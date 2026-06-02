@@ -122,7 +122,7 @@
             toastr.warning('Please select Product No', 'Required');
         } else {
             var dg = $('#dg_request').datagrid({
-                url: '<?= base_url('pricing/Material_costs/datatablesTemp/') ?>?item_fg_id=' + item_fg_id,
+                url: '<?= base_url('pricing/material_costs/datatablesTemp/') ?>?item_fg_id=' + item_fg_id,
                 // singleSelect: true,
                 idField: 'item_rm_id',
                 columns: [
@@ -641,7 +641,7 @@
             prompt: 'Choose Division',
             onSelect: function(div) {
                 $('#item_fg_number').combogrid({
-                    url: '<?= base_url('npd/item_fg_npd/reads/') ?>' + window.btoa(div.id),
+                    url: '<?= base_url('pricing/material_costs/readItems/') ?>' + window.btoa(div.id),
                     panelWidth: 500,
                     idField: 'number',
                     textField: 'number',
@@ -676,41 +676,6 @@
                 });
             }
         });
-
-        // $('#item_fg_number').combogrid({
-        //     url: '<?= base_url('npd/item_fg_npd/reads'); ?>',
-        //     panelWidth: 500,
-        //     idField: 'number',
-        //     textField: 'number',
-        //     mode: 'remote',
-        //     fitColumns: true,
-        //     prompt: "Choose Product Number.",
-        //     columns: [
-        //         [{
-        //             field: 'id',
-        //             title: 'Product ID',
-        //             width: 200
-        //         }, {
-        //             field: 'number',
-        //             title: 'Product No.',
-        //             width: 150
-        //         }, {
-        //             field: 'name',
-        //             title: 'Product Name',
-        //             width: 150
-        //         }]
-        //     ],
-        //     icons: [{
-        //         iconCls: 'icon-clear',
-        //         handler: function(e) {
-        //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-        //         }
-        //     }],
-        //     onSelect: function(value, rows) {
-        //         $('#item_fg_id').textbox('setValue', rows.id);
-        //         $('#item_fg_name').textbox('setValue', rows.name);
-        //     }
-        // });
     });
 
     // $("#filter_lot_no").combobox({

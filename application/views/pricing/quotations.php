@@ -239,7 +239,7 @@
                     field: 'quotation_number2',
                     width: 170,
                     halign: 'center',
-                    title: "Quotation Number",
+                    title: "Breakdown Number",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -524,6 +524,12 @@
                             halign: 'center',
                             width: 200
                         }, {
+                            field: 'quotation_number2',
+                            title: 'Breakdown Number',
+                            halign: 'center',
+                            align: 'center',
+                            width: 120
+                        }, {
                             field: 'price',
                             title: 'Price',
                             halign: 'center',
@@ -582,6 +588,73 @@
         });
 
         //SAVE DATA
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var quotation_date = $("#quotation_date").datebox('getValue');
+        //             var quotation_number = $("#quotation_number").textbox('getValue');
+        //             var customer_id = $("#customer_id").textbox('getValue');
+        //             var quotation_to = $("#quotation_to").combogrid('getValue');
+        //             var quotation_attn = $("#quotation_attn").textbox('getValue');
+        //             var quotation_cc = $("#quotation_cc").textbox('getValue');
+
+        //             var rows = $('#dg2').datagrid('getRows');
+        //             var totalrows = rows.length;
+        //             endEditing();
+
+        //             for (let i = 0; i < totalrows; i++) {
+        //                 if (rows[i].item_fg_id) {
+                            
+        //                     var dataFinal = {
+        //                         quotation_date: quotation_date,
+        //                         quotation_number: quotation_number,
+        //                         customer_id: customer_id,
+        //                         quotation_to: quotation_to,
+        //                         quotation_attn: quotation_attn,
+        //                         quotation_cc: quotation_cc,
+        //                         id: rows[i].id,
+        //                         item_fg_id: rows[i].item_fg_id,
+        //                         item_fg_number: rows[i].item_fg_number,
+        //                         item_fg_name: rows[i].item_fg_name,
+        //                         quotation_number2: rows[i].quotation_number2,
+        //                         revision_quotation_number: rows[i].revision_quotation_number,
+        //                         moq: rows[i].moq,
+        //                         mpq: rows[i].mpq,
+        //                         price: rows[i].price,
+        //                         remark: rows[i].remark
+        //                     };
+                          
+        //                     $.ajax({
+        //                         type: "post",
+        //                         url: url_save,
+        //                         data: dataFinal,
+        //                         dataType: "json",
+        //                         success: function(result) {
+        //                             if (i == (totalrows - 1)) {
+        //                                 Swal.fire({
+        //                                     title: result.message,
+        //                                     icon: result.theme,
+        //                                     confirmButtonText: 'Ok',
+        //                                     allowOutsideClick: false,
+        //                                 }).then((result) => {
+        //                                     if (result.isConfirmed) {
+        //                                         window.location.reload();
+        //                                     }
+        //                                 });
+        //                             }
+        //                         }
+        //                     });
+        //                 }
+        //             }
+
+        //             $('#dg').datagrid('reload');
+        //             $('#dlg_insert').dialog('close');
+        //         }
+        //     }]
+        // });
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
@@ -594,9 +667,23 @@
                     var quotation_attn = $("#quotation_attn").textbox('getValue');
                     var quotation_cc = $("#quotation_cc").textbox('getValue');
 
+                    endEditing();
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
-                    endEditing();
+                    
+                    var requestsCompleted = 0;
+                    var totalRequests = 0;
+
+                    for (let i = 0; i < totalrows; i++) {
+                        if (rows[i].item_fg_id) {
+                            totalRequests++;
+                        }
+                    }
+
+                    if (totalRequests === 0) {
+                        Swal.fire('Info', 'Tidak ada data valid untuk disimpan.', 'info');
+                        return;
+                    }
 
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_fg_id) {
@@ -619,32 +706,39 @@
                                 price: rows[i].price,
                                 remark: rows[i].remark
                             };
-                          
+                        
                             $.ajax({
                                 type: "post",
                                 url: url_save,
                                 data: dataFinal,
                                 dataType: "json",
                                 success: function(result) {
-                                    if (i == (totalrows - 1)) {
+                                    requestsCompleted++; // Tambah counter jika sukses
+                                    
+                                    if (requestsCompleted === totalRequests) {
+                                        
+                                        $('#dg').datagrid('reload');
+                                        $('#dlg_insert').dialog('close');
+                                        
                                         Swal.fire({
-                                            title: result.message,
-                                            icon: result.theme,
+                                            title: 'Success!',
+                                            text: 'Semua data berhasil disimpan.',
+                                            icon: 'success', 
                                             confirmButtonText: 'Ok',
                                             allowOutsideClick: false,
-                                        }).then((result) => {
-                                            if (result.isConfirmed) {
+                                        }).then((swalResult) => {
+                                            if (swalResult.isConfirmed) {
                                                 window.location.reload();
                                             }
                                         });
                                     }
+                                },
+                                error: function() {
+                                    requestsCompleted++;
                                 }
                             });
                         }
                     }
-
-                    $('#dg').datagrid('reload');
-                    $('#dlg_insert').dialog('close');
                 }
             }]
         });

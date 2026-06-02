@@ -43,7 +43,7 @@ class Process_costs extends CI_Controller
                 a.*,
                 b.cycle_time,
                 b.cycle_time_process,
-                b.cavity_standard,
+                m.cavity_standard,
                 c.toonage,
                 c.volume AS machine_volume,
                 IFNULL(m.price, 0) AS mold_price,
@@ -51,7 +51,7 @@ class Process_costs extends CI_Controller
                 m.mold_id,
                 m.mold_name
             FROM item_fg a
-            LEFT JOIN menu_loadings_npd b ON a.id = b.item_fg_id
+            LEFT JOIN menu_loadings b ON a.id = b.item_fg_id
             LEFT JOIN machines c ON c.id = b.machine_id
             LEFT JOIN (
                 SELECT 
@@ -59,7 +59,8 @@ class Process_costs extends CI_Controller
                     mp.price,
                     md.lifetime,
                     md.id as mold_id,
-                    md.mold_name
+                    md.mold_name,
+                    md.cavity_standard
                 FROM mold_items mi
                 JOIN mold_prices mp ON mp.mold_id = mi.mold_id
                 JOIN molds md ON md.id = mi.mold_id

@@ -86,25 +86,16 @@ class Breakdown_prices extends CI_Controller
     {
         $date = $this->input->post('date');
         $time = strtotime($date);
-        $year = date('Y', $time);
         $shortYear = date('y', $time);
         $monthRomawi = $this->get_romawi(date('n', $time));
 
-        $this->db->select('quotation_number');
-        $this->db->like('quotation_number', "/BPI-MKT/QUOT/", 'both');
-        $this->db->like('quotation_number', "/$shortYear", 'after');
-        $this->db->order_by('quotation_number', 'DESC');
-        $this->db->limit(1);
+        $this->db->select("MAX(CAST(SUBSTRING_INDEX(quotation_number, '/', 1) AS UNSIGNED)) as max_no"); 
+        $this->db->like('quotation_number', "/BPI-MKT/QUOT/");
+        $this->db->like('quotation_number', "/$shortYear", 'before'); 
+        
         $query = $this->db->get('breakdown_prices');
-
-        if ($query->num_rows() > 0) {
-            $last_no = $query->row()->quotation_number;
-            $parts = explode('/', $last_no);
-            $next_val = intval($parts[0]) + 1;
-        } else {
-            $next_val = 1;
-        }
-
+        $row = $query->row();
+        $next_val = ($row && $row->max_no) ? intval($row->max_no) + 1 : 1;
         $no_urut = sprintf('%03d', $next_val);
         $result = "$no_urut/BPI-MKT/QUOT/$monthRomawi/$shortYear";
         
@@ -243,6 +234,189 @@ class Breakdown_prices extends CI_Controller
         echo $send;
     }
 
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'p_month' => $data->val($i, 2),
+                'p_year' => $data->val($i, 3),
+                'revision' => $data->val($i, 4),
+                'item_fg_number' => $data->val($i, 5),
+                'model_name' => $data->val($i, 6),
+                'order_estimation' => $data->val($i, 7),
+                'model_life_time' => $data->val($i, 8),
+                'start_mass_pro' => $data->val($i, 9),
+                'l_t_dies_actual' => $data->val($i, 10),
+                'quotation_date' => $data->val($i, 11),
+                'price_cond' => $data->val($i, 12),
+                'currency' => $data->val($i, 13),
+                'mold_unit' => $data->val($i, 14),
+                'dies_unit' => $data->val($i, 15),
+                'dies_price' => $data->val($i, 16),
+                'jig_unit' => $data->val($i, 17),
+                'jig_price' => $data->val($i, 18),
+                'tooling_unit' => $data->val($i, 19),
+                'tooling_price' => $data->val($i, 20),
+                'fixture_cost_unit' => $data->val($i, 21),
+                'fixture_cost_price' => $data->val($i, 22)
+            );
+        }
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
+    }
+    public function uploadclearFailed()
+    {
+        @unlink('failed/production_schedules.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/production_schedules.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/production_schedules.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    // public function uploadcreate()
+    // {
+    //     if ($this->input->post()) {
+    //         $data = $this->input->post('data');
+    //         //Cek Process Number          //table       //field        //field excel
+    //         $item_fg = $this->crud->read('item_fg', [], ["number" => $data['item_fg_number']]);
+
+    //         if (empty($item_fg->id)) {
+    //             echo json_encode(array("title" => "Not Found", "message" => "Item Finish Good " . $data['item_fg_number'] . " Not Found", "theme" => "error"));
+    //         } else {
+    //             $dataFinal = array(
+    //                 //field
+    //                 "item_fg_id" => $item_fg->id,
+    //                 "item_fg_number" => $item_fg->number,,
+    //                 "item_fg_name" => $item_fg->name,
+    //                 "model_name" => $data['model_name'],
+    //                 "p_month" => $data['p_month'],
+    //                 "p_year" => $data['p_year'],
+    //                 "revision" => $data['revision'],
+    //                 "order_estimation" => $data['order_estimation'],
+    //                 "model_life_time" => $data['model_life_time'],
+    //                 "start_mass_pro" => $data['start_mass_pro'],
+    //                 "l_t_dies_actual" => $data['l_t_dies_actual'],
+    //                 "supplier" => 'PT. BANSHU PLASTIC INDONESIA',
+    //                 "quotation_date" => $data['quotation_date'],
+    //                 "quotation_number" => $quotation_number,
+    //                 "price_cond" => $data['price_cond'],
+    //                 "currency" => $data['currency'],
+    //                 "mold_unit" => $data['mold_unit'],
+    //                 "dies_unit" => $data['dies_unit'],
+    //                 "dies_price" => $data['dies_price'],
+    //                 "jig_unit" => $data['jig_unit'],
+    //                 "jig_price" => $data['jig_price'],
+    //                 "tooling_unit" => $data['tooling_unit'],
+    //                 "tooling_price" => $data['tooling_price'],
+    //                 "fixture_cost_unit" => $data['fixture_cost_unit'],
+    //                 "fixture_cost_price" => $data['fixture_cost_price'],
+    //             );
+    //             $send   = $this->crud->create('breakdown_prices', $dataFinal);
+    //             echo $send;
+    //         }
+    //     }
+    // }
+
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+            
+            // Cek Process Number
+            $item_fg = $this->crud->read('item_fg', [], ["number" => $data['item_fg_number']]);
+
+            if (empty($item_fg->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Item Finish Good " . $data['item_fg_number'] . " Not Found", "theme" => "error"));
+            } else {
+
+                $excel_date = $data['quotation_date']; 
+                $time = strtotime($excel_date);
+                
+                if (!$time) {
+                    $time = time(); 
+                }
+
+                $shortYear = date('y', $time);
+                $monthRomawi = $this->get_romawi(date('n', $time));
+
+                $this->db->select("MAX(CAST(SUBSTRING_INDEX(quotation_number, '/', 1) AS UNSIGNED)) as max_no"); 
+                $this->db->like('quotation_number', "/BPI-MKT/QUOT/");
+                $this->db->like('quotation_number', "/$shortYear", 'before'); 
+                
+                $query = $this->db->get('breakdown_prices');
+                $row = $query->row();
+                
+                $next_val = ($row && $row->max_no) ? intval($row->max_no) + 1 : 1;
+                $no_urut = sprintf('%03d', $next_val);
+                
+                $quotation_number = "$no_urut/BPI-MKT/QUOT/$monthRomawi/$shortYear";
+                // ==========================================================
+
+                $dataFinal = array(
+                    "item_fg_id" => $item_fg->id,
+                    "item_fg_number" => $item_fg->number,
+                    "item_fg_name" => $item_fg->name,
+                    "model_name" => $data['model_name'],
+                    "p_month" => $data['p_month'],
+                    "p_year" => $data['p_year'],
+                    "revision" => $data['revision'],
+                    "order_estimation" => $data['order_estimation'],
+                    "model_life_time" => $data['model_life_time'],
+                    "start_mass_pro" => $data['start_mass_pro'],
+                    "l_t_dies_actual" => $data['l_t_dies_actual'],
+                    "supplier" => 'PT. BANSHU PLASTIC INDONESIA',
+                    "quotation_date" => $data['quotation_date'],
+                    "quotation_number" => $quotation_number,
+                    "price_cond" => $data['price_cond'],
+                    "currency" => $data['currency'],
+                    "mold_unit" => $data['mold_unit'],
+                    "dies_unit" => $data['dies_unit'],
+                    "dies_price" => $data['dies_price'],
+                    "jig_unit" => $data['jig_unit'],
+                    "jig_price" => $data['jig_price'],
+                    "tooling_unit" => $data['tooling_unit'],
+                    "tooling_price" => $data['tooling_price'],
+                    "fixture_cost_unit" => $data['fixture_cost_unit'],
+                    "fixture_cost_price" => $data['fixture_cost_price'],
+                    "remarks" => 'Upload'
+                );
+                
+                $send = $this->crud->create('breakdown_prices', $dataFinal);
+                echo $send;
+            }
+        }
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -363,8 +537,9 @@ class Breakdown_prices extends CI_Controller
         $id = base64_decode($id);
 
         // 1. Ambil data Header dari breakdown_prices
-        $this->db->select('b.*');
-        $this->db->from('breakdown_prices b');
+        $this->db->select('a.*, b.quotation_number as quot_no, b.revision as quot_rev');
+        $this->db->from('breakdown_prices a');
+        $this->db->join('quotations b','a.quotation_number = b.quotation_number2');
         $this->db->where('b.id', $id);
         $header = $this->db->get()->row();
 
@@ -406,6 +581,8 @@ class Breakdown_prices extends CI_Controller
         $this->db->select("
             cp.*, 
             ifg.color as color_fg,
+            ifg.weight,
+            ifg.uom,
             
             COALESCE(f_vg.name, cp.part_name_vg) as name_vg, 
             ir_vg.color as color_vg,
@@ -413,46 +590,50 @@ class Breakdown_prices extends CI_Controller
             ir_mb.color as color_mb,
             ir_cp.color as color_cp,
 
-            s_vg.name as maker_vg,
-            s_mb.name as maker_mb,
-            s_cp.name as maker_cp,
+            si_vg.maker as maker_vg,
+            si_mb.maker as maker_mb,
+            si_cp.maker as maker_cp,
+            si_vg.price as price_vg,
+            si_mb.price as price_mb,
+            si_cp.price as price_cp,
 
             bn_vg.composition as comp_vg,
             bn_mb.composition as comp_mb,
             bn_cp.composition as comp_cp,
 
-            loading.runner,
-            loading.cavity_standard
+            ml.runner,
+            mld.cavity_standard
         ");
         $this->db->from('cost_patterns cp');
         $this->db->join('item_fg ifg', 'ifg.id = cp.item_fg_id', 'left');
 
-        /* JOIN LOADING NPD (Runner & Cavity) */
-        $this->db->join('menu_loadings_npd loading', 'loading.item_fg_id = cp.item_fg_id', 'left');
+        /* JOIN LOADING (Runner & Cavity) */
+        $this->db->join('menu_loadings ml', 'ml.item_fg_id = cp.item_fg_id', 'left');
+        $this->db->join('molds mld', 'ml.mold_id = mld.id');
 
         /* --- JOIN VIRGIN (VG) --- */
         $this->db->join('item_rm ir_vg', 'ir_vg.id = cp.item_rm_id_vg', 'left');
         $this->db->join('item_family_subs f_vg', 'f_vg.id = ir_vg.item_sub_family_id', 'left');
-        $this->db->join('bom_npd bn_vg', 'bn_vg.item_fg_id = cp.item_fg_id AND bn_vg.item_rm_id = cp.item_rm_id_vg', 'left');
+        $this->db->join('bom bn_vg', 'bn_vg.item_fg_id = cp.item_fg_id AND bn_vg.item_rm_id = cp.item_rm_id_vg', 'left');
         // Subquery Supplier VG (Share 100)
-        $sub_vg = "(SELECT item_rm_id, supplier_id FROM supplier_items WHERE share_order = 100 GROUP BY item_rm_id) si_vg";
+        $sub_vg = "(SELECT item_rm_id, supplier_id, maker, price FROM supplier_items WHERE share_order = 100 GROUP BY item_rm_id) si_vg";
         $this->db->join($sub_vg, 'si_vg.item_rm_id = ir_vg.id', 'left');
         $this->db->join('suppliers s_vg', 's_vg.id = si_vg.supplier_id', 'left');
 
         /* --- JOIN MASTERBATCH (MB) --- */
         $this->db->join('item_rm ir_mb', 'ir_mb.id = cp.item_rm_id_mb', 'left');
         $this->db->join('item_family_subs f_mb', 'f_mb.id = ir_mb.item_sub_family_id', 'left');
-        $this->db->join('bom_npd bn_mb', 'bn_mb.item_fg_id = cp.item_fg_id AND bn_mb.item_rm_id = cp.item_rm_id_mb', 'left');
+        $this->db->join('bom bn_mb', 'bn_mb.item_fg_id = cp.item_fg_id AND bn_mb.item_rm_id = cp.item_rm_id_mb', 'left');
         // Subquery Supplier MB (Share 100)
-        $sub_mb = "(SELECT item_rm_id, supplier_id FROM supplier_items WHERE share_order = 100 GROUP BY item_rm_id) si_mb";
+        $sub_mb = "(SELECT item_rm_id, supplier_id, maker, price FROM supplier_items WHERE share_order = 100 GROUP BY item_rm_id) si_mb";
         $this->db->join($sub_mb, 'si_mb.item_rm_id = ir_mb.id', 'left');
         $this->db->join('suppliers s_mb', 's_mb.id = si_mb.supplier_id', 'left');
 
         /* --- JOIN CHILD PART (CP) --- */
         $this->db->join('item_rm ir_cp', 'ir_cp.id = cp.item_rm_id_cp', 'left');
-        $this->db->join('bom_npd bn_cp', 'bn_cp.item_fg_id = cp.item_fg_id AND bn_cp.item_rm_id = cp.item_rm_id_cp', 'left');
+        $this->db->join('bom bn_cp', 'bn_cp.item_fg_id = cp.item_fg_id AND bn_cp.item_rm_id = cp.item_rm_id_cp', 'left');
         // Subquery Supplier CP (Share 100)
-        $sub_cp = "(SELECT item_rm_id, supplier_id FROM supplier_items WHERE share_order = 100 GROUP BY item_rm_id) si_cp";
+        $sub_cp = "(SELECT item_rm_id, supplier_id, maker, price FROM supplier_items WHERE share_order = 100 GROUP BY item_rm_id) si_cp";
         $this->db->join($sub_cp, 'si_cp.item_rm_id = ir_cp.id', 'left');
         $this->db->join('suppliers s_cp', 's_cp.id = si_cp.supplier_id', 'left');
 
@@ -479,7 +660,7 @@ class Breakdown_prices extends CI_Controller
         $html = '
         <html>
         <head>
-            <title>Breakdown Price - '.$header->quotation_number.' REV 0'.$header->revision_quotation_number.'</title>
+            <title>Breakdown Price - '.$header->quot_no.' REV 0'.$header->quot_rev.'</title>
             <style>
                 body { font-family: Calibri, sans-serif; font-size: 11px; }
                 .container { width: 210mm; padding: 10mm; margin: auto; }
@@ -494,6 +675,7 @@ class Breakdown_prices extends CI_Controller
         </head>
         <body>
             <div class="container">
+                <br><br><br><br><br><br><br><br><br><br>
                 <div class="title">BREAKDOWN PRICE</div>
 
                 <table>
@@ -514,7 +696,7 @@ class Breakdown_prices extends CI_Controller
                     </tr>
                     <tr>
                         <td width="15%" class="bg-blue">Model Name</td><td width="35%">'.$header->model_name.'</td>
-                        <td width="15%" class="bg-blue">Quotation Number</td><td class="bg-blue">'.$header->quotation_number.' REV 0'.$header->revision_quotation_number.'</td>
+                        <td width="15%" class="bg-blue">Quotation Number</td><td class="bg-blue">'.$header->quot_no.' REV 0'.$header->quot_rev.'</td>
                     </tr>
                     <tr>
                         <td class="bg-blue">Part Number</td><td>'.$header->item_fg_number.'</td>
@@ -563,7 +745,10 @@ class Breakdown_prices extends CI_Controller
                     </tr>
                 </table>
 
-                <div style="font-weight:bold; margin-top:10px;">MATERIAL & PARTS COST</div>
+                <div style="margin-top:10px; overflow: hidden; width: 100%;">
+                    <div style="float: left; font-weight: bold;">MATERIAL & PARTS COST</div>
+                    <div style="float: right; font-weight: bold; font-size: 11px;">PRICE UNIT IN : '.$header->currency.'</div>
+                </div>
                 <table class="border text-center">
                     <tr class="bg-gray">
                         <th rowspan="2">NAME / SPECIFICATION</th>
@@ -588,58 +773,59 @@ class Breakdown_prices extends CI_Controller
 
                         // --- 1. BLOK VIRGIN (VG) ---
                         if(!empty($d->item_rm_id_vg)) {
-                            $gross_vg = (float)$d->comp_vg; // Mengambil dari BOM NPD
-                            $net_vg   = $gross_vg - $runner_per_pcs; // Rumus: Gross - (Runner/Cavity)
-                            $cost_vg  = ($gross_vg * (float)$d->virgin_cost) / 1000;
-                            $sub_total_1 += $cost_vg;
+                            $gross_vg = (float)$d->comp_vg * 1000; // Mengambil dari BOM
+                            // $net_vg   = $gross_vg - $runner_per_pcs; // Rumus: Gross - (Runner/Cavity)
+                            // $net_vg   = (float)$d->nett_vg;
+                            // $cost_vg  = ($gross_vg * (float)$d->virgin_cost) / 1000; //perlu di tanyakn lagi
+                            $sub_total_1 += (float)$d->virgin_cost;
 
                             $html .= '<tr>
                                 <td align="left">'.$d->name_vg.'</td> 
                                 <td>'.($d->maker_vg ?: '-').'</td> 
                                 <td>'.$d->color_vg.'</td>
                                 <td align="right">'.number_format($gross_vg, 3).'</td> 
-                                <td align="right">'.number_format($net_vg, 3).'</td>   
+                                <td align="right">'.number_format($d->weight, 3).'</td>   
                                 <td align="center">gr</td>
+                                <td align="right">'.number_format($d->price_vg, 2).'</td>
                                 <td align="right">'.number_format($d->virgin_cost, 2).'</td>
-                                <td align="right">'.number_format($cost_vg, 2).'</td>
                             </tr>';
                         }
 
                         // --- 2. BLOK MASTERBATCH (MB) ---
                         if(!empty($d->item_rm_id_mb)) {
-                            $gross_mb = (float)$d->comp_mb; // Mengambil dari BOM NPD
-                            $net_mb   = $gross_mb - $runner_per_pcs;
-                            $cost_mb  = ($gross_mb * (float)$d->mb_cost) / 1000;
-                            $sub_total_1 += $cost_mb;
+                            $gross_mb = (float)$d->comp_mb * 1000; // Mengambil dari BOM
+                            $net_mb   = $gross_mb;// penyesuaian 2026-05-12
+                            // $cost_mb  = ($gross_mb * (float)$d->mb_cost) / 1000;
+                            $sub_total_1 += (float)$d->mb_cost;
 
                             $html .= '<tr>
                                 <td align="left">'.$d->name_mb.'</td>
                                 <td>'.($d->maker_mb ?: '-').'</td>
                                 <td>'.$d->color_mb.'</td>
                                 <td align="right">'.number_format($gross_mb, 3).'</td>
-                                <td align="right">'.number_format($net_mb, 3).'</td>
+                                <td align="right">'.number_format($d->weight, 3).'</td>
                                 <td align="center">gr</td>
+                                <td align="right">'.number_format($d->price_mb, 2).'</td>
                                 <td align="right">'.number_format($d->mb_cost, 2).'</td>
-                                <td align="right">'.number_format($cost_mb, 2).'</td>
                             </tr>';
                         }
 
                         // --- 3. BLOK CHILD PART (CP) ---
                         if(!empty($d->item_rm_id_cp)) {
-                            $gross_cp = (float)$d->comp_cp; // Mengambil dari BOM NPD
-                            $net_cp   = $gross_cp; // Sesuai permintaan: CP pakai comp saja
-                            $cost_cp  = ($gross_cp * (float)$d->child_part_cost); // Tanpa dibagi 1000 jika per pcs
-                            $sub_total_1 += $cost_cp;
+                            $gross_cp = (float)$d->comp_cp; // Mengambil dari BOM
+                            $net_cp   = $gross_cp; // penyesuaian 2026-05-12
+                            // $cost_cp  = ($gross_cp * (float)$d->child_part_cost); // Tanpa dibagi 1000 jika per pcs
+                            $sub_total_1 += (float)$d->child_part_cost;
 
                             $html .= '<tr>
                                 <td align="left">'.$d->part_no_cp.'</td>
                                 <td>'.($d->maker_cp ?: '-').'</td>
                                 <td>'.$d->color_cp.'</td>
                                 <td align="right">'.number_format($gross_cp, 3).'</td>
-                                <td align="right">'.number_format($net_cp, 3).'</td>
-                                <td align="center">pcs</td>
+                                <td align="right">'.number_format($d->weight, 3).'</td>
+                                <td align="center">'.($d->maker_cp ?: '-').'</td>
+                                <td align="right">'.number_format($d->price_cp, 2).'</td>
                                 <td align="right">'.number_format($d->child_part_cost, 2).'</td>
-                                <td align="right">'.number_format($cost_cp, 2).'</td>
                             </tr>';
                         }
                     }

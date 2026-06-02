@@ -139,14 +139,16 @@ class Quotations extends CI_Controller
 
     private function calculate_total_cost($header)
     {
-        // Ambil detail cost pattern (logika JOIN yang Anda berikan sebelumnya)
-        $this->db->select("cp.*, loading.runner, loading.cavity_standard, 
-                        bn_vg.composition as comp_vg, bn_mb.composition as comp_mb, bn_cp.composition as comp_cp");
+        $this->db->select("cp.*, ml.runner, mld.cavity_standard, 
+                        bn_vg.composition as comp_vg, 
+                        bn_mb.composition as comp_mb, 
+                        bn_cp.composition as comp_cp");
         $this->db->from('cost_patterns cp');
-        $this->db->join('menu_loadings_npd loading', 'loading.item_fg_id = cp.item_fg_id', 'left');
-        $this->db->join('bom_npd bn_vg', 'bn_vg.item_fg_id = cp.item_fg_id AND bn_vg.item_rm_id = cp.item_rm_id_vg', 'left');
-        $this->db->join('bom_npd bn_mb', 'bn_mb.item_fg_id = cp.item_fg_id AND bn_mb.item_rm_id = cp.item_rm_id_mb', 'left');
-        $this->db->join('bom_npd bn_cp', 'bn_cp.item_fg_id = cp.item_fg_id AND bn_cp.item_rm_id = cp.item_rm_id_cp', 'left');
+        $this->db->join('menu_loadings ml', 'ml.item_fg_id = cp.item_fg_id', 'left');
+        $this->db->join('molds mld', 'ml.mold_id = mld.id');
+        $this->db->join('bom bn_vg', 'bn_vg.item_fg_id = cp.item_fg_id AND bn_vg.item_rm_id = cp.item_rm_id_vg', 'left');
+        $this->db->join('bom bn_mb', 'bn_mb.item_fg_id = cp.item_fg_id AND bn_mb.item_rm_id = cp.item_rm_id_mb', 'left');
+        $this->db->join('bom bn_cp', 'bn_cp.item_fg_id = cp.item_fg_id AND bn_cp.item_rm_id = cp.item_rm_id_cp', 'left');
         
         $this->db->where([
             'cp.p_month'    => $header->p_month,
@@ -180,7 +182,7 @@ class Quotations extends CI_Controller
         $sub_total_2 = $inj_cost + $sec_process_cost;
 
         // Sub Total 3 (Amortization)
-        $sub_total_3 = ($process->mold_depreciation * 5); // Simple sum of the 5 factors as per your logic
+        $sub_total_3 = ($process->mold_depreciation * 5);
 
         $total_cost = $sub_total_1 + $sub_total_2 + $sub_total_3 
                     + (float)$process->adm_foh_cost + (float)$process->ng_ratio_cost 
@@ -250,7 +252,7 @@ class Quotations extends CI_Controller
             $this->db->select('a.*');
             $this->db->from('quotations a');
             $this->db->where('a.quotation_number', $number);
-            $this->db->like('a.item_fg_id', $filter_item_fg_id); // bentrok dengan datagrid sub assy
+            $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -301,6 +303,11 @@ class Quotations extends CI_Controller
             );
             
             if (@$post['id'] != "") {
+                $old_data = $this->crud->read('quotations', [], ["id" => $post['id']]);
+                
+                $current_revision = !empty($old_data->revision) ? (int)$old_data->revision : 0;
+                $dataFinal['revision'] = $current_revision + 1;
+
                 $send = $this->crud->update('quotations', ["id" => $post['id']], $dataFinal);
             } else {
                 $send = $this->crud->create('quotations', $post);

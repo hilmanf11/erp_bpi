@@ -54,7 +54,7 @@ class Material_costs extends CI_Controller
     {
         $division_id = base64_decode($division_id);
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_fg_npd WHERE status = '0' AND division_id like '%$division_id%' AND (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') ORDER BY number ASC");
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE status = '0' AND division_id like '%$division_id%' AND (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') ORDER BY number ASC");
         echo json_encode($send);
     }
 
@@ -204,10 +204,10 @@ class Material_costs extends CI_Controller
             f.currency
         ");
         
-        $this->db->from("bom_npd a");
+        $this->db->from("bom a");
         $this->db->join("item_rm b", "a.item_rm_id = b.id", "left");
         $this->db->join("$price_subquery", "b.id = c.item_rm_id", "left");
-        $this->db->join("item_fg_npd d", "a.item_fg_id = d.id", "left");
+        $this->db->join("item_fg d", "a.item_fg_id = d.id", "left");
         $this->db->join("item_familys e", "e.id = b.item_family_id", "left");
         $this->db->join("suppliers f", "f.id = c.supplier_id", "left");
 
