@@ -316,8 +316,18 @@ class Report_history_transactions_fg extends CI_Controller
                     <th width="100">ITO<br>(MONTH)</th>
                 </tr>';
         $no = 1;
+        $totalBeginStock = 0;
+        $totalIn = 0;
+        $totalOut = 0;
+        $totalEndingStock = 0;
+        $totalIto = 0;
         foreach ($records as $record) {
             $item_fg_id = $record->id;
+
+            $totalBeginStock += @$record->begin_stock;
+            $totalIn += $record->qty_in;
+            $totalOut += $record->qty_out;
+            $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
 
             $total_sales_minus = $record->qty_out_sales_minus1 + $record->qty_out_sales_minus2 + $record->qty_out_sales_minus3;
             $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 2) : '0';
@@ -932,6 +942,17 @@ class Report_history_transactions_fg extends CI_Controller
             }
             $no++;
         }
+
+        $html .= '<tr>
+            <td colspan="7" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td style="text-align:right;">-</td>
+        </tr>
+        </tbody>';
+
         $html .= '</table></body></html>';
         echo $html;
     }

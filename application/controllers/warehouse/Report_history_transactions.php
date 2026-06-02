@@ -558,11 +558,11 @@ class Report_history_transactions extends CI_Controller
             $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
 
             $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
-            $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 2) : '0.00';
+            $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 4) : '0.0000';
 
             $stock_coverage = ($total_sales_minus > 0)
-                ? number_format(((@$record->begin_stock + $record->qty_in) - $record->qty_out) / ($total_sales_minus / 3), 2)
-                : '0.00'; // atau bisa diganti jadi '0.00' atau '-'
+                ? number_format(((@$record->begin_stock + $record->qty_in) - $record->qty_out) / ($total_sales_minus / 3), 4)
+                : '0.0000'; // atau bisa diganti jadi '0.0000' atau '-'
 
             // $totalIto += $stock_coverage;
 
@@ -574,12 +574,12 @@ class Report_history_transactions extends CI_Controller
                             <td>' . $record->division . '</td>
                             <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
-                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_bpi, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_plant1, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 4) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_in, 4) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_out, 4) . '</td>
+                            <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 4) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_bpi, 4) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_plant1, 4) . '</td>
                             <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
 
@@ -886,10 +886,10 @@ class Report_history_transactions extends CI_Controller
                                 <td>' . $data['lotno'] . '</td>
                                 <td>' . $data['doc3'] . '</td>
                                 <td>' . $data['doc4'] . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                <td style="text-align:right;">' . number_format($data['qty_in'], 4) . '</td>
+                                <td style="text-align:right;">' . number_format($data['qty_out'], 4) . '</td>
+                                <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                             </tr>';
                         
                             $begin = $balance;
@@ -910,10 +910,10 @@ class Report_history_transactions extends CI_Controller
                             //                     <td>' . $receipt->bc_aju . '</td>
                             //                     <td>' . $receipt->bc_document . '</td>
                             //                     <td>' . $receipt->bc_date . '</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                            //                     <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                            //                     <td style="text-align:right;">' . number_format($receipt->qty_receipt, 4) . '</td>
                             //                     <td style="text-align:right;">' . number_format(0)  . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                             //                 </tr>';
                             //     $begin += $receipt->qty_receipt;
                             //     $nod++;
@@ -932,10 +932,10 @@ class Report_history_transactions extends CI_Controller
                             //                     <td>' . $issued->label_no . '</td>
                             //                     <td>' . $issued->request_no . '</td>
                             //                     <td>-</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                            //                     <td style="text-align:right;">' . number_format($begin, 4) . '</td>
                             //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($issued->qty, 4)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                             //                 </tr>';
                             //     $begin -= $issued->qty;
                             //     $nod++;
@@ -953,10 +953,10 @@ class Report_history_transactions extends CI_Controller
                             //                     <td>' . $return->label_no . '</td>
                             //                     <td>' . $return->return_no . '</td>
                             //                     <td>-</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                            //                     <td style="text-align:right;">' . number_format($return->qty, 4)  . '</td>
                             //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                             //                 </tr>';
                             //     $begin += $return->qty;
                             //     $nod++;
@@ -975,10 +975,10 @@ class Report_history_transactions extends CI_Controller
                             //                     <td>-</td>
                             //                     <td>-</td>
                             //                     <td>-</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($os_rm->qty, 2)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                            //                     <td style="text-align:right;">' . number_format($os_rm->qty, 4)  . '</td>
                             //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                             //                 </tr>';
                             //     $begin += $os_rm->qty;
                             //     $nod++;
@@ -997,10 +997,10 @@ class Report_history_transactions extends CI_Controller
                             //                     <td>' . $bpm_scan->label . '</td>
                             //                     <td>' . $bpm_scan->request_id . '</td>
                             //                     <td>' . $bpm_scan->request_date . '</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                            //                     <td style="text-align:right;">' . number_format($bpm_scan->qty, 4)  . '</td>
                             //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                            //                     <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                             //                 </tr>';
                             //     $begin += $bpm_scan->qty;
                             //     $nod++;
@@ -1020,10 +1020,10 @@ class Report_history_transactions extends CI_Controller
                             //                     <td>-</td>
                             //                     <td>' . $transaction->request_no . '</td>
                             //                     <td>-</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                            //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                            //                     <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                            //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                            //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                            //                     <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                             //                 </tr>';
                             
                             //     // Update balance
@@ -1071,10 +1071,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $receipt->lotno . '</td>
                                             <td>' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 4) . '</td>
                                             <td style="text-align:right;">' . number_format(0)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin += $receipt->qty_receipt;
                             $nod++;
@@ -1113,10 +1113,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -1162,10 +1162,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -1197,10 +1197,10 @@ class Report_history_transactions extends CI_Controller
                                                 <td>' . $transaction->label . '</td>
                                                 <td>' . $transaction->request_id . '</td>
                                                 <td>' . $transaction->request_date . '</td>
-                                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                                <td style="text-align:right;">' . number_format($transaction->qty, 2)  . '</td>
+                                                <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                                <td style="text-align:right;">' . number_format($transaction->qty, 4)  . '</td>
                                                 <td style="text-align:right;">' . number_format(0) . '</td>
-                                                <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                                <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                             </tr>';
                                 $begin += $transaction->qty;
                                 $nod++;
@@ -1240,10 +1240,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -1289,10 +1289,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -1338,10 +1338,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -1426,6 +1426,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
+                                            <td>' . $issued->specification . '</td>
                                             <td>ISSUED</td>
                                             <td>' . $user->name . '</td>
                                             <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
@@ -1434,10 +1435,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $issued->lotno . '</td>
                                             <td>' . $issued->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
                                             <td style="text-align:right;">' . number_format(0) . '</td>
-                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($issued->qty, 4)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin -= $issued->qty;
                             $nod++;
@@ -1450,12 +1451,12 @@ class Report_history_transactions extends CI_Controller
 
         $html .= '<tr>
             <td colspan="10" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalBpi, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalPlant1, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalBeginStock, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalIn, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalOut, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalEndingStock, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalBpi, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalPlant1, 4) . '</td>
             <td style="text-align:right;">-</td>
         </tr>
         </tbody>';
@@ -1756,7 +1757,7 @@ class Report_history_transactions extends CI_Controller
             $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
             
             $avg_sales_minus_numeric = ($total_sales_minus > 0) ? ($total_sales_minus / 3) : 0;
-            $avg_sales_minus = number_format($avg_sales_minus_numeric, 2); // Hanya untuk tampilan
+            $avg_sales_minus = number_format($avg_sales_minus_numeric, 4); // Hanya untuk tampilan
 
             $ending_stock = (@$record->begin_stock + $record->qty_in) - $record->qty_out;
 
@@ -1768,8 +1769,8 @@ class Report_history_transactions extends CI_Controller
             $totalIto += $_stock_coverage_numeric;
 
             $stock_coverage = ($avg_sales_minus_numeric > 0)
-                ? number_format($_stock_coverage_numeric, 2)
-                : '0'; // atau bisa diganti jadi '0.00' atau '-'
+                ? number_format($_stock_coverage_numeric, 4)
+                : '0.0000'; // atau bisa diganti jadi '0.0000' atau '-'
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -1780,10 +1781,10 @@ class Report_history_transactions extends CI_Controller
                             <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
                             <td>' . $record->sub_prodfam . '</td>
-                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 4) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_in, 4) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_out, 4) . '</td>
+                            <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 4) . '</td>
                             
                             <td style="text-align:right;">' . $record->receipt_qty . '</td>
                             <td style="text-align:right;">' . $record->bpm_qty . '</td>
@@ -1799,8 +1800,8 @@ class Report_history_transactions extends CI_Controller
 
                             <td style="text-align:right;">' . number_format($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty,2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty,2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in, 4) . '</td>
+                            <td style="text-align:right;">' . number_format(($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 4) . '</td>
 
                             <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
@@ -1809,27 +1810,27 @@ class Report_history_transactions extends CI_Controller
 
         $html .= '<tr>
             <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalBeginStock, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalIn, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalOut, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalEndingStock, 4) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalReceiptQty, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalBpmQty, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalAdjInQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalReceiptQty, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalBpmQty, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalAdjInQty, 4) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalQtyIssuedSupplySheet, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyIssuedMaterialRequest, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyKanban, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyKanbanSJ, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyKanbanSP, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalBpbQty, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalAdjOutQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyIssuedSupplySheet, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyIssuedMaterialRequest, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyKanban, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyKanbanSJ, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyKanbanSP, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalBpbQty, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalAdjOutQty, 4) . '</td>
            
-            <td style="text-align:right;">' . number_format($totalQtyIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyOut, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtySelisihIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtySelisihOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyIn, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyOut, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtySelisihIn, 4) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtySelisihOut, 4) . '</td>
 
             <td style="text-align:right;">' . $totalIto . '</td>
             
@@ -1967,6 +1968,7 @@ class Report_history_transactions extends CI_Controller
                 <tr>
                     <th width="20">No</th>
                     <th>Part No</th>
+                    <th>Specification</th>
                     <th>Category</th>
                     <th>Product Family</th>
                     <th>Sub Product <br>Family</th>
@@ -2053,8 +2055,8 @@ class Report_history_transactions extends CI_Controller
                 $in_qty = 0;
                 $end_qty = 0;
                 $balance = 0;
-                for ($i = $start; $i <= $finish; $i += (60 * 60 * 24)) {
-                    $working_date = date('Y-m-d', $i);
+                //for ($i = $start; $i <= $finish; $i += (60 * 60 * 24)) {
+                    // $working_date = date('Y-m-d', $i);
 
                     if ($filter_trans_type == '' ) {
                         //-------------- Awal Query disini----------------------------------//                    
@@ -2066,15 +2068,93 @@ class Report_history_transactions extends CI_Controller
                             a.bc_document, 
                             a.bc_date, 
                             SUM(b.qty) as qty_receipt,
-                            c.name as username
+                            c.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM purchase_order_receipts a 
                         JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
                         JOIN users c ON a.created_by = c.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$working_date' and '$working_date'
+                        WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
                         GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
                         
                         //ISSUED
-                        $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
+                        $issueds = $this->crud->query("SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            c.lotno,
+                            COALESCE(c.specification,'-') as specification
+                        FROM issued_material_details a 
+                        JOIN purchase_order_labels b ON a.label_no = b.label_no
+                        JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION ALL
+
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            c.lot_no as lotno,
+                            '-' as specification
+                        FROM issued_material_details a
+                        JOIN bpm_labels b ON a.label_no = b.label_no
+                        JOIN bpm c ON b.request_id = c.request_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION ALL
+                        
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            COALESCE(c.lotno,'-') as lotno,
+                            '-' as specification
+                        FROM issued_material_details a 
+                        JOIN barcode_divides b ON a.label_no = b.label_divided
+                        LEFT JOIN purchase_order_receipts c ON b.reff = c.receipt_id
+                        LEFT JOIN new_barcode d ON b.reff = d.label_no
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION ALL
+
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            '-' as lotno,
+                            '-' as specification
+                        FROM issued_material_details a 
+                        JOIN new_barcode b ON a.label_no = b.label_no
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION ALL
+                        
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            '-' as label_no, 
+                            a.request_no,
+                            '-' as lotno,
+                            '-' as specification
+                        FROM issued_material_details a 
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        AND a.type = 'Other'
+                        AND DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+                        
+                        // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
                         //RETURN
                         $returns = $this->crud->query("SELECT
@@ -2089,11 +2169,11 @@ class Report_history_transactions extends CI_Controller
                         JOIN return_material_labels b ON a.return_id = b.return_id
                         JOIN scan_item_receipts c ON a.return_id = c.receipt_id
                         JOIN users d ON a.created_by = d.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$working_date' and '$working_date'
+                        WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$filter_from' and '$filter_to'
                         GROUP BY b.label_no");
 
                         //OS RM
-                        $os_rms = $this->crud->query("SELECT * FROM os_rm WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(trans_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
+                        $os_rms = $this->crud->query("SELECT * FROM os_rm WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(trans_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
                         //SCAN BPM
                         $bpm_scans = $this->crud->query("SELECT 
@@ -2104,7 +2184,7 @@ class Report_history_transactions extends CI_Controller
                         request_date, 
                         request_id 
                         FROM scan_item_bpm 
-                        WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
+                        WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
                         // TRANSACTION RM (IN and OUT)
                         $transactions = $this->crud->query("SELECT
@@ -2113,10 +2193,11 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.request_date between '$working_date' and '$working_date'");
+                        WHERE a.item_rm_id = '$item_rm_id' and a.request_date between '$filter_from' and '$filter_to'");
 
                         //-------------- Akhir query disini----------------------------------//
 
@@ -2127,6 +2208,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $receipt->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2138,10 +2220,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $receipt->bc_aju . '</td>
                                             <td>' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format(0, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format(0, 4)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin += $receipt->qty_receipt;
                             $no++;
@@ -2154,6 +2236,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $issued->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2165,10 +2248,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $issued->label_no . '</td>
                                             <td>' . $issued->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format(0, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($issued->qty, 4)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin -= $issued->qty;
                             $no++;
@@ -2179,6 +2262,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>-</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2190,10 +2274,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $return->label_no . '</td>
                                             <td>' . $return->return_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($return->qty, 4)  . '</td>
+                                            <td style="text-align:right;">' . number_format(0, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin += $return->qty;
                             $no++;
@@ -2206,6 +2290,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>-</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2217,10 +2302,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>-</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($os_rm->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($os_rm->qty, 4)  . '</td>
+                                            <td style="text-align:right;">' . number_format(0, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin += $os_rm->qty;
                             $no++;
@@ -2233,6 +2318,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                              <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>-</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2244,10 +2330,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . date("Y-m-d", strtotime($bpm_scan->request_date)) . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($bpm_scan->qty, 4)  . '</td>
+                                            <td style="text-align:right;">' . number_format(0, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin += $bpm_scan->qty;
                             $no++;
@@ -2260,6 +2346,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2271,10 +2358,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -2298,11 +2385,12 @@ class Report_history_transactions extends CI_Controller
                             a.bc_document, 
                             a.bc_date, 
                             SUM(b.qty) as qty_receipt,
-                            c.name as username
+                            c.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM purchase_order_receipts a 
                         JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
                         JOIN users c ON a.created_by = c.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$working_date' and '$working_date'
+                        WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
                         GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
             
                         foreach ($receipts as $receipt) {
@@ -2310,6 +2398,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $receipt->specification . '</td>                                            
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2321,10 +2410,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $receipt->bc_aju . '</td>
                                             <td>' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format(0, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 4) . '</td>
+                                            <td style="text-align:right;">' . number_format(0, 4)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin += $receipt->qty_receipt;
                             $no++;
@@ -2339,10 +2428,12 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ IN STO' and a.request_date between '$working_date' and '$working_date'");
+                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ IN STO' and a.request_date between '$filter_from' and '$filter_to'
+                        ORDER BY a.request_date");
             
                         foreach ($transactions as $transaction) {
                             $balance = ($transaction->transaction_kind == 'IN') 
@@ -2352,6 +2443,7 @@ class Report_history_transactions extends CI_Controller
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2363,10 +2455,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -2380,7 +2472,6 @@ class Report_history_transactions extends CI_Controller
                         }
                     }
 
-
                     if ($filter_trans_type == 'BPM') {
                         //TRANSACTION
                         $transactions = $this->crud->query("SELECT
@@ -2389,10 +2480,12 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPM' and a.request_date between '$working_date' and '$working_date'");
+                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPM' and a.request_date between '$filter_from' and '$filter_to'
+                        ORDER BY a.request_date");
             
                         foreach ($transactions as $transaction) {
                             $balance = ($transaction->transaction_kind == 'IN') 
@@ -2402,6 +2495,7 @@ class Report_history_transactions extends CI_Controller
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2413,10 +2507,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -2438,10 +2532,12 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ OUT STO' and a.request_date between '$working_date' and '$working_date'");
+                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ OUT STO' and a.request_date between '$filter_from' and '$filter_to'
+                        ORDER BY a.request_date");
             
                         foreach ($transactions as $transaction) {
                             $balance = ($transaction->transaction_kind == 'IN') 
@@ -2451,6 +2547,7 @@ class Report_history_transactions extends CI_Controller
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2462,10 +2559,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -2487,10 +2584,12 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPB' and a.request_date between '$working_date' and '$working_date'");
+                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPB' and a.request_date between '$filter_from' and '$filter_to'
+                        ORDER BY a.request_date");
             
                         foreach ($transactions as $transaction) {
                             $balance = ($transaction->transaction_kind == 'IN') 
@@ -2500,6 +2599,7 @@ class Report_history_transactions extends CI_Controller
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2511,10 +2611,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -2536,10 +2636,12 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'KANBAN WO' and a.request_date between '$working_date' and '$working_date'");
+                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'KANBAN WO' and a.request_date between '$filter_from' and '$filter_to'
+                        ORDER BY a.request_date");
             
                         foreach ($transactions as $transaction) {
                             $balance = ($transaction->transaction_kind == 'IN') 
@@ -2560,10 +2662,10 @@ class Report_history_transactions extends CI_Controller
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 4) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4) . '</td>
                                         </tr>';
                         
                             // Update balance
@@ -2579,14 +2681,76 @@ class Report_history_transactions extends CI_Controller
 
                     if ($filter_trans_type == 'ISSUED') {
                         //ISSUED
-                        $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
-            
+                        // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+                        $issueds = $this->crud->query("SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            c.lotno,
+                            COALESCE(c.specification,'-') as specification
+                        FROM issued_material_details a 
+                        JOIN purchase_order_labels b ON a.label_no = b.label_no
+                        JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            c.lot_no as lotno,
+                            '-' as specification
+                        FROM issued_material_details a
+                        JOIN bpm_labels b ON a.label_no = b.label_no
+                        JOIN bpm c ON b.request_id = c.request_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+                        
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            COALESCE(c.lotno,'-') as lotno,
+                            '-' as specification
+                        FROM issued_material_details a 
+                        JOIN barcode_divides b ON a.label_no = b.label_divided
+                        LEFT JOIN purchase_order_receipts c ON b.reff = c.receipt_id
+                        LEFT JOIN new_barcode d ON b.reff = d.label_no
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            '-' as lotno,
+                            '-' as specification
+                        FROM issued_material_details a 
+                        JOIN new_barcode b ON a.label_no = b.label_no
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
                         foreach ($issueds as $issued) {
                             $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
                             $balance = ($begin - $issued->qty);
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
+                                            <td>' . $issued->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2598,26 +2762,26 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $issued->label_no . '</td>
                                             <td>' . $issued->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 4) . '</td>
                                             <td style="text-align:right;">' . number_format(0) . '</td>
-                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($issued->qty, 4)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 4)  . '</td>
                                         </tr>';
                             $begin -= $issued->qty;
                             $no++;
                         }
                     }
-                }
+                // }
             }
             $no++;
         }
 
         // $html .= '<tr>
         //     <td colspan="14" style="text-align:right;"><b>GRAND TOTAL</b></td>
-        //     <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format($totalBeginStock, 4) . '</td>
+        //     <td style="text-align:right;">' . number_format($totalIn, 4) . '</td>
+        //     <td style="text-align:right;">' . number_format($totalOut, 4) . '</td>
+        //     <td style="text-align:right;">' . number_format($totalEndingStock, 4) . '</td>
         // </tr>';
       
         $html .= '</table></body></html>';

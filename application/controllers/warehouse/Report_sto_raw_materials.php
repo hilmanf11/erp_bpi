@@ -31,7 +31,7 @@ class Report_sto_raw_materials extends CI_Controller
     public function readsNotfg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG'");
+        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG' AND id NOT IN ('C06','C11')");
         // $send = $this->crud->reads('item_categories', ["name" => $post]);
         echo json_encode($send);
     }
@@ -50,9 +50,10 @@ class Report_sto_raw_materials extends CI_Controller
 
     public function readItemFamilys()
     {
+        $excluded_ids = ['P08', 'P05', 'P49'];
         $this->db->select('*');
         $this->db->from('item_familys');
-        $this->db->where('id !=', "P08"); 
+        $this->db->where_not_in('id', $excluded_ids);
         $this->db->where('deleted', 0);
         // $this->db->where("item_category_id", $item_category_id);
         $this->db->order_by('name', 'ASC');
@@ -107,11 +108,11 @@ class Report_sto_raw_materials extends CI_Controller
         c.name AS category_name, 
         j.created_by, 
         j.created_date, 
-        (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0)) - (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_stock,
+        (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) - (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_stock,
 
         COALESCE(j.qty_sto, 0) AS qty_sto, 
 
-        COALESCE(j.qty_sto, 0) - ((COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0)) - (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0))) AS deviation
+        COALESCE(j.qty_sto, 0) - ((COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) - (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0))) AS deviation
 
         FROM item_rm a
         JOIN item_familys b ON a.item_family_id = b.id
@@ -122,6 +123,7 @@ class Report_sto_raw_materials extends CI_Controller
         LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_cut_of_stock' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') < '$filter_cut_of_stock' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_cut_of_stock' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_cut_of_stock' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
 
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_sto, MAX(created_date) AS created_date,  MAX(created_by) AS created_by FROM sto_raw_materials WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from_sto' and '$filter_to_sto' GROUP BY item_rm_id ) j ON a.id = j.item_rm_id
 

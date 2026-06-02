@@ -166,10 +166,11 @@ class Item_receipts extends CI_Controller
                                 //field
                                 "request_no" => $post['bc_document'],
                                 "label_no" => $post['label_no'],
-                                "plant" => $post['plant'],
+                                // "plant" => $post['plant'],
                                 "item_rm_id" => $post['item_rm_id'],
                                 "qty" => $post['qty'],
                                 "type"=> 'WIP',
+                                "status"=> 0
                             );
                             $update   = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status_issued" => 1]);
                             $send   = $this->crud->create('issued_material_details', $dataFinal2);

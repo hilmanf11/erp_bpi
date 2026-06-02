@@ -53,6 +53,9 @@ class Issued_materials extends CI_Controller
     {
         $item_rm_id = $this->input->post('item_rm_id');
 
+        // var_dump($item_rm_id);
+        // return;
+
         // Cari item dengan prefix 'CR-'
         $query_cr = $this->db->query("
             SELECT id as item_rm_id, number as item_rm_no, name as item_rm_name, uom
@@ -165,6 +168,7 @@ class Issued_materials extends CI_Controller
                     $this->db->from('supply_requestions a');
                     $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                     $this->db->where('a.request_no', $request_no);
+                    $this->db->where("(a.approved_to = '' OR a.approved_to IS NULL)", NULL, FALSE);
                     $totalRows = $this->db->count_all_results('', false);
                     //Get Data Array
                     $records = $this->db->get()->result_array();
@@ -401,13 +405,6 @@ class Issued_materials extends CI_Controller
             $item_rm_id_eq = $item_rm_id_equivalent->row() ? $item_rm_id_equivalent->row()->id : null;
             $qty_equivalent = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_eq'");
             $qty_equivalentValue = isset($qty_equivalent[0]) ? ($qty_equivalent[0]->qty ?? 0) : 0;
-           
-            // var_dump($totalSupply[0]->qty);
-            // var_dump($issued_materials->qty);
-            // var_dump($post['qty']);
-            // var_dump($qty_crusherValue);
-            // var_dump($qty_peletizingValue);
-            // die;
 
             $totalSupplyQty = (float)$totalSupply[0]->qty;
             $postQty = (float)$post['qty'];
@@ -415,6 +412,19 @@ class Issued_materials extends CI_Controller
             $peletizingQty = (float)$qty_peletizingValue;
             $equivalentQty = (float)$qty_equivalentValue;
             $issuedQty = (float)$issued_materials->qty;
+
+            // var_dump("Total Supply :",$totalSupplyQty);
+            // var_dump("Total qty Issued :",$issuedQty);
+            // var_dump("Qty :",$postQty);
+            // var_dump("Qty Crusher : ",$crusherQty);
+            // var_dump("Qty Pelet : ",$peletizingQty);
+
+            // var_dump("TOTAL:", round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty));
+            // var_dump("ISSUED:", round($issuedQty));
+            // var_dump("sheets:", $supply_sheets);
+            // var_dump("materials:", $supply_materials);
+            // var_dump("requestions:", $supply_requestions);
+            // return;
 
             if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty + $equivalentQty) <= round($issuedQty)) {
                     $send   = $this->crud->create('issued_material_details', $dataFinal);
