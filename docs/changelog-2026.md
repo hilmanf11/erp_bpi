@@ -657,3 +657,6 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-06-02]
 - **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([0fb0f73d](https://github.com/hilmanf11/erp_bpi/commit/0fb0f73d2fa47d3042a6891fb5dd006010fc6443))
+
+### [2026-06-02]
+- **kurniawan**: Update Script planning ([6705dd68](https://github.com/hilmanf11/erp_bpi/commit/6705dd6859c709c6e0a8864d8b69d8acd158232c))
