@@ -645,3 +645,6 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-06-02]
 - **kurniawan**: Update Script Warehouse ([b45f6121](https://github.com/hilmanf11/erp_bpi/commit/b45f6121d1bfbb44b0599df999fd8b8cda54127e))
+
+### [2026-06-02]
+- **kurniawan**: Update supplier_items.php ([56b0e7f9](https://github.com/hilmanf11/erp_bpi/commit/56b0e7f98e5afc18a644a39a639e6728c7f7a909))
