@@ -115,7 +115,11 @@ class Generate_mps extends CI_Controller
             //
 
             //Select Query a.safety_stock
-            $this->db->select('a.id, a.number, a.name, COALESCE(j.safety_stock,0) as safety_stock, a.number_customer,a.mpq,
+            $this->db->select("a.id, a.number, a.name, COALESCE(j.safety_stock,0) as safety_stock, a.number_customer,
+                (CASE 
+                    WHEN a.default_packing = 'BOX' THEN COALESCE(a.qty_box, 0) 
+                    ELSE COALESCE(a.mpq, 0) 
+                END) as mpq,
                 COALESCE(c.pp, 0) as injection,
                 COALESCE(c.p1, 0) as assembly,
                 COALESCE(c.p2, 0) as onhold,
@@ -133,12 +137,13 @@ class Generate_mps extends CI_Controller
                 COALESCE(h.shift_hour, 0) as shift_hour,
                 COALESCE(h.productcivity, 0) as productivity,
                 COALESCE(h.cavity_standard, 0) as cavity_standard,
+                h.priority,
                 (COALESCE(i.so_month_1, 0) + COALESCE(k.qty, 0)) as qty_so,
                 COALESCE(i.so_month_2, 0) as so_month_2,
                 COALESCE(i.so_month_3, 0) as so_month_3,
                 COALESCE(i.so_month_4, 0) as so_month_4,
                 COALESCE(i.so_month_5, 0) as so_month_5,
-                COALESCE(i.so_month_6, 0) as so_month_6');
+                COALESCE(i.so_month_6, 0) as so_month_6");
             $this->db->from('item_fg a');
             $this->db->join('item_fg_subs b', "a.id = b.item_fg_sa_id", 'left');
             $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '$filter_month' and c.p_year = '$filter_year' and c.revision = '$filter_revision'", 'left');
@@ -396,6 +401,7 @@ class Generate_mps extends CI_Controller
                     "shift_hour" => $data['shift_hour'],
                     "productivity" => $data['productivity'],
                     "cavity_standard" => $data['cavity_standard'],
+                    "priority" => $data['priority'],
                     "qty_so" => $data['qty_so'],
                     "so_month_2" => $data['so_month_2'],
                     "so_month_3" => $data['so_month_3'],
@@ -594,43 +600,48 @@ class Generate_mps extends CI_Controller
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
 
-        $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
-        $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
-
         $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
-        $monthEnd =  strtotime(date('Y-m-d', strtotime('+5 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
+        $monthEnd = strtotime(date('Y-m-d', strtotime('+6 month', $monthStart)));
 
         $html = "";
         $no = 1;
+        
         while ($monthStart < $monthEnd) {
             $monthName = date('m/Y', $monthStart);
             $start = strtotime(date('Y-m-01', $monthStart));
             $finish = strtotime(date('Y-m-t', $monthStart));
 
-            //HKW 1
+            $this->db->select('working_date');
+            $this->db->from('calendars');
+            $this->db->where('working_date >=', date('Y-m-01', $monthStart));
+            $this->db->where('working_date <=', date('Y-m-t', $monthStart));
+            $this->db->where("remarks !=", "");
+            $this->db->where('deleted', 0); 
+            $holidays = $this->db->get()->result_array();
+            
+            $datesWithRemarks = array_column($holidays, 'working_date');
+
             $hkw = 0;
-            for ($z = $start; $z <= $finish; $z += (60 * 60 * 24)) {
+            for ($z = $start; $z <= $finish; $z += 86400) { // 86400 detik = 1 hari
                 $working_date = date('Y-m-d', $z);
+                $isSunday = (date('w', $z) == 0);
+                
+                $hasRemark = in_array($working_date, $datesWithRemarks);
 
-                $this->db->select('remarks');
-                $this->db->from('calendars');
-                $this->db->where('working_date', $working_date);
-                $holiday = $this->db->get()->row();
-
-                // if (date('w', $z) !== '0' && date('w', $z) !== '6') {
-                    if (@$holiday->remarks != null or @$holiday->remarks != "") {
-                        $hkw += 0;
-                    } else {
-                        $hkw += 1;
+                if ($isSunday) {
+                    if ($hasRemark) {
+                        $hkw += 1; // Hari Minggu ada remark = Lembur (Masuk)
                     }
-                // } else {
-                //     $hkw += 0;
-                // }
+                } else {
+                    if (!$hasRemark) {
+                        $hkw += 1; // Hari biasa tidak ada remark = Masuk normal
+                    }
+                }
             }
 
-            $html .= '  <div style="margin:15px;">
-                            HKW ' . $no . ' : ' . $monthName . ' : <b>' . $hkw . '</b>
-                        </div>';
+            $html .= '<div style="margin:15px;">
+                        HKW ' . $no . ' : ' . $monthName . ' : <b>' . $hkw . '</b>
+                    </div>';
 
             $no++;
             $monthStart = strtotime("+1 month", $monthStart);
@@ -712,17 +723,88 @@ class Generate_mps extends CI_Controller
                     }
                 }
 
-                $mpq = $post['mpq'] ?: 1;
+                //Dokumentasi
+                // $mpq = isset($post['mpq']) ? (float)$post['mpq'] : 0;
 
-                if (!empty($post['cycle_time']) && !empty($post['productivity'])) {
-                    $cavity = $post['cavity_standard'];
-                    $cycle_time = $post['cycle_time'];
-                    $shift_hour = $post['shift_hour'];
-                    $productivity = $post['productivity'];
+                // if (!empty($post['cycle_time']) && !empty($post['productivity'])) {
+                //     $cavity = $post['cavity_standard'];
+                //     $cycle_time = $post['cycle_time'];
+                //     $shift_hour = $post['shift_hour'];
+                //     $productivity = $post['productivity'];
 
-                    $capacityPerShift = round((3600 / $cycle_time) * $cavity * $shift_hour * ($productivity/100));
-                }else{
-                    $capacityPerShift = 1;
+                //     $capacityPerShift = round((3600 / $cycle_time) * $cavity * $shift_hour * ($productivity/100));
+                // } else {
+                //     $this->db->select('number');
+                //     $this->db->where('id', $post['item_fg_id']);
+                //     $cek_item = $this->db->get('item_fg')->row();
+                //     $item_number = (!empty($cek_item)) ? $cek_item->number : 'Unknown Item';
+
+                //     echo json_encode([
+                //         'theme'   => 'failed', 
+                //         'title'   => 'FAILED',
+                //         'message' => 'Please Check Item [' . $item_number . '] in Menu Loading.'
+                //     ]);
+                //     exit; // Hentikan eksekusi script untuk item ini
+                // }
+
+                $this->db->select('number');
+                $this->db->where('id', $post['item_fg_id']);
+                $cek_item = $this->db->get('item_fg')->row();
+                $item_number = (!empty($cek_item)) ? $cek_item->number : 'Unknown Item';
+
+                // 1A. Validasi Keberadaan Data (Jika kosong / tidak ada di Menu Loading)
+                if (!isset($post['priority']) || $post['priority'] === "") {
+                    echo json_encode([
+                        'theme'   => 'error', 
+                        'title'   => 'FAILED',
+                        'message' => 'Data Not Found in Menu Loading for Item [' . $item_number . ']'
+                    ]);
+                    exit;
+                }
+
+                if ($post['priority'] != 1) {
+                    echo json_encode([
+                        'theme'   => 'error', 
+                        'title'   => 'FAILED',
+                        'message' => 'Priority for Item [' . $item_number . '] not 1 (Current Priority: ' . $post['priority'] . ')'
+                    ]);
+                    exit;
+                }
+
+                $mpq = isset($post['mpq']) ? (float)$post['mpq'] : 0;
+                if ($mpq <= 0) {
+                    echo json_encode([
+                        'theme'   => 'error', 
+                        'title'   => 'FAILED',
+                        'message' => 'Data MPQ for Item [' . $item_number . '] should not 0 or Null.'
+                    ]);
+                    exit;
+                }
+
+                if (empty($post['cycle_time']) || empty($post['productivity']) || empty($post['cavity_standard']) || (float)$post['cavity_standard'] <= 0) {
+                    echo json_encode([
+                        'theme'   => 'error', 
+                        'title'   => 'FAILED',
+                        'message' => 'Please Check Item [' . $item_number . '] in Menu Loading. (Cavity, Cycle Time, or Productivity should not 0)'
+                    ]);
+                    exit;
+                }
+
+                // 4. Jika semua data valid, lakukan perhitungan Kapasitas
+                $cavity = (float)$post['cavity_standard'];
+                $cycle_time = (float)$post['cycle_time'];
+                $shift_hour = (float)$post['shift_hour'];
+                $productivity = (float)$post['productivity'];
+
+                $capacityPerShift = round((3600 / $cycle_time) * $cavity * $shift_hour * ($productivity/100));
+
+                if ($capacityPerShift <= 0) {
+                    echo json_encode([
+                        'theme'   => 'error', 
+                        'title'   => 'FAILED',
+                        'message' => 'Capacity Per Shift for Item [' . $item_number . '] 0. Please Data in Menu Loading.'
+                    ]);
+                    exit;
                 }
 
                 //Bulan Pertama - Keenam
@@ -1019,90 +1101,90 @@ class Generate_mps extends CI_Controller
         }
     }
 
-    public function push_data_header(){
-        $this->dummy = $this->load->database('dummy', TRUE);
+    // public function push_data_header(){
+    //     $this->dummy = $this->load->database('dummy', TRUE);
 
-        if($this->input->get()){
-            //Filter Data
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //     if($this->input->get()){
+    //         //Filter Data
+    //         $filter_month = base64_decode($this->input->get('filter_month'));
+    //         $filter_year = base64_decode($this->input->get('filter_year'));
+    //         $filter_revision = base64_decode($this->input->get('filter_revision'));
 
-            //Perhitungan HKW
-            $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
-            $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
+    //         //Perhitungan HKW
+    //         $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
+    //         $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
 
-            $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
-            $monthEnd =  strtotime(date('Y-m-d', strtotime('+5 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
+    //         $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
+    //         $monthEnd =  strtotime(date('Y-m-d', strtotime('+5 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
 
-            $no = 1;
-            while ($monthStart < $monthEnd) {
-                $start = strtotime(date('Y-m-01', $monthStart));
-                $finish = strtotime(date('Y-m-t', $monthStart));
+    //         $no = 1;
+    //         while ($monthStart < $monthEnd) {
+    //             $start = strtotime(date('Y-m-01', $monthStart));
+    //             $finish = strtotime(date('Y-m-t', $monthStart));
 
-                //HKW 1
-                $hkw = 0;
-                for ($z = $start; $z <= $finish; $z += (60 * 60 * 24)) {
-                    $working_date = date('Y-m-d', $z);
+    //             //HKW 1
+    //             $hkw = 0;
+    //             for ($z = $start; $z <= $finish; $z += (60 * 60 * 24)) {
+    //                 $working_date = date('Y-m-d', $z);
 
-                    $this->db->select('remarks');
-                    $this->db->from('calendars');
-                    $this->db->where('working_date', $working_date);
-                    $holiday = $this->db->get()->row();
+    //                 $this->db->select('remarks');
+    //                 $this->db->from('calendars');
+    //                 $this->db->where('working_date', $working_date);
+    //                 $holiday = $this->db->get()->row();
 
-                    // if (date('w', $z) !== '0' && date('w', $z) !== '6') {
-                        if (@$holiday->remarks != null or @$holiday->remarks != "") {
-                            $hkw += 0;
-                        } else {
-                            $hkw += 1;
-                        }
-                    // } else {
-                    //     $hkw += 0;
-                    // }
-                }
+    //                 // if (date('w', $z) !== '0' && date('w', $z) !== '6') {
+    //                     if (@$holiday->remarks != null or @$holiday->remarks != "") {
+    //                         $hkw += 0;
+    //                     } else {
+    //                         $hkw += 1;
+    //                     }
+    //                 // } else {
+    //                 //     $hkw += 0;
+    //                 // }
+    //             }
 
-                $arrHkw[] = array(
-                    "hkw_".$no => $hkw
-                );
+    //             $arrHkw[] = array(
+    //                 "hkw_".$no => $hkw
+    //             );
 
-                $no++;
-                $monthStart = strtotime("+1 month", $monthStart);
-            }
+    //             $no++;
+    //             $monthStart = strtotime("+1 month", $monthStart);
+    //         }
 
-            $this->dummy->select('*');
-            $this->dummy->from("ltpp_header");
-            $this->dummy->where("period", $filter_year . $filter_month);
-            $this->dummy->where("rev", $filter_revision);
-            $ltpp_header = $this->dummy->get()->result_array();
+    //         $this->dummy->select('*');
+    //         $this->dummy->from("ltpp_header");
+    //         $this->dummy->where("period", $filter_year . $filter_month);
+    //         $this->dummy->where("rev", $filter_revision);
+    //         $ltpp_header = $this->dummy->get()->result_array();
 
-            $arrData = array(
-                "ltpp_doc" => $this->ltpp_no($filter_month, $filter_year),
-                "period" => $filter_year . $filter_month,
-                "date_period" => $filter_year ."-".$filter_month."-01",
-                "lt" => "8",
-                "hkw_1" => $arrHkw[0]['hkw_1'],
-                "hkw_2" => $arrHkw[1]['hkw_2'],
-                "hkw_3" => $arrHkw[2]['hkw_3'],
-                "hkw_4" => $arrHkw[3]['hkw_4'],
-                "hkw_5" => $arrHkw[4]['hkw_5'],
-                "hkw_6" => $arrHkw[5]['hkw_6'],
-                "rev" => $filter_revision,
-                "fc_m4" => "0",
-                "upload_user" => $this->session->username,
-                "upload_time" => date("Y-m-d H:i:s"),
-                "status" => "",
-                "approval_sts" => "",
-                "remark" => "",
-            );
+    //         $arrData = array(
+    //             "ltpp_doc" => $this->ltpp_no($filter_month, $filter_year),
+    //             "period" => $filter_year . $filter_month,
+    //             "date_period" => $filter_year ."-".$filter_month."-01",
+    //             "lt" => "8",
+    //             "hkw_1" => $arrHkw[0]['hkw_1'],
+    //             "hkw_2" => $arrHkw[1]['hkw_2'],
+    //             "hkw_3" => $arrHkw[2]['hkw_3'],
+    //             "hkw_4" => $arrHkw[3]['hkw_4'],
+    //             "hkw_5" => $arrHkw[4]['hkw_5'],
+    //             "hkw_6" => $arrHkw[5]['hkw_6'],
+    //             "rev" => $filter_revision,
+    //             "fc_m4" => "0",
+    //             "upload_user" => $this->session->username,
+    //             "upload_time" => date("Y-m-d H:i:s"),
+    //             "status" => "",
+    //             "approval_sts" => "",
+    //             "remark" => "",
+    //         );
 
-            if(count($ltpp_header) == 0){
-                $this->dummy->insert("ltpp_header", $arrData);
-                die(json_encode($arrData));
-            }else{
-                die(json_encode($ltpp_header));
-            }
-        }
-    }
+    //         if(count($ltpp_header) == 0){
+    //             $this->dummy->insert("ltpp_header", $arrData);
+    //             die(json_encode($arrData));
+    //         }else{
+    //             die(json_encode($ltpp_header));
+    //         }
+    //     }
+    // }
 
     public function print($option = "")
     {

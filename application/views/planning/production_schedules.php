@@ -45,6 +45,7 @@
             <th rowspan="2" data-options="field:'status_subcont',width:100,align:'center'">Status Subcont</th>
             <th rowspan="2" data-options="field:'subcont_type',width:100,align:'center'">Subcont Type</th>
             <th rowspan="2" data-options="field:'type',width:100,align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'remarks',width:100,align:'center'">Remark</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -604,7 +605,7 @@
     });
     
     $('#filter_item_fg_id').combogrid({
-        url: '<?= base_url('master/item_fg/reads/001') ?>',
+        url: '<?= base_url('master/item_fg/reads/') ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'number',

@@ -861,7 +861,7 @@ class Checksheets extends CI_Controller
         $checksheet_number = base64_decode($checksheet_number);
         //Cek Label
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.checksheet_label, 
-        b.trans_date, b.prod_date, b.shift, d.control_id, d.logo, d.uom, 
+        b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, 
         (CASE 
             WHEN b.lot_no IS NULL or b.lot_no = "" THEN c.lot_no 
             ELSE b.lot_no 
@@ -949,7 +949,7 @@ class Checksheets extends CI_Controller
                                         <td colspan="2" style="text-align:left; border: 1px solid black;">
                                             <small style="font-size:10px;">Prod Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->prod_date . '</b>
                                             <br>
-                                            <small style="font-size:10px;">Pack Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->trans_date . '</b>
+                                            <small style="font-size:10px;">Pack Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->packing_date . '</b>
                                         </td>
                                     </tr>
                                      <tr>
@@ -1026,7 +1026,7 @@ class Checksheets extends CI_Controller
         $checksheet_number = base64_decode($checksheet_number);
         //Cek Label
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.checksheet_label, 
-        b.trans_date, b.prod_date, b.shift, d.control_id, d.logo, d.uom, 
+        b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, 
         (CASE 
             WHEN b.lot_no IS NULL or b.lot_no = "" THEN c.lot_no 
             ELSE b.lot_no 
@@ -1113,7 +1113,7 @@ class Checksheets extends CI_Controller
                                         <td colspan="2" style="text-align:left; border: 1px solid black;">
                                             <small style="font-size:10px;">Prod Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->prod_date . '</b>
                                             <br>
-                                            <small style="font-size:10px;">Pack Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->trans_date . '</b>
+                                            <small style="font-size:10px;">Pack Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->packing_date . '</b>
                                         </td>
                                     </tr>
                                      <tr>

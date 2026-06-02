@@ -1571,6 +1571,7 @@ class Supply_sheets extends CI_Controller
                 <th>Status</th>
                 <th>Supply Date</th>
                 <th>Requester</th>
+                <th>Lot No</th>
                 <th>Period</th>
                 <th>WP</th>
                 <th>Work Order</th>
@@ -1605,6 +1606,7 @@ class Supply_sheets extends CI_Controller
                         <td>' . $status . '</td>
                         <td>' . $data['request_date'] . '</td>
                         <td>' . $data['request_name'] . '</td>
+                        <td>' . $data['lot_no'] . '</td>
                         <td>' . $data['period'] . '</td>
                         <td>' . $data['wp'] . '</td>
                         <td>' . $data['workorder'] . '</td>
