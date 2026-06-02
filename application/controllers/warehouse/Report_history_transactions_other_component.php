@@ -31,7 +31,7 @@ class Report_history_transactions_other_component extends CI_Controller
     public function readsItem()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE (a.number like '%$post%' or a.name like '$post') AND (a.item_category_id = 'C06' OR (a.division = 'INJ' AND a.item_category_id = 'C11' AND a.item_family_id = 'P05'))");
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE (a.number like '%$post%' or a.name like '$post') AND (a.item_category_id = 'C06' OR (a.division = 'INJ' AND a.item_category_id = 'C11' AND a.item_family_id IN ('P05','P33')))");
         echo json_encode($send);
     }
 
@@ -362,7 +362,13 @@ class Report_history_transactions_other_component extends CI_Controller
         AND b.number LIKE '%$filter_item_family%'
         AND a.id LIKE '%$filter_items%'
         AND a.division LIKE '%$filter_division%'
-        AND (a.item_category_id = 'C06' OR (a.division = 'INJ' AND a.item_category_id = 'C11' AND a.item_family_id = 'P05'))
+        AND (
+            a.item_category_id = 'C06' OR (
+                a.division = 'INJ' AND a.item_category_id = 'C11' AND (
+                    a.item_family_id in ('P05','P33') 
+                ) 
+            ) 
+        )
         GROUP BY a.id
         ORDER BY c.name DESC, b.name DESC, a.number";
 
@@ -1217,6 +1223,8 @@ class Report_history_transactions_other_component extends CI_Controller
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalBpi, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalPlant1, 2) . '</td>
         </tr>
         </tbody>';
       

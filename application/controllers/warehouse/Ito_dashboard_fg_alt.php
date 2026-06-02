@@ -11,7 +11,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * @property CI_Form_validation $form_validation
  * @property Crud $crud
  */
-class Ito_dashboard_fg extends CI_Controller
+class Ito_dashboard_fg_alt extends CI_Controller
 {
     private $_get_rates = [];
 
@@ -34,7 +34,7 @@ class Ito_dashboard_fg extends CI_Controller
             $data['approval'] = $this->crud->read('signatures');
 
             $this->load->view('template/header', $data);
-            $this->load->view('warehouse/ito_dashboard_fg');
+            $this->load->view('warehouse/ito_dashboard_fg_alt');
         } else {
             redirect('error_access');
         }
@@ -596,11 +596,12 @@ class Ito_dashboard_fg extends CI_Controller
            
             
             $main_res[] = array(
+                'id_item' => $row['id'],
                 'stock_min1' => $stock_min1,
                 'stock_min2' => $stock_min2,
                 'stock_min3' => $stock_min3,
-                'id' => $row['id'],
                 'end_stock' => $row['end_stock'],
+                'end_stock_amount' => $row['end_stock_amount'],
                 'qty_out'  => $qty_out,
                 'qty_out_amount'  => $qty_out_amount,
                 'avg_3month'  => $avg_3month,
@@ -610,12 +611,12 @@ class Ito_dashboard_fg extends CI_Controller
             );
 
             $pie_res[] = array(
-                'id' => $row['id'],
+                'id_item' => $row['id'],
                 'ito_days'  => $ito_days,
             );
 
             $bar_res[] = array(
-                'id' => $row['id'],
+                'id_item' => $row['id'],
                 'stock_out'  => $qty_out,
                 'avg_3month'  => $avg_3month,
                 'ito_days'  => $ito_days,
@@ -626,6 +627,40 @@ class Ito_dashboard_fg extends CI_Controller
             $grandtotal_qty_in_amount += $qty_out_amount;
             
         }
+
+        $color = array();
+
+       
+
+        // $color = $this->_generateColors(count($main_res));
+        $color = ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'];
+
+        usort($main_res, function($a, $b) {
+            // Kita bandingkan field ito_days
+            // Jika $b > $a, maka $b akan naik ke atas (Descending)
+            if ($a['ito_days'] == $b['ito_days']) {
+                return 0;
+            }
+            return ($b['ito_days'] < $a['ito_days']) ? -1 : 1;
+        });
+        
+        //  echo json_encode($main_res);
+
+        // exit();
+
+
+        $result = array(
+            "total" => count($main_res), // Jika tanpa pagination server-side
+            "rows"  => $main_res,
+            "grandtotal_qty" => $grandtotal_qty,
+            "grandtotal_qty_in_amount" => $grandtotal_qty_in_amount,
+            "pie_data" => $pie_res,
+            "bar_data" => $bar_res,
+            "color" => $color,
+
+        );
+
+        echo json_encode($result);
     }
 
 }

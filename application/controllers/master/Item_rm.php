@@ -48,6 +48,13 @@ class Item_rm extends CI_Controller
         $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.item_family_id NOT IN ('P05', 'P04', 'P33') AND (a.number like '%$post%' or a.name like '$post') GROUP BY a.name");
         echo json_encode($send);
     }
+    //Untuk historical Other Component
+    public function reads_other_component()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.item_family_id IN ('P05', 'P04', 'P33', 'P49') AND (a.number like '%$post%' or a.name like '$post')");
+        echo json_encode($send);
+    }
 
     public function readsnotfg()
     {
