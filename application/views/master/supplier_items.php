@@ -160,9 +160,17 @@
                     <span style="width:35%; display:inline-block;">Convertion %</span>
                     <input style="width:60%;" name="weight_kg" id="weight_kg" class="easyui-textbox">
                 </div>
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Calculate MPQ</span>
                     <input style="width:60%;" name="calculate" id="calculate" class="easyui-textbox">
+                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Calculate MPQ</span>
+                    <select style="width:60%;" id="calculate" name="calculate" class="easyui-combobox" panelHeight="auto" required>
+                        <option value="">Choose Calculate</option>
+                        <option value="YES">YES</option>
+                        <option value="NO">NO</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remark</span>
