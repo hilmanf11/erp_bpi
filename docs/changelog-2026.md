@@ -640,3 +640,8 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-05-20]
 - **kurniawan**: Update Report ([2a006a45](https://github.com/hilmanf11/erp_bpi/commit/2a006a453c5f0aaccafb663f808445ce841b667e))
+
+## June 2026
+
+### [2026-06-02]
+- **kurniawan**: Update Script Warehouse ([b45f6121](https://github.com/hilmanf11/erp_bpi/commit/b45f6121d1bfbb44b0599df999fd8b8cda54127e))
