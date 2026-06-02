@@ -660,3 +660,6 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-06-02]
 - **kurniawan**: Update Script planning ([6705dd68](https://github.com/hilmanf11/erp_bpi/commit/6705dd6859c709c6e0a8864d8b69d8acd158232c))
+
+### [2026-06-02]
+- **kurniawan**: Update Script WIP adj fg ([e92e1092](https://github.com/hilmanf11/erp_bpi/commit/e92e1092080eb649bdabb5f072ca0fd92ea94a78))
