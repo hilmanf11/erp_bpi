@@ -651,3 +651,6 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-06-02]
 - **kurniawan**: Update Script NPD ([2042c7c4](https://github.com/hilmanf11/erp_bpi/commit/2042c7c48a3e9eea1197586b6a3616c480a0c05a))
+
+### [2026-06-02]
+- **kurniawan**: Update script Purchase ([bceca171](https://github.com/hilmanf11/erp_bpi/commit/bceca171e81aa10cf15c2e183b94a9714d193b7f))
