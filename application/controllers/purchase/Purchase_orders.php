@@ -849,7 +849,15 @@ class Purchase_orders extends CI_Controller
             'item_rm_id' => $item->id
         ];
         if (isset($post['specification'])) {
-            $where['specification'] = $post['specification'];
+            $spec = trim($post['specification']);
+            
+            $spec = preg_replace('/\s*[xX]\s*/', ' x ', $spec);
+
+            $spec_formatted = preg_replace_callback('/\b\d+(\.\d+)?\b/', function($matches) {
+                return number_format((float)$matches[0], 2, '.', '');
+            }, $spec);
+
+            $where['specification'] = $spec_formatted;
         }
 
         if ($isDimensionItem) {

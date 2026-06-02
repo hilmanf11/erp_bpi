@@ -1,8 +1,8 @@
 <div id="f" class="easyui-panel" style="width:99.5%; background: #F4F4F4;">
     <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
-        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; margin-left: 10px; border-radius:4px;">
+        <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; margin-left: 10px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="width: 50%; float: left;">
+            <div style="width: 35%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Trans Date</span>
                     <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
@@ -24,13 +24,27 @@
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
-            <div style="width: 50%; float: left;">
+            <div style="width: 35%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Purchase Order No</span>
                     <input style="width:60%;" id="filter_purchase_order" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" name="filter_division" id="filter_division" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" id="filter_item_category" class="easyui-combobox">
+                </div>
+            </div>
+            <div style="width: 30%; float: left;">
+                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" id="filter_product_family" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part No</span>
                     <input style="width:60%;" id="filter_product_no" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
@@ -60,6 +74,9 @@
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
         var filter_supplier = $("#filter_supplier").combobox("getValue");
+        var filter_item_category = $("#filter_item_category").combobox("getValue");
+        var filter_division = $("#filter_division").combobox("getValue");
+        var filter_product_family = $("#filter_product_family").combobox("getValue");
         var filter_product_no = $("#filter_product_no").combogrid("getValue");
         var filter_purchase_order = $("#filter_purchase_order").combobox("getValue");
         var filter_status = $("#filter_status").combobox("getValue");
@@ -67,6 +84,9 @@
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_display=" + filter_display +
             "&filter_supplier=" + filter_supplier +
+            "&filter_item_category=" + filter_item_category +
+            "&filter_division=" + filter_division +
+            "&filter_product_family=" + filter_product_family +
             "&filter_product_no=" + filter_product_no +
             "&filter_status=" + filter_status +
             "&filter_purchase_order=" + window.btoa(filter_purchase_order);
@@ -83,6 +103,9 @@
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
         var filter_supplier = $("#filter_supplier").combobox("getValue");
+        var filter_item_category = $("#filter_item_category").combobox("getValue");
+        var filter_division = $("#filter_division").combobox("getValue");
+        var filter_product_family = $("#filter_product_family").combobox("getValue");
         var filter_product_no = $("#filter_product_no").combogrid("getValue");
         var filter_purchase_order = $("#filter_purchase_order").combobox("getValue");
         var filter_status = $("#filter_status").combobox("getValue");
@@ -90,6 +113,9 @@
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_display=" + filter_display +
             "&filter_supplier=" + filter_supplier +
+            "&filter_item_category=" + filter_item_category +
+            "&filter_division=" + filter_division +
+            "&filter_product_family=" + filter_product_family +
             "&filter_product_no=" + filter_product_no +
             "&filter_status=" + filter_status +
             "&filter_purchase_order=" + window.btoa(filter_purchase_order);
@@ -142,7 +168,7 @@
                             textField: 'number',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: "Select Product No",
+                            prompt: "Select Part No",
                             icons: [{
                                 iconCls: 'icon-clear',
                                 handler: function(e) {
@@ -152,11 +178,11 @@
                             columns: [
                                 [{
                                     field: 'number',
-                                    title: 'Product No',
+                                    title: 'Part No',
                                     width: 200
                                 }, {
                                     field: 'name',
-                                    title: 'Product Name',
+                                    title: 'Part Name',
                                     width: 200
                                 }]
                             ],
@@ -179,6 +205,19 @@
             }],
         });
 
+        $("#filter_item_category").combobox({
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Select Categories",
+             icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
+
         $('#filter_product_no').combogrid({
             url: '<?= base_url("purchase/report_outstanding_po/reads") ?>',
             panelWidth: 400,
@@ -186,7 +225,7 @@
             textField: 'number',
             mode: 'remote',
             fitColumns: true,
-            prompt: "Select Product No",
+            prompt: "Select Part No",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
@@ -196,16 +235,44 @@
             columns: [
                 [{
                     field: 'number',
-                    title: 'Product No',
+                    title: 'Part No',
                     width: 200
                 }, {
                     field: 'name',
-                    title: 'Product Name',
+                    title: 'Part Name',
                     width: 200
                 }]
             ],
         });
     });
+
+    $('#filter_division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Select Division',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+    });
+
+    $("#filter_product_family").combobox({
+        url: '<?= base_url('master/item_familys/readNotFg/') ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: "Select Product Family",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+    });
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();

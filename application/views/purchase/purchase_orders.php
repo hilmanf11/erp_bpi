@@ -13,8 +13,8 @@
             <th rowspan="2" data-options="field:'po_date',width:100,align:'center'">PO Date</th>
             <th rowspan="2" data-options="field:'delivery_date',width:100,align:'center'">Delivery Date</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'item_supplier',width:200,halign:'center'">Supplier Product</th>
             <th rowspan="2" data-options="field:'specification',width:200,halign:'center'">Specification</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformatDefault">MPQ</th>
@@ -376,7 +376,7 @@
                                 width: 150,
                                 readonly: true,
                                 halign: 'center',
-                                title: "Product No",
+                                title: "Part No",
                                 editor: {
                                     type: 'textbox',
                                     options: {
@@ -400,7 +400,7 @@
                                 width: 200,
                                 readonly: true,
                                 halign: 'center',
-                                title: "Product Name"
+                                title: "Part Name"
                              }, {//2
                                 field: 'item_supplier',
                                 width: 150,
@@ -835,7 +835,7 @@
                                             supplier_id.combogrid('setValue', selectedSupplier.id);
                                             updateSupplierFields(selectedSupplier);
                                         } else {
-                                            toastr.warning("Please Input Product No in Supplier Items");
+                                            toastr.warning("Please Input Part No in Supplier Items");
                                         }
                                     }
                                 },

@@ -909,6 +909,7 @@ class Purchase_requests extends CI_Controller
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_category_id = $this->input->get('filter_category_id');
         $filter_item_familys = $this->input->get('filter_item_familys');
+        $filter_status = $this->input->get('filter_status');
         $filter_access = $this->readUserAccess();
 
         //Config
@@ -932,6 +933,8 @@ class Purchase_requests extends CI_Controller
         }
         $this->db->like('a.request_no', $filter_request_no);
         $this->db->like('c.id', $filter_item_familys);
+        $this->db->like('c.item_category_id', $filter_category_id);
+        $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.request_date', 'DESC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: black;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
