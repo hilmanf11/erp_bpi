@@ -491,15 +491,24 @@
                 $('#description').summernote('code', '');
             }
 
-            var detailData = [];
-            if (row.details) {
-                try {
-                    detailData = typeof row.details === 'string' ? JSON.parse(row.details) : row.details;
-                } catch (e) {
-                    console.error("Format JSON detail tidak valid", e);
+            // Kosongkan datagrid terlebih dahulu
+            $('#dg2').datagrid('loadData', []); 
+            
+            // Ambil data dari tabel detail menggunakan AJAX
+            $.ajax({
+                url: '<?= base_url('npd/create_tasks/get_details') ?>',
+                type: 'GET',
+                data: { task_id: row.id },
+                dataType: 'json',
+                success: function(response) {
+                    // Masukkan data ke dalam datagrid
+                    $('#dg2').datagrid('loadData', response);
+                },
+                error: function() {
+                    toastr.error("Failed to load task details.");
                 }
-            }
-            $('#dg2').datagrid('loadData', detailData);
+            });
+
             url_save = '<?= base_url('npd/create_tasks/update') ?>?id=' + row.id; 
             
         } else {

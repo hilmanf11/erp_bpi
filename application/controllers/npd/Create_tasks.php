@@ -1,429 +1,911 @@
-<?php
-date_default_timezone_set("Asia/Bangkok");
-defined('BASEPATH') or exit('No direct script access allowed');
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
-class Create_tasks extends CI_Controller
-{
-    public function __construct()
-    {
-        parent::__construct();
-        $this->load->helper('url');
-        $this->load->helper(array('form', 'url'));
-        $this->load->library('form_validation');
-        $this->load->library('session');
-        $this->load->model('crud');
-        //VALIDASI FORM
-        $this->form_validation->set_rules('id', 'ID', 'required|min_length[1]|max_length[20]|is_unique[create_tasks.id]');
-    }
-    //HALAMAN UTAMA
-    public function index()
-    {
-        if (empty($this->session->username)) {
-            redirect('error_session');
-        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
-            $data['button'] = $this->getbutton($this->id_menu());
-            $this->load->view('template/header', $data);
-            $this->load->view('npd/create_tasks');
-        } else {
-            redirect('error_access');
-        }
-    }
-    //GET DATA
-    public function reads()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        // $send = $this->crud->query("SELECT * FROM create_tasks WHERE name LIKE '%$post%'AND number != 'FG'");
-        $send = $this->crud->reads('create_tasks', ["name" => $post]);
-        echo json_encode($send);
+<!-- TABLE DATAGRID -->
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+    <thead>
+        <tr>
+            <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'project_number',width:150,halign:'center'">Project No</th>
+            <th rowspan="2" data-options="field:'project_name',width:150,halign:'center'">Project Name</th>
+            <th rowspan="2" data-options="field:'project_start_date',width:100,halign:'center'">Start Date</th>
+            <th rowspan="2" data-options="field:'project_end_date',width:100,halign:'center'">End Date</th>
+            <th rowspan="2" data-options="field:'project_duration',width:100,halign:'center',align:'center'">Duration</th>
+            <th rowspan="2" data-options="field:'phase_name',width:200,halign:'center',align:'center'">Phase Name</th>
+            <th rowspan="2" data-options="field:'event',width:100,halign:'center',align:'center'">Event</th>
+            <th rowspan="2" data-options="field:'btn',width:80,halign:'center',align:'right',formatter:btnDescription">Description</th>
+            <th colspan="5" data-options="field:'',width:100,halign:'center'"> Attachment</th>
+            <th rowspan="2" data-options="field:'project_level',width:100,halign:'center',align:'center', styler:cellStyler">Project Level</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+        </tr>
+        <tr>
+            <th data-options="field:'attachment1',width:80,align:'center',formatter: btnDetails">1</th>            
+            <th data-options="field:'attachment2',width:80,align:'center',formatter: btnDetails">2</th>            
+            <th data-options="field:'attachment3',width:80,align:'center',formatter: btnDetails">3</th>            
+            <th data-options="field:'attachment4',width:80,align:'center',formatter: btnDetails">4</th>            
+            <th data-options="field:'attachment5',width:80,align:'center',formatter: btnDetails">5</th>            
+
+            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+        </tr>
+    </thead>
+</table>
+<!-- TOOLBAR DATAGRID -->
+<div id="toolbar" style="height: 35px;">
+    <?= $button ?>
+</div>
+<div id="toolbar2">
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
+</div>
+<!-- DIALOG SAVE AND UPDATE -->
+<div id="dlg_insert" class="easyui-dialog" title="Add New Project" data-options="closed: true,modal:true" style="width: 1200px; height: 550px; padding:10px; top: 20px;">    
+    <form id="frm_insert" method="post"  novalidate enctype="multipart/form-data">
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Project Data</b></legend>
+            <div style="float:left; width:33%;">
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Project Number</span>
+                    <input style="width:60%;" name="project_number" id="project_number" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Project Name</span>
+                    <input style="width:60%;" name="project_name" id="project_name" required="true" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Project Level</span>
+                    <input style="width:60%;" name="project_level" id="project_level" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Project Category ID</span>
+                    <input style="width:60%;" name="project_category_id" id="project_category_id" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Project Category</span>
+                    <input style="width:60%;" name="project_category" id="project_category" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Phase Id</span>
+                    <input style="width:60%;" name="phase_id" id="phase_id" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Phase</span>
+                    <input style="width:60%;" name="phase_name" id="phase_name" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Event</span>
+                    <input style="width:60%;" name="event" id="event" class="easyui-textbox">
+                </div>
+            </div>
+            <div style="float:left; width:33%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment 1</span>
+                    <input style="width:60%;" name="attachment_upload1" id="attachment_upload1" class="easyui-filebox upload-trigger">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment 2</span>
+                    <input style="width:60%;" name="attachment_upload2" id="attachment_upload2" class="easyui-filebox upload-trigger">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment 3</span>
+                    <input style="width:60%;" name="attachment_upload3" id="attachment_upload3" class="easyui-filebox upload-trigger">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment 4</span>
+                    <input style="width:60%;" name="attachment_upload4" id="attachment_upload4" class="easyui-filebox upload-trigger">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment 1</span>
+                    <input style="width:60%;" name="attachment1" id="attachment1" class="easyui-textbox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment 2</span>
+                    <input style="width:60%;" name="attachment2" id="attachment2" class="easyui-textbox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment 3</span>
+                    <input style="width:60%;" name="attachment3" id="attachment3" class="easyui-textbox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment 4</span>
+                    <input style="width:60%;" name="attachment4" id="attachment4" class="easyui-textbox">
+                </div>
+            </div>
+            <div style="float:left; width:33%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment 5</span>
+                    <input style="width:60%;" name="attachment_upload5" id="attachment_upload5" class="easyui-filebox upload-trigger">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment 5</span>
+                    <input style="width:60%;" name="attachment5" id="attachment5" class="easyui-textbox">
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #17a2b8; border-radius: 3px; width: 85%;">
+                    <b style="color: #17a2b8;"><i class="fa fa-info-circle"></i> Upload Rules:</b>
+                    <ul style="margin: 5px 0 0 0; padding-left: 20px; font-size: 11px; color: #555; line-height: 1.5;">
+                        <li>Max file size: <b>5 MB</b> per file.</li>
+                        <li>Allowed formats: <b>.PDF, .JPG, .PNG</b></li>
+                        <li>Ensure documents are clearly legible.</li>
+                    </ul>
+                </div>
+            </div>
+        </fieldset>
+        <div style="clear:both;"></div>
+        <table id="dg2" class="easyui-datagrid" style="width:100%; height: 200px;" title="Project Detail Lists" toolbar="#toolbar2"></table>
+        <div style="margin-top: 15px; width: 100%;">
+            <textarea name="description" id="description" style="width:100%; height:150px;"></textarea>
+        </div>
+    </form>
+</div>
+<div id="dlg_description" class="easyui-dialog" title="Project Description" data-options="closed: true, modal:true" style="width: 700px; height: 450px; padding:20px; top: 50px;">
+    <div id="content_description" style="font-size: 14px; line-height: 1.6;">
+        </div>
+</div>
+<!-- PDF -->
+<iframe id="printout" src="<?= base_url('npd/create_tasks/print') ?>" style="width: 100%;" hidden></iframe>
+<script>
+
+    //ADD DATA
+    function add() {
+        $('#dlg_insert').dialog('open').dialog('center');
+        $('#dg2').datagrid('loadData', {"total":0,"rows":[]});         
+        url_save = '<?= base_url('npd/create_tasks/create') ?>';
+        
+        $('#frm_insert').form('clear');
+        $("#start_date").datebox('setValue', "<?= date("Y-m-d") ?>");
+        $("#end_date").datebox('setValue', "<?= date("Y-m-t") ?>");
+        
+        // $.ajax({
+        //     type : "post",
+        //     url : "<?= base_url('npd/create_tasks/autoid')?>",
+        //     dataType : "html",
+        //     success : function(response){
+        //         $('#number').textbox('setValue', response);             
+        //     }
+        // });
+
+        $('#description').summernote('code', '');
     }
 
-    public function readProjects()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT a.*, b.name as project_category_name 
-        FROM create_projects a 
-        JOIN project_categorys b ON a.project_category_id = b.id
-        WHERE a.name LIKE '%$post%' AND a.number LIKE '%$post%'");
-        echo json_encode($send);
-    }
+    function addTable(link = "") {
+        $('#dg2').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                [{
+                    field: 'phase_name_sub',
+                    width: 200,
+                    halign: 'center',
+                    title: "Phase Sub.",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('npd/project_phase_subs/reads'); ?>',
+                            required: true,
+                            panelWidth: 600,
+                            idField: 'phase_name_sub',
+                            textField: 'phase_name_sub',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Phase Sub.',
+                            columns: [
+                                [{
+                                    field: 'phase_name',
+                                    title: 'Phase Name.',
+                                    width: 200
+                                }, {
+                                    field: 'phase_name_sub',
+                                    title: 'Phase Name Sub',
+                                    width: 200
+                                }, {
+                                    field: 'module',
+                                    title: 'Module',
+                                    width: 200
+                                }]
+                            ],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
 
-    public function readMenus()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $id = ['20251212000005','20260107000002','20251215000001','20251224000001','20260112000001','20260129000001','20260209000001'];
-        $id = implode("','", $id);        
-        $send = $this->crud->query("SELECT * FROM menus WHERE id IN ('$id') AND name LIKE '%$post%' AND `status` = '0'");
-        // $send = $this->crud->reads('menus', ["name" => $post]);
-        echo json_encode($send);
-    }
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'phase_name_sub'
+                                });
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'phase_sub_id'
+                                });
+                                var ed3 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'module'
+                                });
+                                var ed4 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'link'
+                                });
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'menus_id'
+                                });
 
-    public function readUsers()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('users', ["name" => $post]);
-        echo json_encode($send);
-    }
-    
-    public function readsnotfg()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM create_tasks WHERE name LIKE '%$post%' AND `status` = '0'");
-        // $send = $this->crud->reads('create_tasks', ["name" => $post]);
-        echo json_encode($send);
-    }
+                                $(ed.target).textbox('setValue', rows.phase_name_sub);
+                                $(ed2.target).textbox('setValue', rows.id);
+                                $(ed3.target).textbox('setValue', rows.module);
+                                $(ed4.target).textbox('setValue', rows.link);
+                                $(ed5.target).textbox('setValue', rows.menus_id);
+                            }
+                        }
+                    }
+                }, {
+                    field: 'phase_sub_id',
+                    width: 150,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Phase Sub ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'module',
+                    width: 150,
+                    halign: 'center',
+                    title: "Module",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                 }, {
+                    field: 'link',
+                    width: 150,
+                    halign: 'center',
+                    title: "Link",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'menus_id',
+                    width: 150,
+                    // hidden: true,
+                    halign: 'center',
+                    title: "Menu Id",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'department_id',
+                    hidden: true,
+                    editor: { 
+                        type: 'textbox' 
+                    }
+                }, {
+                    field: 'department', 
+                    width: 150,
+                    align: 'center',
+                    title: "Department",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            url: '<?= base_url('master/departments/reads') ?>',
+                            editable: false,
+                            valueField: 'name', // Tetap name
+                            textField: 'name',
+                            prompt: 'Choose Department',
+                            onSelect: function(record) {
+                                var dg = $('#dg2'); 
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
 
-    //GET DATATABLES
-    public function datatables()
-    {
-        if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
-            $page = $this->input->post('page');
-            $rows = $this->input->post('rows');
-            //Pagination 1-10
-            $page   = isset($page) ? intval($page) : 1;
-            $rows   = isset($rows) ? intval($rows) : 10;
-            $offset = ($page - 1) * $rows;
-            $result = array();
-            //Select Query
-            $this->db->select('a.*, b.start_date as project_start_date, b.end_date as project_end_date');
-            $this->db->from('create_tasks a');
-            $this->db->join('create_projects b', 'a.project_number = b.number');
-            $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
-                foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
-                }
-            }
-            $this->db->order_by('a.id', 'asc');
-            //Total Data
-            $totalRows = $this->db->count_all_results('', false);
-            //Limit 1 - 10
-            $this->db->limit($rows, $offset);
-            //Get Data Array
-            $records = $this->db->get()->result_array();
+                                // 1. Isi kolom hidden department_id
+                                var ed_dept_id = dg.datagrid('getEditor', { index: rowIndex, field: 'department_id' });
+                                if (ed_dept_id) {
+                                    $(ed_dept_id.target).textbox('setValue', record.id);
+                                }
 
-            foreach ($records as &$row) {
-                if (!empty($row['project_start_date']) && !empty($row['project_end_date'])) {
-                            
-                    $start = new DateTime($row['project_start_date']);
-                    $end = new DateTime($row['project_end_date']);
+                                // 2. Load Sub Department seperti biasa
+                                var ed_sub = dg.datagrid('getEditor', { index: rowIndex, field: 'sub_department' });
+                                if (ed_sub) {
+                                    $(ed_sub.target).combobox('clear');
+                                    var url_sub = '<?= base_url('master/sub_departments/readss') ?>?department_id=' + record.id;
+                                    $(ed_sub.target).combobox('reload', url_sub);
+                                }
+                            }
+                        }
+                    }
+                }, {
+                    field: 'sub_department',
+                    width: 150,
+                    halign: 'center',
+                    title: "Sub Department",
+                    editor: {
+                        type: 'combobox', // Ubah dari textbox menjadi combobox
+                        options: {
+                            // url: tidak diisi di sini karena akan diisi otomatis oleh onSelect di atas
+                            editable: false,
+                            valueField: 'name', 
+                            textField: 'name',
+                            prompt: 'Choose Sub Dept'
+                        }
+                    }
+                },{
+                    field: 'level',
+                    width: 80,
+                    halign: 'center',
+                    align: 'center', 
+                    title: "Level",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            data: [
+                                { value: 'LOW', text: 'LOW' },
+                                { value: 'MEDIUM', text: 'MEDIUM' },
+                                { value: 'HIGH', text: 'HIGH' }
+                            ],
+                            valueField: 'value',
+                            textField: 'text',
+                            panelHeight: 'auto', 
+                            editable: false,
+                            prompt: 'Choose Level'
+                        }
+                    }
+                }, {
+                    field: 'start_date',
+                    width: 100,
+                    halign: 'center',
+                    title: "Start Date",
+                    editor: {
+                        type: 'datebox'
+                    }
+                }, {
+                    field: 'end_date',
+                    width: 100,
+                    halign: 'center',
+                    title: "End Date",
+                    editor: {
+                        type: 'datebox'
+                    }
+                }, {
+                    field: 'remark',
+                    width: 200,
+                    halign: 'center',
+                    title: "Remarks",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }]
+            ],
+            onClickCell: onClickCell,
+            onBeginEdit: function(rowIndex, rowData) {
+                if (rowData.department_id) {
+                    var ed_sub = $(this).datagrid('getEditor', { 
+                        index: rowIndex, 
+                        field: 'sub_department' 
+                    });
                     
-                    $start->setTime(12, 0, 0);
-                    $end->setTime(12, 0, 0);
-                    
-                    $end->modify('+1 day');
+                    if (ed_sub) {
+                        var url_sub = '<?= base_url('master/sub_departments/reads') ?>?department_id=' + rowData.department_id;
+                        
+                        $(ed_sub.target).combobox('reload', url_sub);
 
-                    $interval = $start->diff($end);
-                    
-                    $duration_text = [];
-                    if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
-                    if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
-                    if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
-                    
-                    $row['project_duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
-                    
-                } else {
-                    $row['project_duration'] = '-';
-                }
-            }
-
-            // Return ke EasyUI
-            $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
-            echo json_encode($result);
-        }
-    }
-
-    public function datatableDetails()
-    {
-        $number = base64_decode($this->input->get('project_number'));
-
-        if ($number) {
-            $this->db->select('a.details, a.project_category');
-            $this->db->from('create_tasks a');
-            $this->db->where('a.project_number', $number);
-            $row = $this->db->get()->row();
-
-            if ($row && !empty($row->details)) {
-                $records = json_decode($row->details, true); 
-
-                if (is_array($records)) {
-                    foreach ($records as &$item) {
-                        $item['project_category'] = $row->project_category;
-
-                        if (!empty($item['start_date']) && !empty($item['end_date'])) {
-                            
-                            $start = new DateTime($item['start_date']);
-                            $end = new DateTime($item['end_date']);
-                            
-                            $start->setTime(12, 0, 0);
-                            $end->setTime(12, 0, 0);
-                            
-                            $end->modify('+1 day');
-
-                            $interval = $start->diff($end);
-                            
-                            $duration_text = [];
-                            if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
-                            if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
-                            if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
-                            
-                            $item['duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
-                            
-                        } else {
-                            $item['duration'] = '-';
+                        if (rowData.sub_department) {
+                            setTimeout(function() {
+                                $(ed_sub.target).combobox('setValue', rowData.sub_department);
+                            }, 100);
                         }
                     }
                 }
-
-                echo json_encode($records);
-            } else {
-                echo json_encode([]);
             }
+        });
+    }
+
+    var editIndex = undefined;
+
+    function endEditing() {
+        if (editIndex == undefined) {
+            return true
+        }
+        if ($('#dg2').datagrid('validateRow', editIndex)) {
+            $('#dg2').datagrid('endEdit', editIndex);
+            editIndex = undefined;
+            return true;
         } else {
-            echo json_encode([]);
+            return false;
         }
     }
 
-    public function uploadatt()
-    {
-        // Pastikan file disimpan dalam direktori yang diinginkan
-        $uploadDir = 'assets/image/create_tasks/';
+    function onClickCell(index, field) {
+        if (editIndex != index) {
+            if (endEditing()) {
+                $('#dg2').datagrid('selectRow', index).datagrid('beginEdit', index);
+                editIndex = index;
+            } else {
+                setTimeout(function() {
+                    $('#dg2').datagrid('selectRow', editIndex);
+                }, 0);
+            }
+        }
+    }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Pastikan ada file yang diunggah dari permintaan
-            if (isset($_FILES['file'])) {
-                $file = $_FILES['file'];
-
-                // Validasi ekstensi file yang diunggah
-                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-
-                if (!in_array($fileExtension, $allowedExtensions)) {
-                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
-                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
-                }
-
-                // Validasi ukuran file yang diunggah (maksimal 5MB)
-                $maxFileSize = 5 * 1024 * 1024; // 5MB dalam bytes
-                if ($file['size'] > $maxFileSize) {
-                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
-                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
-                }
-
-                // Pastikan tidak ada error dalam proses upload
-                if ($file['error'] === UPLOAD_ERR_OK) {
-                    // Buat nama unik untuk file yang diunggah
-                    $fileName = uniqid() . '_' . $file['name'];
-                    $uploadPath = $uploadDir . $fileName;
-
-                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
-                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                        // File berhasil diunggah
-                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
-                    } else {
-                        // Gagal menyimpan file
-                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
+    function append() {
+        var project_name = $("#project_name").combogrid('getValue');
+        if (project_name != "") {
+            if (endEditing()) {
+                var firstRowIndex = $('#dg2').datagrid('getRows').length > 0 ? 0 : undefined;
+                $('#dg2').datagrid('insertRow', {
+                    index: firstRowIndex,
+                    row: {
+                        qty: '0'
                     }
-                } else {
-                    // Ada error dalam proses upload
-                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
-                }
-            } else {
-                // File tidak ditemukan dalam permintaan
-                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
+                });
+                $('#dg2').datagrid('selectRow', firstRowIndex).datagrid('beginEdit', firstRowIndex);
             }
         } else {
-            // Metode request yang diperlukan adalah POST
-            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
+            toastr.error("Please Choose Customer first");
         }
     }
 
-    //CREATE DATA
-    public function create() {
-        $details_json = $this->input->post('details');
-        $data_project = array(
-            'project_number'      => $this->input->post('project_number'),
-            'project_name'        => $this->input->post('project_name'),
-            'project_level'       => $this->input->post('project_level'),
-            'project_category_id' => $this->input->post('project_category_id'),
-            'project_category'    => $this->input->post('project_category'),
-            'phase_id'            => $this->input->post('phase_id'),
-            'phase_name'          => $this->input->post('phase_name'),
-            'event'               => $this->input->post('event'),
-            'attachment1'         => $this->input->post('attachment1'),
-            'attachment2'         => $this->input->post('attachment2'),
-            'attachment3'         => $this->input->post('attachment3'),
-            'attachment4'         => $this->input->post('attachment4'),
-            'attachment5'         => $this->input->post('attachment5'),
-            'description'         => $this->input->post('description'),
-            'remark'              => $this->input->post('remark'),
-            'details'             => $details_json
-        );
-        $insert = $this->crud->create('create_tasks', $data_project);
-        if ($insert) {
-            echo json_encode(['theme' => 'success', 'message' => 'Task successfully saved!']);
+    function removeit() {
+        var row = $('#dg2').datagrid('getSelected');
+        if (row) {
+            var rowIndex = $('#dg2').datagrid('getRowIndex', row);
+            $('#dg2').datagrid('deleteRow', rowIndex);
+            if (editIndex == rowIndex) {
+                editIndex = undefined;
+            }
         } else {
-            echo json_encode(['theme' => 'error', 'message' => 'Failed to save task data.']);
+            toastr.warning("Please select a product item to remove!", "Information");
         }
     }
 
-    //UPDATE DATA
-    public function update() {
-        $id = $this->input->get('id');
-
-        if ($id) {
-            $details_json = $this->input->post('details');
-
-            $data_update = array(
-                'project_name'        => $this->input->post('project_name'),
-                'project_level'       => $this->input->post('project_level'),
-                'project_category_id' => $this->input->post('project_category_id'),
-                'project_category'    => $this->input->post('project_category'),
-                'phase_id'            => $this->input->post('phase_id'),
-                'phase_name'          => $this->input->post('phase_name'),
-                'event'               => $this->input->post('event'),
-                'attachment1'         => $this->input->post('attachment1'),
-                'attachment2'         => $this->input->post('attachment2'),
-                'attachment3'         => $this->input->post('attachment3'),
-                'attachment4'         => $this->input->post('attachment4'),
-                'attachment5'         => $this->input->post('attachment5'),
-                'description'         => $this->input->post('description'),
-                'details'             => $details_json
-            );
-
-            $where = array('id' => $id);
-            $update = $this->crud->update('create_tasks', $where, $data_update);
-
-            if ($update) {
-                echo json_encode(['theme' => 'success', 'message' => 'Task successfully updated!']);
-            } else {
-                echo json_encode(['theme' => 'error', 'message' => 'Failed to update task data.']);
-            }
-        } else {
-            echo json_encode(['theme' => 'error', 'message' => 'Task ID not found.']);
-        }
-    }
-    //DELETE DATA
-    public function delete()
-    {
-        $id = $this->input->post('id');
-        if ($id) {
-            $where = array('id' => $id);
-            $delete = $this->crud->delete('create_tasks', $where);
-            if ($delete) {
-                echo json_encode(['theme' => 'success', 'message' => 'Project successfully deleted!']);
-            } else {
-                echo json_encode(['theme' => 'error', 'message' => 'Failed to delete project.']);
-            }
-        } else {
-            echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
-        }
-    }
-    //PRINT & EXCEL DATA
-    public function print($option = "")
-    {
-        if ($option == "excel") {
-            $format  = date("Ymd");
-            header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=create_tasks_$format.xls");
-        }
-
-        // Config Data
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
-
-        // Select Query Project
-        $this->db->select('a.*, b.start_date as project_start_date, b.end_date as project_end_date');
-        $this->db->from('create_tasks a');
-        $this->db->join('create_projects b', 'a.project_number = b.number');
-        $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.id', 'ASC');
-        $records = $this->db->get()->result_array();
-
-        // --- PROSES PERHITUNGAN DURASI ---
-        foreach ($records as &$row) {
-            if (!empty($row['project_start_date']) && !empty($row['project_end_date'])) {
-                $start = new DateTime($row['project_start_date']);
-                $end = new DateTime($row['project_end_date']);
-                $interval = $start->diff($end);
-                
-                $duration_text = [];
-                if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
-                if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
-                if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
-                
-                $row['duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
-            } else {
-                $row['duration'] = '-'; 
-            }
-        }
-        // ----------------------------------
-
-        // Build HTML
-        $html = '<html><head><title>Print Data Project</title></head>
-        <style>
-            body {font-family: Arial, Helvetica, sans-serif;}
-            #customers {border-collapse: collapse; width: 100%; font-size: 12px;}
-            #customers td, #customers th {border: 1px solid #ddd; padding: 4px;}
-            #customers tr:nth-child(even){background-color: #f2f2f2;}
-            #customers tr:hover {background-color: #ddd;}
-            #customers th {padding-top: 6px; padding-bottom: 6px; text-align: left; color: black; background-color: #e0e0e0;}
-        </style>
-        <body>
-        <center>
-            <div style="float: left; font-size: 12px; text-align: left;">
-                <table style="width: 100%;">
-                    <tr>
-                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; margin-right:10px;">
-                            <img src="' . ($config->favicon ?? '') . '" width="30">
-                        </td>
-                        <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . ($config->name ?? 'Company Name') . '</b>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date : ' . date("d M Y H:i:s") . ' <br>
-                Print By : ' . $this->session->userdata('username') . '  
-            </div>
-            <br><br>
-            <div style="clear: both; font-size: 16px; text-align: center; margin-top: 15px; margin-bottom: 15px;">
-                <h3>CREATE TASKS</h3>
-            </div>
-        </center>
-        
-        <table id="customers" border="1">
-            <tr>
-                <th width="30" style="text-align: center;">No</th>
-                <th>Project No</th>
-                <th>Project Name</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Duration</th>
-                <th>Level</th>
-                <th>Category</th>
-            </tr>';
+    // EDIT DATA
+    function update() {
+        var row = $('#dg').datagrid('getSelected');
+        if (row) {
+            $('#dlg_insert').dialog('open').dialog('center').dialog('setTitle', 'Edit Task');
             
-        $no = 1;
-        foreach ($records as $data) {
-            $html .= '<tr>
-                    <td style="text-align: center;">' . $no . '</td>
-                    <td>' . $data['project_number'] . '</td>
-                    <td>' . $data['project_name'] . '</td>
-                    <td>' . $data['project_start_date'] . '</td>
-                    <td>' . $data['project_end_date'] . '</td>
-                    <td>' . $data['duration'] . '</td>
-                    <td style="text-align: center;">' . $data['project_level'] . '</td>
-                    <td>' . $data['project_category'] . '</td>
-                </tr>';
-            $no++;
+            $('#frm_insert').form('load', row);
+            
+            for (var i = 1; i <= 5; i++) {
+                var fileName = row['attachment' + i];
+                if (fileName) {
+                    $('#attachment_upload' + i).filebox('setText', fileName);
+                } else {
+                    $('#attachment_upload' + i).filebox('clear');
+                }
+            }
+           
+            if (row.description) {
+                $('#description').summernote('code', row.description);
+            } else {
+                $('#description').summernote('code', '');
+            }
+
+            // Kosongkan datagrid terlebih dahulu
+            $('#dg2').datagrid('loadData', []); 
+            
+            // Ambil data dari tabel detail menggunakan AJAX
+            $.ajax({
+                url: '<?= base_url('npd/create_tasks/get_details') ?>',
+                type: 'GET',
+                data: { task_id: row.id },
+                dataType: 'json',
+                success: function(response) {
+                    // Masukkan data ke dalam datagrid
+                    $('#dg2').datagrid('loadData', response);
+                },
+                error: function() {
+                    toastr.error("Failed to load task details.");
+                }
+            });
+
+            url_save = '<?= base_url('npd/create_tasks/update') ?>?id=' + row.id; 
+            
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
         }
-        
-        $html .= '</table></body></html>';
-        
-        echo $html;
     }
-}
+
+    // DELETE DATA PROJECT
+    function deleted() {
+        var rows = $('#dg').datagrid('getSelections');
+        
+        if (rows.length > 0) {
+            $.messager.confirm('Warning', 'Are you sure you want to delete ' + rows.length + ' selected project(s)?', function(r) {
+                if (r) {
+                    var promises = []; 
+                    
+                    for (var i = 0; i < rows.length; i++) {
+                        var request = $.ajax({
+                            method: 'post',
+                            url: '<?= base_url('npd/create_tasks/delete') ?>',
+                            data: {
+                                id: rows[i].id
+                            },
+                            dataType: 'json' 
+                        });
+                        
+                        promises.push(request);
+                    }
+                    
+                    $.when.apply($, promises).done(function() {
+                        $('#dg').datagrid('reload');
+                        $('#dg').datagrid('clearSelections'); 
+                        toastr.success("Data successfully deleted!");
+                    }).fail(function(jqXHR, textStatus, errorThrown) {
+                        toastr.error("Error occurred while deleting some data.");
+                        $('#dg').datagrid('reload'); 
+                    });
+                }
+            });
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+    //PRINT EXCEL
+    function excel() {
+        window.location.assign('<?= base_url('npd/create_tasks/print/excel') ?>');
+    }
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+    $(function() {
+        //ADD DATA
+        addTable();
+
+        //SETTING DATAGRID EASYUI
+        // $('#dg').datagrid({
+        //     url: '<?= base_url('npd/create_tasks/datatables') ?>',
+        //     pagination: true,
+        //     clientPaging: false,
+        //     remoteFilter: true,
+        //     rownumbers: true,
+        //     fit: true,
+        //     pageList: [20, 50, 100, 500, 1000],
+        //     pageSize: 20,
+        // }).datagrid('enableFilter');
+
+        $('#dg').datagrid({
+            url: '<?= base_url('npd/create_tasks/datatables') ?>',
+            pagination: true,
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
+            view: detailview,
+            detailFormatter: function(index, row) {
+                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.project_number + '"></table></div>';
+            },
+            onExpandRow: function(index, row) {
+                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+
+                ddv.datagrid({
+                    url: '<?= base_url('npd/create_tasks/datatableDetails?project_number=') ?>' + window.btoa(row.project_number),
+                    singleSelect: true,
+                    rownumbers: true,
+                    columns: [
+                        [{
+                            field: 'phase_name_sub',
+                            title: 'Phase Sub Name',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'project_category',
+                            title: 'Project Category',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'start_date',
+                            title: 'Start Date',
+                            halign: 'center',
+                            width: 100
+                        }, {
+                            field: 'end_date',
+                            title: 'End Date',
+                            halign: 'center',
+                            width: 100
+                         }, {
+                            field: 'duration',
+                            title: 'Duration',
+                            halign: 'center',
+                            width: 100
+                        }, {
+                            field: 'level',
+                            title: 'Level',
+                            align: 'center',
+                            width: 100,
+                            styler: cellStyler
+                        }, {
+                            field: 'department',
+                            title: 'Department',
+                            halign: 'center',
+                            width: 150,
+                        }, {
+                            field: 'sub_department',
+                            title: 'Department Sub',
+                            halign: 'center',
+                            width: 150
+                        }, {
+                            field: 'remark',
+                            title: 'Remarks',
+                            width: 150,
+                            halign: 'center',
+                        }]
+                    ],
+                    onResize: function() {
+                        $('#dg').datagrid('fixDetailRowHeight', index);
+                    },
+                    onLoadSuccess: function() {
+                        setTimeout(function() {
+                            $('#dg').datagrid('fixDetailRowHeight', index);
+                        }, 0);
+                    }
+                });
+                $('#dg').datagrid('fixDetailRowHeight', index);
+            }
+        }).datagrid('enableFilter');
+
+        // SAVE DATA 
+        $('#dlg_insert').dialog({
+            buttons: [{
+                text: 'Save All',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    if (!$('#frm_insert').form('validate')) {
+                        toastr.warning("Please fill all required fields in the form!");
+                        return false;
+                    }
+
+                    endEditing();
+                    $("#dg2").datagrid('acceptChanges');
+                    var rows = $('#dg2').datagrid('getRows');
+
+                    if (rows.length === 0) {
+                        toastr.warning("Please add at least one product detail!");
+                        return false;
+                    }
+
+                    var formData = new FormData($('#frm_insert')[0]);
+
+                    var desc_value = $('#description').summernote('code');
+                    formData.set('description', desc_value);
+
+                    formData.append('details', JSON.stringify(rows));
+
+                    $.ajax({
+                        type: "POST",
+                        url: url_save,
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: "json",
+                        success: function(result) {
+                            if (result.theme === "success" || result.status === "success") {
+                                
+                                $('#dlg_insert').dialog('close');
+                                $('#dg').datagrid('reload'); 
+
+                                Swal.fire({
+                                    title: 'Success',
+                                    text: result.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'Ok',
+                                    allowOutsideClick: false,
+                                });
+
+                            } else {
+                                toastr.error(result.message);
+                                Swal.fire('Error', result.message, 'error');
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            toastr.error("Server Error: " + textStatus);
+                        }
+                    });
+                }
+            }]
+        });
+    });
+
+    $('#project_name').combogrid({
+        url: '<?= base_url('npd/create_tasks/readProjects'); ?>',
+        panelWidth: 400,
+        idField: 'name',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Project Name",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Project Number',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Project Name',
+                width: 250
+            }, ]
+        ],
+        onSelect: function (index, row) {
+            $('#project_number').textbox('setValue',row.number);
+            $('#project_level').textbox('setValue',row.level);
+            $('#project_category_id').textbox('setValue',row.project_category_id);
+            $('#project_category').textbox('setValue',row.project_category_name);
+        }
+    });
+
+    $('#phase_name').combobox({
+        url:'<?= base_url('npd/project_phases/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Phase Name',
+        onSelect: function(phase_name){
+            $('#phase_id').textbox('setValue',phase_name.id);
+        }
+    });
+
+    $('#description').summernote({
+        height: 150,
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['insert', ['link', 'picture']]
+        ]
+    });
+
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
+        }
+    }
+
+    function statusformat(value, row) {
+        // active=0 / inactive=1
+        if (value == '1') {
+            return "<b style='color:red;'>INACTIVE</b>";
+        } else if (value == 'footer') {
+            return "";
+        } else {
+            return "<b style='color:green;'>ACTIVE</b>";
+        }
+    }
+    function statusStyle(value, row, index) {
+        if (value == '1') {
+            return 'background-color:#FFC8C8;';
+        } else if (value == 'footer') {
+            return "";
+        } else {
+            return 'background-color:#C8FFCC;';
+        }
+    }
+
+    function cellStyler(value, row, index) {
+        if (value == 'LOW') {
+            return 'background: #53D636; color:white;';
+        } else if (value == 'MEDIUM'){
+            return 'background: #FFFF00; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    // Formatter Button
+    function btnDescription(val, row) {
+        var desc = "viewDescription('" + row.project_number + "')";
+        return '<a href="javascript:void(0)" class="btn btn-primary w-100" onClick="' + desc + '" style="pointer-events: visible; opacity:1; padding: 2px 5px;"><i class="fa fa-eye"></i> View</a>';
+    }
+
+    function viewDescription(project_number) {
+        var rows = $('#dg').datagrid('getRows');
+        var dataRow = null;
+
+        for (var i = 0; i < rows.length; i++) {
+            if (rows[i].project_number === project_number) {
+                dataRow = rows[i];
+                break; 
+            }
+        }
+        if (dataRow) {
+            var descHtml = dataRow.description ? dataRow.description : '<p class="text-muted"><i>No description available for this project.</i></p>';
+            $('#content_description').html(descHtml);
+            
+            $('#dlg_description').dialog('setTitle', 'Project Description : ' + dataRow.project_number).dialog('open').dialog('center');
+        } else {
+            toastr.error("Project data not found!");
+        }
+    }
+
+    function btnDetails(val, row, index) {
+        if (val != null && val !== "") {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/create_tasks/') ?>' + val + '" onclick="event.stopPropagation();" style="pointer-events: visible; opacity:1; padding: 2px 5px;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
+
+    $('.upload-trigger').filebox({
+        buttonText: 'Browse File',
+        accept: '.jpg, .png, .pdf',
+        onChange: function () {
+            // 1. Tangkap ID dari filebox yang sedang diklik/dipilih
+            var currentId = $(this).attr('id'); 
+            
+            // 2. Ambil angkanya saja untuk menentukan targetnya
+            var indexNumber = currentId.replace('attachment_upload', ''); 
+            
+            // 3. Tentukan ID elemen target
+            var targetId = '#attachment' + indexNumber; 
+
+            // --- PROSES UPLOAD AJAX ---
+            var files = $(this).filebox('files');
+            if (files.length === 0) return; // Jika batal pilih file, hentikan
+
+            var formData = new FormData();
+            formData.append('file', files[0], files[0].name);
+
+            // Munculkan indikator loading (opsional tapi disarankan)
+            $.messager.progress({ title: 'Please waiting', msg: 'Uploading data...' });
+
+            $.ajax({
+                url: '<?= base_url('npd/create_tasks/uploadatt') ?>',
+                type: 'post',
+                data: formData,
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                success: function (data) {
+                    $.messager.progress('close'); // Tutup loading
+
+                    if (data.success == true) {
+                        toastr.success(data.message);
+                        
+                        // 4. Set Value ke textbox HANYA pada target yang sesuai
+                        $(targetId).textbox('setValue', data.filename); 
+                        
+                    } else {
+                        toastr.error(data.message);
+                        // Jika gagal, kosongkan kembali fileboxnya
+                        $('#' + currentId).filebox('clear'); 
+                    }
+                },
+                error: function() {
+                    $.messager.progress('close');
+                    toastr.error("Server error while uploading.");
+                    $('#' + currentId).filebox('clear');
+                }
+            });
+        }
+    });
+
+</script>

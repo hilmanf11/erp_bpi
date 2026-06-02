@@ -1,409 +1,670 @@
-<?php
-date_default_timezone_set("Asia/Bangkok");
-defined('BASEPATH') or exit('No direct script access allowed');
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
-class Create_projects extends CI_Controller
-{
-    public function __construct()
-    {
-        parent::__construct();
-        $this->load->helper('url');
-        $this->load->helper(array('form', 'url'));
-        $this->load->library('form_validation');
-        $this->load->library('session');
-        $this->load->model('crud');
-        //VALIDASI FORM
-        $this->form_validation->set_rules('id', 'ID', 'required|min_length[1]|max_length[20]|is_unique[create_projects.id]');
-    }
-    //HALAMAN UTAMA
-    public function index()
-    {
-        if (empty($this->session->username)) {
-            redirect('error_session');
-        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
-            $data['button'] = $this->getbutton($this->id_menu());
-            $this->load->view('template/header', $data);
-            $this->load->view('npd/create_projects');
-        } else {
-            redirect('error_access');
-        }
-    }
-    //GET DATA
-    public function reads()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM create_projects WHERE name LIKE '%$post%' AND number LIKE '%$post%'");
-        echo json_encode($send);
+<!-- TABLE DATAGRID -->
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+    <thead>
+        <tr>
+            <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'status_time',width:100,align:'center',styler:stylerStatusTime,formatter:formatStatusTime">Status</th>            
+            <th rowspan="2" data-options="field:'status_project',width:100,align:'center', styler:cellStylerStatus, formatter:cellFormatter">Project</th>
+            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Project No</th>
+            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Project Name</th>
+            <th rowspan="2" data-options="field:'division',width:100,halign:'center'">Division</th>
+            <th rowspan="2" data-options="field:'btn',width:80,halign:'center',align:'right',formatter:btnDescription">Description</th>
+            <!-- <th rowspan="2" data-options="field:'owner',width:100,halign:'center'">Owner</th> -->
+            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer</th>
+            <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>
+            <th rowspan="2" data-options="field:'start_date',width:100,halign:'center'">Start Date</th>
+            <th rowspan="2" data-options="field:'end_date',width:100,halign:'center'">End Date</th>
+            <th rowspan="2" data-options="field:'duration',width:150,halign:'center',align:'center'">Duration</th>
+            <th rowspan="2" data-options="field:'progress',width:150,halign:'center',align:'center'">% Progress</th>
+            <th rowspan="2" data-options="field:'level',width:80,halign:'center',align:'center', styler:cellStyler">Level</th>
+            <th rowspan="2" data-options="field:'project_category_name',width:150,halign:'center'">Category</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+        </tr>
+        <tr>
+            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+        </tr>
+    </thead>
+</table>
+<!-- TOOLBAR DATAGRID -->
+<div id="toolbar" style="height: 35px;">
+    <?= $button ?>
+</div>
+<div id="toolbar2">
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
+</div>
+<!-- DIALOG SAVE AND UPDATE -->
+<div id="dlg_insert" class="easyui-dialog" title="Add New Project" data-options="closed: true,modal:true" style="width: 900px; height: 550px; padding:10px; top: 20px;">    <form id="frm_insert" method="post" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Project Data</b></legend>
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Project No</span>
+                    <input style="width:60%;" name="number" id="number" class="easyui-textbox" readonly prompt="Auto">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Project Name</span>
+                    <input style="width:60%;" name="name" id="name" required="true" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" name="division_id" id="division_id" class="easyui-combobox" required="true">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60%;" name="customer_id" id="customer_id" required="true" class="easyui-combogrid">
+                </div>
+            </div>
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Model</span>
+                    <input style="width:60%;" name="model" id="model" required="true" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Start/End Date</span>
+                    <input style="width:29%;" name="start_date" id="start_date" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox" required="true">
+                    -
+                    <input style="width:29%;" name="end_date" id="end_date" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox" required="true">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Level</span>
+                    <select style="width:60%;" name="level" id="level" required="true" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Choose Level</option>
+                        <option value="LOW">LOW</option>
+                        <option value="MEDIUM">MEDIUM</option>
+                        <option value="HIGH">HIGH</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" name="project_category_id" id="project_category_id" required="true" class="easyui-combogrid">
+                </div>
+            </div>
+        </fieldset>
+        <div style="clear:both;"></div>
+        <table id="dg2" class="easyui-datagrid" style="width:100%; height: 200px;" title="Project Detail Lists" toolbar="#toolbar2"></table>
+        <div style="margin-top: 15px; width: 100%;">
+            <textarea name="description" id="description" style="width:100%; height:150px;"></textarea>
+        </div>
+    </form>
+</div>
+<div id="dlg_description" class="easyui-dialog" title="Project Description" data-options="closed: true, modal:true" style="width: 700px; height: 450px; padding:20px; top: 50px;">
+    <div id="content_description" style="font-size: 14px; line-height: 1.6;">
+        </div>
+</div>
+<!-- PDF -->
+<iframe id="printout" src="<?= base_url('npd/create_projects/print') ?>" style="width: 100%;" hidden></iframe>
+<script>
+
+    //ADD DATA
+    function add() {
+        $('#dlg_insert').dialog('open').dialog('center');
+        $('#dg2').datagrid('loadData', {"total":0,"rows":[]});         
+        url_save = '<?= base_url('npd/create_projects/create') ?>';
+        
+        $('#frm_insert').form('clear');
+        $("#start_date").datebox('setValue', "<?= date("Y-m-d") ?>");
+        $("#end_date").datebox('setValue', "<?= date("Y-m-t") ?>");
+        
+        $.ajax({
+            type : "post",
+            url : "<?= base_url('npd/create_projects/autoid')?>",
+            dataType : "html",
+            success : function(response){
+                $('#number').textbox('setValue', response);             }
+        });
+
+        $('#description').summernote('code', '');
     }
 
-    public function readMenus()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $id = ['20251212000005','20260107000002','20251215000001','20251224000001','20260112000001','20260129000001','20260209000001'];
-        $id = implode("','", $id);        
-        $send = $this->crud->query("SELECT * FROM menus WHERE id IN ('$id') AND name LIKE '%$post%' AND `status` = '0'");
-        // $send = $this->crud->reads('menus', ["name" => $post]);
-        echo json_encode($send);
-    }
-
-    public function readUsers()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('users', ["name" => $post]);
-        echo json_encode($send);
-    }
-    
-    public function readsnotfg()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM create_projects WHERE name LIKE '%$post%' AND `status` = '0'");
-        // $send = $this->crud->reads('create_projects', ["name" => $post]);
-        echo json_encode($send);
-    }
-
-    //GET DATATABLES
-    public function datatables()
-    {
-        if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
-            $page = $this->input->post('page');
-            $rows = $this->input->post('rows');
-            //Pagination 1-10
-            $page   = isset($page) ? intval($page) : 1;
-            $rows   = isset($rows) ? intval($rows) : 10;
-            $offset = ($page - 1) * $rows;
-            $result = array();
-            //Select Query
-            $this->db->select('a.*, 
-            b.name as division, 
-            c.name as customer_name, 
-            d.number as model_number, 
-            e.name as project_category_name, 
-            a.created_by as owner, 
-            a.status as status_project');
-            $this->db->from('create_projects a');
-            $this->db->join('divisions b','b.id = a.division_id');
-            $this->db->join('customers c','c.id = a.customer_id');
-            $this->db->join('item_fg_npd d','d.id = a.item_fg_id_npd');
-            $this->db->join('project_categorys e','e.id = a.project_category_id');
-            $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
-                foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
-                }
-            }
-            $this->db->order_by('a.id', 'asc');
-            //Total Data
-            $totalRows = $this->db->count_all_results('', false);
-            //Limit 1 - 10
-            $this->db->limit($rows, $offset);
-            //Get Data Array
-            $records = $this->db->get()->result_array();
-
-            $today = new DateTime();
-            $today->setTime(0, 0, 0); // Set jam ke 00:00:00 agar perbandingan adil
-
-            foreach ($records as &$row) {
-                
-                // ============================================
-                // 1. LOGIKA STATUS TIME (OVERDUE / ON TRACK)
-                // ============================================
-                if ($row['status_project'] == 1) {
-                    // Jika status project 1 (Selesai), maka waktunya dianggap Completed
-                    $row['status_time'] = 'Completed'; 
-                } else {
-                    // Jika status project masih 0 (Open)
-                    if (!empty($row['end_date'])) {
-                        $end_date_dt = new DateTime($row['end_date']);
-                        $end_date_dt->setTime(0, 0, 0);
-                        
-                        // Bandingkan hari ini dengan end_date
-                        if ($today > $end_date_dt) {
-                            $row['status_time'] = 'Overdue';
-                        } else {
-                            $row['status_time'] = 'On Progress';
-                        }
-                    } else {
-                        // Jika tidak ada data end_date
-                        $row['status_time'] = '-';
+    function addTable(link = "") {
+        $('#dg2').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                [{
+                    field: 'item_fg_number',
+                    width: 200,
+                    halign: 'center',
+                    title: "Product Number",
+                    editor: {
+                        type: 'textbox'
                     }
-                }
+                }, {
+                    field: 'item_fg_name',
+                    width: 200,
+                    halign: 'center',
+                    title: "Product Customer",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'volume',
+                    width: 100,
+                    align: 'center',
+                    title: "Volume",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
+                    }
+                  }, {
+                    field: 'volume_unit',
+                    width: 150,
+                    align: 'center',
+                    title: "Volume Unit",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            url: '<?= base_url('npd/volume_units/reads') ?>',
+                            editable:false,
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose Currencies'
+                        }
+                    }
+                }, {
+                    field: 'remark',
+                    width: 200,
+                    halign: 'center',
+                    title: "Remarks",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }]
+            ],
+            onClickCell: onClickCell
+        });
+    }
 
-                // ============================================
-                // 2. LOGIKA DURASI (Skrip asli Anda)
-                // ============================================
-                if (!empty($row['start_date']) && !empty($row['end_date'])) {
-                    $start = new DateTime($row['start_date']);
-                    $end = new DateTime($row['end_date']);
-                    
-                    $start->setTime(12, 0, 0);
-                    $end->setTime(12, 0, 0);
-                    $end->modify('+1 day');
+    var editIndex = undefined;
 
-                    $interval = $start->diff($end);
-                    
-                    $duration_text = [];
-                    if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
-                    if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
-                    if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
-                    
-                    $row['duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
-                    
-                } else {
-                    $row['duration'] = '-';
-                }
-
-                // (Masukkan logika hitung PROGRESS di sini jika ingin dipakai lagi)
-            }
-            // Return ke EasyUI
-            $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
-            echo json_encode($result);
+    function endEditing() {
+        if (editIndex == undefined) {
+            return true
+        }
+        if ($('#dg2').datagrid('validateRow', editIndex)) {
+            $('#dg2').datagrid('endEdit', editIndex);
+            editIndex = undefined;
+            return true;
+        } else {
+            return false;
         }
     }
 
-    public function datatableDetails()
-    {
-        $number = base64_decode($this->input->get('number'));
-
-        if ($number) {
-            $this->db->select('details');
-            $this->db->from('create_projects');
-            $this->db->where('number', $number);
-            $row = $this->db->get()->row();
-
-            if ($row && !empty($row->details)) {
-                $records = json_decode($row->details, true); 
-                echo json_encode($records);
+    function onClickCell(index, field) {
+        if (editIndex != index) {
+            if (endEditing()) {
+                $('#dg2').datagrid('selectRow', index).datagrid('beginEdit', index);
+                editIndex = index;
             } else {
-                echo json_encode([]);
-            }
-        } else {
-            echo json_encode([]);
-        }
-    }
-
-    //AUTO ID
-    public function autoid()
-    {
-        $year = date('Y');
-        $month = date('m');
-        
-        $prefix_search = "PRO" . $year; 
-        
-        $sql = $this->db->query("SELECT MAX(number) as kode FROM create_projects WHERE number LIKE '$prefix_search%'");
-        $row = $sql->row();
-
-        if ($row && $row->kode) {
-            $urutan = (int) substr($row->kode, -3);
-            $urutan++;
-        } else {
-            $urutan = 1;
-        }
-
-        $autoid = "PRO" . $year . $month . sprintf("%03s", $urutan);
-        
-        echo $autoid;
-    }
-    //CREATE DATA
-    public function create() {
-        // 1. Ambil data JSON string dari Datagrid yang dikirim via AJAX
-        // Bentuknya akan berupa text panjang: [{"item_fg_id": "1", "volume": "100"}, {...}]
-        $details_json = $this->input->post('details');
-
-        // 2. Bungkus semua data dari form Header DAN data Detail ke dalam 1 Array
-        $data_project = array(
-            'number'              => $this->input->post('number'),
-            'name'                => $this->input->post('name'),
-            'division_id'         => $this->input->post('division_id'),
-            'customer_id'         => $this->input->post('customer_id'),
-            'item_fg_id_npd'      => $this->input->post('item_fg_id_npd'),
-            'start_date'          => $this->input->post('start_date'),
-            'end_date'            => $this->input->post('end_date'),
-            'level'               => $this->input->post('level'),
-            'project_category_id' => $this->input->post('project_category_id'),
-            'description'         => $this->input->post('description'),
-            'details'             => $details_json // <-- SIMPAN LANGSUNG SEBAGAI TEKS DI SINI
-        );
-
-        // 3. Simpan hanya ke 1 tabel (create_projects)
-        $insert = $this->crud->create('create_projects', $data_project);
-
-        if ($insert) {
-            echo json_encode(['theme' => 'success', 'message' => 'Project and all details successfully saved!']);
-        } else {
-            echo json_encode(['theme' => 'error', 'message' => 'Failed to save project data.']);
-        }
-    }
-    //UPDATE DATA
-    public function update() {
-        $id = $this->input->get('id');
-
-        if ($id) {
-            $details_json = $this->input->post('details');
-
-            $data_update = array(
-                'name'                => $this->input->post('name'),
-                'division_id'         => $this->input->post('division_id'),
-                'customer_id'         => $this->input->post('customer_id'),
-                'item_fg_id_npd'      => $this->input->post('item_fg_id_npd'),
-                'start_date'          => $this->input->post('start_date'),
-                'end_date'            => $this->input->post('end_date'),
-                'level'               => $this->input->post('level'),
-                'project_category_id' => $this->input->post('project_category_id'),
-                'description'         => $this->input->post('description'),
-                'details'             => $details_json
-            );
-
-            $where = array('id' => $id);
-            $update = $this->crud->update('create_projects', $where, $data_update);
-
-            if ($update) {
-                echo json_encode(['theme' => 'success', 'message' => 'Project successfully updated!']);
-            } else {
-                echo json_encode(['theme' => 'error', 'message' => 'Failed to update project data.']);
-            }
-        } else {
-            echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
-        }
-    }
-    //DELETE DATA
-    public function delete()
-    {
-        $id = $this->input->post('id');
-        if ($id) {
-            $where = array('id' => $id);
-            $delete = $this->crud->delete('create_projects', $where);
-            if ($delete) {
-                echo json_encode(['theme' => 'success', 'message' => 'Project successfully deleted!']);
-            } else {
-                echo json_encode(['theme' => 'error', 'message' => 'Failed to delete project.']);
-            }
-        } else {
-            echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
-        }
-    }
-    //PRINT & EXCEL DATA
-    public function print($option = "")
-    {
-        if ($option == "excel") {
-            $format  = date("Ymd");
-            header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=create_projects_$format.xls");
-        }
-
-        // Config Data
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
-
-        // Select Query Project
-        $this->db->select('a.*, b.name as division, c.name as customer_name, d.number as model_number, e.name as project_category_name, a.created_by as owner');
-        $this->db->from('create_projects a');
-        $this->db->join('divisions b', 'b.id = a.division_id', 'left');
-        $this->db->join('customers c', 'c.id = a.customer_id', 'left');
-        $this->db->join('item_fg_npd d', 'd.id = a.item_fg_id_npd', 'left');
-        $this->db->join('project_categorys e', 'e.id = a.project_category_id', 'left');
-        $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.id', 'ASC');
-        $records = $this->db->get()->result_array();
-
-        // --- PROSES PERHITUNGAN DURASI ---
-        foreach ($records as &$row) {
-            if (!empty($row['start_date']) && !empty($row['end_date'])) {
-                            
-                $start = new DateTime($row['start_date']);
-                $end = new DateTime($row['end_date']);
-                
-                $start->setTime(12, 0, 0);
-                $end->setTime(12, 0, 0);
-                
-                $end->modify('+1 day');
-
-                $interval = $start->diff($end);
-                
-                $duration_text = [];
-                if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
-                if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
-                if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
-                
-                $row['duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
-                
-            } else {
-                $row['duration'] = '-';
+                setTimeout(function() {
+                    $('#dg2').datagrid('selectRow', editIndex);
+                }, 0);
             }
         }
-        // ----------------------------------
+    }
 
-        // Build HTML
-        $html = '<html><head><title>Print Data Project</title></head>
-        <style>
-            body {font-family: Arial, Helvetica, sans-serif;}
-            #customers {border-collapse: collapse; width: 100%; font-size: 12px;}
-            #customers td, #customers th {border: 1px solid #ddd; padding: 4px;}
-            #customers tr:nth-child(even){background-color: #f2f2f2;}
-            #customers tr:hover {background-color: #ddd;}
-            #customers th {padding-top: 6px; padding-bottom: 6px; text-align: left; color: black; background-color: #e0e0e0;}
-        </style>
-        <body>
-        <center>
-            <div style="float: left; font-size: 12px; text-align: left;">
-                <table style="width: 100%;">
-                    <tr>
-                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; margin-right:10px;">
-                            <img src="' . ($config->favicon ?? '') . '" width="30">
-                        </td>
-                        <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . ($config->name ?? 'Company Name') . '</b>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date : ' . date("d M Y H:i:s") . ' <br>
-                Print By : ' . $this->session->userdata('username') . '  
-            </div>
-            <br><br>
-            <div style="clear: both; font-size: 16px; text-align: center; margin-top: 15px; margin-bottom: 15px;">
-                <h3>CREATE PROJECT</h3>
-            </div>
-        </center>
+    function append() {
+        var customer_id = $("#customer_id").combogrid('getValue');
+        if (customer_id != "") {
+            if (endEditing()) {
+                var firstRowIndex = $('#dg2').datagrid('getRows').length > 0 ? 0 : undefined;
+                $('#dg2').datagrid('insertRow', {
+                    index: firstRowIndex,
+                    row: {
+                        qty: '0'
+                    }
+                });
+                $('#dg2').datagrid('selectRow', firstRowIndex).datagrid('beginEdit', firstRowIndex);
+            }
+        } else {
+            toastr.error("Please Choose Customer first");
+        }
+    }
+
+    function removeit() {
+        var row = $('#dg2').datagrid('getSelected');
+        if (row) {
+            var rowIndex = $('#dg2').datagrid('getRowIndex', row);
+            $('#dg2').datagrid('deleteRow', rowIndex);
+            if (editIndex == rowIndex) {
+                editIndex = undefined;
+            }
+        } else {
+            toastr.warning("Please select a product item to remove!", "Information");
+        }
+    }
+
+    // EDIT DATA
+    // function update() {
+    //     var row = $('#dg').datagrid('getSelected');
         
-        <table id="customers" border="1">
-            <tr>
-                <th width="30" style="text-align: center;">No</th>
-                <th>Project No</th>
-                <th>Project Name</th>
-                <th>Division</th>
-                <th>Customer</th>
-                <th>Model</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Duration</th>
-                <th>Level</th>
-                <th>Category</th>
-            </tr>';
+    //     if (row) {
+    //         $('#dlg_insert').dialog('open').dialog('center').dialog('setTitle', 'Edit Project');
             
-        $no = 1;
-        foreach ($records as $data) {
-            $html .= '<tr>
-                    <td style="text-align: center;">' . $no . '</td>
-                    <td>' . $data['number'] . '</td>
-                    <td>' . $data['name'] . '</td>
-                    <td>' . $data['division'] . '</td>
-                    <td>' . $data['customer_name'] . '</td>
-                    <td>' . $data['model_number'] . '</td>
-                    <td>' . $data['start_date'] . '</td>
-                    <td>' . $data['end_date'] . '</td>
-                    <td>' . $data['duration'] . '</td>
-                    <td style="text-align: center;">' . $data['level'] . '</td>
-                    <td>' . $data['project_category_name'] . '</td>
-                </tr>';
-            $no++;
+    //         $('#frm_insert').form('load', row);
+            
+    //         if (row.description) {
+    //             $('#description').summernote('code', row.description);
+    //         } else {
+    //             $('#description').summernote('code', '');
+    //         }
+
+    //         var detailData = [];
+    //         if (row.details) {
+    //             try {
+    //                 detailData = typeof row.details === 'string' ? JSON.parse(row.details) : row.details;
+    //             } catch (e) {
+    //                 console.error("Format JSON detail tidak valid", e);
+    //             }
+    //         }
+    //         $('#dg2').datagrid('loadData', detailData);
+
+    //         url_save = '<?= base_url('npd/create_projects/update') ?>?id=' + row.id; 
+            
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
+    // EDIT DATA
+    function update() {
+        var row = $('#dg').datagrid('getSelected');
+        
+        if (row) {
+            $('#dlg_insert').dialog('open').dialog('center').dialog('setTitle', 'Edit Project');
+            
+            $('#frm_insert').form('load', row);
+            
+            if (row.description) {
+                $('#description').summernote('code', row.description);
+            } else {
+                $('#description').summernote('code', '');
+            }
+
+            // --- BAGIAN YANG DIRUBAH ---
+            // Karena data tidak ada di row, kita ambil dari fungsi datatableDetails
+            var url_details = '<?= base_url('npd/create_projects/datatableDetails?number=') ?>' + window.btoa(row.number);
+            
+            // Lakukan AJAX Get untuk mengambil data detailnya lalu load ke datagrid dg2
+            $.get(url_details, function(data) {
+                var detailData = typeof data === 'string' ? JSON.parse(data) : data;
+                $('#dg2').datagrid('loadData', detailData);
+            });
+            // ---------------------------
+
+            url_save = '<?= base_url('npd/create_projects/update') ?>?id=' + row.id; 
+            
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
         }
-        
-        $html .= '</table></body></html>';
-        
-        echo $html;
     }
-}
+
+    // DELETE DATA PROJECT
+    function deleted() {
+        var rows = $('#dg').datagrid('getSelections');
+        
+        if (rows.length > 0) {
+            $.messager.confirm('Warning', 'Are you sure you want to delete ' + rows.length + ' selected project(s)?', function(r) {
+                if (r) {
+                    var promises = []; 
+                    
+                    for (var i = 0; i < rows.length; i++) {
+                        var request = $.ajax({
+                            method: 'post',
+                            url: '<?= base_url('npd/create_projects/delete') ?>',
+                            data: {
+                                id: rows[i].id
+                            },
+                            dataType: 'json' 
+                        });
+                        
+                        promises.push(request);
+                    }
+                    
+                    $.when.apply($, promises).done(function() {
+                        $('#dg').datagrid('reload');
+                        $('#dg').datagrid('clearSelections'); 
+                        toastr.success("Data successfully deleted!");
+                    }).fail(function(jqXHR, textStatus, errorThrown) {
+                        toastr.error("Error occurred while deleting some data.");
+                        $('#dg').datagrid('reload'); 
+                    });
+                }
+            });
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+    //PRINT EXCEL
+    function excel() {
+        window.location.assign('<?= base_url('npd/create_projects/print/excel') ?>');
+    }
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+    $(function() {
+        //ADD DATA
+        addTable();
+
+        //SETTING DATAGRID EASYUI
+        // $('#dg').datagrid({
+        //     url: '<?= base_url('npd/create_projects/datatables') ?>',
+        //     pagination: true,
+        //     clientPaging: false,
+        //     remoteFilter: true,
+        //     rownumbers: true,
+        //     fit: true,
+        //     pageList: [20, 50, 100, 500, 1000],
+        //     pageSize: 20,
+        // }).datagrid('enableFilter');
+
+        $('#dg').datagrid({
+            url: '<?= base_url('npd/create_projects/datatables') ?>',
+            pagination: true,
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
+            view: detailview,
+            detailFormatter: function(index, row) {
+                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.number + '"></table></div>';
+            },
+            onExpandRow: function(index, row) {
+                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+
+                ddv.datagrid({
+                    url: '<?= base_url('npd/create_projects/datatableDetails?number=') ?>' + window.btoa(row.number),
+                    singleSelect: true,
+                    rownumbers: true,
+                    columns: [
+                        [{
+                            field: 'item_fg_id',
+                            hidden:true,
+                            title: 'Product ID',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'item_fg_number',
+                            title: 'Product No.',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'item_fg_name',
+                            title: 'Product Name',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'volume',
+                            title: 'Volume',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100,
+                        }, {
+                            field: 'volume_unit',
+                            title: 'Volume Unit',
+                            halign: 'center',
+                            width: 100
+                        }, {
+                            field: 'remark',
+                            title: 'Remarks',
+                            width: 150,
+                            halign: 'center',
+                        }]
+                    ],
+                    onResize: function() {
+                        $('#dg').datagrid('fixDetailRowHeight', index);
+                    },
+                    onLoadSuccess: function() {
+                        setTimeout(function() {
+                            $('#dg').datagrid('fixDetailRowHeight', index);
+                        }, 0);
+                    }
+                });
+                $('#dg').datagrid('fixDetailRowHeight', index);
+            }
+        }).datagrid('enableFilter');
+
+        // SAVE DATA 
+        $('#dlg_insert').dialog({
+            buttons: [{
+                text: 'Save All',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    if (!$('#frm_insert').form('validate')) {
+                        toastr.warning("Please fill all required fields in the form!");
+                        return false;
+                    }
+
+                    endEditing();
+                    $("#dg2").datagrid('acceptChanges');
+                    var rows = $('#dg2').datagrid('getRows');
+
+                    if (rows.length === 0) {
+                        toastr.warning("Please add at least one product detail!");
+                        return false;
+                    }
+
+                    var formData = new FormData($('#frm_insert')[0]);
+
+                    var desc_value = $('#description').summernote('code');
+                    formData.set('description', desc_value);
+
+                    formData.append('details', JSON.stringify(rows));
+
+                    $.ajax({
+                        type: "POST",
+                        url: url_save,
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: "json",
+                        success: function(result) {
+                            if (result.theme === "success" || result.status === "success") {
+                                
+                                $('#dlg_insert').dialog('close');
+                                $('#dg').datagrid('reload'); 
+
+                                Swal.fire({
+                                    title: 'Success',
+                                    text: result.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'Ok',
+                                    allowOutsideClick: false,
+                                });
+
+                            } else {
+                                toastr.error(result.message);
+                                Swal.fire('Error', result.message, 'error');
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            toastr.error("Server Error: " + textStatus);
+                        }
+                    });
+                }
+            }]
+        });
+    });
+
+    $('#phase_name').combobox({
+        url:'<?= base_url('npd/project_phases/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Phase Name',
+        onSelect: function(phase_name){
+            $('#phase_id').textbox('setValue',phase_name.id);
+        }
+    });
+    
+    $('#division_id').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'id',
+        textField: 'number',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Division',
+    });
+
+    $('#customer_id').combogrid({
+        url: '<?= base_url('master/customers/reads/'); ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Customer",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Customer No',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Customer Name',
+                width: 250
+            }, ]
+        ],
+    });
+
+    $('#project_category_id').combogrid({
+        url: '<?= base_url('npd/project_categorys/reads/'); ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Project Category",
+        columns: [
+            [{
+                field: 'code',
+                title: 'Code',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Category Name',
+                width: 250
+            }, ]
+        ],
+    });
+
+    $('#description').summernote({
+        height: 150,
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['insert', ['link', 'picture']]
+        ]
+    });
+
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
+        }
+    }
+
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 1) {
+            return 'COMPLETE';
+        } else {
+            return 'UNCOMPLETE';
+        }
+    };
+
+    function cellStylerStatus(value, row, index) {
+        if (value == 1) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    function cellStyler(value, row, index) {
+        if (value == 'LOW') {
+            return 'background: #53D636; color:white;';
+        } else if (value == 'MEDIUM'){
+            return 'background: #FFFF00; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    function stylerStatusTime(value, row, index) {
+        if (value === 'Completed') {
+            // Hijau sesuai Chart (#28a745), Teks Putih
+            return 'background-color: #28a745; color: #ffffff; border-radius: 3px;'; 
+            
+        } else if (value === 'Overdue') {
+            // Merah sesuai Chart (#dc3545), Teks Putih
+            return 'background-color: #dc3545; color: #ffffff; border-radius: 3px;';
+            
+        } else if (value === 'On Progress') {
+            // Kuning sesuai Chart (#ffc107), Teks Gelap (#212529) agar kontras/terbaca
+            return 'background-color: #ffc107; color: #212529; border-radius: 3px;';
+        }
+        return '';
+    }
+
+    function formatStatusTime(value, row, index) {
+        if (value) {
+            return '<span style="font-size: 11px; letter-spacing: 0.5px;">' + value.toUpperCase() + '</span>';
+        }
+        return '-';
+    }
+
+    // Formatter Button
+    function btnDescription(val, row) {
+        var desc = "viewDescription('" + row.number + "')";
+        return '<a href="javascript:void(0)" class="btn btn-primary w-100" onClick="' + desc + '" style="pointer-events: visible; opacity:1; padding: 2px 5px;"><i class="fa fa-eye"></i> View</a>';
+    }
+
+    function viewDescription(number) {
+        var rows = $('#dg').datagrid('getRows');
+        var dataRow = null;
+
+        for (var i = 0; i < rows.length; i++) {
+            if (rows[i].number === number) {
+                dataRow = rows[i];
+                break; 
+            }
+        }
+        if (dataRow) {
+            var descHtml = dataRow.description ? dataRow.description : '<p class="text-muted"><i>No description available for this project.</i></p>';
+            $('#content_description').html(descHtml);
+            
+            $('#dlg_description').dialog('setTitle', 'Project Description : ' + dataRow.number).dialog('open').dialog('center');
+        } else {
+            toastr.error("Project data not found!");
+        }
+    }
+</script>
