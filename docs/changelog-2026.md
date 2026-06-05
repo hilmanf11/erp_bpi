@@ -663,3 +663,6 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-06-02]
 - **kurniawan**: Update Script WIP adj fg ([e92e1092](https://github.com/hilmanf11/erp_bpi/commit/e92e1092080eb649bdabb5f072ca0fd92ea94a78))
+
+### [2026-06-05]
+- **kurniawan**: update NPD script ([c818f8aa](https://github.com/hilmanf11/erp_bpi/commit/c818f8aa5cddc637ab41bf75580983988482a6c7))
