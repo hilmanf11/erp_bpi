@@ -120,8 +120,8 @@
     <table id="dg_detail" class="easyui-datagrid" style="width:100%; height: 180px;" data-options="singleSelect:true, rownumbers:false">
         <thead>
             <tr>
-                <th data-options="field:'item_fg_number_npd_detail',width:150,halign:'center'">Product No</th>
-                <th data-options="field:'item_fg_name_npd_detail',width:200,halign:'center'">Product Name</th>
+                <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
+                <th data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
                 <th data-options="field:'volume',width:100,halign:'center',align:'center'">Volume</th>
                 <th data-options="field:'volume_unit',width:100,halign:'center',align:'center'">Volume Unit</th>
             </tr>

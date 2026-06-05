@@ -1,1018 +1,622 @@
-<!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar" pagination="true" rownumbers="true" fitColumns="false" singleSelect="false">
-
-    <!-- FROZEN -->
-    <thead frozen="true">
-        <tr>
-            <th field="ck" checkbox="true"></th>
-            <th data-options="field:'action_print',width:80,align:'center',formatter:formatPrint">Print</th>
-            <th data-options="field:'attachment',width:80,align:'center',formatter:formatAttachment">Part Picture</th>
-            <th data-options="field:'item_fg_number',width:120,halign:'center'">Product No</th>
-            <th data-options="field:'item_fg_name',width:250">Product Name</th>
-            <th data-options="field:'customer_name',width:250">Customer</th>
-        </tr>
-    </thead>
-    <thead>
-        <tr>
-            <th data-options="field:'part_size_mm',width:120,align:'right'">Part Size (mm)</th>
-            <th data-options="field:'est_part_weight_per_pcs',width:150,align:'right'">Est. Part Weight (g)</th>
-            <th data-options="field:'item_rm_number',width:150">Resin Material</th>
-            <th data-options="field:'mould_cav_no',width:120,align:'right'">Cavity No</th>
-            <th data-options="field:'mould_base_steel',width:150">Base Steel</th>
-            <th data-options="field:'core_cav_steel',width:160">Core & Cavity Steel</th>
-            <th data-options="field:'mould_cav_core_steel',width:160">Cavity & Core Steel</th>
-            <th data-options="field:'mold_base_accessories',width:160">Mold Accessories</th>
-            <th data-options="field:'mould_frame_note',width:180">Mould Frame Note</th>
-            <th data-options="field:'mould_life_estimation',width:140,align:'right'">Life Est (Shots)</th>
-            <th data-options="field:'mould_finish_surface',width:150">Finish Surface</th>
-            <th data-options="field:'mould_building_standard',width:160">Building Standard</th>
-            <th data-options="field:'estimation_mould_length',width:120,align:'right'">Mould Length</th>
-            <th data-options="field:'estimation_mould_width',width:120,align:'right'">Mould Width</th>
-            <th data-options="field:'estimation_mould_height',width:120,align:'right'">Mould Height</th>
-            <th data-options="field:'estimation_mould_weight',width:140,align:'right'">Mould Weight (kg)</th>
-
-            <th data-options="field:'injection_system',width:150">Injection System</th>
-            <th data-options="field:'ejection_system',width:150">Ejection System</th>
-            <th data-options="field:'no_of_sliders',width:120">No of Sliders</th>
-            <th data-options="field:'side_action_operated_by',width:160">Side Action Op</th>
-            <th data-options="field:'no_of_lifter',width:120">No of Lifter</th>
-            <th data-options="field:'hot_runner_details',width:180">Hot Runner Details</th>
-
-            <th data-options="field:'est_runner_weight_per_pcs',width:160,align:'right'">Runner Weight (g)</th>
-            <th data-options="field:'est_cycle_time',width:120,align:'right'">Cycle Time (s)</th>
-            <th data-options="field:'est_machine_size',width:130,align:'right'">Machine Size (T)</th>
-            <th data-options="field:'lead_time_1st_off_sample',width:160,align:'right'">Lead Time (Weeks)</th>
-            <th data-options="field:'target_productivity',width:150,align:'right'">Target Prod (pcs/h)</th>
-            <th data-options="field:'mold_setting_time',width:140">Mold Setting Time</th>
-            <th data-options="field:'quantity_year',width:120,align:'right'">Qty / Year</th>
-            <th data-options="field:'quantity_month',width:120,align:'right'">Qty / Month</th>
-            <th data-options="field:'quantity_wp_month',width:140,align:'right'">Qty W/P / Month</th>
-            <th data-options="field:'avg_load_cap_machine',width:130,align:'right'">Avg Load (%)</th>
-            <th data-options="field:'space_needed_for_wp_fg',width:120,align:'right'">Space (m2)</th>
-            <th data-options="field:'packaging',width:120,align:'right'">Packaging</th>
-
-            <th data-options="field:'estimation_hot_runner_fob_price',width:180">Hot Runner FOB Price</th>
-            <th data-options="field:'mold_flow_analysis_cost',width:160">Mold Flow Cost</th>
-            <th data-options="field:'other_cost',width:140">Other Cost</th>
-            <th data-options="field:'target_capability',width:150">Target Capability</th>
-            <th data-options="field:'mfg_tech_alternative',width:160">Mfg Tech Alt</th>
-            <th data-options="field:'customer_req',width:250">Customer Req</th>
-            <th data-options="field:'experience_from_previous_dev',width:250">Prev Experience</th>
-            
-            <th data-options="field:'man_power_std',width:120">Man Power (Std)</th>
-            <th data-options="field:'man_power_act',width:120">Man Power (Act)</th>
-            <th data-options="field:'machine_std',width:120">Machine (Std)</th>
-            <th data-options="field:'machine_act',width:120">Machine (Act)</th>
-            <th data-options="field:'method_std',width:120">Method (Std)</th>
-            <th data-options="field:'method_act',width:120">Method (Act)</th>
-            <th data-options="field:'material_std',width:120">Material (Std)</th>
-            <th data-options="field:'material_act',width:120">Material (Act)</th>
-            <th data-options="field:'other',width:150">Other 4M</th>
-            
-            <th data-options="field:'rejection_ppm_copq',width:180">Rejection PPM/COPQ</th>
-            <th data-options="field:'error_proofing',width:180">Error Proofing</th>
-
-            <th data-options="field:'created_by',width:120">Created By</th>
-            <th data-options="field:'created_date',width:150">Created Date</th>
-            <th data-options="field:'updated_by',width:120">Updated By</th>
-            <th data-options="field:'updated_date',width:150">Updated Date</th>
-        </tr>
-    </thead>
-</table>
-
-<!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 200px; padding: 10px;">
-    <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
-    <div style="width: 100%;">
-        <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-            <legend><b>Form Filter Data</b></legend>
-            <!-- <div style="width: 50%; float: left;"> -->
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_item_fg_number" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
-            <!-- </div> -->
-            <!-- <div style="width: 50%; float: left;" hidden>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product Id</span>
-                    <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
-                </div>
-                
-            </div> -->
-            
-        </fieldset>
-        <?= $button ?>
-    </div>
-</div>
-
-<style>
-    .tab-wrap {
-        width: 100%;
+<?php
+date_default_timezone_set("Asia/Bangkok");
+defined('BASEPATH') or exit('No direct script access allowed');
+class Feasibilitys extends CI_Controller
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->helper('url');
+        $this->load->helper(array('form', 'url'));
+        $this->load->library('form_validation');
+        $this->load->library('session');
+        $this->load->model('crud');
     }
-
-    /*flex 1 kolom */
-    .form-row {
-        display: flex;
-        flex-direction: column; /* VERTIKAL */
-    }
-
-    /* tiap fitem full width */
-    .form-row .fitem {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 4px 10px;
-    }
-
-    /* input tidak terlalu panjang */
-    .form-row .fitem input {
-        max-width: 200px;
-    }
-</style>
-
-<!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed:true,modal:true" style="width:60%;height:650px;padding:10px;">
-    <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
-        <div class="easyui-tabs" style="width:100%;height:570px;">
-            <div title="Part Information" style="padding:10px">
-                <div class="tab-wrap">
-                    <div class="form-row">
-                        <div class="fitem" hidden>
-                            <span style="width:35%; display:inline-block;">Product Id</span>
-                            <input style="width:60%;" name="item_fg_id" id="item_fg_id" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Product No</span>
-                            <input style="width:60%;" name="item_fg_number" id="item_fg_number" required="" class="easyui-combogrid">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Product Name</span>
-                            <input style="width:60%;" name="item_fg_name" id="item_fg_name" readonly class="easyui-textbox">
-                        </div>
-                        <div class="fitem" hidden>
-                            <span style="width:35%; display:inline-block;">Project Number</span>
-                            <input style="width:60%;" name="project_number" id="project_number" readonly class="easyui-textbox">
-                        </div>
-                        <div class="fitem" hidden>
-                            <span style="width:35%; display:inline-block;">Customer Id</span>
-                            <input style="width:60%;" name="customer_id" id="customer_id" readonly class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Customer</span>
-                            <input style="width:60%;" name="customer_name" id="customer_name" readonly class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Part Picture</span>
-                            <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Part size/mm</span>
-                            <input style="width:60%;" name="part_size_mm" id="part_size_mm" class="easyui-numberbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Est. part weight/g per pcs</span>
-                            <input style="width:60%;" name="est_part_weight_per_pcs" id="est_part_weight_per_pcs" class="easyui-numberbox">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div title="Mould & Tooling Specs" style="padding:10px">
-                <div class="tab-wrap">
-                    <div class="form-row">
-                        <div class="fitem" hidden>
-                            <span style="width:35%; display:inline-block;">Moulding Resin Material</span>
-                            <input style="width:60%;" name="item_rm_id" id="item_rm_id" class="easyui-numberbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Moulding Resin Material</span>
-                            <input style="width:60%;" name="item_rm_number" id="item_rm_number" class="easyui-combobox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mould Cavity Number</span>
-                            <input style="width:60%;" name="mould_cav_no" id="mould_cav_no" class="easyui-numberbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mould base Steel</span>
-                            <input style="width:60%;" name="mould_base_steel" id="mould_base_steel" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Core & Cavity plate Steel</span>
-                            <input style="width:60%;" name="core_cav_steel" id="core_cav_steel" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mould Cavity & Core Steel</span>
-                            <input style="width:60%;" name="mould_cav_core_steel" id="mould_cav_core_steel" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mold base Accessories</span>
-                            <input style="width:60%;" name="mold_base_accessories" id="mold_base_accessories" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mould Frame Note</span>
-                            <input style="width:60%;" name="mould_frame_note" id="mould_frame_note" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mould life estimation </span>
-                            <input style="width:60%;" name="mould_life_estimation" id="mould_life_estimation" class="easyui-numberbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mould Finish Surface</span>
-                            <input style="width:60%;" name="mould_finish_surface" id="mould_finish_surface" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mould Building Standard</span>
-                            <input style="width:60%;" name="mould_building_standard" id="mould_building_standard" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Estimation Mould Size</span>
-                            <input style="width:20%;" name="estimation_mould_length" id="estimation_mould_length" class="easyui-numberbox" data-options="buttonText:'mm',prompt:'length'">
-                            <input style="width:20%;" name="estimation_mould_width" id="estimation_mould_width" class="easyui-numberbox" data-options="buttonText:'mm',prompt:'width'">
-                            <input style="width:20%;" name="estimation_mould_height" id="estimation_mould_height" class="easyui-numberbox" data-options="buttonText:'mm',prompt:'height'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Estimation Mould Weigh</span>
-                            <input style="width:60%;" name="estimation_mould_weight" id="estimation_mould_weight" class="easyui-numberbox" data-options="buttonText:'kg'">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div title="Injection & Mechanism" style="padding:10px">
-                <div class="tab-wrap">
-                    <div class="form-row">
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Injection System</span>
-                            <input style="width:60%;" name="injection_system" id="injection_system" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Ejection System</span>
-                            <input style="width:60%;" name="ejection_system" id="ejection_system" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">No. of sliders</span>
-                            <input style="width:60%;" name="no_of_sliders" id="no_of_sliders" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Side actions operated by</span>
-                            <input style="width:60%;" name="side_action_operated_by" id="side_action_operated_by" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">No. of lifter</span>
-                            <input style="width:60%;" name="no_of_lifter" id="no_of_lifter" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Hot Runner Details</span>
-                            <input style="width:60%;" name="hot_runner_details" id="hot_runner_details" class="easyui-textbox" data-options="prompt:'Default: Not Required'">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div title="Production Planning" style="padding:10px">
-                <div class="tab-wrap">
-                    <div class="form-row">
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Est. runner weight/g per pcs</span>
-                            <input style="width:60%;" name="est_runner_weight_per_pcs" id="est_runner_weight_per_pcs" class="easyui-numberbox" precision="2">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Est. cycle time</span>
-                            <input style="width:60%;" name="est_cycle_time" id="est_cycle_time" class="easyui-numberbox" data-options="buttonText:'sec'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Est. Machine size</span>
-                            <input style="width:60%;" name="est_machine_size" id="est_machine_size" class="easyui-numberbox" data-options="buttonText:'ton'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Lead time to 1st off samples</span>
-                            <input style="width:60%;" name="lead_time_1st_off_sample" id="lead_time_1st_off_sample" class="easyui-numberbox" data-options="buttonText:'weeks'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Target Productivity</span>
-                            <input style="width:60%;" name="target_productivity" id="target_productivity" class="easyui-numberbox" data-options="buttonText:'pcs/hour', onChange: calculateAvgLoad">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mold setting time</span>
-                            <input style="width:60%;" name="mold_setting_time" id="mold_setting_time" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Quantity / Year</span>
-                            <input style="width:60%;" name="quantity_year" id="quantity_year" class="easyui-numberbox" readonly="" data-options="buttonText:'pcs'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Quantity / Month</span>
-                            <input style="width:60%;" name="quantity_month" id="quantity_month" class="easyui-numberbox" readonly="" data-options="buttonText:'pcs'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Quantity W/P / Month</span>
-                            <input style="width:60%;" name="quantity_wp_month" id="quantity_wp_month" class="easyui-numberbox" readonly="" data-options="buttonText:'pcs', onChange: calculateAvgLoad">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Avg Load Capacity per machine</span>
-                            <input style="width:60%;" name="avg_load_cap_machine" id="avg_load_cap_machine" class="easyui-numberbox" readonly="" data-options="buttonText:'%'" precision='2'>
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Space needed for W/P & FG</span>
-                            <input style="width:60%;" name="space_needed_for_wp_fg" id="space_needed_for_wp_fg" class="easyui-numberbox" readonly="" data-options="buttonText:'m2', precision:2">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Packaging</span>
-                            <input style="width:60%;" name="packaging" id="packaging" class="easyui-numberbox">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div title="Cost, Quality & Analysis" style="padding:10px">
-                <div class="tab-wrap">
-                    <div class="form-row">
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Estimation Hot Runner FOB Price</span> 
-                            <input style="width:60%;" name="estimation_hot_runner_fob_price" id="estimation_hot_runner_fob_price" class="easyui-textbox" data-options="prompt:'Default: Not Required'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mold Flow Analysis cost</span> 
-                            <input style="width:60%;" name="mold_flow_analysis_cost" id="mold_flow_analysis_cost" class="easyui-textbox" data-options="prompt:'Default: Not Required'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Other cost</span> 
-                            <input style="width:60%;" name="other_cost" id="other_cost" class="easyui-textbox" data-options="prompt:'Default: Not Required'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Target Capability</span> 
-                            <input style="width:60%;" name="target_capability" id="target_capability" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Mfg Tech Alternative</span> 
-                            <input style="width:60%;" name="mfg_tech_alternative" id="mfg_tech_alternative" class="easyui-textbox" data-options="prompt:'Default: Not Required'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Customer Requirement</span> 
-                            <input style="width:60%;" name="customer_req" id="customer_req" class="easyui-textbox" data-options="prompt:'Default: Not Required'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Experience From Previous Developments</span> 
-                            <input style="width:60%;" name="experience_from_previous_dev" id="experience_from_previous_dev" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Man Power</span> 
-                            <input style="width:30%;" name="man_power_std" id="man_power_std" class="easyui-textbox" data-options="prompt:'std'">
-                            <input style="width:30%;" name="man_power_act" id="man_power_act" class="easyui-textbox" data-options="prompt:'act'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Machine</span> 
-                            <input style="width:30%;" name="machine_std" id="machine_std" class="easyui-combogrid" data-options="prompt:'std'">
-                            <input style="width:30%;" name="machine_act" id="machine_act" class="easyui-textbox" data-options="prompt:'act'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Method</span> 
-                            <input style="width:30%;" name="method_std" id="method_std" class="easyui-textbox" data-options="prompt:'std'">
-                            <input style="width:30%;" name="method_act" id="method_act" class="easyui-textbox" data-options="prompt:'act'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Material</span> 
-                            <input style="width:30%;" name="material_std" id="material_std" class="easyui-textbox" data-options="prompt:'std'">
-                            <input style="width:30%;" name="material_act" id="material_act" class="easyui-textbox" data-options="prompt:'act'">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Other</span> 
-                            <input style="width:60%;" name="other" id="other" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Rejection PPM or COPQ</span> 
-                            <input style="width:60%;" name="rejection_ppm_copq" id="other" class="easyui-textbox">
-                        </div>
-                        <div class="fitem">
-                            <span style="width:35%; display:inline-block;">Error proofing</span> 
-                            <input style="width:60%;" name="error_proofing" id="error_proofing" class="easyui-textbox">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-<!-- Update -->
-<!-- <div id="dlg_insert2" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 40%; padding:10px; top: 10px;">
-    <form id="frm_insert2" method="post" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Form Data</b></legend>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">ID</span>
-                    <input style="width:30%;" name="id" id="id" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Customer ID</span>
-                    <input style="width:30%;" name="customer_id" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" name="customer_name" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division ID</span>
-                    <input style="width:60%;" name="division_id"  class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Plant ID</span>
-                    <input style="width:30%;" name="customer_address_id" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant</span>
-                    <input style="width:60%;" name="plant" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Part Id</span>
-                    <input style="width:60%;" name="item_fg_id" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Part Number</span>
-                    <input style="width:60%;" name="item_fg_number" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Price</span>
-                    <input style="width:60%;" name="price" class="easyui-numberbox" precision='4'>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Currency</span>
-                    <input style="width:60%;" name="currency" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Valid Date</span>
-                    <input style="width:60%;" name="valid_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Remark</span>
-                    <input style="width:60%;" name="remark"  class="easyui-textbox">
-                </div>
-        </fieldset>
-    </form>
-</div> -->
-
-<!-- Detail Histories -->
-<!-- <div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 600px; height: 300px; top: 20px;">
-    <table id="dg_history" class="easyui-datagrid" style="width:100%;">
-        <thead>
-            <tr>
-                <th data-options="field:'price',width:100,halign:'center',formatter: priceformat">Price</th>
-                <th data-options="field:'valid_date',width:100,halign:'center'">Valid Date</th>
-                <th data-options="field:'created_by',width:120,align:'center'"> Created By</th>
-                <th data-options="field:'created_date',width:150,align:'center'"> Created Date</th>
-            </tr>
-        </thead>
-    </table>
-</div> -->
-
-<!-- Upload -->
-<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
-    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">File Upload</span>
-                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
-            </div>
-        </fieldset>
-    </form>
-    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
-    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
-    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
-        <ul id="remarks">
-        </ul>
-    </div>
-</div>
-
-<!-- PDF -->
-<iframe id="printout" src="<?= base_url('npd/feasibilitys/print') ?>" style="width: 100%;" hidden></iframe>
-
-<script>
-    //ADD DATA
-    function add() {
-        $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('npd/feasibilitys/create') ?>';
-        $('#frm_insert').form('clear');
-
-    }
-
-    //EDIT DATA
-    function update() {
-        var row = $('#dg').datagrid('getSelected');
-        console.log(row);
-
-        if (row) {
-            $('#dlg_insert').dialog('open');
-            $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('npd/feasibilitys/update') ?>?id=' + btoa(row.id);
+    //HALAMAN UTAMA
+    public function index()
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+            $data['button'] = $this->getbutton($this->id_menu());
+            $this->load->view('template/header', $data);
+            $this->load->view('npd/feasibilitys');
         } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            redirect('error_access');
+        }
+    }
+    //GET DATA
+    public function readFG()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.*, a.customer_id, a.number as project_number, b.volume, b.volume_unit, c.name as customer_name
+        FROM create_projects a 
+        JOIN create_project_details b ON a.id = b.create_project_id 
+        JOIN customers c ON a.customer_id = c.id 
+        ORDER BY b.item_fg_number ASC");
+        echo json_encode($send);
+    }
+
+    public function readItems()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT 
+            a.id, 
+            a.number, 
+            a.name
+        FROM item_rm a 
+        WHERE a.number LIKE '%$post%' or a.name LIKE '%$post%'");
+        echo json_encode($send);
+    }
+
+    public function readsMachines()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT 
+            a.toonage, 
+            a.maker,
+            CONCAT(a.toonage, ' - ', a.maker) AS machine_std
+        FROM machines a 
+        WHERE a.toonage LIKE '%$post%' or a.maker LIKE '%$post%'
+        GROUP BY a.toonage, a.maker
+        ORDER BY a.toonage ASC");
+        echo json_encode($send);
+    }
+
+    //GET DATATABLES
+    public function datatables()
+    {
+        if ($this->input->post()) {
+            $get = $this->input->get();
+            $filter_customer_id = @base64_decode($get['filter_customer_id']);
+            $filter_item_fg_number = @base64_decode($get['filter_item_fg_number']);
+
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+            //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+            //Select Query
+            $this->db->select('a.*');
+            $this->db->from('feasibilitys a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->like('a.customer_id', $filter_customer_id);
+            $this->db->like('a.item_fg_number', $filter_item_fg_number);
+            
+            $this->db->order_by('b.id', 'ASC');
+            // $this->db->order_by('d.plant', 'ASC');
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
+        }
+    }
+
+    //CREATE DATA
+    public function create()
+    {
+        if ($this->input->post()) {
+            $post   = $this->input->post();
+            
+            $feasibilitys = $this->crud->read('feasibilitys', [], [
+                "project_number" => $post['project_number'], 
+                "item_fg_id" => $post['item_fg_id']
+            ]);
+            
+            if (empty($feasibilitys)) {
+                $attachment = $this->crud->upload('attachment', ["pdf", "png", "jpg", "jpeg"], 'assets/documents/feasibilitys/', [], "feasibilitys", "attachment");
+                
+                $postFinal = array_merge($post, ["attachment" => $attachment]);
+                $send = $this->crud->create('feasibilitys', $postFinal);
+                
+                echo json_encode([
+                    "theme"   => "success",
+                    "title"   => "Success",
+                    "message" => "Data has been save!"
+                ]);
+                
+            } else {
+                echo json_encode([
+                    "theme"   => "error",
+                    "title"   => "Validation Error",
+                    "message" => "Duplicate Data"
+                ]);
+            }
+            
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    //UPDATE DATA
+    public function update()
+    {
+        if ($this->input->post()) {
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $attachment = $this->crud->upload('attachment', ["pdf", "png", "jpg", "jpeg"], 'assets/documents/feasibilitys/', ["id" => $id], "feasibilitys", "attachment");
+            $postFinal = array_merge($post, ["attachment" => $attachment]);
+            $send = $this->crud->update('feasibilitys', ["id" => $id], $postFinal);
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
         }
     }
 
     //DELETE DATA
-    function deleted() {
-        var rows = $('#dg').datagrid('getSelections');
-        console.log(rows);
-        if (rows.length > 0) {
-            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                if (r) {
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
-                        $.ajax({
-                            method: 'post',
-                            url: '<?= base_url('npd/feasibilitys/delete') ?>',
-                            data: {
-                                id: row.id
-                            },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
-                            },
-                            complete: function(data) {
-                                $('#dg').datagrid('reload');
-                            }
-                        });
-                    }
-                }
-            });
-        } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+    public function delete()
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('feasibilitys', $data);
+        echo $send;
+    }
+
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'customer_id' => $data->val($i, 2),
+                'division_id' => $data->val($i, 3),
+                'customer_address_id' => $data->val($i, 4),
+                'item_fg_id' => $data->val($i, 5),
+                'price' => $data->val($i, 6),
+                'currency' => $data->val($i, 7),
+                'valid_date' => $data->val($i, 8),
+                'remark' => $data->val($i, 9)
+            );
         }
-    }
-    // UPLOAD DATA
-    function upload() {
-        $('#dlg_upload').dialog('open');
-    }
-    // DOWNLOAD
-    function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_customer_items.xls') ?>');
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
     }
 
-    //FILTER DATA
-    function filter() {
-        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
-        var filter_item_fg_number = $("#filter_item_fg_number").combogrid('getValue');
-
-        var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_number=" + window.btoa(filter_item_fg_number);
-
-        $('#dg').datagrid({
-            url: '<?= base_url('npd/feasibilitys/datatables') ?>' + url
-        });
-
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('npd/feasibilitys/print') ?>' + url);
+    public function uploadclearFailed()
+    {
+        @unlink('failed/customer_items.txt');
     }
 
-    //PRINT PDF
-    function pdf() {
-        $("#printout").get(0).contentWindow.print();
-    }
-
-    //PRINT EXCEL
-    function excel() {
-        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
-        var filter_item_fg_number = $("#filter_item_fg_number").combogrid('getValue');
-
-        var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_number=" + window.btoa(filter_item_fg_number);
-
-        window.location.assign('<?= base_url('npd/feasibilitys/print/excel') ?>' + url);
-    }
-
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
-
-    $(function() {
-        //ADD DATA
-        $('#dg').datagrid({
-            url: '<?= base_url('npd/feasibilitys/datatables') ?>',
-            pagination: true,
-            clientPaging: false,
-            remoteFilter: true,
-            rownumbers: true,
-            fit: true,
-            pageList: [20, 50, 100, 500, 1000],
-            pageSize: 20,
-        })
-
-        //SAVE DATA
-        $('#dlg_insert').dialog({
-            buttons: [{
-                text: 'Save',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_insert').form('submit', {
-                        url: url_save,
-                        onSubmit: function() {
-                            return $(this).form('validate');
-                        },
-                        success: function(result) {
-                            var result = eval('(' + result + ')');
-                            if (result.theme == "success") {
-                                toastr.success(result.message, result.title);
-                            } else {
-                                toastr.error(result.message, result.title);
-                            }
-                            $('#dlg_insert').dialog('close');
-                            $('#dg').datagrid('reload');
-                        }
-                    });
-                }
-            }]
-        });
-
-        $('#dlg_insert').dialog({
-            onOpen: function () {
-                $.parser.parse('#dlg_insert');
-            }
-        });
-    });
-
-    function calculateAvgLoad() {
-        var qty_wp = parseFloat($('#quantity_wp_month').numberbox('getValue')) || 0;
-        var target_prod = parseFloat($('#target_productivity').numberbox('getValue')) || 0;
-        
-        if (target_prod > 0) {
-            var avg_load = (qty_wp / (target_prod * 7.5 * 3) / 30) * 100;
-            
-            $('#avg_load_cap_machine').numberbox('setValue', avg_load.toFixed(2));
-        } else {
-            $('#avg_load_cap_machine').numberbox('setValue', 0);
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/customer_items.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
         }
     }
 
-    function calculateSpaceNeeded() {
-        var qty_month = parseFloat($('#quantity_month').numberbox('getValue')) || 0;
-        var box_space_mm2 = 590 * 390; // = 230100
-        var box_stacking_qty = 6;
-        var box_packing_qty = 80; 
-        //    var box_packing_qty = parseFloat($('#packaging').numberbox('getValue')) || 1;
-
-        if (qty_month > 0) {
-            var total_boxes_needed = Math.ceil(qty_month / box_packing_qty);
-
-            var space_needed = (total_boxes_needed / box_stacking_qty) * (box_space_mm2 / 1000000);
-
-            $('#space_needed_for_wp_fg').numberbox('setValue', space_needed.toFixed(2));
-        } else {
-            $('#space_needed_for_wp_fg').numberbox('setValue', 0);
-        }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/customer_items.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
     }
 
-    //SAVE DATA2
-    // $('#dlg_insert2').dialog({
-    //     buttons: [{
-    //         text: 'Save',
-    //         iconCls: 'icon-ok',
-    //         handler: function() {
-    //             $('#frm_insert2').form('submit', {
-    //                 url: url_save,
-    //                 onSubmit: function() {
-    //                     return $(this).form('validate');
-    //                 },
-    //                 success: function(result) {
-    //                     var result = eval('(' + result + ')');
-    //                     if (result.theme == "success") {
-    //                         toastr.success(result.message, result.title);
-    //                     } else {
-    //                         toastr.error(result.message, result.title);
-    //                     }
-    //                     $('#dlg_insert2').dialog('close');
-    //                     $('#dg').datagrid('reload');
-    //                 }
-    //             });
+    //UPLOAD CREATE DATA
+    // public function uploadcreate()
+    // {
+    //     if ($this->input->post()) {
+    //         $data = $this->input->post('data');
+
+    //         //Cek Process Number          //table       //field        //field excel
+    //         $customer_items = $this->crud->read('customer_items', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
+
+    //         if (!empty($customer_items->customer_id)) {
+    //             echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
+    //         } elseif (!empty($customer_items->item_fg_id)) {
+    //             echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+    //         } else {
+    //             $dataFinal = array(
+    //                 //field
+    //                 "customer_id" => $data['customer_id'],
+    //                 "item_fg_id" => $data['item_fg_id'],
+    //                 "price" => $data['price'],
+    //                 "valid_date" => $data['valid_date'],
+    //                 "remark" => $data['remark'],
+    //             );
+    //             $send   = $this->crud->create('customer_items', $dataFinal);
+    //             echo $send;
     //         }
-    //     }]
-    // });
+    //     }
+    // }
 
-    $('#item_fg_number').combogrid({
-        url: '<?= base_url('npd/feasibilitys/readFG'); ?>',
-        panelWidth: 500,
-        idField: 'item_fg_number',
-        textField: 'item_fg_number',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Product Number.",
-        columns: [
-            [{
-                field: 'item_fg_number',
-                title: 'Product No.',
-                width: 150
-            }, {
-                field: 'item_fg_name',
-                title: 'Product Name',
-                width: 150
-            }, {
-                field: 'project_number',
-                title: 'Project No',
-                width: 150
-            }]
-        ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
-       onSelect: function(value, rows) {
-            $('#item_fg_id').textbox('setValue', rows.item_fg_id);
-            $('#item_fg_name').textbox('setValue', rows.item_fg_name);
-            $('#customer_name').textbox('setValue', rows.customer_name);
-            $('#customer_id').textbox('setValue', rows.customer_id);
-            $('#project_number').textbox('setValue', rows.project_number);
+    // PRINT & EXCEL DATA
+    public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=feasibility_summary_$format.xls");
+        }
 
-            var volume = parseFloat(rows.volume) || 0;
-            var qty_month = 0;
+        $get = $this->input->get();
+        $filter_customer_id = @base64_decode($get['filter_customer_id']);
+        $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+        $filter_item_fg_number = @base64_decode($get['filter_item_fg_number']);
 
-            if (rows.volume_unit === "PCS/YEAR") {
-                $('#quantity_year').numberbox('setValue', volume);
-                qty_month = volume / 12;
-                $('#quantity_month').numberbox('setValue', qty_month);
-            } 
-            else if (rows.volume_unit === "PCS/MONTH") {
-                $('#quantity_year').numberbox('setValue', volume * 12);
-                qty_month = volume;
-                $('#quantity_month').numberbox('setValue', qty_month);
-            }
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        $this->db->select('a.*');
+        $this->db->from('feasibilitys a');
+        if ($filter_customer_id) { $this->db->like('a.customer_id', $filter_customer_id); }
+        if ($filter_item_fg_id) { $this->db->like('a.item_fg_id', $filter_item_fg_id); }
+        if ($filter_item_fg_number) { $this->db->like('a.item_fg_number', $filter_item_fg_number); }
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        $html = '<html><head><title>Print Feasibility Data</title></head>
+        <style>
+            body {font-family: Arial, Helvetica, sans-serif;}
+            #feasibilitys {border-collapse: collapse;width: 100%;font-size: 11px;}
+            #feasibilitys td, #feasibilitys th {border: 1px solid #ddd;padding: 4px;}
+            #feasibilitys tr:nth-child(even){background-color: #f2f2f2;}
+            #feasibilitys tr:hover {background-color: #ddd;}
+            #feasibilitys th {padding-top: 4px;padding-bottom: 4px;text-align: center;color: black; background-color: #eaeaea;}
+        </style>
+        <body>
+        <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; margin-right:10px;">
+                            <img src="' . $config->favicon . '" width="40">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; vertical-align: middle; margin:2px;">
+                            <b>' . $config->name . '</b>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print By ' . $this->session->username . '  
+            </div>
+            <br><br><br>
+            <div style="clear: both; font-size: 16px; text-align: center;">
+                <h3>Summary Feasibility Study Data</h3>
+            </div>
+        </center>
+        
+        <table id="feasibilitys" border="1">
+            <tr>
+                <th width="40">No</th>
+                
+                <th>Product No</th>
+                <th>Product Name</th>
+                <th>Customer</th>
+                <th>Part Size (mm)</th>
+                <th>Est. Part Weight (g)</th>
+
+                <th>Resin Material</th>
+                <th>Cavity No</th>
+                <th>Base Steel</th>
+                <th>Core & Cavity Steel</th>
+                <th>Cavity & Core Steel</th>
+                <th>Mold Accessories</th>
+                <th>Mould Frame Note</th>
+                <th>Life Est (Shots)</th>
+                <th>Finish Surface</th>
+                <th>Building Standard</th>
+                <th>Mould Length (mm)</th>
+                <th>Mould Width (mm)</th>
+                <th>Mould Height (mm)</th>
+                <th>Mould Weight (kg)</th>
+
+                <th>Injection System</th>
+                <th>Ejection System</th>
+                <th>No of Sliders</th>
+                <th>Side Action Op</th>
+                <th>No of Lifter</th>
+                <th>Hot Runner Details</th>
+
+                <th>Runner Weight (g)</th>
+                <th>Cycle Time (s)</th>
+                <th>Machine Size (T)</th>
+                <th>Lead Time (Weeks)</th>
+                <th>Target Prod (pcs/h)</th>
+                <th>Mold Setting Time</th>
+                <th>Qty / Year</th>
+                <th>Qty / Month</th>
+                <th>Qty W/P / Month</th>
+                <th>Avg Load (%)</th>
+                <th>Space (m2)</th>
+                <th>Packaging</th>
+
+                <th>Hot Runner FOB Price</th>
+                <th>Mold Flow Cost</th>
+                <th>Other Cost</th>
+                <th>Target Capability</th>
+                <th>Mfg Tech Alt</th>
+                <th>Customer Req</th>
+                <th>Prev Experience</th>
+                
+                <th>Man Power (Std)</th>
+                <th>Man Power (Act)</th>
+                <th>Machine (Std)</th>
+                <th>Machine (Act)</th>
+                <th>Method (Std)</th>
+                <th>Method (Act)</th>
+                <th>Material (Std)</th>
+                <th>Material (Act)</th>
+                <th>Other 4M</th>
+                
+                <th>Rejection PPM/COPQ</th>
+                <th>Error Proofing</th>
+            </tr>';
             
-            var qty_wp_month = qty_month + (qty_month * 0.10);
-            $('#quantity_wp_month').numberbox('setValue', qty_wp_month);
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
+                    <td style="text-align:center;">'.$no.'</td>
+                    
+                    <td style="mso-number-format:\@;">'.$data['item_fg_number'].'</td>
+                    <td style="mso-number-format:\@;">'.$data['item_fg_name'].'</td>
+                    <td style="mso-number-format:\@;">'.$data['customer_name'].'</td>
+                    <td>'.$data['part_size_mm'].'</td>
+                    <td>'.$data['est_part_weight_per_pcs'].'</td>
 
-            calculateAvgLoad();
-            calculateSpaceNeeded();
+                    <td style="mso-number-format:\@;">'.$data['item_rm_number'].'</td>
+                    <td style="text-align:right;">'.$data['mould_cav_no'].'</td>
+                    <td>'.$data['mould_base_steel'].'</td>
+                    <td>'.$data['core_cav_steel'].'</td>
+                    <td>'.$data['mould_cav_core_steel'].'</td>
+                    <td>'.$data['mold_base_accessories'].'</td>
+                    <td>'.$data['mould_frame_note'].'</td>
+                    <td style="text-align:right;">'.$data['mould_life_estimation'].'</td>
+                    <td>'.$data['mould_finish_surface'].'</td>
+                    <td>'.$data['mould_building_standard'].'</td>
+                    <td style="text-align:right;">'.$data['estimation_mould_length'].'</td>
+                    <td style="text-align:right;">'.$data['estimation_mould_width'].'</td>
+                    <td style="text-align:right;">'.$data['estimation_mould_height'].'</td>
+                    <td style="text-align:right;">'.$data['estimation_mould_weight'].'</td>
+
+                    <td>'.$data['injection_system'].'</td>
+                    <td>'.$data['ejection_system'].'</td>
+                    <td>'.$data['no_of_sliders'].'</td>
+                    <td>'.$data['side_action_operated_by'].'</td>
+                    <td>'.$data['no_of_lifter'].'</td>
+                    <td>'.$data['hot_runner_details'].'</td>
+
+                    <td style="text-align:right;">'.$data['est_runner_weight_per_pcs'].'</td>
+                    <td style="text-align:right;">'.$data['est_cycle_time'].'</td>
+                    <td style="text-align:right;">'.$data['est_machine_size'].'</td>
+                    <td style="text-align:right;">'.$data['lead_time_1st_off_sample'].'</td>
+                    <td style="text-align:right;">'.$data['target_productivity'].'</td>
+                    <td>'.$data['mold_setting_time'].'</td>
+                    <td style="text-align:right;">'.$data['quantity_year'].'</td>
+                    <td style="text-align:right;">'.$data['quantity_month'].'</td>
+                    <td style="text-align:right;">'.$data['quantity_wp_month'].'</td>
+                    <td style="text-align:right;">'.$data['avg_load_cap_machine'].'</td>
+                    <td style="text-align:right;">'.$data['space_needed_for_wp_fg'].'</td>
+                    <td style="text-align:right;">'.$data['packaging'].'</td>
+
+                    <td>'.$data['estimation_hot_runner_fob_price'].'</td>
+                    <td>'.$data['mold_flow_analysis_cost'].'</td>
+                    <td>'.$data['other_cost'].'</td>
+                    <td>'.$data['target_capability'].'</td>
+                    <td>'.$data['mfg_tech_alternative'].'</td>
+                    <td>'.$data['customer_req'].'</td>
+                    <td>'.$data['experience_from_previous_dev'].'</td>
+                    
+                    <td>'.$data['man_power_std'].'</td>
+                    <td>'.$data['man_power_act'].'</td>
+                    <td>'.$data['machine_std'].'</td>
+                    <td>'.$data['machine_act'].'</td>
+                    <td>'.$data['method_std'].'</td>
+                    <td>'.$data['method_act'].'</td>
+                    <td>'.$data['material_std'].'</td>
+                    <td>'.$data['material_act'].'</td>
+                    <td>'.$data['other'].'</td>
+                    
+                    <td>'.$data['rejection_ppm_copq'].'</td>
+                    <td>'.$data['error_proofing'].'</td>
+                </tr>';
+            $no++;
         }
-    });
-
-    $('#item_rm_number').combobox({
-        url: '<?= base_url('npd/feasibilitys/readItems/'); ?>',
-        valueField: 'number',
-        textField: 'number',
-        prompt: 'Choose Part No',
-        onSelect: function(supp) {
-            $('#item_rm_id').textbox('setValue', supp.id);
-        }
-    });
-
-    $('#machine_std').combogrid({
-        url: '<?= base_url('npd/feasibilitys/readsMachines'); ?>',
-        panelWidth: 200,
-        idField: 'machine_std',
-        textField: 'machine_std',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "std",
-        columns: [
-            [{
-                field: 'toonage',
-                title: 'Tonage',
-                width: 100
-            }, {
-                field: 'maker',
-                title: 'Maker',
-                width: 100
-            }]
-        ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }]
-    });
-
-
-    $('#filter_customer_id').combogrid({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        panelWidth: 750,
-        idField: 'id',
-        textField: 'name',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Customer",
-        columns: [
-            [{
-                field: 'id',
-                title: 'Customer ID',
-                width: 150
-            }, {
-                field: 'number',
-                title: 'Customer Code',
-                width: 150
-            }, {
-                field: 'name',
-                title: 'Customer Name',
-                width: 200
-            }, {
-                field: 'type',
-                title: 'Type',
-                width: 100
-            }, {
-                field: 'currency',
-                title: 'Currency',
-                width: 100
-            }, ]
-        ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }]
-    });
-
-    $('#filter_item_fg_id').combogrid({
-        url: '<?= base_url('master/item_fg/reads'); ?>',
-        panelWidth: 500,
-        idField: 'id',
-        textField: 'id',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Product Id.",
-        columns: [
-            [{
-                field: 'id',
-                title: 'Product ID',
-                width: 200
-            }, {
-                field: 'number',
-                title: 'Product No.',
-                width: 150
-            }, {
-                field: 'name',
-                title: 'Product Name',
-                width: 150
-            }]
-        ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
-    });
-
-    $('#filter_item_fg_number').combogrid({
-        url: '<?= base_url('master/item_fg/reads'); ?>',
-        panelWidth: 500,
-        idField: 'number',
-        textField: 'number',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Product No.",
-        columns: [
-            [{
-                field: 'number',
-                title: 'Product No.',
-                width: 150
-            }, {
-                field: 'name',
-                title: 'Product Name',
-                width: 150
-            }, {
-                field: 'number_customer',
-                title: 'Product Customer',
-                width: 200
-            }, ]
-        ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
-    });
-
-    // $('#division_id').combobox({
-    //     url: '<?= base_url('master/divisions/reads/'); ?>',
-    //     valueField: 'id',
-    //     textField: 'name',
-    //     prompt: 'Choose Division'
-    // });
-
-
-    //CELLSTYLE STATUS
-    function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Not Active';
-        }
-    };
-
-    // UPLOAD DATA
-    $('#dlg_upload').dialog({
-        buttons: [{
-            text: 'List Failed',
-            handler: function() {
-                window.open('<?= base_url('npd/feasibilitys/uploadDownloadFailed') ?>', '_blank');
-            }
-        }, {
-            text: 'Upload',
-            iconCls: 'icon-ok',
-            handler: function() {
-                $('#frm_upload').form('submit', {
-                    url: '<?= base_url('npd/feasibilitys/upload') ?>',
-                    onSubmit: function() {
-                        if ($(this).form('validate') == false) {
-                            return $(this).form('validate');
-                        } else {
-                            $.messager.progress({
-                                title: 'Please Wait',
-                                msg: 'Importing Excel to Database'
-                            });
-                        }
-                    },
-                    success: function(result) {
-                        $.messager.progress('close');
-                        //Clear File
-                        $.ajax({
-                            url: "<?= base_url('npd/feasibilitys/uploadclearFailed') ?>"
-                        });
-                        var json = eval('(' + result + ')');
-                        requestData(json.total, json);
-
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
-
-                                $.ajax({
-                                    type: "POST",
-                                    async: true,
-                                    url: "<?= base_url('npd/feasibilitys/uploadCreate') ?>",
-                                    data: {
-                                        "data": json[number - 1]
-                                    },
-                                    cache: false,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('npd/feasibilitys/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-                                        $("#p_remarks").append(title + "<br>");
-                                    }
-                                });
-                            }
-                        }
-                    }
-                });
-            }
-        }]
-    });
-
-    function formatAttachment(value, row, index) {
-        if (value && value !== "") {
-            return '<a href="' + value + '" target="_blank" class="w-100" style="background-color: #2b91d8; color: white; padding: 5px 0; text-decoration: none; border-radius: 3px; font-size: 12px; display: inline-block; text-align: center;" ><i class="fa fa-eye"></i></a>';
-        } else {
-            return '<span style="color:#aaa;">-</span>';
-        }
+        $html .= '</table></body></html>';
+        echo $html;
     }
 
-    function formatPrint(value, row, index) {
-        if (row.id) {
-            var id_b64 = window.btoa(row.id);
-            var url_print = '<?= base_url('npd/feasibilitys/print_feasibility') ?>?id=' + id_b64;
-            return '<a href="' + url_print + '" target="_blank" class="w-100" style="background-color: #2b91d8; color: white; padding: 5px 0; text-decoration: none; border-radius: 3px; font-size: 12px; display: inline-block; text-align: center;" title="Print Feasibility Study"><i class="fa fa-print"></i></a>';
-        } else {
-            return '-';
+    public function print_feasibility($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=feasibility_study_$format.xls");
         }
+
+        $get = $this->input->get();
+        $id = @base64_decode($get['id']);
+
+        // Config Data
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        // Fetch Data Feasibility
+        $this->db->select('a.*');
+        $this->db->from('feasibilitys a');
+
+        if ($id){ 
+            $this->db->like('a.id', $id);
+        }
+       
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        // Template HTML & CSS Base
+        $html = '<html>
+        <head><title>Print Feasibility Study</title></head>
+        <style>
+            body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+            .page-break { page-break-after: always; padding-bottom: 20px; }
+            .table-print { border-collapse: collapse; width: 100%; font-size: 12px; margin-bottom: 20px; }
+            .table-print td, .table-print th { border: 1px solid #000; padding: 4px 8px; }
+            .table-header { border-collapse: collapse; width: 100%; border: 1px solid #000; border-bottom: none; }
+            .table-header td { padding: 8px; }
+            .text-center { text-align: center; }
+            .text-left { text-align: left; }
+            .text-right { text-align: right; }
+            .font-bold { font-weight: bold; }
+        </style>
+        <body>';
+
+        foreach ($records as $data) {
+            
+            // --- 1. LOGIKA PENANGANAN GAMBAR ---
+            $img_html = "";
+            if (!empty($data['attachment'])) {
+                $ext = strtolower(pathinfo($data['attachment'], PATHINFO_EXTENSION));
+                if (in_array($ext, ['png', 'jpg', 'jpeg'])) {
+                    $img_html = '<img src="'.$data['attachment'].'" style="max-width:200px; max-height:150px; display:block; margin:auto;">';
+                } else {
+                    $img_html = '<i>File Terlampir: ' . basename($data['attachment']) . '</i>';
+                }
+            }
+
+            $html .= '<div class="page-break">';
+
+
+            $html .= '<table class="table-print">';
+            
+            // Baris 1: Header Logo & Judul (Mengikuti pembagian 35% dan 65% milik tabel)
+            $html .= '<tr>
+                        <td colspan="2" width="35%" style="text-align: left; padding: 10px;">
+                            <img src="' . $config->favicon . '" width="50" style="vertical-align: middle; margin-right: 10px;">
+                            <b style="vertical-align: middle; font-size: 15px;">PT. BANSHU PLASTIC INDONESIA</b>
+                        </td>
+                        <td colspan="2" width="65%" class="text-center font-bold" style="font-size: 16px;">
+                            Feasibility Study New Project
+                        </td>
+                      </tr>';
+            
+            // Helper function untuk baris standar
+            $renderRow = function($label, $value) {
+                return '<tr><td colspan="2" width="35%">'.$label.'</td><td colspan="2" width="65%" class="text-center">'.$value.'</td></tr>';
+            };
+
+            // Lanjut ke isi tabel seperti biasa...
+            $html .= $renderRow('Customer', $data['customer_name']);
+            $html .= $renderRow('Part Name:', $data['item_fg_name']);
+            
+            $html .= '<tr><td colspan="2">Part Picture</td><td colspan="2" class="text-center">'.$img_html.'</td></tr>';
+            
+            $html .= $renderRow('Part Number:', $data['item_fg_number']);
+            $html .= $renderRow('Moulding Resin Material:', $data['item_rm_number']);
+            $html .= $renderRow('Mould Cavity Number:', $data['mould_cav_no']);
+            $html .= $renderRow('Mould-base Steel :', $data['mould_base_steel']);
+            $html .= $renderRow('Core & Cavity plate Steel :', $data['core_cav_steel']);
+            $html .= $renderRow('Mould Cavity & Core Steel:', $data['mould_cav_core_steel']);
+            $html .= $renderRow('Mold base Accessories', $data['mold_base_accessories']);
+            $html .= $renderRow('No. of sliders:', $data['no_of_sliders']);
+            $html .= $renderRow('Side actions operated by', $data['side_action_operated_by']);
+            $html .= $renderRow('No. of lifter:', $data['no_of_lifter']);
+            $html .= $renderRow('Injection System:', $data['injection_system']);
+            $html .= $renderRow('Ejection System:', $data['ejection_system']);
+            $html .= $renderRow('Mould Frame Note:', $data['mould_frame_note']);
+            $html .= $renderRow('Mould life estimation', $data['mould_life_estimation'] . ' years');
+            $html .= $renderRow('Mould Finish Surface:', $data['mould_finish_surface']);
+            $html .= $renderRow('Part size/mm', $data['part_size_mm']);
+            $html .= $renderRow('Est. part weight/g per pcs', $data['est_part_weight_per_pcs']);
+            $html .= $renderRow('Est. runner weight/g per pcs', $data['est_runner_weight_per_pcs']);
+            $html .= $renderRow('Est. cycle time ( Sec )', $data['est_cycle_time']);
+            $html .= $renderRow('Est. Machine size ( Ton )', $data['est_machine_size'] . 'T');
+            
+            $mould_size = $data['estimation_mould_length'] . ' x ' . $data['estimation_mould_width'] . ' x ' . $data['estimation_mould_height'];
+            $html .= '<tr><td colspan="2">Estimation Mould Size: (mm)</td><td colspan="2" class="text-center">'.$mould_size.'</td></tr>';
+            
+            $html .= $renderRow('Estimation Mould Weigh: (kg)', $data['estimation_mould_weight']);
+            $html .= $renderRow('Lead time to 1st off samples: (Weeks)', $data['lead_time_1st_off_sample'] . ' weeks');
+            $html .= $renderRow('Mould Building Standard:', $data['mould_building_standard']);
+            $html .= $renderRow('Estimation Hot Runner FOB Price:', $data['estimation_hot_runner_fob_price']);
+            $html .= $renderRow('Hot Runner Details', $data['hot_runner_details']);
+            $html .= $renderRow('Mold Flow Analysis cost:', $data['mold_flow_analysis_cost']);
+            $html .= $renderRow('Other cost:', $data['other_cost']);
+            $html .= $renderRow('Target Productivity (Pcs/Hour) :', $data['target_productivity']);
+            $html .= $renderRow('Mold setting time :', $data['mold_setting_time']);
+            $html .= $renderRow('Target Capability :', $data['target_capability']);
+            $html .= $renderRow('Mfg Tech Alternative :', $data['mfg_tech_alternative']);
+            $html .= $renderRow('Customer Requirement :', $data['customer_req']);
+            $html .= $renderRow('Experience From Previous Developments :', $data['experience_from_previous_dev']);
+            
+            // --- 4. AREA KHUSUS 4M ANALYSIS (ROWSPAN) ---
+            // Baris pertama (MANPOWER) 
+            $html .= '<tr>
+                        <td rowspan="5" width="35%">4M Analysis of the previous project experiences</td>
+                        <td width="20%" class="text-center">MANPOWER</td>
+                        <td width="22.5%">STD : '.$data['man_power_std'].'</td>
+                        <td width="22.5%">ACT : '.$data['man_power_act'].'</td>
+                      </tr>';
+            $html .= '<tr>
+                        <td class="text-center">MACHINE</td>
+                        <td>STD : '.$data['machine_std'].'</td>
+                        <td>ACT : '.$data['machine_act'].'</td>
+                      </tr>';
+            $html .= '<tr>
+                        <td class="text-center">METHOD</td>
+                        <td>STD : '.$data['method_std'].'</td>
+                        <td>ACT : '.$data['method_act'].'</td>
+                      </tr>';
+            $html .= '<tr>
+                        <td class="text-center">MATERIAL</td>
+                        <td>STD : '.$data['material_std'].'</td>
+                        <td>ACT : '.$data['material_act'].'</td>
+                      </tr>';
+            $html .= '<tr>
+                        <td class="text-center">OTHERS</td>
+                        <td colspan="2">'.$data['other'].'</td>
+                      </tr>';
+            // ---------------------------------------------
+                      
+            $html .= $renderRow('Rejection PPM or COPQ', $data['rejection_ppm_copq']);
+            $html .= $renderRow('Packaging :', $data['packaging']);
+            $html .= $renderRow('Error proofing :', $data['error_proofing']);
+            
+            $html .= $renderRow('Quantity / Year (Pcs) :', number_format((float)$data['quantity_year'], 0, ',', '.'));
+            $html .= $renderRow('Quantity / Month (Pcs) :', number_format((float)$data['quantity_month'], 0, ',', '.'));
+            $html .= $renderRow('Quantity W/P / Month (Pcs) :', number_format((float)$data['quantity_wp_month'], 0, ',', '.'));
+            
+            $html .= $renderRow('Avg Load Capacity per machine (%) :', $data['avg_load_cap_machine']);
+            $html .= $renderRow('Space needed for W/P & FG (m2) :', $data['space_needed_for_wp_fg']);
+
+            $html .= '</table>';
+            $html .= '</div>'; 
+        }
+
+        if (empty($records)) {
+            $html .= '<h3 style="text-align:center; font-family:arial;">Data tidak ditemukan.</h3>';
+        }
+
+        $html .= '</body></html>';
+        
+        echo $html;
     }
-</script>
+}

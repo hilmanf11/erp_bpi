@@ -1,186 +1,177 @@
-<!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
-    <thead>
-        <tr>
-            <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'module',width:150,halign:'center'">Module</th>
-            <th rowspan="2" data-options="field:'link',width:250,halign:'center'">link</th>
-            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
-        </tr>
-        <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
-        </tr>
-    </thead>
-</table>
-<!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 35px;">
-    <?= $button ?>
-</div>
-<!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Add Menus for NPD</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Module</span>
-                <input style="width:60%;" name="module" id="module" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem" hidden>
-                <span style="width:35%; display:inline-block;">Menu ID</span>
-                <input style="width:60%;" name="menus_id" id="menus_id" readonly class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Link</span>
-                <input style="width:60%;" name="link" id="link" readonly class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="0">Active</option>
-                    <option value="1">Inactive</option>
-                </select>
-            </div>
-        </fieldset>
-    </form>
-</div>
+<?php
+date_default_timezone_set("Asia/Bangkok");
+defined('BASEPATH') or exit('No direct script access allowed');
+class Npd_menus extends CI_Controller
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->helper('url');
+        $this->load->helper(array('form', 'url'));
+        $this->load->library('form_validation');
+        $this->load->library('session');
+        $this->load->model('crud');
 
-<!-- PDF -->
-<iframe id="printout" src="<?= base_url('npd/npd_menus/print') ?>" style="width: 100%;" hidden></iframe>
-<script>
-    //ADD DATA
-    function add() {
-        $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('npd/npd_menus/create') ?>';
-        $('#frm_insert').form('clear');
-
+        //VALIDASI FORM
+        $this->form_validation->set_rules('module', 'Module', 'required|min_length[1]|max_length[100]|is_unique[npd_menus.module]');
     }
-    //EDIT DATA
-    function update() {
-        var row = $('#dg').datagrid('getSelected');
-        if (row) {
-            $('#dlg_insert').dialog('open');
-            $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('npd/npd_menus/update') ?>?id=' + btoa(row.id);
+    //HALAMAN UTAMA
+    public function index()
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+            $data['button'] = $this->getbutton($this->id_menu());
+            $this->load->view('template/header', $data);
+            $this->load->view('npd/npd_menus');
         } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
-        }
-    }
-    //DELETE DATA
-    function deleted() {
-        var rows = $('#dg').datagrid('getSelections');
-        if (rows.length > 0) {
-            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                if (r) {
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
-                        $.ajax({
-                            method: 'post',
-                            url: '<?= base_url('npd/npd_menus/delete') ?>',
-                            data: {
-                                id: row.id
-                            },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error("This item cannot be deleted, Please make sure it didn't have any relation");
-                                // $.messager.alert("Error", jqXHR.statusText, 'error');
-                            },
-                            complete: function(data) {
-                                $('#dg').datagrid('reload');
-                            }
-                        });
-                    }
-                }
-            });
-        } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            redirect('error_access');
         }
     }
     
-    //CELLSTYLE STATUS
-    function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
+    //GET DATA
+    public function reads()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('npd_menus', ["class" => $post]);
+        echo json_encode($send);
     }
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Not Active';
-        }
-    };
 
-    //PRINT PDF
-    function pdf() {
-        $("#printout").get(0).contentWindow.print();
+    public function readMenus()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";       
+        $send = $this->crud->query("SELECT * FROM menus WHERE name LIKE '%$post%' AND `status` = '0'");
+        echo json_encode($send);
     }
-    //PRINT EXCEL
-    function excel() {
-        window.location.assign('<?= base_url('npd/npd_menus/print/excel') ?>');
-    }
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
-    $(function() {
-        //SETTING DATAGRID EASYUI
-        $('#dg').datagrid({
-            url: '<?= base_url('npd/npd_menus/datatables') ?>',
-            pagination: true,
-            clientPaging: false,
-            remoteFilter: true,
-            rownumbers: true,
-            fit: true,
-            pageList: [20, 50, 100, 500, 1000],
-            pageSize: 20,
-        }).datagrid('enableFilter');
 
-        //SAVE DATA
-        $('#dlg_insert').dialog({
-            buttons: [{
-                text: 'Save',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_insert').form('submit', {
-                        url: url_save,
-                        onSubmit: function() {
-                            return $(this).form('validate');
-                        },
-                        success: function(result) {
-                            var result = eval('(' + result + ')');
-                            if (result.theme == "success") {
-                                toastr.success(result.message, result.title);
-                            } else {
-                                toastr.error(result.message, result.title);
-                            }
-                            $('#dlg_insert').dialog('close');
-                            $('#dg').datagrid('reload');
-                        }
-                    });
+
+    //GET DATATABLES
+    public function datatables()
+    {
+        if ($this->input->post()) {
+            $filters = json_decode($this->input->post('filterRules'));
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+            //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+            //Select Query
+            $this->db->select('*');
+            $this->db->from('npd_menus');
+            $this->db->where('deleted', 0);
+            if (@count($filters) > 0) {
+                foreach ($filters as $filter) {
+                    $this->db->like($filter->field, $filter->value);
                 }
-            }]
-        });
-    });
-
-    $('#module').combobox({
-        url: '<?= base_url('npd/npd_menus/readMenus'); ?>',
-        valueField: 'name',
-        textField: 'name',
-        prompt: 'Choose Module',
-        onSelect: function(menu){
-            $('#link').textbox('setValue',menu.link);
-            $('#menus_id').textbox('setValue',menu.id);
+            }
+            $this->db->order_by('menus_id', 'ASC');
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
         }
-    });
+    }
+    //CREATE DATA
+    public function create()
+    {
+        if ($this->input->post()) {
+            if ($this->form_validation->run() == TRUE) {
+                $post   = $this->input->post();
+                $send   = $this->crud->create('npd_menus', $post);
+                echo $send;
+            } else {
+                show_error(validation_errors());
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+    //UPDATE DATA
+    public function update()
+    {
+        if ($this->input->post()) {
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $send = $this->crud->update('npd_menus', ["id" => $id], $post);
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+    //DELETE DATA
+    public function delete()
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('npd_menus', $data);
+        echo $send;
+    }
+    //PRINT & EXCEL DATA
+    public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=npd_menus_$format.xls");
+        }
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
 
-</script>
+        $this->db->select('*');
+        $this->db->from('npd_menus');
+        $this->db->where('deleted', 0);
+        $this->db->order_by('id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                            <img src="' . $config->favicon . '" width="30">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <b>' . $config->name . '</b><br>
+                            <small>MASTER SETUP MENU</small>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print By ' . $this->session->username . '  
+            </div>
+        </center>
+        <br><br><br>
+        
+        <table id="customers" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Module</th>
+                <th>Link</th>
+                <th>Status</th>
+            </tr>';
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
+                    <td>' . $no . '</td>
+                    <td>' . $data['module'] . '</td>
+                    <td>' . $data['link'] . '</td>
+                    <td>' . $data['status'] . '</td>';
+            $no++;
+        }
+        
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+}

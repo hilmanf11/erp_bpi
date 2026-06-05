@@ -40,9 +40,7 @@ class Project_phase_subs extends CI_Controller
     public function readMenus()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $id = ['20251212000005','20260107000002','20251215000001','20251224000001','20260112000001','20260129000001','20260209000001'];
-        $id = implode("','", $id);        
-        $send = $this->crud->query("SELECT * FROM menus WHERE id IN ('$id') AND name LIKE '%$post%' AND `status` = '0'");
+        $send = $this->crud->query("SELECT * FROM npd_menus WHERE `module` LIKE '%$post%' AND `status` = '0'");
         // $send = $this->crud->reads('menus', ["name" => $post]);
         echo json_encode($send);
     }

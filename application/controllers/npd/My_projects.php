@@ -172,9 +172,10 @@ class My_projects extends CI_Controller
                             a.start_date,
                             a.end_date,
                             b.details,
-                            a.item_fg_id_npd');
+                            c.item_fg_id');
             $this->db->from('create_projects a');
             $this->db->join('create_tasks b', 'a.number = b.project_number', 'left');
+            $this->db->join('create_project_details c', 'a.id = c.create_project_id', 'left');
             $this->db->where('a.status', 0); 
             $this->db->order_by('a.id', 'asc');
 
@@ -217,7 +218,7 @@ class My_projects extends CI_Controller
                             if (!empty($target_table) && $this->db->table_exists($target_table)) {
                                 
                                 $this->db->select_max('created_date');
-                                $this->db->where('item_fg_id', $row['item_fg_id_npd']);
+                                $this->db->where('item_fg_id', $row['item_fg_id']);
                                 $target_data = $this->db->get($target_table)->row_array();
 
                                 // ==========================================
@@ -309,43 +310,55 @@ class My_projects extends CI_Controller
         $number = base64_decode($this->input->get('project_number'));
 
         if ($number) {
-            $this->db->select('a.details, a.customer_id, a.number, a.name, b.name as customer_name, c.number as model_number, a.start_date, a.end_date, d.name as division'); 
+            // 1. SELECT gabungan kolom dari detail (e.*) dan tabel-tabel master
+            $this->db->select('
+                e.*, 
+                a.number, 
+                a.name, 
+                b.name as customer_name, 
+                "-" as model_number, 
+                a.start_date, 
+                a.end_date, 
+                d.name as division
+            '); 
+            
             $this->db->from('create_projects a');
+            // 2. JOIN langsung ke tabel detail project
+            $this->db->join('create_project_details e', 'a.id = e.create_project_id', 'inner'); 
+            
+            // JOIN ke tabel referensi lainnya
             $this->db->join('customers b', 'a.customer_id = b.id', 'left');
-            $this->db->join('item_fg_npd c', 'a.item_fg_id_npd = c.id', 'left');
             $this->db->join('divisions d', 'a.division_id = d.id', 'left');
+            
             $this->db->where('a.number', $number);
-            $row = $this->db->get()->row();
+            
+            // Langsung ambil sebagai result_array karena bentuknya sudah list detail
+            $records = $this->db->get()->result_array();
 
-            if ($row && !empty($row->details)) {
-                $records = json_decode($row->details, true); 
-
-                if (is_array($records)) {
-                    foreach ($records as &$item) {
-                        $item['number'] = $row->number;
-                        $item['name'] = $row->name;
-                        $item['customer_name'] = $row->customer_name; 
-                        $item['model_number'] = $row->model_number; 
-                        $item['start_date'] = $row->start_date; 
-                        $item['end_date'] = $row->end_date; 
-                        $item['division'] = $row->division; 
-
-                        // Duration
-                        // if (!empty($item['start_date']) && !empty($item['end_date'])) {
-                        //     $start = new DateTime($item['start_date']);
-                        //     $end = new DateTime($item['end_date']);
-                        //     $start->setTime(12, 0, 0);
-                        //     $end->setTime(12, 0, 0);
-                        //     $end->modify('+1 day');
-                        //     $interval = $start->diff($end);
-                        //     $duration_text = [];
-                        //     if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
-                        //     if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
-                        //     if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
-                        //     $item['duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
-                        // } else {
-                        //     $item['duration'] = '-';
-                        // }
+            if (!empty($records)) {
+                
+                // 3. Looping hanya untuk menghitung durasi (karena kolom master sudah otomatis masuk via JOIN)
+                foreach ($records as &$item) {
+                    
+                    // Duration (Diaktifkan kembali dengan pengaman nilai kosong '0000-00-00')
+                    if (!empty($item['start_date']) && !empty($item['end_date']) && $item['start_date'] != '0000-00-00' && $item['end_date'] != '0000-00-00') {
+                        $start = new DateTime($item['start_date']);
+                        $end = new DateTime($item['end_date']);
+                        
+                        $start->setTime(12, 0, 0);
+                        $end->setTime(12, 0, 0);
+                        $end->modify('+1 day');
+                        
+                        $interval = $start->diff($end);
+                        
+                        $duration_text = [];
+                        if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
+                        if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
+                        if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
+                        
+                        $item['duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
+                    } else {
+                        $item['duration'] = '-';
                     }
                 }
 
@@ -446,7 +459,7 @@ class My_projects extends CI_Controller
             $this->db->select('a.details, a.phase_name, a.description, a.attachment1, a.attachment2, a.attachment3, a.attachment4, a.attachment5, b.item_fg_id_npd, b.status as project_status, c.number as model_number'); 
             $this->db->from('create_tasks a');
             $this->db->join('create_projects b', 'a.project_number = b.number');
-            $this->db->join('item_fg_npd c', 'b.item_fg_id_npd = c.id');
+            $this->db->join('item_fg c', 'b.item_fg_id_npd = c.id');
             $this->db->where('a.project_number', $number);
             $row = $this->db->get()->row();
 
@@ -601,9 +614,10 @@ class My_projects extends CI_Controller
 
     public function getSummaryStats()
     {
-        $this->db->select('a.details, b.item_fg_id_npd');
+        $this->db->select('a.details, c.item_fg_id');
         $this->db->from('create_tasks a');
         $this->db->join('create_projects b', 'a.project_number = b.number');
+        $this->db->join('create_project_details c', 'b.id = c.create_project_id');
         $this->db->where('b.status', 0); 
         $all_data = $this->db->get()->result_array();
 
@@ -631,7 +645,7 @@ class My_projects extends CI_Controller
                         if (!empty($target_table) && $this->db->table_exists($target_table)) {
                             // 2. Ambil created_date PALING TINGGI (Terbaru)
                             $this->db->select_max('created_date');
-                            $this->db->where('item_fg_id', $row['item_fg_id_npd']);
+                            $this->db->where('item_fg_id', $row['item_fg_id']);
                             $target_data = $this->db->get($target_table)->row_array();
 
                             if (!empty($target_data['created_date']) && $target_data['created_date'] !== '0000-00-00 00:00:00') {

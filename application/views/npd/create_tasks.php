@@ -451,7 +451,7 @@
                 $('#dg2').datagrid('selectRow', firstRowIndex).datagrid('beginEdit', firstRowIndex);
             }
         } else {
-            toastr.error("Please Choose Customer first");
+            toastr.error("Please Choose Project Name first");
         }
     }
 

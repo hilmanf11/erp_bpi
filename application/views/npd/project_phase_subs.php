@@ -233,8 +233,8 @@
 
     $('#module').combobox({
         url: '<?= base_url('npd/project_phase_subs/readMenus'); ?>',
-        valueField: 'name',
-        textField: 'name',
+        valueField: 'module',
+        textField: 'module',
         prompt: 'Choose Module',
         onSelect: function(menu){
             $('#link').textbox('setValue',menu.link);
