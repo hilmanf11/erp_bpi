@@ -666,3 +666,6 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-06-05]
 - **kurniawan**: update NPD script ([c818f8aa](https://github.com/hilmanf11/erp_bpi/commit/c818f8aa5cddc637ab41bf75580983988482a6c7))
+
+### [2026-06-09]
+- **Yudhazaldi**: Penambahan Status di supply sheet ([05d322f6](https://github.com/hilmanf11/erp_bpi/commit/05d322f6be551b3a63c491bbccb82d9187eb5a72))
