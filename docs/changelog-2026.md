@@ -669,3 +669,6 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-06-09]
 - **Yudhazaldi**: Penambahan Status di supply sheet ([05d322f6](https://github.com/hilmanf11/erp_bpi/commit/05d322f6be551b3a63c491bbccb82d9187eb5a72))
+
+### [2026-06-09]
+- **kurniawan**: Update master/location_items ([358b6cfe](https://github.com/hilmanf11/erp_bpi/commit/358b6cfeca89c2bc56a3928cd083080f9617d349))
