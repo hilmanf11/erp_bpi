@@ -82,6 +82,7 @@
                         <option value="">Select All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
+                        <option value="2">COMPLETE</option>
                     </select>
                 </div>
                 <div class="fitem">
