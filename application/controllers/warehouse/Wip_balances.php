@@ -142,10 +142,11 @@ class Wip_balances extends CI_Controller
             a.qty_real AS needs,
             COALESCE(c.qty_purging,a.qty_purging) as qty_purging');
         $this->db->from('wip_balances a');
-        $this->db->join('item_rm b', 'a.item_rm_id = b.id','left');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('supply_sheets c', 'a.item_rm_id = c.item_rm_id and a.request_no = c.request_no','left');
         $this->db->join('supply_requestions c2', 'a.item_rm_id = c2.item_rm_id and a.request_no = c2.request_no','left');
-        $this->db->join('item_fg d', 'd.id = c.item_fg_id','left');
+        $this->db->join('item_ng e', 'e.document = c2.document and e.item_rm_id = c2.item_rm_id','left');
+        $this->db->join('item_fg d', 'd.id = COALESCE(c.item_fg_id, e.item_fg_id)','left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('b.number', 'ASC');
         $this->db->order_by('a.request_no', 'ASC');
