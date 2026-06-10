@@ -356,7 +356,7 @@
                         field: 'qty_req',
                         width: 80,
                         halign: 'center',
-                        title: "Qty",
+                        title: "Supply",
                         editor: {
                             type: 'numberbox',
                             options: {
@@ -369,7 +369,7 @@
                         width: 100,
                         halign: 'center',
                         hidden: true,
-                        title: "Req Qty",
+                        title: "Need",
                         editor: {
                             type: 'numberbox',
                             options: {
@@ -381,7 +381,7 @@
                         field: 'qty_real',
                         width: 100,
                         halign: 'center',
-                        title: "Req Qty",
+                        title: "Need",
                         editor: {
                             type: 'numberbox',
                             options: {
