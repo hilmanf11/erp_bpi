@@ -51,11 +51,16 @@ class Wip_balances extends CI_Controller
             b.number as item_number, 
             b.name as item_name, 
             b.uom, 
+            COALESCE(c.workorder,c2.workorder) as workorder,
+            d.number as product_number,
             a.issued as supply, 
-            a.need AS needs');
+            a.qty_real AS needs,
+            COALESCE(c.qty_purging,a.qty_purging) as qty_purging');
             $this->db->from('wip_balances a');
-            $this->db->join('item_rm b', 'a.item_rm_id = b.id','left');
-            // $this->db->join('uom c', 'b.uom_id = c.id');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('supply_sheets c', 'a.item_rm_id = c.item_rm_id and a.request_no = c.request_no','left');
+            $this->db->join('supply_requestions c2', 'a.item_rm_id = c2.item_rm_id and a.request_no = c2.request_no','left');
+            $this->db->join('item_fg d', 'd.id = c.item_fg_id','left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -126,10 +131,20 @@ class Wip_balances extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+        $this->db->select('a.*, 
+            b.number as item_number, 
+            b.name as item_name, 
+            b.uom, 
+            COALESCE(c.workorder,c2.workorder) as workorder,
+            d.number as product_number,
+            a.issued as supply, 
+            a.qty_real AS needs,
+            COALESCE(c.qty_purging,a.qty_purging) as qty_purging');
         $this->db->from('wip_balances a');
-        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        // $this->db->join('uom c', 'b.uom_id = c.id');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id','left');
+        $this->db->join('supply_sheets c', 'a.item_rm_id = c.item_rm_id and a.request_no = c.request_no','left');
+        $this->db->join('supply_requestions c2', 'a.item_rm_id = c2.item_rm_id and a.request_no = c2.request_no','left');
+        $this->db->join('item_fg d', 'd.id = c.item_fg_id','left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('b.number', 'ASC');
         $this->db->order_by('a.request_no', 'ASC');
@@ -160,10 +175,12 @@ class Wip_balances extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Product No</th>
-                <th>Product Name</th>
+                <th>Part No</th>
+                <th>Part Name</th>
                 <th>Trans Date</th>
                 <th>Supply Sheet</th>
+                <th>Product No</th>
+                <th>Workorder</th>
                 <th>Uom</th>
                 <th>Begin</th>
                 <th>Need</th>
@@ -185,6 +202,8 @@ class Wip_balances extends CI_Controller
                     <td>' . $data['item_name'] . '</td>
                     <td>' . $trans_date . '</td>
                     <td>' . $data['request_no'] . '</td>
+                    <td>' . $data['product_number'] . '</td>
+                    <td>' . $data['workorder'] . '</td>
                     <td>' . $data['uom'] . '</td>
                     <td>' . $data['begin'] . '</td>
                     <td>' . $data['need'] . '</td>
