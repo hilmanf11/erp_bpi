@@ -685,3 +685,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-10]
 - **Yudhazaldi**: Ganti Header Datagrid Add Supply Sheet ([61adbaea](https://github.com/hilmanf11/erp_bpi/commit/61adbaeae567280565cdad0c14a60cbb0bbb3a91))
+
+### [2026-06-10]
+- **kurniawan**: Update Wip_balances.php ([4f85759b](https://github.com/hilmanf11/erp_bpi/commit/4f85759b29e559c46e8604b44320747793f56f71))
