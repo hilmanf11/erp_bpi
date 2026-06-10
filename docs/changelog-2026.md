@@ -672,3 +672,8 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-06-09]
 - **kurniawan**: Update master/location_items ([358b6cfe](https://github.com/hilmanf11/erp_bpi/commit/358b6cfeca89c2bc56a3928cd083080f9617d349))
+
+### [2026-06-10]
+- **kurniawan**: Update Scipt Supply Sheet
+
+update fungsi Delete ([7d05293a](https://github.com/hilmanf11/erp_bpi/commit/7d05293a5854aa4bf068ae4a23748bf88c60c4fe))
