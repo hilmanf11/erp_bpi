@@ -677,3 +677,8 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 - **kurniawan**: Update Scipt Supply Sheet
 
 update fungsi Delete ([7d05293a](https://github.com/hilmanf11/erp_bpi/commit/7d05293a5854aa4bf068ae4a23748bf88c60c4fe))
+
+### [2026-06-10]
+- **kurniawan**: Update Script Wip Balance
+
+add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184caeb2b3ec26f113445cdf3332d4983ed45a))
