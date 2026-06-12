@@ -165,13 +165,13 @@ class Locations extends CI_Controller
         $total_row = $data->rowcount($sheet_index = 0);
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
-                'type' => "RM",
                 'number' => $data->val($i, 2),
                 'location' => $data->val($i, 3),
                 'area' => $data->val($i, 4),
                 'rack' => $data->val($i, 5),
                 'level' => $data->val($i, 6),
-                'level_sub' => $data->val($i, 7)
+                'level_sub' => $data->val($i, 7),
+                'type' => $data->val($i, 8)
             );
         }
         $datas['total'] = count($datas);
@@ -207,9 +207,9 @@ class Locations extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-            $warehouse_locations = $this->crud->read('warehouse_locations', [], ["number" => $data['number'], "type" => "RM"]);
+            $warehouse_locations = $this->crud->read('warehouse_locations', [], ["number" => $data['number'], "type" => $data['type']]);
             if (!empty($warehouse_locations)) {
-                echo json_encode(array("title" => "Duplicate", "message" => "Code " . $data['number'] . " Duplicate", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicate", "message" => "Code " . $data['number'] . " for type " .$data['type']. " is Duplicate", "theme" => "error"));
             } else {
                 $send   = $this->crud->create('warehouse_locations', $data);
                 echo $send;
