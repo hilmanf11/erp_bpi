@@ -691,3 +691,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-10]
 - **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([62283753](https://github.com/hilmanf11/erp_bpi/commit/62283753b763c4aaca0a88c5b95d17bc62927dd2))
+
+### [2026-06-12]
+- **kurniawan**: Update forecast & Generate loadcap ([b5385c5b](https://github.com/hilmanf11/erp_bpi/commit/b5385c5b9cc78652e5bc918f10c5c8c01355fd1b))
