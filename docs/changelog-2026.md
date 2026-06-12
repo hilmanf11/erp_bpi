@@ -700,3 +700,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-12]
 - **kurniawan**: Update Locations.php ([e40d2ad8](https://github.com/hilmanf11/erp_bpi/commit/e40d2ad8e06368d574919969fc3220d508f4a4fe))
+
+### [2026-06-12]
+- **kurniawan**: update item receipt ([645de328](https://github.com/hilmanf11/erp_bpi/commit/645de328aec29cb797f9541cedeec09ac09beff6))
