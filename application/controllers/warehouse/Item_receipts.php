@@ -28,7 +28,7 @@ class Item_receipts extends CI_Controller
 
     public function readArea()
     {
-        $data = $this->crud->query("SELECT DISTINCT area FROM warehouse_locations WHERE `status` = '0' ORDER BY area ASC");
+        $data = $this->crud->query("SELECT * FROM warehouse_locations WHERE `status` = '0' AND `type` = 'RM' GROUP BY `location` ORDER BY `location` ASC");
         echo json_encode($data);
     }
 
