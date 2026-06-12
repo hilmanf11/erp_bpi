@@ -1083,12 +1083,12 @@
 
     function btnPrint(val, row) {
         console.log(row.delivery_note_no);
-        var print = "print_do('" + row.delivery_order_no + "')"; 
+        var print = "print_dn('" + row.delivery_order_no + "')"; 
         return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
     }
 
-    function print_do(delivery_order_no) {
-        window.open("<?= base_url('sales/delivery_notes/print_do/') ?>" + window.btoa(delivery_order_no), "_blank", "width=1200,height=600");
+    function print_dn(delivery_order_no) {
+        window.open("<?= base_url('sales/delivery_notes/print_dn/') ?>" + window.btoa(delivery_order_no), "_blank", "width=1200,height=600");
     }
 
     function styleApproved(value, row, index) {

@@ -685,7 +685,7 @@ class Delivery_notes extends CI_Controller
         echo $send;
     }
 
-    public function print_do($delivery_order_no)
+    public function print_dn($delivery_order_no)
     {
         $delivery_order_no = base64_decode($delivery_order_no);
 
