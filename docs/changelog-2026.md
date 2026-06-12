@@ -703,3 +703,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-12]
 - **kurniawan**: update item receipt ([645de328](https://github.com/hilmanf11/erp_bpi/commit/645de328aec29cb797f9541cedeec09ac09beff6))
+
+### [2026-06-12]
+- **kurniawan**: Update Generate_mps.php ([034a20bf](https://github.com/hilmanf11/erp_bpi/commit/034a20bff9342f3071e6edd8854d0917c8d2fbce))
