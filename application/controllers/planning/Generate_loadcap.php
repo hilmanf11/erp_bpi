@@ -82,6 +82,7 @@ class Generate_loadcap extends CI_Controller
     public function getData()
     {
         if ($this->input->get()) {
+            file_put_contents('failed/generate_loadcap.txt', '');
 
             $filter_month       = base64_decode($this->input->get('filter_month'));
             $filter_year        = base64_decode($this->input->get('filter_year'));
@@ -224,7 +225,8 @@ class Generate_loadcap extends CI_Controller
                 LEFT JOIN molds g ON ml.mold_id = g.id
                 LEFT JOIN machines h ON ml.machine_id = h.id
                 LEFT JOIN item_fg i ON ml.item_fg_id = i.id
-                WHERE i.division_id != 'DIV02'
+                WHERE i.division_id != 'DIV02' 
+                AND ml.priority = '1'
             ) f";
 
             $hkw_per_bulan = [];
@@ -244,23 +246,30 @@ class Generate_loadcap extends CI_Controller
                 $monthStart = strtotime("$year-$month-01");
                 $monthEnd = strtotime(date('Y-m-t', $monthStart));
 
-                // Ambil tanggal libur di bulan ini (remarks != '')
                 $this->db->select('working_date');
                 $this->db->from('calendars');
                 $this->db->where('working_date >=', date('Y-m-01', $monthStart));
                 $this->db->where('working_date <=', date('Y-m-t', $monthStart));
-                $this->db->where("remarks != ''");
+                $this->db->where("remarks !=", "");
+                $this->db->where('deleted', 0); 
                 $holidays = $this->db->get()->result_array();
                 $holidayDates = array_column($holidays, 'working_date');
 
-                // Hitung jumlah hari kerja (tidak Minggu & tidak libur)
+                // Hitung jumlah hari kerja (LOGIKA SAKLAR)
                 $hkw = 0;
                 for ($z = $monthStart; $z <= $monthEnd; $z += 86400) { // 86400 = 1 hari
                     $currentDate = date('Y-m-d', $z);
                     $isSunday = (date('w', $z) == 0);
-                    $isHoliday = in_array($currentDate, $holidayDates);
-                    if (!$isSunday && !$isHoliday) {
-                        $hkw++;
+                    $hasRemark = in_array($currentDate, $holidayDates);
+
+                    if ($isSunday) {
+                        if ($hasRemark) {
+                            $hkw++; // Minggu tapi disuruh masuk (ada remark)
+                        }
+                    } else {
+                        if (!$hasRemark) {
+                            $hkw++; // Hari biasa tanpa remarks (Kerja normal)
+                        }
                     }
                 }
 
@@ -461,25 +470,32 @@ class Generate_loadcap extends CI_Controller
             $start = strtotime(date('Y-m-01', $monthStart));
             $finish = strtotime(date('Y-m-t', $monthStart));
 
-            // Ambil semua tanggal libur dalam bulan ini (1x query)
             $this->db->select('working_date');
             $this->db->from('calendars');
             $this->db->where('working_date >=', date('Y-m-01', $monthStart));
             $this->db->where('working_date <=', date('Y-m-t', $monthStart));
-            $this->db->where("remarks != ''");
-            $holidays = $this->db->get()->result_array();
-            $holidayDates = array_column($holidays, 'working_date');
+            $this->db->where("remarks !=", ""); 
+            $this->db->where('deleted', 0); 
+            $calendar_data = $this->db->get()->result_array();
+            
+            $datesWithRemarks = array_column($calendar_data, 'working_date');
 
             // Hitung HKW
             $hkw = 0;
-            for ($z = $start; $z <= $finish; $z += 86400) { // 86400 = 1 hari
+            for ($z = $start; $z <= $finish; $z += 86400) { // 86400 = 1 hari dalam detik
                 $working_date = date('Y-m-d', $z);
                 $isSunday = (date('w', $z) == 0);
-                // $isSaturday = (date('w', $z) == 6); // aktifkan jika sabtu libur
-                $isHoliday = in_array($working_date, $holidayDates);
+                
+                $hasRemark = in_array($working_date, $datesWithRemarks);
 
-                if (!$isSunday && !$isHoliday) {
-                    $hkw++;
+                if ($isSunday) {
+                    if ($hasRemark) {
+                        $hkw++;
+                    }
+                } else {
+                    if (!$hasRemark) {
+                        $hkw++; 
+                    }
                 }
             }
 
@@ -1098,26 +1114,35 @@ class Generate_loadcap extends CI_Controller
         $period = $filter_year . "-" . $filter_month;
 
         $query_main = "SELECT a.*, 
-            b.name, 
-            b.number,
-            b.status_subcont,
-            b.color,
-            c.name as customer_name,
-            d.mold_name
-            FROM generate_loadcap a
-            JOIN item_fg b ON a.item_fg_id = b.id
-            JOIN customers c ON a.customer_id = c.id
-            JOIN molds d ON a.mold_id = d.id
-            JOIN machines e ON a.machine_id = e.id
-            WHERE a.item_fg_id LIKE '%$filter_product_no%' 
-                AND a.p_month LIKE '%$filter_month%' 
-                AND a.p_year LIKE '%$filter_year%' 
-                AND a.revision LIKE '%$filter_revision%' 
-                AND a.status = 0
-            ORDER BY b.number
-            ";
+                b.name, 
+                b.number,
+                b.status_subcont,
+                b.color,
+                b.type,
+                c.name as customer_name,
+                d.mold_name,
+                f.loadcap1 as total_loadcap
+                FROM generate_loadcap a
+                JOIN item_fg b ON a.item_fg_id = b.id
+                JOIN customers c ON a.customer_id = c.id
+                JOIN molds d ON a.mold_id = d.id
+                JOIN machines e ON a.machine_id = e.id
+                
+                LEFT JOIN generate_loadcap_machine f 
+                    ON a.machine_id = f.machine_id 
+                    AND a.p_month = f.p_month 
+                    AND a.p_year = f.p_year 
+                    AND a.revision = f.revision
+                    
+                WHERE a.item_fg_id LIKE '%$filter_product_no%' 
+                    AND a.p_month LIKE '%$filter_month%' 
+                    AND a.p_year LIKE '%$filter_year%' 
+                    AND a.revision LIKE '%$filter_revision%' 
+                    AND a.status = 0
+                ORDER BY b.number
+                ";
 
-        $records = $this->crud->query($query_main);
+    $records = $this->crud->query($query_main);
 
         $monthNames = [];
         $y = (int)$filter_year;
@@ -1162,6 +1187,7 @@ class Generate_loadcap extends CI_Controller
                     <th rowspan="2">Product No</th>
                     <th rowspan="2">Product Name</th>
                     <th rowspan="2">Subcont</th>
+                    <th rowspan="2">Type</th>
                     <th rowspan="2">MC No</th>
                     <th rowspan="2">Tonage</th>
                     <th rowspan="2">Mold</th>
@@ -1206,6 +1232,7 @@ class Generate_loadcap extends CI_Controller
                             <td style="mso-number-format:\@;">' . $record->number . '</td>
                             <td style="mso-number-format:\@;">' . $record->name . '</td>
                             <td>' . $record->status_subcont . '</td>
+                            <td>' . $record->type . '</td>
                             <td>' . $record->machine_number . '</td>
                             <td>' . $record->toonage . '</td>
                             <td>' . $record->mold_name . '</td>
@@ -1225,8 +1252,7 @@ class Generate_loadcap extends CI_Controller
                             <td>' . $record->prodplan4 . '</td>
                             <td>' . $record->need_day . '</td>
                             <td>' . $record->sum_need_day . '</td>
-                            <td>' . $record->loadcap1 . '%</td>
-                            <td>' . $record->loadcap2 . '%</td>
+                            <td style="' . ($record->total_loadcap > 100 ? 'background-color: pink; color: black;' : '') . '">' . $record->loadcap1 . '%</td>                            <td>' . $record->loadcap2 . '%</td>
                             <td>' . $record->loadcap3 . '%</td>
                             <td>' . $record->loadcap4 . '%</td>
                             <td>' . $record->manpower1 . '</td>
@@ -1445,7 +1471,6 @@ class Generate_loadcap extends CI_Controller
 
         <div class="grid-2x2">
 
-            <!-- LEFT TOP: MACHINE -->
             <div class="table-box">
                 <h3>REKAP PER MACHINE</h3>
                 <table id="customers">
@@ -1460,24 +1485,36 @@ class Generate_loadcap extends CI_Controller
                     </tr>';
 
         $no = 1;
+        $tot_mc_1 = 0; $tot_mc_2 = 0; $tot_mc_3 = 0; $tot_mc_4 = 0;
         foreach ($records as $r) {
+            $tot_mc_1 += $r->loadcap1;
+            $tot_mc_2 += $r->loadcap2;
+            $tot_mc_3 += $r->loadcap3;
+            $tot_mc_4 += $r->loadcap4;
+
             $html .= '
                 <tr>
                     <td align="center">' . $no++ . '</td>
                     <td>' . $r->machine_number . '</td>
                     <td align="center">' . $r->toonage . '</td>
-                    <td align="right" style="color:' . ($r->loadcap1 > 100 ? 'red' : 'black') . ';">' . number_format($r->loadcap1, 2) . '%</td>
-                    <td align="right" style="color:' . ($r->loadcap2 > 100 ? 'red' : 'black') . ';">' . number_format($r->loadcap2, 2) . '%</td>
-                    <td align="right" style="color:' . ($r->loadcap3 > 100 ? 'red' : 'black') . ';">' . number_format($r->loadcap3, 2) . '%</td>
-                    <td align="right" style="color:' . ($r->loadcap4 > 100 ? 'red' : 'black') . ';">' . number_format($r->loadcap4, 2) . '%</td>
+                    <td align="right" style="' . ($r->loadcap1 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($r->loadcap1, 2) . '%</td>
+                    <td align="right" style="' . ($r->loadcap2 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($r->loadcap2, 2) . '%</td>
+                    <td align="right" style="' . ($r->loadcap3 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($r->loadcap3, 2) . '%</td>
+                    <td align="right" style="' . ($r->loadcap4 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($r->loadcap4, 2) . '%</td>
                 </tr>';
         }
 
         $html .= '
+                    <tr style="background-color: #f9f9f9; font-weight: bold;">
+                        <td colspan="3" align="center">TOTAL</td>
+                        <td align="right">' . number_format($tot_mc_1, 2) . '%</td>
+                        <td align="right">' . number_format($tot_mc_2, 2) . '%</td>
+                        <td align="right">' . number_format($tot_mc_3, 2) . '%</td>
+                        <td align="right">' . number_format($tot_mc_4, 2) . '%</td>
+                    </tr>
                 </table>
             </div>
 
-            <!-- RIGHT TOP: MANPOWER -->
             <div class="table-box">
                 <h3>REKAP PER MANPOWER</h3>
                 <table id="customers">
@@ -1492,7 +1529,13 @@ class Generate_loadcap extends CI_Controller
                     </tr>';
 
         $no = 1;
+        $tot_mp_1 = 0; $tot_mp_2 = 0; $tot_mp_3 = 0; $tot_mp_4 = 0;
         foreach ($manpower as $m) {
+            $tot_mp_1 += $m->manpower1;
+            $tot_mp_2 += $m->manpower2;
+            $tot_mp_3 += $m->manpower3;
+            $tot_mp_4 += $m->manpower4;
+
             $html .= '
                     <tr>
                         <td align="center">' . $no++ . '</td>
@@ -1506,10 +1549,16 @@ class Generate_loadcap extends CI_Controller
         }
 
         $html .= '
+                    <tr style="background-color: #f9f9f9; font-weight: bold;">
+                        <td colspan="3" align="center">TOTAL</td>
+                        <td align="right">' . number_format($tot_mp_1, 2) . '</td>
+                        <td align="right">' . number_format($tot_mp_2, 2) . '</td>
+                        <td align="right">' . number_format($tot_mp_3, 2) . '</td>
+                        <td align="right">' . number_format($tot_mp_4, 2) . '</td>
+                    </tr>
                 </table>
             </div>
 
-            <!-- LEFT BOTTOM: TONNAGE -->
             <div class="table-box">
                 <h3>REKAP PER TONNAGE</h3>
                 <table id="customers">
@@ -1522,22 +1571,33 @@ class Generate_loadcap extends CI_Controller
                     </tr>';
 
         $no = 1;
+        $tot_ton_total = 0; $tot_ton_unit = 0;
         foreach ($tonnage as $t) {
+            $tot_ton_total += $t->total;
+            $tot_ton_unit += $t->unit;
+
             $html .= '
                     <tr>
                         <td align="center">' . $no++ . '</td>
                         <td align="center">' . $t->toonage . '</td>
-                        <td align="right">' . number_format($t->total, 2) . '%</td>
+                        <td align="right">'  . number_format($t->total, 2) . '%</td>
                         <td align="center">' . $t->unit . '</td>
-                        <td align="right">' . number_format($t->average, 2) . '%</td>
+                        <td align="right" style="' . ($t->average > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($t->average, 2) . '%</td>
                     </tr>';
         }
 
+        $tot_ton_avg = ($tot_ton_unit > 0) ? ($tot_ton_total / $tot_ton_unit) : 0;
+
         $html .= '
+                    <tr style="background-color: #f9f9f9; font-weight: bold;">
+                        <td colspan="2" align="center">TOTAL</td>
+                        <td align="right">' . number_format($tot_ton_total, 2) . '%</td>
+                        <td align="center">' . $tot_ton_unit . '</td>
+                        <td align="right">' . number_format($tot_ton_avg, 2) . '%</td>
+                    </tr>
                 </table>
             </div>
 
-            <!-- RIGHT BOTTOM: EMPTY -->
             <div class="table-box"><h3>&nbsp;</h3></div>
 
         </div>

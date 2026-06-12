@@ -163,6 +163,7 @@ class Forecasts extends CI_Controller
             $p_month = base64_decode($this->input->get('p_month'));
             $p_year = base64_decode($this->input->get('p_year'));
             $revision = base64_decode($this->input->get('revision'));
+            $filter_items = @base64_decode($this->input->get('filter_items'));
 
             $this->db->select('a.*, c.number as item_fg_number, c.name as item_fg_name, c.number_customer as item_fg_customer');
             $this->db->from('forecasts a');
@@ -173,6 +174,10 @@ class Forecasts extends CI_Controller
             $this->db->where('a.p_month', $p_month);
             $this->db->where('a.p_year', $p_year);
             $this->db->where('a.revision', $revision);
+            if ($filter_items != "") {
+                $this->db->where('a.item_fg_id', $filter_items);
+            }
+
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
