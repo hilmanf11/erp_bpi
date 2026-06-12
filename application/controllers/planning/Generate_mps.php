@@ -82,6 +82,7 @@ class Generate_mps extends CI_Controller
     public function getData()
     {
         if ($this->input->get()) {
+            file_put_contents('failed/generate_mps.txt', '');
             //Filter Data
             $filter_month = base64_decode($this->input->get('filter_month'));
             $filter_year = base64_decode($this->input->get('filter_year'));
@@ -133,6 +134,7 @@ class Generate_mps extends CI_Controller
                 COALESCE(g.month_4, 0) as month_4,
                 COALESCE(g.month_5, 0) as month_5,
                 COALESCE(g.month_6, 0) as month_6,
+                COALESCE(g.month_7, 0) as month_7,
                 COALESCE(h.cycle_time, 0) as cycle_time,
                 COALESCE(h.shift_hour, 0) as shift_hour,
                 COALESCE(h.productcivity, 0) as productivity,
@@ -183,36 +185,107 @@ class Generate_mps extends CI_Controller
                 GROUP BY a.sales_order_no, a.item_fg_id) z
                 GROUP BY z.id) f", '(a.id = f.id or b.item_fg_id = f.id)', 'left');
 
-            // $this->db->join("(SELECT f.item_fg_id, 
-            //     SUM(f.month_1) AS month_1, 
-            //     SUM(f.month_2) AS month_2, 
-            //     SUM(f.month_3) AS month_3, 
-            //     SUM(f.month_4) AS month_4, 
-            //     SUM(f.month_5) AS month_5, 
-            //     SUM(f.month_6) AS month_6 
-            // FROM forecasts f 
-            // JOIN ( SELECT customer_id, item_fg_id, MAX(revision) AS latest_revision 
-            //        FROM forecasts 
-            //        WHERE p_year = '$filter_year' AND p_month = '$filter_month' 
-            //        GROUP BY customer_id, item_fg_id 
-            // ) AS latest_revisions 
-            //        ON f.customer_id = latest_revisions.customer_id 
-            //        AND f.item_fg_id = latest_revisions.item_fg_id 
-            //        AND f.revision = latest_revisions.latest_revision 
-            // WHERE f.p_year = '$filter_year' AND f.p_month = '$filter_month' 
-            // GROUP BY f.item_fg_id) g ", '(a.id = g.item_fg_id or b.item_fg_id = g.item_fg_id)', 'left');
+            // $this->db->join("
+            // (
+            //     SELECT 
+            //         T.item_fg_id,
 
+            //         MAX(CASE WHEN T.idx = 1 THEN T.final_value END) AS month_1,
+            //         MAX(CASE WHEN T.idx = 2 THEN T.final_value END) AS month_2,
+            //         MAX(CASE WHEN T.idx = 3 THEN T.final_value END) AS month_3,
+            //         MAX(CASE WHEN T.idx = 4 THEN T.final_value END) AS month_4,
+            //         MAX(CASE WHEN T.idx = 5 THEN T.final_value END) AS month_5,
+            //         MAX(CASE WHEN T.idx = 6 THEN T.final_value END) AS month_6
+
+            //     FROM
+            //     (
+            //         --
+            //         -- Buat list (item_fg_id, customer_id) dari seluruh bulan yg relevan (target +/- fallback)
+            //         --
+            //         SELECT 
+            //             fc.item_fg_id,
+            //             fc.customer_id,
+            //             m.idx,
+            //             (
+            //                 SELECT 
+            //                     COALESCE(
+            //                         /* 1. ambil forecast bulan target (month_1) */
+            //                         (SELECT f1.month_1 
+            //                         FROM forecasts f1 
+            //                         WHERE f1.item_fg_id = fc.item_fg_id
+            //                         AND f1.customer_id = fc.customer_id
+            //                         AND CONCAT(f1.p_year,'-',LPAD(f1.p_month,2,'0')) = DATE_FORMAT(m.period,'%Y-%m')
+            //                         ORDER BY f1.revision DESC LIMIT 1),
+
+            //                         /* 2. fallback 1 bulan sebelum → month_2 */
+            //                         (SELECT f2.month_2 
+            //                         FROM forecasts f2 
+            //                         WHERE f2.item_fg_id = fc.item_fg_id
+            //                         AND f2.customer_id = fc.customer_id
+            //                         AND CONCAT(f2.p_year,'-',LPAD(f2.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 1 MONTH),'%Y-%m')
+            //                         ORDER BY f2.revision DESC LIMIT 1),
+
+            //                         /* 3. fallback 2 bulan sebelum → month_3 */
+            //                         (SELECT f3.month_3 
+            //                         FROM forecasts f3 
+            //                         WHERE f3.item_fg_id = fc.item_fg_id
+            //                         AND f3.customer_id = fc.customer_id
+            //                         AND CONCAT(f3.p_year,'-',LPAD(f3.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 2 MONTH),'%Y-%m')
+            //                         ORDER BY f3.revision DESC LIMIT 1),
+
+            //                         /* 4. fallback 3 bulan sebelum → month_4 */
+            //                         (SELECT f4.month_4 
+            //                         FROM forecasts f4 
+            //                         WHERE f4.item_fg_id = fc.item_fg_id
+            //                         AND f4.customer_id = fc.customer_id
+            //                         AND CONCAT(f4.p_year,'-',LPAD(f4.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 3 MONTH),'%Y-%m')
+            //                         ORDER BY f4.revision DESC LIMIT 1),
+
+            //                         0
+            //                     )
+            //             ) AS final_value
+            //         FROM 
+            //             (
+            //                 SELECT DISTINCT item_fg_id, customer_id
+            //                 FROM forecasts
+            //                 WHERE deleted = 0
+            //                 AND (
+            //                     /* ambil rentang periode: filter_month -3  sampai filter_month +5 (6 bulan forward + 3 fallback back) */
+            //                     CONCAT(p_year,'-',LPAD(p_month,2,'0')) BETWEEN
+            //                         DATE_FORMAT(DATE_SUB(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH),'%Y-%m')
+            //                     AND
+            //                         DATE_FORMAT(DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH),'%Y-%m')
+            //                 )
+            //             ) fc
+
+            //         CROSS JOIN (
+            //             /* generate 6 bulan dari filter */
+            //             SELECT 1 AS idx, DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
+            //             UNION ALL SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
+            //             UNION ALL SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
+            //             UNION ALL SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
+            //             UNION ALL SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
+            //             UNION ALL SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
+            //         ) m
+
+            //     ) T
+
+            //     GROUP BY T.item_fg_id
+
+            // ) g", "a.id = g.item_fg_id OR b.item_fg_id = g.item_fg_id", "left");
+
+            //dokumentasi : add month_7 dan cum item beda customer
             $this->db->join("
             (
                 SELECT 
                     T.item_fg_id,
-
-                    MAX(CASE WHEN T.idx = 1 THEN T.final_value END) AS month_1,
-                    MAX(CASE WHEN T.idx = 2 THEN T.final_value END) AS month_2,
-                    MAX(CASE WHEN T.idx = 3 THEN T.final_value END) AS month_3,
-                    MAX(CASE WHEN T.idx = 4 THEN T.final_value END) AS month_4,
-                    MAX(CASE WHEN T.idx = 5 THEN T.final_value END) AS month_5,
-                    MAX(CASE WHEN T.idx = 6 THEN T.final_value END) AS month_6
+                    SUM(CASE WHEN T.idx = 1 THEN T.final_value END) AS month_1,
+                    SUM(CASE WHEN T.idx = 2 THEN T.final_value END) AS month_2,
+                    SUM(CASE WHEN T.idx = 3 THEN T.final_value END) AS month_3,
+                    SUM(CASE WHEN T.idx = 4 THEN T.final_value END) AS month_4,
+                    SUM(CASE WHEN T.idx = 5 THEN T.final_value END) AS month_5,
+                    SUM(CASE WHEN T.idx = 6 THEN T.final_value END) AS month_6,
+                    SUM(CASE WHEN T.idx = 7 THEN T.final_value END) AS month_7
 
                 FROM
                 (
@@ -267,22 +340,24 @@ class Generate_mps extends CI_Controller
                             FROM forecasts
                             WHERE deleted = 0
                             AND (
-                                /* ambil rentang periode: filter_month -3  sampai filter_month +5 (6 bulan forward + 3 fallback back) */
+                                /* ambil rentang periode: filter_month -3  sampai filter_month +6 (7 bulan forward + 3 fallback back) */
                                 CONCAT(p_year,'-',LPAD(p_month,2,'0')) BETWEEN
                                     DATE_FORMAT(DATE_SUB(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH),'%Y-%m')
                                 AND
-                                    DATE_FORMAT(DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH),'%Y-%m')
+                                    -- Ubah INTERVAL 5 MONTH menjadi 6 MONTH agar mencakup bulan ke-7
+                                    DATE_FORMAT(DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 6 MONTH),'%Y-%m')
                             )
                         ) fc
 
                     CROSS JOIN (
-                        /* generate 6 bulan dari filter */
+                        /* generate 7 bulan dari filter */
                         SELECT 1 AS idx, DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
                         UNION ALL SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
                         UNION ALL SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
                         UNION ALL SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
                         UNION ALL SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
                         UNION ALL SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
+                        UNION ALL SELECT 7, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 6 MONTH) -- Tambahan bulan ke-7
                     ) m
 
                 ) T
@@ -290,7 +365,6 @@ class Generate_mps extends CI_Controller
                 GROUP BY T.item_fg_id
 
             ) g", "a.id = g.item_fg_id OR b.item_fg_id = g.item_fg_id", "left");
-
 
             $this->db->join("(SELECT DISTINCT a.item_fg_id, a.cycle_time, a.shift_hour, a.productcivity, b.cavity_standard, a.priority FROM menu_loadings a JOIN molds b ON a.mold_id = b.id WHERE a.priority = 1 GROUP BY a.item_fg_id) h ", 'a.id = h.item_fg_id', 'left');
             
@@ -397,6 +471,7 @@ class Generate_mps extends CI_Controller
                     "month_4" => $data['month_4'],
                     "month_5" => $data['month_5'],
                     "month_6" => $data['month_6'],
+                    "month_7" => $data['month_7'],
                     "cycle_time" => $data['cycle_time'],
                     "shift_hour" => $data['shift_hour'],
                     "productivity" => $data['productivity'],
@@ -790,11 +865,21 @@ class Generate_mps extends CI_Controller
                     exit;
                 }
 
-                // 4. Jika semua data valid, lakukan perhitungan Kapasitas
-                $cavity = (float)$post['cavity_standard'];
-                $cycle_time = (float)$post['cycle_time'];
-                $shift_hour = (float)$post['shift_hour'];
-                $productivity = (float)$post['productivity'];
+                // 4. Tarik nilai dan jadikan desimal (float) terlebih dahulu
+                $cavity = isset($post['cavity_standard']) ? (float)$post['cavity_standard'] : 0;
+                $cycle_time = isset($post['cycle_time']) ? (float)$post['cycle_time'] : 0;
+                $shift_hour = isset($post['shift_hour']) ? (float)$post['shift_hour'] : 0;
+                $productivity = isset($post['productivity']) ? (float)$post['productivity'] : 0;
+
+                // Validasi SUPER KETAT: Murni memeriksa angka, bukan sekadar "empty"
+                if ($cycle_time <= 0 || $productivity <= 0 || $cavity <= 0) {
+                    echo json_encode([
+                        'theme'   => 'error', 
+                        'title'   => 'FAILED',
+                        'message' => 'Please Check Item [' . $item_number . '] in Menu Loading. (Cavity, Cycle Time, or Productivity should not be 0 or Null)'
+                    ]);
+                    exit;
+                }
 
                 $capacityPerShift = round((3600 / $cycle_time) * $cavity * $shift_hour * ($productivity/100));
 
@@ -802,7 +887,7 @@ class Generate_mps extends CI_Controller
                     echo json_encode([
                         'theme'   => 'error', 
                         'title'   => 'FAILED',
-                        'message' => 'Capacity Per Shift for Item [' . $item_number . '] 0. Please Data in Menu Loading.'
+                        'message' => 'Capacity Per Shift for Item [' . $item_number . '] is 0. Please Check Data in Menu Loading.'
                     ]);
                     exit;
                 }
@@ -815,7 +900,7 @@ class Generate_mps extends CI_Controller
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_1'] * (@$post['safety_stock'] / 100));
+                    $safetyStock = @round($post['month_2'] * (@$post['safety_stock'] / 100));//perubahan : perhitungan safetyStock : forecast next month
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
@@ -828,7 +913,7 @@ class Generate_mps extends CI_Controller
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_2'] * (@$post['safety_stock'] / 100));
+                    $safetyStock = @round($post['month_3'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
@@ -841,7 +926,7 @@ class Generate_mps extends CI_Controller
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_3'] * (@$post['safety_stock'] / 100));
+                    $safetyStock = @round($post['month_4'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
@@ -854,7 +939,7 @@ class Generate_mps extends CI_Controller
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_4'] * (@$post['safety_stock'] / 100));
+                    $safetyStock = @round($post['month_5'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
@@ -867,7 +952,7 @@ class Generate_mps extends CI_Controller
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_5'] * (@$post['safety_stock'] / 100));
+                    $safetyStock = @round($post['month_6'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
@@ -880,7 +965,7 @@ class Generate_mps extends CI_Controller
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_6'] * (@$post['safety_stock'] / 100));
+                    $safetyStock = @round($post['month_7'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
@@ -942,17 +1027,68 @@ class Generate_mps extends CI_Controller
             }
 
             // ---------------------------------------------------------------
-            $generateMps = $this->crud->reads('generate_mps', [], [
-                "p_month" => $post['p_month'],
-                "p_year" => $post['p_year'],
-                "revision" => $post['revision'],
-                // "customer_id" => $post['customer_id'],
-                "item_fg_id" => $post['item_fg_id'],
-                "wip_month" => $post['wip_month']
-            ]);
+            // $generateMps = $this->crud->reads('generate_mps', [], [
+            //     "p_month" => $post['p_month'],
+            //     "p_year" => $post['p_year'],
+            //     "revision" => $post['revision'],
+            //     // "customer_id" => $post['customer_id'],
+            //     "item_fg_id" => $post['item_fg_id'],
+            //     "wip_month" => $post['wip_month']
+            // ]);
 
-            // var_dump($post);
-            // die;
+            // // var_dump($post);
+            // // die;
+
+            // $postFinal = array(
+            //     "p_month" => $post['p_month'],
+            //     "p_year" => $post['p_year'],
+            //     "revision" => $post['revision'],
+            //     "cutoff" => $post['cutoff'],
+            //     // "customer_id" => $post['customer_id'],
+            //     "item_fg_id" => $post['item_fg_id'],
+            //     "wip_month" => $post['wip_month'],
+            //     "pp" => $post['pp'],
+            //     "p1" => $post['p1'],
+            //     "p2" => $post['p2'],
+            //     "p3" => $post['p3'],
+            //     "fg" => $post['fg'],
+            //     "os_mpp" => $post['os_mpp'],
+            //     "os_so" => $post['os_so'],
+            //     "total_stock" => $post['total_stock'],
+            //     "balance" => $balance
+            // );
+
+            // if (count($generateMps) > 0) {
+            //     $send   = $this->db->update('generate_mps', $postFinal, [
+            //         "p_month" => $post['p_month'],
+            //         "p_year" => $post['p_year'],
+            //         "revision" => $post['revision'],
+            //         // "customer_id" => $post['customer_id'],
+            //         "item_fg_id" => $post['item_fg_id'],
+            //         "wip_month" => $post['wip_month']
+            //     ]);
+            //     // echo $send;
+            //     echo json_encode([
+            //         'theme' => 'success',
+            //         'title' => 'Updated',
+            //         'message' => 'Update data Successfully.'
+            //     ]);
+            // } else {
+            //     $send = $this->crud->createNotLog('generate_mps', $postFinal);
+            //     // echo $send;
+            //     echo json_encode([
+            //         'theme' => 'success',
+            //         'title' => 'Created',
+            //         'message' => 'Create data Successfully.'
+            //     ]);
+            // }
+            //-------------------------------------------------------------------------
+            $this->db->where('p_month', $post['p_month']);
+            $this->db->where('p_year', $post['p_year']);
+            $this->db->where('revision', $post['revision']);
+            $this->db->where('item_fg_id', $post['item_fg_id']);
+            $this->db->where('wip_month', $post['wip_month']);
+            $cek_data_mps = $this->db->get('generate_mps')->num_rows();
 
             $postFinal = array(
                 "p_month" => $post['p_month'],
@@ -973,7 +1109,7 @@ class Generate_mps extends CI_Controller
                 "balance" => $balance
             );
 
-            if (count($generateMps) > 0) {
+            if ($cek_data_mps > 0) {
                 $send   = $this->db->update('generate_mps', $postFinal, [
                     "p_month" => $post['p_month'],
                     "p_year" => $post['p_year'],
@@ -982,7 +1118,7 @@ class Generate_mps extends CI_Controller
                     "item_fg_id" => $post['item_fg_id'],
                     "wip_month" => $post['wip_month']
                 ]);
-                // echo $send;
+                
                 echo json_encode([
                     'theme' => 'success',
                     'title' => 'Updated',
@@ -990,7 +1126,7 @@ class Generate_mps extends CI_Controller
                 ]);
             } else {
                 $send = $this->crud->createNotLog('generate_mps', $postFinal);
-                // echo $send;
+                
                 echo json_encode([
                     'theme' => 'success',
                     'title' => 'Created',
@@ -1273,7 +1409,7 @@ class Generate_mps extends CI_Controller
             </td>
         </table>
         <center>
-            <b style="font-size:18px;">MASTER PRODUCTION SCHEDULES</b>
+            <b style="font-size:18px;">GENERATE MPS</b>
         </center>
         <p style="font-size:12px; margin:0;">PERIOD ' . $this->monthName($filter_month) . ' ' . $filter_year . '</p>
         <p style="font-size:12px; margin:0;">REVISION ' . $filter_revision . '</p>
