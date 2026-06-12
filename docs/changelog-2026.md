@@ -697,3 +697,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-12]
 - **kurniawan**: Update DN ([40996600](https://github.com/hilmanf11/erp_bpi/commit/409966009b5ef58e6da800d36cec41b0d15f80be))
+
+### [2026-06-12]
+- **kurniawan**: Update Locations.php ([e40d2ad8](https://github.com/hilmanf11/erp_bpi/commit/e40d2ad8e06368d574919969fc3220d508f4a4fe))
