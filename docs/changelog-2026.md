@@ -694,3 +694,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-12]
 - **kurniawan**: Update forecast & Generate loadcap ([b5385c5b](https://github.com/hilmanf11/erp_bpi/commit/b5385c5b9cc78652e5bc918f10c5c8c01355fd1b))
+
+### [2026-06-12]
+- **kurniawan**: Update DN ([40996600](https://github.com/hilmanf11/erp_bpi/commit/409966009b5ef58e6da800d36cec41b0d15f80be))
