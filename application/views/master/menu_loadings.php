@@ -60,9 +60,13 @@
                 <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
             </div>
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Product No.</span>
+                <input style="width:60%;" name="item_fg_number" id="item_fg_number" class="easyui-textbox">
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Mold ID</span>
-                <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combobox">
+                <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No.</span>
@@ -139,6 +143,22 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+            
+            // PAKSA COMBOBOX RELOAD DAN CARI TEXT-NYA SENDIRI
+            if (row.machine_id) {
+                var url = '<?= base_url('master/machines/reads/'); ?>';
+                
+                // Reload data combobox dari URL
+                $('#machine_id').combobox('reload', url);
+                
+                // Gunakan onLoadSuccess untuk menempelkan ID setelah data selesai ditarik
+                $('#machine_id').combobox({
+                    onLoadSuccess: function() {
+                        $(this).combobox('setValue', row.machine_id);
+                    }
+                });
+            }
+
             url_save = '<?= base_url('master/menu_loadings/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -223,6 +243,7 @@
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
+                                localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                             } else {
                                 toastr.error(result.message, result.title);
                             }
@@ -242,13 +263,29 @@
         textField:'number',
         prompt: 'Choose Product No.',
         onSelect: function(item_fg){
-            $('#mold_id').combobox({
-                url:'<?= base_url('master/molds/reads/'); ?>' + btoa(item_fg.id),
-                valueField:'id',
-                textField:'id',
-                prompt: 'Choose Mold ID',
-            });
+            $('#item_fg_number').textbox('setValue', item_fg.number);
         }
+    });
+
+    $('#mold_id').combogrid({
+        url:'<?= base_url('master/menu_loadings/readMolds/'); ?>',
+        panelWidth: 350,
+        idField: 'id',
+        textField: 'mold_name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Mold number",
+        columns: [
+            [{
+                field: 'id',
+                title: 'id',
+                width: 100
+            }, {
+                field: 'mold_name',
+                title: 'Mold Name',
+                width: 250
+            }, ]
+        ],
     });
 
     $('#machine_id').combobox({
@@ -260,81 +297,131 @@
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/menu_loadings/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/menu_loadings/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/menu_loadings/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/menu_loadings/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/menu_loadings/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/menu_loadings/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/menu_loadings/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/menu_loadings/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
+                        }
+                    }
+                });
+            }
+        }]
+    });
 
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
+    //untuk kebutuhan NPD
+    $(document).ready(function() {
+        if (localStorage.getItem('trigger_add') === 'yes') {
+            localStorage.removeItem('trigger_add');
 
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/menu_loadings/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/menu_loadings/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof add === "function") {
+                    add(); 
+
+                    var checkClose = setInterval(function() {
+                        var isHidden = $('#dlg_insert').closest('.window').is(':hidden');
+                        if (isHidden) {
+                            clearInterval(checkClose); // Hentikan monitoring
+                            if (window.parent.$('#dlg_outer_wrapper').length) {
+                                window.parent.$('#dlg_outer_wrapper').dialog('close');
                             }
                         }
-                    });
+                    }, 500);
                 }
-            }]
-        });
+            }, 1000); 
+        }
+
+        // ==========================================
+        // SKRIP TRIGGER UPLOAD
+        // ==========================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var action = urlParams.get('action');
+
+        if (action === 'upload') {
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof upload === 'function') {
+                    upload(); 
+                    var checkCloseUpload = setInterval(function() {
+                        var isHidden = $('#dlg_upload').closest('.window').is(':hidden'); 
+                        if (isHidden) {
+                            clearInterval(checkCloseUpload); 
+                            if (window.parent.$('#dlg_upload_wrapper').length) {
+                                window.parent.$('#dlg_upload_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 500);
+        }
+    });
 </script>
