@@ -706,3 +706,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-12]
 - **kurniawan**: Update Generate_mps.php ([034a20bf](https://github.com/hilmanf11/erp_bpi/commit/034a20bff9342f3071e6edd8854d0917c8d2fbce))
+
+### [2026-06-18]
+- **kurniawan**: update menu loadings ([83f0904a](https://github.com/hilmanf11/erp_bpi/commit/83f0904a50940fd1ba105bd2dbdcb073b61c1682))
