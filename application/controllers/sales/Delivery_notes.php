@@ -980,6 +980,9 @@ class Delivery_notes extends CI_Controller
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
+        ini_set('memory_limit', '-1'); 
+        ini_set('max_execution_time', 0);
+
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
