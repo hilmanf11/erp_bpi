@@ -709,3 +709,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-18]
 - **kurniawan**: update menu loadings ([83f0904a](https://github.com/hilmanf11/erp_bpi/commit/83f0904a50940fd1ba105bd2dbdcb073b61c1682))
+
+### [2026-06-23]
+- **kurniawan**: Update report_outstanding_pr.php ([815b654b](https://github.com/hilmanf11/erp_bpi/commit/815b654b0b824d7e1a2055ac527e26d155e3f735))
