@@ -609,17 +609,43 @@ class Purchase_order_receipts extends CI_Controller
         }
     }
 
+    // public function delete()
+    // {
+    //     $data = $this->input->post();
+    //     // var_dump($data);
+    //     // return;
+    //     $deletePurchaseOrderReceipts = $this->crud->delete('purchase_order_receipts', ["id" => $data['id']]);
+    //     $deleteScanItemReceipts = $this->crud->delete('scan_item_receipts', ["receipt_id" => $data['receipt_id']]);
+    //     $deleteLabels = $this->crud->delete('purchase_order_labels', ["receipt_id" => $data['receipt_id']]);
+    //     //$updatePurchaseOrders = $this->crud->update('purchase_orders', ["po_no" => $data['po_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]); // update memakai approval
+    //     $updatePurchaseOrders = $this->db->update('purchase_orders', ["status" => 0], ["po_no" => $data['po_no'], "item_rm_id" => $data['item_rm_id']]); //update tidak approval
+    //     echo $deletePurchaseOrderReceipts;
+    // }
+
     public function delete()
     {
         $data = $this->input->post();
-        // var_dump($data);
-        // return;
-        $deletePurchaseOrderReceipts = $this->crud->delete('purchase_order_receipts', ["id" => $data['id']]);
-        $deleteScanItemReceipts = $this->crud->delete('scan_item_receipts', ["receipt_id" => $data['receipt_id']]);
-        $deleteLabels = $this->crud->delete('purchase_order_labels', ["receipt_id" => $data['receipt_id']]);
-        //$updatePurchaseOrders = $this->crud->update('purchase_orders', ["po_no" => $data['po_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]); // update memakai approval
-        $updatePurchaseOrders = $this->db->update('purchase_orders', ["status" => 0], ["po_no" => $data['po_no'], "item_rm_id" => $data['item_rm_id']]); //update tidak approval
-        echo $deletePurchaseOrderReceipts;
+        $this->db->trans_start();
+        // 1. Eksekusi Hapus Anak (Child)
+        if (!empty($data['receipt_id'])) {
+            $this->crud->delete('scan_item_receipts', ["receipt_id" => $data['receipt_id']]);
+            $this->crud->delete('purchase_order_labels', ["receipt_id" => $data['receipt_id']]);
+        }
+        // 2. Eksekusi Hapus Induk (Parent)
+        if (!empty($data['id'])) {
+            $this->crud->delete('purchase_order_receipts', ["id" => $data['id']]);
+        }
+        // 3. Update Status PO
+        if (!empty($data['po_no']) && !empty($data['item_rm_id'])) {
+            $this->db->update('purchase_orders', ["status" => 0], ["po_no" => $data['po_no'], "item_rm_id" => $data['item_rm_id']]);
+        }
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            echo 0;
+        } else {
+            echo 1;
+        }
     }
 
     public function print_label_po($receipt_no)
