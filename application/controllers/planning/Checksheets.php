@@ -861,10 +861,8 @@ class Checksheets extends CI_Controller
         $checksheet_number = base64_decode($checksheet_number);
         //Cek Label
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.checksheet_label, 
-        b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, 
+        b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, b.checksheet_type,
         (CASE 
-            WHEN b.checksheet_type = "Output Repacking" THEN 
-                CONCAT("R", CASE WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no ELSE b.lot_no END)
             WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no 
             ELSE b.lot_no 
         END) as lot_no,
@@ -899,6 +897,12 @@ class Checksheets extends CI_Controller
                 //     $padding = "padding:0 0mm 1mm 4mm;";
                 // }
 
+                if($wip_receipt_label->checksheet_type == "Output Repacking"){
+                    $repacking = "R";
+                }else{
+                    $repacking = "";
+                }
+
                 if ($wip_receipt_label->logo == "0") {
                     $img_bpi = '<img style="width:50%;" src="' . base_url("assets/image/bpi_logo.png") . '" />';
                 } else {
@@ -922,7 +926,13 @@ class Checksheets extends CI_Controller
                                         <th colspan="4" style="font-size: 8px; text-align: right; border: none;"><b>' . $config_iso->doc_barcode_fg . '</b></th>
                                     </tr>
                                     <tr>
-                                        <th colspan="4" style="font-size: 15px; text-align: center; border: none;"><b>LABEL PACKING</b></th>
+                                        <th colspan="4" style="border: none; padding: 0;">
+                                            <table style="width: 100%; border: none; border-collapse: collapse;">
+                                                <tr>
+                                                    <td style="width: 100%; font-size: 15px; text-align: center; border: none;"><b>LABEL PACKING</b></td>
+                                                </tr>
+                                            </table>
+                                        </th>
                                     </tr>
                                     <tr>
                                         <td style="width:5mm; height: 5mm; border: none; text-align: center;">' . $img_bpi . '</td>
@@ -932,8 +942,14 @@ class Checksheets extends CI_Controller
                                         <td colspan="2" style="text-align:left; border: 1px solid black;">
                                             <small style="font-size:10px;">Part No</small><br><b style="font-size:16px;">' . $wip_receipt_label->item_number . '</b>
                                         </td>
-                                        <td colspan="2" style="text-align:left; border: 1px solid black;">
+                                        
+                                        <td style="text-align:left; border-top: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black; border-right: none;">
                                             <small style="font-size:10px;">Lot No.</small><br><b style="font-size:12px;">' . $wip_receipt_label->lot_no . '</b>
+                                        </td>
+                                        
+                                        <td style="text-align:left; border-top: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black; border-left: none;">
+                                            <br>
+                                            <b style="font-size:14px;">' . $repacking . '</b>
                                         </td>
                                     </tr>
                                     <tr>
@@ -1021,10 +1037,8 @@ class Checksheets extends CI_Controller
         $checksheet_number = base64_decode($checksheet_number);
         //Cek Label
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.checksheet_label, 
-        b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, 
+        b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, b.checksheet_type,
         (CASE 
-            WHEN b.checksheet_type = "Output Repacking" THEN 
-                CONCAT("R", CASE WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no ELSE b.lot_no END)
             WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no 
             ELSE b.lot_no 
         END) as lot_no,
@@ -1060,6 +1074,12 @@ class Checksheets extends CI_Controller
                 // }
                 //Generate QRcode
 
+                if($wip_receipt_label->checksheet_type == "Output Repacking"){
+                    $repacking = "R";
+                }else{
+                    $repacking = "";
+                }
+
                 if ($wip_receipt_label->logo == "0") {
                     $img_bpi = '<img style="width:50%;" src="' . base_url("assets/image/bpi_logo.png") . '" />';
                 } else {
@@ -1082,7 +1102,13 @@ class Checksheets extends CI_Controller
                                         <th colspan="4" style="font-size: 8px; text-align: right; border: none;"><b>' . $config_iso->doc_barcode_fg . '</b></th>
                                     </tr>
                                     <tr>
-                                        <th colspan="4" style="font-size: 15px; text-align: center; border: none;"><b>LABEL BOX</b></th>
+                                        <th colspan="4" style="border: none; padding: 0;">
+                                            <table style="width: 100%; border: none; border-collapse: collapse;">
+                                                <tr>
+                                                    <td style="width: 100%; font-size: 15px; text-align: center; border: none;"><b>LABEL BOX</b></td>
+                                                </tr>
+                                            </table>
+                                        </th>
                                     </tr>
                                     <tr>
                                         <td style="width:5mm; height: 5mm; border: none; text-align: center;">' . $img_bpi . '</td>
@@ -1092,8 +1118,12 @@ class Checksheets extends CI_Controller
                                         <td colspan="2" style="text-align:left; border: 1px solid black;">
                                             <small style="font-size:10px;">Part No</small><br><b style="font-size:16px;">' . $wip_receipt_label->item_number . '</b>
                                         </td>
-                                        <td colspan="2" style="text-align:left; border: 1px solid black;">
+                                        <td style="text-align:left; border-top: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black; border-right: none;">
                                             <small style="font-size:10px;">Lot No.</small><br><b style="font-size:12px;">' . $wip_receipt_label->lot_no . '</b>
+                                        </td>
+                                        <td style="text-align:left; border-top: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black; border-left: none;">
+                                            <br>
+                                            <b style="font-size:14px;">' . $repacking . '</b>
                                         </td>
                                     </tr>
                                     <tr>
