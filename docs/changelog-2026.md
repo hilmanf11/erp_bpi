@@ -730,3 +730,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-24]
 - **kurniawan**: Update Wip_balances.php ([392efc53](https://github.com/hilmanf11/erp_bpi/commit/392efc5394af64c7371486777f5e1a7a65eddb23))
+
+### [2026-06-24]
+- **kurniawan**: Update Checksheets.php ([757c13a5](https://github.com/hilmanf11/erp_bpi/commit/757c13a5d164f12639236d2e0a40cb342163785b))
