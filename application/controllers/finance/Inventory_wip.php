@@ -272,9 +272,10 @@ class Inventory_wip extends CI_Controller
                         COALESCE((COALESCE(c.qty_actual,0)+COALESCE(d.qty_ng,0)),0) as total_production,
                         COALESCE(f.qty_subcont_jasa,0) as subconts_jasa,
                         COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as rfg,
+                        COALESCE(gd.qty_repacking,0) as qty_repacking,
                         COALESCE(h.qty_rfg_jasa,0) as rfg_jasa,
                         COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) + COALESCE(c2.qty_wip,0) + COALESCE(j2.qty_adj_in,0) as qty_in,
-                        COALESCE(ng_map.qty_ng,0) + COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) + COALESCE(h.qty_rfg_jasa,0) + COALESCE(k2.qty_adj_out,0) + COALESCE(k3.qty_ng_wip, 0) + COALESCE(outmap.qty_output, 0) as qty_out,
+                        COALESCE(ng_map.qty_ng,0) + COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) + COALESCE(gd.qty_repacking,0) + COALESCE(h.qty_rfg_jasa,0) + COALESCE(k2.qty_adj_out,0) + COALESCE(k3.qty_ng_wip, 0) + COALESCE(outmap.qty_output, 0) as qty_out,
                         (
                             COALESCE(i.begin_balance, 0) 
                             + 
@@ -377,6 +378,8 @@ class Inventory_wip extends CI_Controller
                                 JOIN checksheets b ON b.number = a.checksheet_number
                                 WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
                                     AND b.status_subcont='NO' 
+                                    AND b.wo_no not like '%RG-%' -- IN REPAIR FG tidak ikut jadi qty RFG
+                                    AND b.checksheet_type !='Output Repacking'
                                     AND b.shift LIKE '%$filter_shift%'
                                 GROUP BY b.item_fg_id
                             ) main
@@ -404,6 +407,16 @@ class Inventory_wip extends CI_Controller
                                     AND a.trans_date BETWEEN '$filter_from' AND '$filter_to' 
                                     GROUP BY a.item_fg_id
                         ) gc on a.id = gc.item_fg_id
+
+                        LEFT JOIN (
+                                    SELECT aa.item_fg_id,sum(aa.qty) as qty_repacking 
+                                    FROM scan_item_receipts_fg aa 
+                                    JOIN checksheets ab on aa.checksheet_number = ab.number
+                                    WHERE ab.packing_date BETWEEN '$filter_from' AND '$filter_to' 
+                                    AND ab.checksheet_type ='Output Repacking'
+                                    GROUP BY ab.item_fg_id
+                        ) gd on a.id = gd.item_fg_id
+                        
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty) as qty_rfg_jasa 
                                     FROM scan_item_receipts_fg aa 
@@ -431,7 +444,7 @@ class Inventory_wip extends CI_Controller
                         ) k3 on a.id = k3.item_fg_id
                         LEFT JOIN (
                                     SELECT a.id,
-                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0)  + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k2.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
+                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0)  + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(gd.qty_repacking, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k2.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
                                     FROM item_fg a
                                     -- qty_balance_wip pada 2025-04-30 (cutoff)
                                     LEFT JOIN (
@@ -507,6 +520,8 @@ class Inventory_wip extends CI_Controller
                                             WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '2025-05-01'
                                             AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
                                             AND b.status_subcont = 'NO'
+                                            AND b.wo_no not like '%RG-%' -- IN REPAIR FG tidak ikut jadi qty RFG
+                                            AND b.checksheet_type !='Output Repacking'
                                             AND b.shift LIKE '%$filter_shift%'
                                             GROUP BY b.item_fg_id
                                         ) main
@@ -561,6 +576,16 @@ class Inventory_wip extends CI_Controller
                                         AND trans_date < '$filter_from'
                                         GROUP BY item_fg_id
                                     ) gc ON a.id = gc.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT aa.item_fg_id,sum(aa.qty) as qty_repacking 
+                                        FROM scan_item_receipts_fg aa 
+                                        JOIN checksheets ab on aa.checksheet_number = ab.number
+                                        WHERE ab.packing_date >= '2025-05-01'
+                                        AND ab.packing_date < '$filter_from'
+                                        AND ab.checksheet_type ='Output Repacking'
+                                        GROUP BY ab.item_fg_id
+                                    ) gd on a.id = gd.item_fg_id
 
                                     LEFT JOIN (
                                         SELECT ab.item_fg_id, SUM(aa.qty) AS qty_rfg_jasa
@@ -829,8 +854,19 @@ class Inventory_wip extends CI_Controller
                                                 )
                                                 AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
                                                 AND e.status_subcont = 'NO'
+                                                AND e.checksheet_type != 'Output Repacking' 
                                                 AND e.shift LIKE '%$filter_shift%'
                                             ");
+
+                $receiptRepackings = $this->crud->query("
+                                                SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG REPACKING' AS receipt_type
+                                                FROM scan_item_receipts_fg f
+                                                JOIN checksheets e ON e.number = f.checksheet_number
+                                                LEFT JOIN users c ON f.created_by = c.username
+                                                WHERE e.item_fg_id = '$item_fg_id'  
+                                                AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+                                                AND e.checksheet_type = 'Output Repacking' 
+                                                AND e.shift like '%$filter_shift%'");
                 
                 // $receiptsNB = $this->crud->query("
                 //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
@@ -917,6 +953,16 @@ class Inventory_wip extends CI_Controller
                         'wo_no' => $receipt->wo_no,
                         'qty_in' => 0,
                         'qty_out' => $receipt->qty,
+                    ];
+                }
+
+                foreach ($receiptRepackings  as $receiptRepacking) {
+                    $all_data[] = [
+                        'type' => $receiptRepacking->receipt_type,
+                        'date' => $receiptRepacking->trans_date,
+                        'wo_no' => $receiptRepacking->wo_no,
+                        'qty_in' => 0,
+                        'qty_out' => $receiptRepacking->qty,
                     ];
                 }
 
