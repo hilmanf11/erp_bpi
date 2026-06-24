@@ -715,3 +715,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-23]
 - **kurniawan**: Update Delivery_notes.php ([697b505f](https://github.com/hilmanf11/erp_bpi/commit/697b505ff975e4dbe021760ad10861a96c769130))
+
+### [2026-06-24]
+- **kurniawan**: Update Purchase_order_receipts.php ([52866c1e](https://github.com/hilmanf11/erp_bpi/commit/52866c1eb47132daa7f05fd45eebbcb52540ca7a))
