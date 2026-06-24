@@ -73,6 +73,8 @@ class Wip_balances extends CI_Controller
                         $this->db->like("a.request_no", $filter->value);
                     } elseif ($filter->field == "uom") {
                         $this->db->like("b.uom", $filter->value);
+                    } elseif ($filter->field == "created_by") {
+                        $this->db->like("a.created_by", $filter->value);
                     }
                 }
             }
@@ -186,7 +188,8 @@ class Wip_balances extends CI_Controller
                 <th>Uom</th>
                 <th>Begin</th>
                 <th>Need</th>
-                <th>Issued</th>
+                <th>Purging</th>
+                <th>Supply</th>
                 <th>Balance</th>
                 <th>Warehouse</th>
             </tr>';
@@ -209,6 +212,7 @@ class Wip_balances extends CI_Controller
                     <td>' . $data['uom'] . '</td>
                     <td>' . $data['begin'] . '</td>
                     <td>' . $data['need'] . '</td>
+                    <td>' . $data['qty_purging'] . '</td>
                     <td>' . $data['issued'] . '</td>
                     <td>' . $data['balance'] . '</td>
                     <td>' . $data['warehouse'] . '</td>';
