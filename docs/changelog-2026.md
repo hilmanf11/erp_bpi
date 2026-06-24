@@ -724,3 +724,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-24]
 - **kurniawan**: Update Report_history_transactions_fg.php ([84d3674b](https://github.com/hilmanf11/erp_bpi/commit/84d3674b9c8881b2d92865ad8f58ef8df5d8ff1c))
+
+### [2026-06-24]
+- **kurniawan**: update finance ([70944e84](https://github.com/hilmanf11/erp_bpi/commit/70944e849649f61796748f1c6d305750e52483c1))
