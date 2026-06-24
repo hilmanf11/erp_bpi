@@ -863,23 +863,18 @@ class Checksheets extends CI_Controller
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.checksheet_label, 
         b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, 
         (CASE 
-            WHEN b.lot_no IS NULL or b.lot_no = "" THEN c.lot_no 
+            WHEN b.checksheet_type = "Output Repacking" THEN 
+                CONCAT("R", CASE WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no ELSE b.lot_no END)
+            WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no 
             ELSE b.lot_no 
-        END) as lot_no, 
-        b.qc_1, b.qc_2, b.op_1, b.op_2, b.qcnumber_1, b.qcnumber_2, b.opnumber_1, b.opnumber_2, h.location'); // d.description,
+        END) as lot_no,
+        b.qc_1, b.qc_2, b.op_1, b.op_2, b.qcnumber_1, b.qcnumber_2, b.opnumber_1, b.opnumber_2, g.location'); // d.description,
 
         $this->db->from('wip_receipt_labels a');
         $this->db->join('checksheets b', 'a.checksheet_number = b.number');
         $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
         $this->db->join('item_fg d', 'b.item_fg_id = d.id');
-        // $this->db->join('uom e', 'd.uom_id = e.id');
-        // $this->db->join('wip_receipts f', 'a.checksheet_number = f.checksheet_number');
-        $this->db->join('warehouse_location_items g', 'd.id = g.item_fg_id', 'left');
-        $this->db->join('warehouse_locations h', 'g.location = h.location', 'left');
-        // $this->db->join('warehouse_location_items g', 'd.id = g.item_rm_id', 'left');
-        // $this->db->join('customer_items h', 'h.customer_id = c.customer_id and d.id = h.item_fg_id', 'left');
-        // $this->db->join('customers i', 'i.id = h.customer_id', 'left');
-        // $this->db->join('sales_orders j', 'c.so_number = j.sales_order_no', 'left');
+        $this->db->join('warehouse_location_items g', 'b.item_fg_id = g.item_fg_id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.checksheet_number', $checksheet_number);
@@ -1028,22 +1023,18 @@ class Checksheets extends CI_Controller
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.checksheet_label, 
         b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, 
         (CASE 
-            WHEN b.lot_no IS NULL or b.lot_no = "" THEN c.lot_no 
+            WHEN b.checksheet_type = "Output Repacking" THEN 
+                CONCAT("R", CASE WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no ELSE b.lot_no END)
+            WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no 
             ELSE b.lot_no 
-        END) as lot_no, 
-        b.qc_1, b.qc_2, b.op_1, b.op_2, b.qcnumber_1, b.qcnumber_2, b.opnumber_1, b.opnumber_2, h.location'); // d.description,    
+        END) as lot_no,
+        b.qc_1, b.qc_2, b.op_1, b.op_2, b.qcnumber_1, b.qcnumber_2, b.opnumber_1, b.opnumber_2, g.location'); // d.description,    
 
         $this->db->from('wip_receipt_boxs a');
         $this->db->join('checksheets b', 'a.checksheet_number = b.number');
         $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
         $this->db->join('item_fg d', 'b.item_fg_id = d.id');
-        // $this->db->join('uom e', 'd.uom_id = e.id');
-        // $this->db->join('wip_receipts f', 'a.checksheet_number = f.checksheet_number');
-        $this->db->join('warehouse_location_items g', 'd.id = g.item_fg_id', 'left');
-        $this->db->join('warehouse_locations h', 'g.location = h.location', 'left');
-        // $this->db->join('customer_items h', 'h.customer_id = c.customer_id and d.id = h.item_fg_id', 'left');
-        // $this->db->join('customers i', 'i.id = h.customer_id', 'left');
-        // $this->db->join('sales_orders j', 'c.so_number = j.sales_order_no', 'left');
+        $this->db->join('warehouse_location_items g', 'b.item_fg_id = g.item_fg_id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.checksheet_number', $checksheet_number);

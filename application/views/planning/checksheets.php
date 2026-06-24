@@ -129,6 +129,7 @@
                         <select style="width:60%;" name="checksheet_type" id="checksheet_type" required="" panelHeight="auto" class="easyui-combobox">
                             <option value="">Choose Type</option>
                             <option value="Output Production">Output Production</option>
+                            <option value="Output Repacking">Output Repacking</option>
                             <option value="Output Repair">Output Repair</option>
                         </select>
                 </div>
@@ -322,6 +323,91 @@
                 var type = $("#checksheet_type").combobox('getValue');
 
                 if(type == "Output Production"){
+                    $("#lotno").hide();
+
+                    $('#product_no').combogrid({
+                        url: '<?= base_url('planning/checksheets/readWoNo') ?>',
+                        panelWidth: 550,
+                        idField: 'product_no',
+                        textField: 'product_no',
+                        mode: 'remote',
+                        fitColumns: true,
+                        prompt: "Choose Product No",
+                        columns: [
+                            [{
+                                field: 'period',
+                                title: 'Period',
+                                width: 150
+                            }, {
+                                field: 'lot_no',
+                                title: 'Lot No',
+                                width: 100,
+                                align: 'left'
+                            }, {
+                                field: 'wo_no',
+                                title: 'Wo No',
+                                width: 100,
+                                align: 'left'
+                            }, {
+                                field: 'product_no',
+                                title: 'Product No',
+                                width: 200,
+                                align: 'left'
+                            }]
+                        ],
+                        onSelect: function(val, row) {
+                            console.log(row);
+                            $("#period").textbox('setValue', row.period);
+                            $("#item_fg_id").textbox('setValue', row.item_fg_id);
+                            $("#product_name").textbox('setValue', row.product_name);
+                            $("#qty").numberbox('setValue', row.qty);
+                            $("#wo_no").textbox('setValue', row.wo_no);
+                            $("#balance").textbox('setValue', '0');
+                            $("#division").textbox('setValue', row.division);
+                            $("#status_subcont").textbox('setValue', row.status_subcont);
+                            $("#subcont_type").textbox('setValue', row.subcont_type);
+
+                            var wo_no = row.wo_no;
+                            console.log(wo_no);
+                            $.ajax({
+                                url: '<?= base_url("planning/checksheets/checkWo_no/") ?>' + window.btoa(wo_no), 
+                                method: 'GET',
+                                dataType: 'json',
+                                success: function(data) {
+                                    console.log(data);
+                                    accumulateAjax = data[0].qty;
+                                    $("#accumulate").numberbox('setValue', data[0].qty);
+                                }
+                            });
+
+                            $('#receipt').numberbox({
+                                onChange: function(value) {
+                                    if(value != ""){
+                                        var qty = $("#qty").numberbox("getValue");
+                                        var receipt = $("#receipt").numberbox('getValue');
+
+                                        var calculate = parseFloat(receipt) + parseFloat(accumulateAjax);
+                                        var result = parseFloat(qty) - parseFloat(calculate);
+
+                                        var balance = $("#balance").numberbox('setValue', result);
+                                        var accumulate_total = $("#accumulate").numberbox('setValue', calculate);
+
+                                        if (result < 0) {
+                                            toastr.warning("Balance minus, please correct your Receipt!");
+                                            $("#receipt").numberbox('setValue', 0);
+                                            $("#accumulate").numberbox('setValue', accumulate);
+                                            balanceMinus.play();
+                                        } else {
+                                            return result;
+                                        }
+                                    }else{
+                                        $("#receipt").numberbox('setValue', 0);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                } else if(type == "Output Repacking"){
                     $("#lotno").hide();
 
                     $('#product_no').combogrid({
