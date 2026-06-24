@@ -721,3 +721,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-24]
 - **kurniawan**: Update Checksheets ([c1c35902](https://github.com/hilmanf11/erp_bpi/commit/c1c35902d1c387d7f45e7055fd1b3b2d1a627c3d))
+
+### [2026-06-24]
+- **kurniawan**: Update Report_history_transactions_fg.php ([84d3674b](https://github.com/hilmanf11/erp_bpi/commit/84d3674b9c8881b2d92865ad8f58ef8df5d8ff1c))
