@@ -3,6 +3,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'number',width:150,halign:'center'" sortable="true">Checksheet ID</th>
+            <th rowspan="2" data-options="field:'checksheet_type',width:150,halign:'center'" sortable="true">Checksheet Type</th>
             <th rowspan="2" data-options="field:'wo_no',width:150,halign:'center'" sortable="true">WO/DOC No</th>
             <th rowspan="2" data-options="field:'division',width:80,halign:'center'" sortable="true">Division</th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'" sortable="true">Trans Date</th>
@@ -111,6 +112,15 @@
                         <option value="Jasa">Jasa</option>
                         <option value="Finished Good">Finished Good</option>
                     </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Final Checksheet Type</span>
+                        <select style="width:60%;" id="filter_checksheet_type" panelHeight="auto" class="easyui-combobox">
+                            <option value="">Select All</option>
+                            <option value="Output Production">Output Production</option>
+                            <option value="Output Repacking">Output Repacking</option>
+                            <option value="Output Repair">Output Repair</option>
+                        </select>
                 </div>
             </div>
         </fieldset>
@@ -713,13 +723,14 @@
         var filter_status = $("#filter_status").combobox('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
-
+        var filter_checksheet_type = $("#filter_checksheet_type").combobox('getValue');
 
         var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_wo_no=" + filter_wo_no + "&filter_checksheet=" + filter_checksheet + 
         "&filter_shift=" + filter_shift + "&filter_item_fg_id=" + filter_item_fg_id + 
         "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
-        "&filter_division=" + filter_division + "&filter_status=" + filter_status;
+        "&filter_division=" + filter_division + "&filter_status=" + filter_status + 
+        "&filter_checksheet_type=" + filter_checksheet_type;
 
         $('#dg').datagrid({
             url: '<?= base_url('planning/checksheets/datatables') ?>' + url,
@@ -749,13 +760,14 @@
         var filter_status = $("#filter_status").combobox('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
-
+        var filter_checksheet_type = $("#filter_checksheet_type").combobox('getValue');
 
         var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_wo_no=" + filter_wo_no + "&filter_checksheet=" + filter_checksheet + 
         "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
         "&filter_shift=" + filter_shift + "&filter_item_fg_id=" + filter_item_fg_id + 
-        "&filter_division=" + filter_division + "&filter_status=" + filter_status;
+        "&filter_division=" + filter_division + "&filter_status=" + filter_status +
+        "&filter_checksheet_type=" + filter_checksheet_type;
         
         window.location.assign('<?= base_url('planning/checksheets/print/excel') ?>' + url);
     }

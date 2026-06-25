@@ -355,6 +355,7 @@ class Checksheets extends CI_Controller
             $filter_status = $this->input->get('filter_status');
             $filter_status_subcont = $this->input->get('filter_status_subcont');
             $filter_subcont_type = $this->input->get('filter_subcont_type');
+            $filter_checksheet_type = $this->input->get('filter_checksheet_type');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -405,11 +406,11 @@ class Checksheets extends CI_Controller
             if ($filter_subcont_type != "") {
                 $this->db->where('a.subcont_type', $filter_subcont_type);
             }
-            // $this->db->like('a.status', $filter_status);
-            // $this->db->like('a.wo_no', $filter_wo_no);
-            // $this->db->like('a.number', $filter_checksheet);
-            // $this->db->like('a.shift', $filter_shift);
-            // $this->db->like('a.item_fg_id', $filter_item_fg_id);
+
+            if ($filter_checksheet_type != "") {
+                $this->db->where('a.checksheet_type', $filter_checksheet_type);
+            }
+            
             $this->db->group_by('a.number');
             $this->db->order_by($sort, $order);
             //Total Data
@@ -1221,6 +1222,9 @@ class Checksheets extends CI_Controller
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         $filter_division = $this->input->get('filter_division');
         $filter_status = $this->input->get('filter_status');
+        $filter_status_subcont = $this->input->get('filter_status_subcont');
+        $filter_subcont_type = $this->input->get('filter_subcont_type');
+        $filter_checksheet_type = $this->input->get('filter_checksheet_type');
 
         //Config
         $this->db->select('*');
@@ -1245,8 +1249,30 @@ class Checksheets extends CI_Controller
         if ($filter_status != "") {
             $this->db->where('a.status', $filter_status);
         }
-        $this->db->like('a.wo_no', $filter_wo_no);
-        $this->db->like('a.item_fg_id', $filter_item_fg_id);
+        if ($filter_wo_no != "") {
+            $this->db->where('a.wo_no', $filter_wo_no);
+        }
+        if ($filter_checksheet != "") {
+            $this->db->where('a.number', $filter_checksheet);
+        }
+        if ($filter_shift != "") {
+            $this->db->where('a.shift', $filter_shift);
+        }
+        if ($filter_item_fg_id != "") {
+            $this->db->where('a.item_fg_id', $filter_item_fg_id);
+        }
+
+        if ($filter_status_subcont != "") {
+            $this->db->where('a.status_subcont', $filter_status_subcont);
+        }
+
+        if ($filter_subcont_type != "") {
+            $this->db->where('a.subcont_type', $filter_subcont_type);
+        }
+
+        if ($filter_checksheet_type != "") {
+            $this->db->where('a.checksheet_type', $filter_checksheet_type);
+        }
         $this->db->order_by('a.number', 'ASC');
         $this->db->order_by('a.wo_no', 'ASC');
         $records = $this->db->get()->result_array();
@@ -1277,6 +1303,7 @@ class Checksheets extends CI_Controller
                 <tr>
                     <th width="20">No</th>
                     <th>Checksheet ID</th>
+                    <th>Checksheet Type</th>
                     <th>Wo_No</th>
                     <th>Trans Date</th>
                     <th>Product No</th>
@@ -1303,6 +1330,7 @@ class Checksheets extends CI_Controller
             $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $data['number'] . '</td>
+                            <td>' . $data['checksheet_type'] . '</td>
                             <td>' . $data['wo_no'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
                             <td>' . $data['product_no'] . '</td>
