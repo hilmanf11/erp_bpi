@@ -736,3 +736,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-06-25]
 - **kurniawan**: Update Checksheets ([23af3c8d](https://github.com/hilmanf11/erp_bpi/commit/23af3c8debd566dd83c88658ab864200260b90cb))
+
+### [2026-06-30]
+- **kurniawan**: Update Cost Pattern ([5783657a](https://github.com/hilmanf11/erp_bpi/commit/5783657a259b9f7c8c68e8ef6345af98ee523d40))
