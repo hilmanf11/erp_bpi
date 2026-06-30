@@ -15,19 +15,37 @@ class Cost_pattern extends CI_Controller
         //Validasi Form
         $this->form_validation->set_rules('item_fg_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
+    // public function index()
+    // {
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+    //         $data['button'] = $this->getbutton($this->id_menu());
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('pricing/cost_pattern');
+    //     } else {
+    //         redirect('error_access');
+    //     }
+    // }
+    //INDEX untuk kebutuhan NPD
     public function index()
     {
         if (empty($this->session->username)) {
             redirect('error_session');
-        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
-            $data['button'] = $this->getbutton($this->id_menu());
+        }
+        
+        $url_menu_id = $this->input->get('menu_id');
+        $active_menu = (!empty($url_menu_id)) ? $url_menu_id : $this->id_menu();
+
+        if ($this->checkuserAccess($active_menu) > 0) {
+            $data['button'] = $this->getbutton($active_menu);
+
             $this->load->view('template/header', $data);
             $this->load->view('pricing/cost_pattern');
         } else {
             redirect('error_access');
         }
     }
-
     public function readPeriod($select)
     {
         if ($select == "month") {
@@ -751,8 +769,8 @@ class Cost_pattern extends CI_Controller
             //Select Query
             $this->db->select("a.*, c.uom");
             $this->db->from('cost_patterns a');
-            $this->db->join('item_fg b','b.id = a.item_fg_id');
-            $this->db->join('item_rm c','c.id = a.item_rm_id_vg');
+            $this->db->join('item_fg b','b.id = a.item_fg_id','left');
+            $this->db->join('item_rm c','c.id = a.item_rm_id_vg','left');
             $this->db->where('a.deleted', 0);
 
             if ($filter_period_year != "") {
@@ -954,12 +972,31 @@ class Cost_pattern extends CI_Controller
         }
     }
 
-
     public function delete()
     {
-        $data = $this->input->post();
-        $send = $this->crud->delete('process_costs', ["id" => $data['id']]);
-        echo $send;
+        $ids = $this->input->post('ids');
+        if (!empty($ids) && is_array($ids)) {
+            $this->db->trans_start();
+            
+            $success = true;
+            
+            foreach ($ids as $id) {
+                $send = $this->crud->delete('cost_patterns', ["id" => $id]);
+                if (!$send) {
+                    $success = false;
+                }
+            }
+            
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === FALSE || !$success) {
+                echo json_encode(['success' => false, 'message' => 'Failed to delete some/all data']);
+            } else {
+                echo json_encode(['success' => true, 'message' => 'Data deleted successfully']);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'No ID received']);
+        }
     }
 
     //UPLOAD DATA
@@ -1177,7 +1214,16 @@ class Cost_pattern extends CI_Controller
             $item_rm_mb = !empty($data['part_no_mb']) ? $this->crud->read('item_rm', [], ["number" => $data['part_no_mb']]) : null;
             $item_rm_cp = !empty($data['part_no_cp']) ? $this->crud->read('item_rm', [], ["number" => $data['part_no_cp']]) : null;
 
-            // 2. Logika Validasi Pengecualian
+            $cek_duplicate = null;
+            if (!empty($item_fg->id)) {
+                $cek_duplicate = $this->crud->read('cost_patterns', [], [
+                    "item_fg_id" => $item_fg->id,
+                    "revision"   => $data['revision'],
+                    "p_month"    => $data['p_month'],
+                    "p_year"     => $data['p_year']
+                ]);
+            }
+
             if (empty($customer->name)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Customer Name " . $data['customer_name'] . " is Not Found", "theme" => "error"));
             } else if (empty($item_fg->number)) {
@@ -1188,6 +1234,14 @@ class Cost_pattern extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => "MB Part Number " . $data['part_no_mb'] . " is Not Found", "theme" => "error"));
             } else if (!empty($data['part_no_cp']) && empty($item_rm_cp->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Child Part Number " . $data['part_no_cp'] . " is Not Found", "theme" => "error"));
+            
+            } else if (!empty($cek_duplicate)) { 
+                echo json_encode(array(
+                    "title"   => "Duplicate Data", 
+                    "message" => "Cost Pattern for Item " . $data['item_fg_number'] . " in Period " . $data['p_month'] . " " . $data['p_year'] . " and Revision " . $data['revision'] . " already exists!", 
+                    "theme"   => "error"
+                ));
+
             } else {
                 
                 $num = function($val) {
@@ -1261,7 +1315,6 @@ class Cost_pattern extends CI_Controller
                     "total_packing_cost"      => $num($data['total_packing_cost']),
                     "transportasion_cost_pcs" => $num($data['transportasion_cost_pcs']),
                     
-                    // Kalkulasi sudah dijamin aman karena data pasti terkonversi menjadi (float) 0 jika kosong
                     "sub_total"               => $num($data['total_process_cost']) + $num($data['total_material_cost']),
                     "grand_total"             => $num($data['total_process_cost']) + $num($data['total_material_cost']) + $num($data['ng_ratio_cost']) + $num($data['adm_foh_cost']) + $num($data['mtn_cost']) + $num($data['total_packing_cost']) + $num($data['transportasion_cost_pcs']) + $num($data['purging_value']) + $num($data['mold_depreciation']) + $num($data['profit_nominal']),
                     "model_name"              => $data['model_name']

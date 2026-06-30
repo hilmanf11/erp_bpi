@@ -1,6 +1,7 @@
-<table id="dg"class="easyui-datagrid"style="width:99.5%;"toolbar="#toolbar"rownumbers="true"singleSelect="true"fitColumns="false"data-options="onLoadSuccess: onMergeFG">
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar" rownumbers="true" singleSelect="false" fitColumns="false" data-options="onLoadSuccess: onMergeFG">
     <thead>
         <tr>
+            <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2"data-options="field:'print',width:60,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2"data-options="field:'item_fg_number',width:120,halign:'center'">Part No</th>
             <th rowspan="2"data-options="field:'item_fg_name',width:150,halign:'center'">Part Name</th>
@@ -270,40 +271,47 @@
 
     //Delete Data
     function deleted() {
-        var rows = $('#dg').datagrid('getSelections');
-        console.log(rows);
-        if (rows.length > 0) {
-                $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                    if (r) {
-                        for (var i = 0; i < rows.length; i++) {
-                            var row = rows[i];
-                            if(row.status == 0){
-                                $.ajax({
-                                    method: 'post',
-                                    url: '<?= base_url('pricing/cost_pattern/delete') ?>',
-                                    data: {
-                                        id: row.id,
-                                        item_fg_id: row.item_fg_id
-                                    },
-                                    success: function(result) {
-                                        var result = eval('(' + result + ')');
-                                    },
-                                    error: function(jqXHR, textStatus, errorThrown) {
-                                        toastr.error(jqXHR.statusText);
-                                        $.messager.alert("Error", jqXHR.statusText, 'error');
-                                    },
-                                    complete: function(data) {
-                                        $('#dg').datagrid('reload');
-                                    }
-                                });
-                            } else {
-                                toastr.warning("Production Schedule is Closed!", "Information");
-                            }
+    var rows = $('#dg').datagrid('getSelections');
+    
+    if (rows.length > 0) {
+        $.messager.confirm('Warning', 'Are you sure you want to delete the selected data?', function(r) {
+            if (r) {
+                var ids = [];
+                for (var i = 0; i < rows.length; i++) {
+                    ids.push(rows[i].id); 
+                }
+                if (ids.length === 0) {
+                    toastr.warning("Failed to extract data ID!", "Information");
+                    return; 
+                }
+
+                $.ajax({
+                    method: 'post',
+                    url: '<?= base_url('pricing/cost_pattern/delete') ?>',
+                    data: {
+                        ids: ids 
+                    },
+                    success: function(result) {
+                        var res = JSON.parse(result);
+                        if(res.success) {
+                            toastr.success(res.message);
+                        } else {
+                            toastr.error(res.message);
                         }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        toastr.error(jqXHR.statusText);
+                        $.messager.alert("Error", jqXHR.statusText, 'error');
+                    },
+                    complete: function(data) {
+                        $('#dg').datagrid('reload');
+                        $('#dg').datagrid('clearSelections');
                     }
                 });
-        } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            }
+        });
+    } else {
+        toastr.warning("Please select at least one data in the table first!", "Information");
         }
     }
 
@@ -535,6 +543,7 @@
         function processSave(total, json, index = 0, success = 0, failed = 0) {
 
             if (index >= total) {
+                localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                 $('#dlg_insert').dialog('close');
                 Swal.fire({
                     icon: 'success',
