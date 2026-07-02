@@ -750,3 +750,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-02]
 - **kurniawan**: Updat Pricing for NPD ([091698f9](https://github.com/hilmanf11/erp_bpi/commit/091698f952293f9d048243e8573befa5a16b63d5))
+
+### [2026-07-02]
+- **kurniawan**: Update NPD ([9811b28b](https://github.com/hilmanf11/erp_bpi/commit/9811b28bcb126a8c5efab76e2288e6c5e2883b2f))
