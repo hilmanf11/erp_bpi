@@ -561,6 +561,8 @@
                                                     $('#dg').datagrid('reload');
                                                 }
                                             });
+                                            
+                                            localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                                         } else {
                                             toastr.error(result.message, "Error");
                                         }
@@ -849,4 +851,54 @@
             // });
         }
     }
+
+    //untuk kebutuhan NPD
+    $(document).ready(function() {
+        if (localStorage.getItem('trigger_add') === 'yes') {
+            localStorage.removeItem('trigger_add');
+
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof add === "function") {
+                    add(); 
+
+                    var checkClose = setInterval(function() {
+                        var isHidden = $('#dlg_insert').closest('.window').is(':hidden');
+                        if (isHidden) {
+                            clearInterval(checkClose); // Hentikan monitoring
+                            if (window.parent.$('#dlg_outer_wrapper').length) {
+                                window.parent.$('#dlg_outer_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 1000); 
+        }
+
+        // ==========================================
+        // SKRIP TRIGGER UPLOAD
+        // ==========================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var action = urlParams.get('action');
+
+        if (action === 'upload') {
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof upload === 'function') {
+                    upload(); 
+                    var checkCloseUpload = setInterval(function() {
+                        var isHidden = $('#dlg_upload').closest('.window').is(':hidden'); 
+                        if (isHidden) {
+                            clearInterval(checkCloseUpload); 
+                            if (window.parent.$('#dlg_upload_wrapper').length) {
+                                window.parent.$('#dlg_upload_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 500);
+        }
+    });
 </script>

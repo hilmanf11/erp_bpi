@@ -716,7 +716,7 @@
                                     requestsCompleted++; // Tambah counter jika sukses
                                     
                                     if (requestsCompleted === totalRequests) {
-                                        
+                                        localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                                         $('#dg').datagrid('reload');
                                         $('#dlg_insert').dialog('close');
                                         
@@ -728,9 +728,10 @@
                                             allowOutsideClick: false,
                                         }).then((swalResult) => {
                                             if (swalResult.isConfirmed) {
-                                                window.location.reload();
+                                                // window.location.reload();
                                             }
                                         });
+                                        
                                     }
                                 },
                                 error: function() {

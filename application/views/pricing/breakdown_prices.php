@@ -372,6 +372,7 @@
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
+                                localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                             } else {
                                 toastr.error(result.message, result.title);
                             }

@@ -290,7 +290,7 @@
 </div>
 
 <!-- Upload -->
-<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+<!-- <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -307,8 +307,7 @@
         <ul id="remarks">
         </ul>
     </div>
-</div>
-
+</div> -->
 
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('pricing/process_costs/print') ?>" style="width: 100%;" hidden></iframe>
@@ -517,6 +516,7 @@
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
+                                localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                             } else {
                                 toastr.error(result.message, result.title);
                             }
@@ -1092,4 +1092,54 @@
     //         }
     //     }]
     // });
+
+    //untuk kebutuhan NPD
+    $(document).ready(function() {
+        if (localStorage.getItem('trigger_add') === 'yes') {
+            localStorage.removeItem('trigger_add');
+
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof add === "function") {
+                    add(); 
+
+                    var checkClose = setInterval(function() {
+                        var isHidden = $('#dlg_insert').closest('.window').is(':hidden');
+                        if (isHidden) {
+                            clearInterval(checkClose); // Hentikan monitoring
+                            if (window.parent.$('#dlg_outer_wrapper').length) {
+                                window.parent.$('#dlg_outer_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 1000); 
+        }
+
+        // ==========================================
+        // SKRIP TRIGGER UPLOAD
+        // ==========================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var action = urlParams.get('action');
+
+        if (action === 'upload') {
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof upload === 'function') {
+                    upload(); 
+                    var checkCloseUpload = setInterval(function() {
+                        var isHidden = $('#dlg_upload').closest('.window').is(':hidden'); 
+                        if (isHidden) {
+                            clearInterval(checkCloseUpload); 
+                            if (window.parent.$('#dlg_upload_wrapper').length) {
+                                window.parent.$('#dlg_upload_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 500);
+        }
+    });
 </script>
