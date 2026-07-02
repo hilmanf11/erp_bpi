@@ -753,11 +753,13 @@ class Cost_pattern extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filter_period_month = $this->input->get('filter_period_month');
+            $filter_month_from = $this->input->get('filter_period_month_from');
+            $filter_month_to = $this->input->get('filter_period_month_to');
             $filter_period_year = $this->input->get('filter_period_year');
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
             $filter_revision = $this->input->get('filter_revision');
             $filter_customer_id = $this->input->get('filter_customer_id');
+        
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -777,8 +779,12 @@ class Cost_pattern extends CI_Controller
                 $this->db->where('a.p_year', $filter_period_year);
             }
 
-            if ($filter_period_month != "") {
-                $this->db->where('a.p_month', $filter_period_month);
+            if ($filter_month_from != "") {
+                $this->db->where('a.p_month >=', $filter_month_from);
+            }
+
+            if ($filter_month_to != "") {
+                $this->db->where('a.p_month <=', $filter_month_to);
             }
 
             if ($filter_item_fg_id != "") {
@@ -793,11 +799,10 @@ class Cost_pattern extends CI_Controller
                 $this->db->where('a.customer_id', $filter_customer_id);
             }
            
-            // $this->db->group_by('a.wo_no');
-            $this->db->order_by('a.item_fg_id', 'ASC');
-            $this->db->order_by('a.p_year', 'ASC');
             $this->db->order_by('a.p_month', 'ASC');
+            $this->db->order_by('a.p_year', 'ASC');
             $this->db->order_by('a.revision', 'ASC');
+            $this->db->order_by('a.item_fg_id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -1334,7 +1339,8 @@ class Cost_pattern extends CI_Controller
             header("Content-Disposition: attachment; filename=cost_pattern_$format.xls");
         }
 
-        $filter_period_month = $this->input->get('filter_period_month');
+        $filter_month_from = $this->input->get('filter_period_month_from');
+        $filter_month_to = $this->input->get('filter_period_month_to');
         $filter_period_year = $this->input->get('filter_period_year');
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         $filter_revision = $this->input->get('filter_revision');
@@ -1355,8 +1361,12 @@ class Cost_pattern extends CI_Controller
             $this->db->where('a.p_year', $filter_period_year);
         }
 
-        if ($filter_period_month != "") {
-            $this->db->where('a.p_month', $filter_period_month);
+        if ($filter_month_from != "") {
+            $this->db->where('a.p_month >=', $filter_month_from);
+        }
+
+        if ($filter_month_to != "") {
+            $this->db->where('a.p_month <=', $filter_month_to);
         }
 
         if ($filter_item_fg_id != "") {
@@ -1371,11 +1381,10 @@ class Cost_pattern extends CI_Controller
             $this->db->where('a.customer_id', $filter_customer_id);
         }
         
-        // $this->db->group_by('a.wo_no');
-        $this->db->order_by('a.item_fg_id', 'ASC');
-        $this->db->order_by('a.p_year', 'ASC');
         $this->db->order_by('a.p_month', 'ASC');
+        $this->db->order_by('a.p_year', 'ASC');
         $this->db->order_by('a.revision', 'ASC');
+        $this->db->order_by('a.item_fg_id', 'ASC');
         $records = $this->db->get()->result_array();
 
         $grouped = [];
@@ -1408,34 +1417,59 @@ class Cost_pattern extends CI_Controller
             
             <table id="customers" border="1">
                 <tr>
-                    <th width="20">No</th>
-                    <th>Month</th>
-                    <th>Year</th>
-                    <th>Rev</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
-                    <th>Customer Name</th>
-                    <th>Material</th>
-                    <th>MB</th>
-                    <th>CP</th>
+                    <th rowspan="2" width="25">No</th>
+                    <th rowspan="2" width="30">Part No</th>
+                    <th rowspan="2" width="35">Part Name</th>
+                    <th rowspan="2" width="150">Customer Name</th>
+                    <th rowspan="2" width="30">Month</th>
+                    <th rowspan="2" width="35">Year</th>
+                    <th rowspan="2" width="25">Rev</th>
+                    <th colspan="3" width="160">MATERIAL SPEC</th>
+                    <th colspan="5" width="160">MATERIAL USED</th>
+                    <th colspan="3" width="160">MATERIAL PRICE</th>
+                    <th colspan="4" width="200">MATERIAL COST</th>
+                    <th colspan="6" width="250">PROCESS COST</th>
+                    <th rowspan="2" width="50">TOTAL</th>
+                    <th rowspan="2" width="50">NG Cost</th>
+                    <th rowspan="2" width="50">ADM/FOH</th>
+                    <th rowspan="2" width="50">MTN</th>
+                    <th rowspan="2" width="50">Packaging</th>
+                    <th rowspan="2" width="50">Transport</th>
+                    <th rowspan="2" width="50">Purging</th>
+                    <th rowspan="2" width="50">Mold</th>
+                    <th rowspan="2" width="50">Profit</th>
+                    <th rowspan="2" width="100">GRAND TOTAL</th>
+                    <th rowspan="2" width="50">MOQ</th>
+                    <th rowspan="2" width="50">Vol</th>
+                    <th rowspan="2" width="100">Purging Cost</th>
+                    <th rowspan="2" width="100">Start Setting</th>
+                </tr>
+                <tr>
+                    <th>Material Name</th>
+                    <th>MB Name</th>
+                    <th>CP Name</th>
+
                     <th>Gross</th>
                     <th>Nett</th>
                     <th>Uom</th>
+                    <th>MB</th>
+                    <th>CP</th>
+
+                    <th>Mat</th>
+                    <th>MB</th>
+                    <th>CP</th>
+
+                    <th>Mat</th>
+                    <th>MB</th>
+                    <th>CP</th>
+                    <th>TOTAL 1</th>
+
                     <th>CT</th>
-                    <th>Cavity</th>
-                    <th>Tonage</th>
+                    <th>CAV</th>
+                    <th>Ton</th>
                     <th>Rate</th>
-                    <th>Total Process</th>
-                    <th>NG Cost</th>
-                    <th>ADM</th>
-                    <th>MTN</th>
-                    <th>Packaging</th>
-                    <th>Transport</th>
-                    <th>Purging</th>
-                    <th>Mold Dep</th>
-                    <th>Profit</th>
-                    <th>Grand Total</th>
-                    <th>MOQ</th>
+                    <th>2nd</th>
+                    <th>TOTAL 2</th>
                 </tr>';
         $no = 1;
         foreach ($grouped as $group) {
@@ -1443,52 +1477,61 @@ class Cost_pattern extends CI_Controller
             $first   = true;
 
             foreach ($group as $data) {
+                    $grand_total =$data['total_process_cost'] + $data['total_material_cost'] + $data['ng_ratio_cost'] + $data['adm_foh_cost'] + $data['mtn_cost'] + $data['total_packing_cost'] + $data['transportasion_cost_pcs'] + $data['purging_value'] + $data['mold_depreciation'] + $data['profit_nominal'];
+                    $html .= '<tr>';
+                    if ($first) {
+                        $html .= '<td rowspan="'.$rowspan.'" align="center">'.$no.'</td>
+                                <td rowspan="'.$rowspan.'" align="center">'.$data['item_fg_number'].'</td>
+                                <td rowspan="'.$rowspan.'" align="center">'.$data['item_fg_name'].'</td>
+                                <td rowspan="'.$rowspan.'" align="center">'.$data['customer_name'].'</td>
+                                <td rowspan="'.$rowspan.'" align="center">'.$data['p_month'].'</td>
+                                <td rowspan="'.$rowspan.'" align="center">'.$data['p_year'].'</td>
+                                <td rowspan="'.$rowspan.'" align="center">'.$data['revision'].'</td>';
+                    }
 
-                $html .= '<tr>';
+                    $html .= '<td>'.$data['part_name_vg'].'</td>
+                            <td>'.$data['part_name_mb'].'</td>
+                            <td>'.$data['part_name_cp'].'</td>
+                            <td align="right">'.number_format($data['used_vg'],4).'</td>
+                            <td align="center">'.$data['nett_vg'].'</td>
+                            <td align="center">'.$data['uom'].'</td>
+                            <td align="right">'.number_format($data['used_mb'],4).'</td>
+                            <td align="right">'.number_format($data['used_cp'],4).'</td>
 
-                if ($first) {
-                    $html .= '
-                    <td rowspan="'.$rowspan.'" align="center">'.$no.'</td>
-                    <td rowspan="'.$rowspan.'" align="center">'.$data['p_month'].'</td>
-                    <td rowspan="'.$rowspan.'" align="center">'.$data['p_year'].'</td>
-                    <td rowspan="'.$rowspan.'" align="center">'.$data['revision'].'</td>
-                    <td rowspan="'.$rowspan.'" style="mso-number-format:\@;">'.$data['item_fg_number'].'</td>
-                    <td rowspan="'.$rowspan.'">'.$data['item_fg_name'].'</td>
-                    <td rowspan="'.$rowspan.'">'.$data['customer_name'].'</td>';
+                            <td align="right">'.number_format($data['price_vg'],2).'</td>
+                            <td align="right">'.number_format($data['price_mb'],2).'</td>
+                            <td align="right">'.number_format($data['price_cp'],2).'</td>
+
+                            <td align="right">'.number_format($data['virgin_cost'],4).'</td>
+                            <td align="right">'.number_format($data['mb_cost'],4).'</td>
+                            <td align="right">'.number_format($data['child_part_cost'],4).'</td>
+                            <td align="right">'.number_format($data['total_material_cost'],4).'</td>';
+
+                    if ($first) {
+                        $html .= '<td rowspan="'.$rowspan.'" align="right">'.number_format($data['cycle_time'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="center">'.$data['cavity_standard'].'</td>
+                                <td rowspan="'.$rowspan.'" align="center">'.$data['toonage'].'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['plain_rate_sec'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['cycle_time_process'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['total_process_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['sub_total'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['ng_ratio_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['adm_foh_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mtn_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['total_packing_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['transportasion_cost_pcs'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_value'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mold_depreciation'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['profit_nominal'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($grand_total).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['moq'],2).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['volume'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['start_setting'],4).'</td>';
+                    }
+                    $html .= '</tr>';
+                    $first = false;
                 }
-
-                // === MATERIAL PER BARIS ===
-                $html .= '
-                    <td>'.$data['part_name_vg'].'</td>
-                    <td>'.$data['part_name_mb'].'</td>
-                    <td>'.$data['part_name_cp'].'</td>
-                    <td align="right">'.number_format($data['used_vg'],4).'</td>
-                    <td align="center">'.$data['nett_vg'].'</td>
-                    <td align="center">'.$data['uom'].'</td>';
-
-                if ($first) {
-                    $html .= '
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['cycle_time'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="center">'.$data['cavity_standard'].'</td>
-                    <td rowspan="'.$rowspan.'" align="center">'.$data['toonage'].'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['plain_rate_sec'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['total_process_cost'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['ng_ratio_cost'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['adm_foh_cost'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mtn_cost'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['total_packing_cost'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['transportasion_cost_pcs'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_value'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mold_depreciation'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['profit_nominal'],4).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['grand_total']).'</td>
-                    <td rowspan="'.$rowspan.'" align="right">'.number_format($data['moq'],2).'</td>';
-                }
-
-                $html .= '</tr>';
-
-                $first = false;
-            }
 
             $no++;
         }
@@ -1672,6 +1715,7 @@ class Cost_pattern extends CI_Controller
                 $first = true;
 
                 foreach ($group as $data) {
+                    $grand_total =$data['total_process_cost'] + $data['total_material_cost'] + $data['ng_ratio_cost'] + $data['adm_foh_cost'] + $data['mtn_cost'] + $data['total_packing_cost'] + $data['transportasion_cost_pcs'] + $data['purging_value'] + $data['mold_depreciation'] + $data['profit_nominal'];
                     $html .= '<tr>';
                     if ($first) {
                         $html .= '<td rowspan="'.$rowspan.'" align="center">'.$no.'</td>
@@ -1717,7 +1761,7 @@ class Cost_pattern extends CI_Controller
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_value'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mold_depreciation'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['profit_nominal'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['grand_total']).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format($grand_total).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['moq'],2).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['volume'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_cost'],4).'</td>

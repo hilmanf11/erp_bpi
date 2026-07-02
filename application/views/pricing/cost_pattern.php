@@ -70,12 +70,15 @@
         <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;">Period</span>
-                <input style="width:20%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
-                <input style="width:20%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
+                <input style="width:15%;" id="filter_period_month_from" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'From'">
+                <span> to </span>
+                <input style="width:15%;" id="filter_period_month_to" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'To'">
+                
+                <input style="width:17%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;">Revision</span>
-                <select style="width:40%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
+                <select style="width:50%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
                     <option value="" selected disabled>Choose All</option>
                     <option value="0">0</option>
                     <option value="1">1</option>
@@ -87,11 +90,11 @@
             </div>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;">Product No</span>
-                <input style="width:40%;" id="filter_item_fg_id" class="easyui-combogrid">
+                <input style="width:50%;" id="filter_item_fg_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;">Customer</span>
-                <input style="width:40%;" id="filter_customer_id" class="easyui-combogrid">
+                <input style="width:50%;" id="filter_customer_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;"></span>
@@ -316,14 +319,19 @@
     }
 
     function filter() {
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
+        var filter_period_month_from = $("#filter_period_month_from").combobox('getValue');
+        var filter_period_month_to = $("#filter_period_month_to").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
 
-        var url = "?filter_period_month=" + filter_period_month + "&filter_period_year=" + filter_period_year +
-            "&filter_item_fg_id=" + filter_item_fg_id + "&filter_revision=" + filter_revision + "&filter_customer_id=" + filter_customer_id;
+        var url = "?filter_period_month_from=" + filter_period_month_from + 
+                "&filter_period_month_to=" + filter_period_month_to + 
+                "&filter_period_year=" + filter_period_year +
+                "&filter_item_fg_id=" + filter_item_fg_id + 
+                "&filter_revision=" + filter_revision + 
+                "&filter_customer_id=" + filter_customer_id;
 
         $('#dg').datagrid({
             url: '<?= base_url('pricing/cost_pattern/datatables') ?>' + url,
@@ -352,16 +360,19 @@
     }
 
     function excel() {
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
+        var filter_period_month_from = $("#filter_period_month_from").combobox('getValue');
+        var filter_period_month_to = $("#filter_period_month_to").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
 
-        var url = "?filter_period_month=" + filter_period_month + "&filter_period_year=" + filter_period_year +
-            "&filter_item_fg_id=" + filter_item_fg_id + "&filter_revision=" + filter_revision + "&filter_customer_id=" + filter_customer_id;
-
-
+        var url = "?filter_period_month_from=" + filter_period_month_from + 
+                "&filter_period_month_to=" + filter_period_month_to + 
+                "&filter_period_year=" + filter_period_year +
+                "&filter_item_fg_id=" + filter_item_fg_id + 
+                "&filter_revision=" + filter_revision + 
+                "&filter_customer_id=" + filter_customer_id;;
 
         window.location.assign('<?= base_url('pricing/cost_pattern/print/excel') ?>' + url);
     }
@@ -602,7 +613,14 @@
         }
     });
 
-    $('#filter_period_month').combobox({
+    $('#filter_period_month_from').combobox({
+        url: '<?= base_url('pricing/material_costs/readPeriod/month'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Months',
+    });
+
+    $('#filter_period_month_to').combobox({
         url: '<?= base_url('pricing/material_costs/readPeriod/month'); ?>',
         valueField: 'id',
         textField: 'name',
