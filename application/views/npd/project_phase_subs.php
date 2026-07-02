@@ -238,7 +238,7 @@
         prompt: 'Choose Module',
         onSelect: function(menu){
             $('#link').textbox('setValue',menu.link);
-            $('#menus_id').textbox('setValue',menu.id);
+            $('#menus_id').textbox('setValue',menu.menus_id);
         }
     });
 

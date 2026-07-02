@@ -394,12 +394,6 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'item_fg_id',
-                            hidden:true,
-                            title: 'Product ID',
-                            halign: 'center',
-                            width: 200
-                        }, {
                             field: 'item_fg_number',
                             title: 'Product No.',
                             halign: 'center',
@@ -453,19 +447,30 @@
 
                     endEditing();
                     $("#dg2").datagrid('acceptChanges');
+                    
                     var rows = $('#dg2').datagrid('getRows');
 
-                    if (rows.length === 0) {
-                        toastr.warning("Please add at least one product detail!");
-                        return false;
+                    for (var i = rows.length - 1; i >= 0; i--) {
+                        var val = rows[i].item_fg_number; 
+                        
+                        if (val === undefined || val === null || val === "") {
+                            var rowIndex = $('#dg2').datagrid('getRowIndex', rows[i]);
+                            $('#dg2').datagrid('deleteRow', rowIndex);
+                        }
+                    }
+
+                    var finalRows = $('#dg2').datagrid('getRows');
+
+                    if (finalRows.length === 0) {
+                        toastr.warning("Please add and fill at least one valid product detail!");
+                        return false; 
                     }
 
                     var formData = new FormData($('#frm_insert')[0]);
-
                     var desc_value = $('#description').summernote('code');
                     formData.set('description', desc_value);
 
-                    formData.append('details', JSON.stringify(rows));
+                    formData.append('details', JSON.stringify(finalRows));
 
                     $.ajax({
                         type: "POST",
@@ -476,7 +481,6 @@
                         dataType: "json",
                         success: function(result) {
                             if (result.theme === "success" || result.status === "success") {
-                                
                                 $('#dlg_insert').dialog('close');
                                 $('#dg').datagrid('reload'); 
 
@@ -495,6 +499,7 @@
                         },
                         error: function(jqXHR, textStatus, errorThrown) {
                             toastr.error("Server Error: " + textStatus);
+                            console.log(jqXHR.responseText);
                         }
                     });
                 }

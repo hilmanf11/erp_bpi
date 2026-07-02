@@ -39,7 +39,7 @@
 
     <div style="display: flex; gap: 15px; width: 100%;">
         
-        <div style="flex: 7; width: 100%;">
+        <div style="flex: 8; width: 100%;">
             
             <div id="tb_my_projects" style="padding: 6px 10px; display: flex; align-items: center; gap: 5px; background-color: #f4f4f4; border: 1px solid #ddd; border-bottom: none;">
                 <span style="font-weight: bold; font-size: 12px; margin-right: 5px;">Status</span>
@@ -74,7 +74,7 @@
             </table>
         </div>
 
-        <div style="flex: 3; display: flex; flex-direction: column; gap: 15px;">
+        <div style="flex: 2; display: flex; flex-direction: column; gap: 15px;">
             <div class="easyui-panel" title="Chart By Project" style="width:100%; height: 232px; padding: 10px; display: flex; justify-content: center; align-items: center;">
                 <canvas id="chartProject" style="max-height: 100%; max-width: 100%;"></canvas>
             </div>
@@ -85,54 +85,57 @@
     </div>
 </div>
 
-<div id="dlg_detail" class="easyui-dialog" title="Information Project Detail" data-options="closed: true, modal:true" style="width: 650px; height: auto; max-height: 550px; padding: 20px; top: 20px;">    
-    <div style="margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-        <div style="font-size: 20px !important; color: #555;" id="number">-</div>
-        <div style="font-size: 30px !important; font-weight: bold; color: #333;" id="name">-</div>
-    </div>
-    <table style="width: 100%; font-size: 12px; margin-bottom: 15px; line-height: 1.8;">
-        <tr>
-            <td>Customer</td>
-            <td>:</td>
-            <td id="customer_name" style="font-weight: bold;">-</td>
-        </tr>
-        <tr>
-            <td>Division</td>
-            <td>:</td>
-            <td id="division" style="font-weight: bold;">-</td>
-        </tr>
-        <tr>
-            <td>Model</td>
-            <td>:</td>
-            <td id="model_number" style="font-weight: bold;">-</td>
-        </tr>
-        <tr>
-            <td>Start Date</td>
-            <td>:</td>
-            <td id="start_date" style="font-weight: bold;">-</td>
-        </tr>
-        <tr>
-            <td>End Date</td>
-            <td>:</td>
-            <td id="end_date" style="font-weight: bold;">-</td>
-        </tr>
-    </table>
-    <table id="dg_detail" class="easyui-datagrid" style="width:100%; height: 180px;" data-options="singleSelect:true, rownumbers:false">
-        <thead>
+<div id="dlg_detail" class="easyui-dialog" title="Information Project Detail" data-options="closed: true, modal:true" style="width: 650px; height: auto; max-height: 550px; padding: 0; top: 20px;"> 
+    <div style="width: 100%; height: 100%; box-sizing: border-box; padding: 20px; overflow-y: auto; background-color: #ffffff;">
+        <div style="margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            <div style="font-size: 20px !important; color: #555;" id="number">-</div>
+            <div style="font-size: 30px !important; font-weight: bold; color: #333;" id="name">-</div>
+        </div>
+        <table style="width: 100%; font-size: 12px; margin-bottom: 15px; line-height: 1.8;">
             <tr>
-                <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
-                <th data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
-                <th data-options="field:'volume',width:100,halign:'center',align:'center'">Volume</th>
-                <th data-options="field:'volume_unit',width:100,halign:'center',align:'center'">Volume Unit</th>
+                <td style="width: 80px;">Customer</td>
+                <td style="width: 15px;">:</td>
+                <td id="customer_name" style="font-weight: bold;">-</td>
             </tr>
-        </thead>
-    </table>
-    <div style="margin-top: 15px; font-size: 12px; color: #555; line-height: 1.5;" id="det_description">
-        -
+            <tr>
+                <td>Division</td>
+                <td>:</td>
+                <td id="division" style="font-weight: bold;">-</td>
+            </tr>
+            <tr>
+                <td>Model</td>
+                <td>:</td>
+                <td id="model_number" style="font-weight: bold;">-</td>
+            </tr>
+            <tr>
+                <td>Start Date</td>
+                <td>:</td>
+                <td id="start_date" style="font-weight: bold;">-</td>
+            </tr>
+            <tr>
+                <td>End Date</td>
+                <td>:</td>
+                <td id="end_date" style="font-weight: bold;">-</td>
+            </tr>
+        </table>
+        <table id="dg_detail" class="easyui-datagrid" style="width:100%; height: 180px;" data-options="singleSelect:true, rownumbers:false">
+            <thead>
+                <tr>
+                    <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
+                    <th data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
+                    <th data-options="field:'volume',width:100,halign:'center',align:'center'">Volume</th>
+                    <th data-options="field:'volume_unit',width:100,halign:'center',align:'center'">Volume Unit</th>
+                </tr>
+            </thead>
+        </table>
+        <div style="margin-top: 15px; font-size: 12px; color: #555; line-height: 1.5;" id="det_description">
+            -
+        </div>
+
     </div>
 </div>
 
-<div id="dlg_tasks" class="easyui-dialog" title="Project" data-options="closed: true,modal:true" style="width: 800px; height: 500px; top: 20px;">
+<div id="dlg_tasks" class="easyui-dialog" title="Project" data-options="closed: true,modal:true" style="width: 1050px; height: 500px; top: 20px;">
     <table id="dg_tasks" class="easyui-datagrid" style="width:100%;">
         <thead>
             <tr>
@@ -164,9 +167,9 @@
     </table>
 </div>
 
-<div id="dlg_description" class="easyui-dialog" title="Project Description" data-options="closed: true, modal:true" style="width: 700px; height: 450px; padding:20px; top: 50px;">
-    <div id="content_description" style="font-size: 14px; line-height: 1.6;">
-        </div>
+<div id="dlg_description" class="easyui-dialog" title="Project Description" data-options="closed: true, modal:true" style="width: 700px; height: 450px; padding:0; top: 50px;">
+    <div id="content_description" style="width: 100%; height: 100%; box-sizing: border-box; padding: 20px; font-size: 14px; line-height: 1.6; overflow-y: auto; background-color: #ffffff;">
+    </div>
 </div>
 
 <div id="dlg_external_module" class="easyui-dialog" title="External Module" data-options="closed:true,modal:true" style="width:800px;height:600px;padding:15px;">
@@ -328,6 +331,17 @@
                     $(this).dialog('dialog').css('background', 'transparent');
                 },
                 onClose: function() {
+                    // Cek apakah ada tanda sukses dari Child
+                    if (localStorage.getItem('task_saved') === 'yes') {
+                        localStorage.removeItem('task_saved');
+                        
+                        // Reload Datagrid Parent
+                        $('#dg_tasks').datagrid('reload');
+                        
+                        toastr.success("Data save Sucess!");
+                    }
+                    
+                    // Hancurkan dialog
                     $(this).dialog('destroy'); 
                 }
             });
@@ -374,80 +388,55 @@
         
         if (row && row.link && row.menus_id) {
             
-            // 1. LOADING MODERN (Overlay putih transparan + Spinner berputar)
+            // 1. LOADING MODERN
             var modernLoader = '<div id="modern_loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.85); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(3px);">' +
                             '<i class="fa fa-circle-o-notch fa-spin fa-3x fa-fw" style="color:#007bff;"></i>' +
                             '<span style="margin-top:15px; font-family:sans-serif; color:#333; font-weight:bold; font-size:16px;">Mengecek ketersediaan fitur...</span>' +
                             '</div>';
             $('body').append(modernLoader);
 
-            // URL tujuan
             var targetUrl = '<?= site_url() ?>/' + row.link + '?bypass=true&menu_id=' + row.menus_id;
 
-            // Buat Iframe tersembunyi
             var $iframe = $('<iframe src="'+targetUrl+'" style="display:none; width:100%; height:100%; border:none;"></iframe>').appendTo('body');
 
-            // Tunggu Iframe selesai dimuat
             $iframe.on('load', function() {
-                
-                // Hapus animasi loading modern dari layar
                 $('#modern_loader').remove(); 
                 
                 var win = this.contentWindow; 
 
-                // ============================================
-                // JIKA USER KLIK DOWNLOAD
-                // ============================================
                 if (action === 'download') {
-                    // Beri tahu user bahwa sistem sedang mengecek template (opsional)
                     toastr.info('Checking template file...', 'Please Wait', { timeOut: 1500 });
-
-                    // 1. Bangun URL yang benar
                     var downloadUrl = '<?= site_url() ?>/' + row.link + '?menu_id=' + row.menus_id;
-
-                    // 2. Buat iframe tersembunyi khusus untuk proses download ini
                     var $hiddenIframe = $('<iframe style="display:none;"></iframe>').appendTo('body');
-
-                    // 3. Tunggu sampai modul selesai dimuat di balik layar
                     $hiddenIframe.on('load', function() {
                         try {
                             var win = this.contentWindow;
 
-                            // Pastikan objek 'win' ada, dan fungsi 'download_excel' tersedia
                             if (win && typeof win.download_excel === 'function') {
                                 win.download_excel(); // Picu download
                                 toastr.success('The template file is being downloaded.');
                             } else {
-                                // Jika tidak ada fiturnya, tampilkan peringatan
                                 toastr.warning('This module does not provide Template files for download.');
                             }
                         } catch (e) {
-                            // Tangkap error jika ada masalah keamanan browser (Cross-Origin, dsb)
                             toastr.error('Failed to access the module.');
                             console.error('Download Error: ', e);
                         }
 
-                        // 4. Hancurkan iframe setelah 2 detik agar tidak menjadi sampah di memori (HTML)
                         setTimeout(function() {
                             $hiddenIframe.remove();
                         }, 2000);
                     });
 
-                    // 5. Masukkan URL ke iframe untuk memancing proses 'load'
                     $hiddenIframe.attr('src', downloadUrl);
                 }
 
-                // ============================================
-                // JIKA USER KLIK UPLOAD
-                // ============================================
                 else if (action === 'upload') {
                     var $dialog = $('#dlg_upload_wrapper');
                     var $iframe = $('#iframe_upload');
                     
-                    // 1. BANGUN URL YANG BENAR
                     var uploadUrl = '<?= site_url() ?>/' + row.link + '?menu_id=' + row.menus_id + '&action=upload';
 
-                    // 2. MUNCULKAN OVERLAY LOADING YANG ELEGAN (Di Halaman Parent)
                     var loader = '<div id="smooth_loader_upload" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(3px);">' +
                                 '<div style="text-align:center; color:#fff;">' +
                                 '<i class="fa fa-circle-o-notch fa-spin fa-4x fa-fw"></i>' +
@@ -455,27 +444,22 @@
                                 '</div></div>';
                     $('body').append(loader);
 
-                    // 3. SET IFRAME MENJADI TRANSPARAN DULU
                     $iframe.css({
                         'opacity': '0',
                         'transition': 'opacity 0.5s ease-in-out'
                     });
 
-                    // 4. BUKA DIALOG WRAPPER (dengan background transparent sementara)
                     $dialog.dialog({
                         onOpen: function() {
                             $(this).dialog('dialog').css('background', 'transparent');
                         }
                     }).dialog('open');
                     
-                    // 5. LOAD URL KE IFRAME
                     $iframe.attr('src', uploadUrl);
 
-                    // 6. DETEKSI SAAT IFRAME SELESAI DIMUAT
                     $iframe.off('load').on('load', function() {
                         var win = this.contentWindow;
                         
-                        // Cek apakah modul punya fitur upload
                         if (typeof win.upload !== 'function') {
                             $('#smooth_loader_upload').remove();
                             $dialog.dialog('close');
@@ -483,14 +467,11 @@
                             return;
                         }
 
-                        // Tahan sebentar (misal 1000ms) agar form Upload di child mekar sempurna
                         setTimeout(function() {
-                            // Hapus loading
                             $('#smooth_loader_upload').fadeOut(500, function() {
                                 $(this).remove();
                             });
 
-                            // Kembalikan background wrapper dan munculkan iframe perlahan
                             $dialog.dialog('dialog').css('background', '#ffffff');
                             $iframe.css('opacity', '1');
                             
@@ -577,7 +558,6 @@
     }
 
     function loadChartProject() {
-        // Cek apakah library Chart sudah siap
         if (typeof Chart === 'undefined') {
             console.error('Library Chart.js belum dimuat!');
             return;
@@ -590,7 +570,6 @@
             success: function(response) {
                 var ctx = document.getElementById('chartProject').getContext('2d');
                 
-                // Hancurkan chart lama jika sudah ada (untuk mencegah tumpang tindih saat reload)
                 if (window.myChartProject) {
                     window.myChartProject.destroy();
                 }
@@ -608,6 +587,12 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: {
+                            animateRotate: true,
+                            animateScale: true,
+                            duration: 2000,
+                            easing: 'easeOutBounce'
+                        },
                         plugins: {
                             legend: {
                                 position: 'bottom',
