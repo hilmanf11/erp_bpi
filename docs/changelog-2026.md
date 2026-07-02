@@ -744,3 +744,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-02]
 - **kurniawan**: Update Report_outstanding_po.php ([e1ed7179](https://github.com/hilmanf11/erp_bpi/commit/e1ed7179ba55a0e5b571d4217c02299c29c3e543))
+
+### [2026-07-02]
+- **kurniawan**: Update cost pattern ([0a83f47a](https://github.com/hilmanf11/erp_bpi/commit/0a83f47a8c79386bfca7c7d2729e2f12a8b416f7))
