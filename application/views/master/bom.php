@@ -67,13 +67,17 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1200px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:15%; display:inline-block;">Product No</span>
                 <input style="width:40%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
+            </div>
+            <div class="fitem" hidden>
+                <span style="width:15%; display:inline-block;">Product No</span>
+                <input style="width:40%;" name="item_fg_number" id="item_fg_number" class="easyui-textbox">
             </div>
         </fieldset>
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Bill of Material Lists" toolbar="#toolbar2"></table>
@@ -100,6 +104,20 @@
     </div>
 </div>
 
+<!-- Detail Histories -->
+<div id="dlg_history" class="easyui-dialog" title="Material Histories" data-options="closed: true,modal:true" style="width: 600px; height: 300px; top: 20px;">
+    <table id="dg_history" class="easyui-datagrid" style="width:100%;">
+        <thead>
+            <tr>
+                <th data-options="field:'name',width:150,halign:'center'">Part Name</th>
+                <th data-options="field:'number',width:150,halign:'center'">Part No</th>
+                <th data-options="field:'created_by',width:100,halign:'center'">Created By</th>
+                <th data-options="field:'created_date',width:100,halign:'center'">Created Date</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/bom/print') ?>" style="width: 100%;" hidden></iframe>
 
@@ -112,7 +130,7 @@
         $('#frm_insert').form('clear');
     }
 
-    function addTable(link = "") {
+    function addTable(link = "", mode = "add") {
         $('#dg2').datagrid({
             url: link,
             singleSelect: true,
@@ -368,9 +386,24 @@
                     editor: {
                         type: 'textbox'
                     }
+                }, {
+                    field: 'btn',
+                    title: 'History',
+                    halign: 'center',
+                    hidden: (mode === 'add'),
+                    width: 80,
+                    formatter: btnHistories
                 }]
             ],
-            onClickCell: onClickCell
+            onClickCell: onClickCell,
+            onLoadSuccess: function() {
+                // Logika sembunyikan/tampilkan kolom setelah data dimuat
+                if (mode === "add") {
+                    $(this).datagrid('hideColumn', 'btn');
+                } else {
+                    $(this).datagrid('showColumn', 'btn');
+                }
+            }
         });
     }
 
@@ -462,11 +495,12 @@
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
-            $('#dlg_insert').dialog('open');
+            $('#dlg_insert').dialog('open').dialog('setTitle', 'Update Data'); // Ubah title agar user tidak bingung
             $('#frm_insert').form('load', row);
             $("#item_fg_id").combogrid('disable');
 
-            addTable('<?= base_url('master/bom/datatableUpdates?item_fg_id=') ?>' + window.btoa(row.item_fg_id));
+            // Panggil dengan parameter 'update'
+            addTable('<?= base_url('master/bom/datatableUpdates?item_fg_id=') ?>' + window.btoa(row.item_fg_id), 'update');
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -665,7 +699,7 @@
                 iconCls: 'icon-ok',
                 handler: function() {
                     var item_fg_id = $("#item_fg_id").combogrid('getValue');
-
+                    var item_fg_number = $("#item_fg_number").textbox('getValue');
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
@@ -676,6 +710,7 @@
                             if(rows[i].type_item == "SA"){
                                 var dataFinal = {
                                     item_fg_id: item_fg_id,
+                                    item_fg_number: item_fg_number,
                                     id: rows[i].id,
                                     item_fg_sa_id: rows[i].item_rm_id,
                                     type: rows[i].type,
@@ -686,6 +721,7 @@
                             }else{
                                 var dataFinal = {
                                     item_fg_id: item_fg_id,
+                                    item_fg_number: item_fg_number,
                                     id: rows[i].id,
                                     item_rm_id: rows[i].item_rm_id,
                                     type: rows[i].type,
@@ -703,6 +739,7 @@
 
                             $.ajax({
                                 type: "post",
+                                async: false,
                                 url: url_save,
                                 data: dataFinal,
                                 dataType: "json",
@@ -715,9 +752,10 @@
                                             allowOutsideClick: false,
                                         }).then((result) => {
                                             if (result.isConfirmed) {
-                                                window.location.reload();
+                                                // window.location.reload();
                                             }
                                         });
+                                        localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                                     }
                                 }
                             });
@@ -749,7 +787,10 @@
                 title: 'Product Name',
                 width: 250
             }, ]
-        ]
+        ],
+        onSelect: function(value, rows) {
+            $('#item_fg_number').textbox('setValue', rows.number);
+        }
     });
 
     $('#filter_item_fg_id').combogrid({
@@ -896,5 +937,69 @@
                 });
             }
         }]
+    });
+
+    function btnHistories(val, row) {
+        var history = "viewHistories('" + row.id + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    }
+
+    function viewHistories(id) {
+        $("#dlg_history").dialog('open');
+        $('#dg_history').datagrid({
+            url: '<?= base_url('master/bom/datatableHistories?id=') ?>' + btoa(id),
+            pagination: false,
+            rownumbers: true,
+        });
+    }
+
+    //untuk kebutuhan NPD
+    $(document).ready(function() {
+        if (localStorage.getItem('trigger_add') === 'yes') {
+            localStorage.removeItem('trigger_add');
+
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof add === "function") {
+                    add(); 
+
+                    var checkClose = setInterval(function() {
+                        var isHidden = $('#dlg_insert').closest('.window').is(':hidden');
+                        if (isHidden) {
+                            clearInterval(checkClose); // Hentikan monitoring
+                            if (window.parent.$('#dlg_outer_wrapper').length) {
+                                window.parent.$('#dlg_outer_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 1000); 
+        }
+
+        // ==========================================
+        // SKRIP TRIGGER UPLOAD
+        // ==========================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var action = urlParams.get('action');
+
+        if (action === 'upload') {
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof upload === 'function') {
+                    upload(); 
+                    var checkCloseUpload = setInterval(function() {
+                        var isHidden = $('#dlg_upload').closest('.window').is(':hidden'); 
+                        if (isHidden) {
+                            clearInterval(checkCloseUpload); 
+                            if (window.parent.$('#dlg_upload_wrapper').length) {
+                                window.parent.$('#dlg_upload_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 500);
+        }
     });
 </script>
