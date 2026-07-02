@@ -125,13 +125,14 @@ class Report_outstanding_po extends CI_Controller
         $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
         $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
+        $this->db->join('purchase_requests f', 'a.request_no = f.request_no and a.item_rm_id = f.item_rm_id');
         $this->db->where('a.deleted', 0);
         $this->db->where("a.po_date between '$filter_from' and '$filter_to'");
         $this->db->like('a.supplier_id', $filter_supplier);
         $this->db->like('a.item_rm_id', $filter_product_no);
         $this->db->like('c.item_category_id', $filter_item_category);
         $this->db->like('a.po_no', $filter_purchase_order);
-        $this->db->like('c.division', $filter_division);
+        $this->db->like('f.division', $filter_division);
         $this->db->like('c.item_family_id', $filter_product_family);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.status', 'ASC');
@@ -187,35 +188,35 @@ class Report_outstanding_po extends CI_Controller
             $item_rm_id = $data['item_rm_id'];
             $supplier = $data['supplier_id'];
             // var_dump($data);
-            if($filter_product_no != "" && $filter_purchase_order != ""){
-                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
-                from purchase_orders a 
-                JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
-                FROM purchase_order_receipts 
-                GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
-                WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
-            }elseif($filter_purchase_order != ""){
-                $receipt = $this->crud->query("SELECT a.po_no, b.qty_receipt 
-                from purchase_orders a 
-                JOIN (SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt 
-                FROM purchase_order_receipts 
-                GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
-                WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
-            }elseif($filter_product_no != ""){
-                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
-                from purchase_orders a 
-                JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
-                FROM purchase_order_receipts 
-                GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
-                WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
-            }else{
-                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
-                from purchase_orders a 
-                JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
-                FROM purchase_order_receipts 
-                GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
-                WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
-            }
+            // if($filter_product_no != "" && $filter_purchase_order != ""){
+            //     $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
+            //     from purchase_orders a 
+            //     JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
+            //     FROM purchase_order_receipts 
+            //     GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
+            //     WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
+            // }elseif($filter_purchase_order != ""){
+            //     $receipt = $this->crud->query("SELECT a.po_no, b.qty_receipt 
+            //     from purchase_orders a 
+            //     JOIN (SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt 
+            //     FROM purchase_order_receipts 
+            //     GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
+            //     WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
+            // }elseif($filter_product_no != ""){
+            //     $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
+            //     from purchase_orders a 
+            //     JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
+            //     FROM purchase_order_receipts 
+            //     GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
+            //     WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
+            // }else{
+            //     $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
+            //     from purchase_orders a 
+            //     JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
+            //     FROM purchase_order_receipts 
+            //     GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
+            //     WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
+            // }
 
             // var_dump($receipt);
             // $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE (a.po_no = '$po_no' OR '$po_no' IS NULL OR '$po_no' = '') and (a.item_rm_id = '$item_rm_id' OR '$item_rm_id' IS NULL OR '$item_rm_id' = '') and a.status like '%$filter_status%'");
