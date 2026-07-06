@@ -756,3 +756,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-02]
 - **kurniawan**: update Master for NPD ([34cf98c3](https://github.com/hilmanf11/erp_bpi/commit/34cf98c3a04b44f52d359ba9f6292da5f880e8de))
+
+### [2026-07-06]
+- **kurniawan**: GENERATE MRP ([ffc68fa3](https://github.com/hilmanf11/erp_bpi/commit/ffc68fa3f4cd181eb80203f1a00e64c686adceec))
