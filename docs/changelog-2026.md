@@ -759,3 +759,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-06]
 - **kurniawan**: GENERATE MRP ([ffc68fa3](https://github.com/hilmanf11/erp_bpi/commit/ffc68fa3f4cd181eb80203f1a00e64c686adceec))
+
+### [2026-07-06]
+- **kurniawan**: new module ([5af5156f](https://github.com/hilmanf11/erp_bpi/commit/5af5156fca082275f65b0c67932ca64a2d785558))
