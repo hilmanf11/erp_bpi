@@ -762,3 +762,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-06]
 - **kurniawan**: new module ([5af5156f](https://github.com/hilmanf11/erp_bpi/commit/5af5156fca082275f65b0c67932ca64a2d785558))
+
+### [2026-07-07]
+- **kurniawan**: update breakdown price ([5777ef07](https://github.com/hilmanf11/erp_bpi/commit/5777ef07b6583070223341f688cb630c61c9b2ef))
