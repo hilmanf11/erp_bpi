@@ -31,15 +31,20 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 240px; padding: 10px;">
+<div id="toolbar" style="height: 270px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
-                <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
+                <input style="width:30%;" id="filter_period_month" class="easyui-combobox">
+                <input style="width:30%;" id="filter_period_year" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Quotation Date</span>
+                <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                <input style="width:29%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Revision</span>
@@ -76,27 +81,6 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Period</span>
-                    <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox">
-                    <input style="width:30%;" name="p_year" id="p_year" required="" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Cost Pattern Revision</span>
-                    <select style="width:60%;" name="revision" id="revision" required="" class="easyui-combobox" panelHeight="auto">
-                        <option value="" selected disabled>Choose Revision</option>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                    </select>
-                </div>
-                <!-- <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Division</span>
-                    <input style="width:60%;" id="division_id" class="easyui-combobox">
-                </div> -->
                 <div class="fitem" hidden>
                     <span style="width:30%; display:inline-block;">Part Id</span>
                     <input style="width:60%;" name="item_fg_id" id="item_fg_id" readonly class="easyui-textbox">
@@ -104,6 +88,15 @@
                 <div class="fitem">
                     <span style="width:30%; display:inline-block;">Part No</span>
                     <input style="width:60%;" name="item_fg_number" id="item_fg_number" required="" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:30%; display:inline-block;">Period</span>
+                    <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox">
+                    <input style="width:30%;" name="p_year" id="p_year" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:30%; display:inline-block;">Cost Pattern Revision</span>
+                    <input style="width:60%;" name="revision" id="revision" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:30%; display:inline-block;">Part Name</span>
@@ -294,11 +287,15 @@
     function filter() {
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_period_month=" + filter_period_month +
             "&filter_period_year=" + filter_period_year +
+            "&filter_from=" + filter_from +
+            "&filter_to=" + filter_to +
             "&filter_item_fg_id=" + filter_item_fg_id +
             "&filter_revision=" + filter_revision;
 
@@ -315,15 +312,19 @@
     }
 
     function excel() {
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
+       var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
-        var url = "?filter_period_month=" + window.btoa(filter_period_month) +
-            "&filter_period_year=" + window.btoa(filter_period_year) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_revision=" + window.btoa(filter_revision);
+        var url = "?filter_period_month=" + filter_period_month +
+            "&filter_period_year=" + filter_period_year +
+            "&filter_from=" + filter_from +
+            "&filter_to=" + filter_to +
+            "&filter_item_fg_id=" + filter_item_fg_id +
+            "&filter_revision=" + filter_revision;
 
         window.location.assign('<?= base_url('pricing/breakdown_prices/print/excel') ?>' + url);
     }
@@ -417,20 +418,6 @@
             }],
         });
 
-        $('#p_month').combobox({
-            url: '<?= base_url('pricing/breakdown_prices/readPeriod/month'); ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: 'Choose Months',
-        });
-
-        $('#p_year').combobox({
-            url: '<?= base_url('pricing/breakdown_prices/readPeriod/year'); ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: 'Choose Years',
-        });
-
         $('#filter_period_month').combobox({
             url: '<?= base_url('pricing/breakdown_prices/readPeriod/month'); ?>',
             valueField: 'id',
@@ -466,17 +453,88 @@
             ]
         });
 
+        // $('#p_month').combobox({
+        //     url: '<?= base_url('pricing/breakdown_prices/readPeriod/month'); ?>',
+        //     valueField: 'id',
+        //     textField: 'name',
+        //     prompt: 'Choose Months',
+        // });
+
+        // $('#p_year').combobox({
+        //     url: '<?= base_url('pricing/breakdown_prices/readPeriod/year'); ?>',
+        //     valueField: 'id',
+        //     textField: 'name',
+        //     prompt: 'Choose Years',
+        // });
+
+        // $('#item_fg_number').combogrid({
+        //     url: '<?= base_url('pricing/breakdown_prices/readItems'); ?>',
+        //     panelWidth: 300,
+        //     idField: 'item_fg_number',
+        //     textField: 'item_fg_number',
+        //     mode: 'remote',
+            
+        //     // HAPUS queryParams statis dari sini!
+            
+        //     fitColumns: true,
+        //     prompt: "Choose Part Number.",
+        //     columns: [
+        //         [{
+        //             field: 'item_fg_number',
+        //             title: 'Part No.',
+        //             width: 150
+        //         }, {
+        //             field: 'item_fg_name',
+        //             title: 'Part Name',
+        //             width: 150
+        //         }]
+        //     ],
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+        //         }
+        //     }],
+            
+        //     // TAMBAHKAN INI: Inject parameter terbaru setiap kali combogrid request ke server
+        //     onBeforeLoad: function(param) {
+        //         param.p_month = $('#p_month').combobox('getValue');
+        //         param.p_year = $('#p_year').combobox('getValue');
+        //         param.revision = $('#revision').combobox('getValue');
+        //     },
+            
+        //     onSelect: function(value, row) {
+        //         $('#item_fg_id').textbox('setValue', row.item_fg_id);
+        //         $('#item_fg_name').textbox('setValue', row.item_fg_name);
+        //         $('#order_estimation').numberbox('setValue', row.volume);
+        //         $('#model_name').textbox('setValue', row.model_name);
+        //     }
+        // });
+
+        $('#p_month').combobox({
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose Months',
+        });
+
+        $('#p_year').combobox({
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose Years',
+        });
+
+        $('#revision').combobox({
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose Revision',
+        });
+
         $('#item_fg_number').combogrid({
             url: '<?= base_url('pricing/breakdown_prices/readItems'); ?>',
             panelWidth: 300,
             idField: 'item_fg_number',
             textField: 'item_fg_number',
             mode: 'remote',
-            queryParams: {
-                p_month: $('#p_month').combobox('getValue'),
-                p_year: $('#p_year').combobox('getValue'),
-                revision: $('#revision').combobox('getValue')
-            },
             fitColumns: true,
             prompt: "Choose Part Number.",
             columns: [
@@ -494,6 +552,9 @@
                 iconCls: 'icon-clear',
                 handler: function(e) {
                     $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                    $('#p_month').combobox('loadData', []);
+                    $('#p_year').combobox('loadData', []);
+                    $('#revision').combobox('loadData', []);
                 }
             }],
             onSelect: function(value, row) {
@@ -501,6 +562,11 @@
                 $('#item_fg_name').textbox('setValue', row.item_fg_name);
                 $('#order_estimation').numberbox('setValue', row.volume);
                 $('#model_name').textbox('setValue', row.model_name);
+
+                var item_id = row.item_fg_id;
+                $('#p_month').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/p_month?item_id='); ?>' + item_id);
+                $('#p_year').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/p_year?item_id='); ?>' + item_id);
+                $('#revision').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/revision?item_id='); ?>' + item_id);
             }
         });
        

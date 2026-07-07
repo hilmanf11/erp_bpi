@@ -72,14 +72,100 @@ class Breakdown_prices extends CI_Controller
         }
     }
 
+    // public function readItems()
+    // {
+    //     $p_month  = (int) $this->input->post('p_month'); 
+    //     $p_year   = $this->input->post('p_year');
+    //     $revision = $this->input->post('revision');
+    //     $post = $this->input->post('q') ? $this->input->post('q') : "";
+
+    //     $this->db->select('*');
+    //     $this->db->from('cost_patterns');
+
+    //     if (!empty($p_month)) {
+    //         $this->db->where('p_month', $p_month);
+    //     }
+        
+    //     if (!empty($p_year)) {
+    //         $this->db->where('p_year', $p_year);
+    //     }
+        
+    //     if ($revision !== "") {
+    //         $this->db->where('revision', $revision);
+    //     }
+
+    //     if (!empty($post)) {
+    //         $this->db->group_start();
+    //         $this->db->like('item_fg_number', $post);
+    //         $this->db->or_like('item_fg_name', $post);
+    //         $this->db->or_like('item_fg_id', $post);
+    //         $this->db->group_end();
+    //     }
+
+    //     $this->db->group_by('item_fg_id');
+    //     $this->db->order_by('item_fg_number', 'ASC');
+        
+    //     $records = $this->db->get()->result_array();
+        
+    //     echo json_encode($records);
+    // }
+
+    public function readItemOptions($type)
+    {
+        $item_id = $this->input->get('item_id');
+        
+        if (empty($item_id)) {
+            echo json_encode([]);
+            return;
+        }
+
+        $this->db->select($type);
+        $this->db->from('cost_patterns');
+        $this->db->where('item_fg_id', $item_id);
+        $this->db->group_by($type);
+        $this->db->order_by($type, 'ASC');
+        $query = $this->db->get()->result_array();
+
+        $result = array();
+        foreach ($query as $row) {
+            $value = $row[$type];
+            
+            if ($type == 'p_month') {
+                $monthName = date("F", mktime(0, 0, 0, (int)$value, 10));
+                
+                $paddedValue = sprintf("%02d", (int)$value); 
+                
+                $result[] = array("id" => $paddedValue, "name" => $monthName);
+            } else {
+                $result[] = array("id" => $value, "name" => $value);
+            }
+        }
+
+        echo json_encode($result);
+    }
+
     public function readItems()
     {
-        $p_month  = $this->input->post('p_month');
-        $p_year   = $this->input->post('p_year');
-        $revision = $this->input->post('revision');
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM cost_patterns WHERE p_month LIKE '%$p_month%' AND p_year LIKE '%$p_year%' AND revision LIKE '%$revision%' AND (item_fg_number like '%$post%' or item_fg_name like '%$post%' or item_fg_id like '%$post%') GROUP BY item_fg_id ORDER BY item_fg_number ASC");
-        echo json_encode($send);
+        $post = $this->input->post('q') ? $this->input->post('q') : "";
+
+        $this->db->select('item_fg_id, item_fg_number, item_fg_name, volume, model_name');
+        $this->db->from('cost_patterns');
+
+        if (!empty($post)) {
+            $this->db->group_start();
+            $this->db->like('item_fg_number', $post);
+            $this->db->or_like('item_fg_name', $post);
+            $this->db->or_like('item_fg_id', $post);
+            $this->db->group_end();
+        }
+
+        // Tampilkan semua item secara unik
+        $this->db->group_by('item_fg_id');
+        $this->db->order_by('item_fg_number', 'ASC');
+        
+        $records = $this->db->get()->result_array();
+        
+        echo json_encode($records);
     }
 
     public function get_quotation_number()
@@ -115,6 +201,8 @@ class Breakdown_prices extends CI_Controller
 
         $filter_period_month = $get['filter_period_month'];
         $filter_period_year = $get['filter_period_year'];
+        $filter_from = $get['filter_from'];
+        $filter_to = $get['filter_to'];
         $filter_item_fg_id = $get['filter_item_fg_id'];
         $filter_revision = $get['filter_revision'];
 
@@ -134,6 +222,10 @@ class Breakdown_prices extends CI_Controller
         $this->db->select('a.*');
         $this->db->from('breakdown_prices a');
         $this->db->where('a.deleted', 0);
+        if ($filter_from != "" or $filter_to != "") {
+            $this->db->where('a.quotation_date >=', $filter_from);
+            $this->db->where('a.quotation_date <=', $filter_to);
+        }
         if ($filter_period_month != "") {
             $this->db->where('a.p_month', $filter_period_month);
         }
@@ -196,6 +288,7 @@ class Breakdown_prices extends CI_Controller
 
             echo json_encode([
                 'status'  => true,
+                'theme'   => 'success',
                 'message' => 'Data Save Succesfully',
                 'data'    => $send
             ]);
@@ -429,6 +522,8 @@ class Breakdown_prices extends CI_Controller
 
         $filter_period_month = $get['filter_period_month'];
         $filter_period_year = $get['filter_period_year'];
+        $filter_from = $get['filter_from'];
+        $filter_to = $get['filter_to'];
         $filter_item_fg_id = $get['filter_item_fg_id'];
         $filter_revision = $get['filter_revision'];
 
@@ -441,6 +536,10 @@ class Breakdown_prices extends CI_Controller
         $this->db->select('a.*');
         $this->db->from('breakdown_prices a');
         $this->db->where('a.deleted', 0);
+        if ($filter_from != "" or $filter_to != "") {
+            $this->db->where('a.quotation_date >=', $filter_from);
+            $this->db->where('a.quotation_date <=', $filter_to);
+        }
         if ($filter_period_month != "") {
             $this->db->where('a.p_month', $filter_period_month);
         }
@@ -534,14 +633,17 @@ class Breakdown_prices extends CI_Controller
 
     public function print_breakdown($id)
     {
-        $id = base64_decode($id);
+        $ids = base64_decode($id);
 
         // 1. Ambil data Header dari breakdown_prices
-        $this->db->select('a.*, b.quotation_number as quot_no, b.revision as quot_rev');
+        $this->db->select('a.*');
         $this->db->from('breakdown_prices a');
-        $this->db->join('quotations b','a.quotation_number = b.quotation_number2');
-        $this->db->where('b.id', $id);
+        // $this->db->join('quotations b','a.quotation_number = b.quotation_number2','left');
+        $this->db->where('a.id', $ids);
         $header = $this->db->get()->row();
+
+        // var_dump($header);
+        // return;
 
         if (!$header) {
             die("Data Breakdown tidak ditemukan.");
@@ -649,18 +751,19 @@ class Breakdown_prices extends CI_Controller
         $this->db->select('cp.*');
         $this->db->from('cost_patterns cp');
         $this->db->where([
-            'cp.p_month'    => $header->p_month,
-            'cp.p_year'     => $header->p_year,
+            'cp.p_month'    => (int) $header->p_month,
+            'cp.p_year'     => (int) $header->p_year,
             'cp.item_fg_id' => $header->item_fg_id,
             'cp.revision'   => $header->revision
         ]);
         $details2 = $this->db->get()->row();
+        // die($this->db->last_query());
 
         // 3. Generate HTML
         $html = '
         <html>
         <head>
-            <title>Breakdown Price - '.$header->quot_no.' REV 0'.$header->quot_rev.'</title>
+            <title>Breakdown Price - '.$header->quotation_number.' REV 0'.$header->revision.'</title>
             <style>
                 body { font-family: Calibri, sans-serif; font-size: 11px; }
                 .container { width: 210mm; padding: 10mm; margin: auto; }
@@ -696,7 +799,7 @@ class Breakdown_prices extends CI_Controller
                     </tr>
                     <tr>
                         <td width="15%" class="bg-blue">Model Name</td><td width="35%">'.$header->model_name.'</td>
-                        <td width="15%" class="bg-blue">Quotation Number</td><td class="bg-blue">'.$header->quot_no.' REV 0'.$header->quot_rev.'</td>
+                        <td width="15%" class="bg-blue">Quotation Number</td><td class="bg-blue">'.$header->quotation_number.' REV 0'.$header->revision.'</td>
                     </tr>
                     <tr>
                         <td class="bg-blue">Part Number</td><td>'.$header->item_fg_number.'</td>
