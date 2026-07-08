@@ -66,79 +66,41 @@ class Report_grn_rm_actual_std_price extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        // $query_main = "SELECT a.*, 
-        //     e.number as part_no, 
-        //     e.name as part_name, 
-        //     f.name as category_name, 
-        //     g.name as family_name,
-        //     c.division,
-        //     h.name as supplier_name,
-        //     (CASE 
-        //         WHEN COALESCE(b.discount_nominal,0) > 0 
-        //             THEN COALESCE(b.total,0) / COALESCE(b.qty,0) 
-        //         ELSE 
-        //             (COALESCE(b.total,0) 
-        //             - ((COALESCE(b.total,0) / NULLIF(COALESCE(b.total_sub,0),0)) 
-        //                 * COALESCE(b.discount_total,0)
-        //             )
-        //             ) / NULLIF(COALESCE(b.qty,0),0)
-        //     END) AS actual_price,
-        //     COALESCE(spr.price, 1) as standar_price,
-        //     i.uom_default as uom,
-        //     COALESCE(i.currency, h.currency) as currency, 
-        //     COALESCE(ser.middle, 1) as std_middle_rate,
-        //     COALESCE(aer.middle, 1) as actual_middle_rate
-        // FROM purchase_order_receipts a 
-        // JOIN (SELECT DISTINCT po_no, request_no, item_rm_id, total, discount_nominal, qty, total_sub, discount_total FROM purchase_orders) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id
-        // JOIN (SELECT DISTINCT a.request_no, b.name as division FROM purchase_requests a JOIN divisions b ON a.division = b.number) c ON b.request_no = c.request_no 
-        // JOIN item_rm e ON a.item_rm_id = e.id 
-        // JOIN item_categories f ON e.item_category_id = f.id 
-        // JOIN item_familys g ON e.item_family_id = g.id
-        // JOIN suppliers h ON a.supplier_id = h.id
-        // JOIN supplier_items i ON a.supplier_id = i.supplier_id and a.item_rm_id = i.item_rm_id
-        
-        // -- JOIN Standard Rate
-        // LEFT JOIN standard_exchange_rates ser 
-        //     ON ser.currency_from = COALESCE(i.currency, h.currency) 
-        //     AND a.receipt_date BETWEEN ser.start_date AND ser.end_date
-            
-        // -- JOIN Actual Rate
-        // LEFT JOIN exchange_rates aer 
-        //     ON aer.currency_from = COALESCE(i.currency, h.currency) 
-        //     AND a.receipt_date BETWEEN aer.start_date AND aer.end_date
-
-        // -- JOIN Standard Price
-        // LEFT JOIN standard_price_rm spr 
-        //     ON a.receipt_date BETWEEN spr.start_date AND spr.end_date AND a.item_rm_id = spr.item_rm_id AND spr.division LIKE '%$filter_division%'
-            
-        // WHERE f.id = 'C01' 
-        // AND a.deleted = '0'
-        // AND a.receipt_date BETWEEN '$filter_from' AND '$filter_to'
-        // AND g.id LIKE '%$filter_item_family%'
-        // AND c.division LIKE '%$filter_division%'
-        // ";
-
-        $query_main = "SELECT a.*, 
+        $query_main = "SELECT
+            a.deleted,
+            a.receipt_date,
+            a.receipt_no,
+            a.po_no,
+            a.bc_document,
+            (CASE 
+                    WHEN COALESCE(b.convertion, 0) > 1 THEN COALESCE(a.qty_receipt, 0) 
+                    ELSE COALESCE(a.qty_receipt2, 0)
+                END) as qty_receipt,
             e.number as part_no, 
             e.name as part_name, 
             f.name as category_name, 
             g.name as family_name,
             c.division,
             h.name as supplier_name,
-            
-            (CASE 
-                WHEN COALESCE(b.discount_nominal,0) > 0 
-                    THEN COALESCE(b.total,0) / NULLIF(COALESCE(b.qty,0),0) 
-                ELSE 
-                    (COALESCE(b.total,0) 
-                    - ((COALESCE(b.total,0) / NULLIF(COALESCE(b.total_sub,0),0)) 
-                        * COALESCE(b.discount_total,0)
-                    )
-                    ) / NULLIF(COALESCE(b.qty,0),0)
-            END) AS actual_price,
-            
+            (
+                (CASE 
+                    WHEN COALESCE(b.discount_nominal,0) > 0 
+                        THEN COALESCE(b.total,0) / NULLIF(COALESCE(b.qty,0),0) 
+                    ELSE 
+                        (COALESCE(b.total,0) 
+                        - ((COALESCE(b.total,0) / NULLIF(COALESCE(b.total_sub,0),0)) 
+                            * COALESCE(b.discount_total,0)
+                        )
+                        ) / NULLIF(COALESCE(b.qty,0),0)
+                END) 
+                / 
+                (CASE 
+                    WHEN COALESCE(b.convertion, 0) > 1 THEN NULLIF(COALESCE(b.weight, 1), 0) 
+                    ELSE 1 
+                END)
+            ) AS actual_price,          
             COALESCE(spr.price, 1) as standar_price,
-            i.uom_default as uom,
+            e.uom,
             COALESCE(i.currency, h.currency) as currency, 
             COALESCE(ser.middle, 1) as std_middle_rate,
             COALESCE(aer.middle, 1) as actual_middle_rate
@@ -150,16 +112,21 @@ class Report_grn_rm_actual_std_price extends CI_Controller
                 po_no, 
                 request_no, 
                 item_rm_id, 
+                specification,
+                convertion,
+                `weight`,
+                price,
                 SUM(qty) as qty, 
                 SUM(total) as total, 
                 SUM(total_sub) as total_sub, 
                 SUM(discount_nominal) as discount_nominal,
                 SUM(discount_total) as discount_total
             FROM purchase_orders
-            GROUP BY po_no, request_no, item_rm_id
-        ) b ON a.po_no = b.po_no AND a.item_rm_id = b.item_rm_id
-        
-        -- PERUBAHAN DI SINI: Tambah b.number as division_code
+            GROUP BY po_no, request_no, item_rm_id, specification, convertion, `weight`
+        ) b ON a.po_no = b.po_no 
+            AND a.item_rm_id = b.item_rm_id 
+            AND COALESCE(a.specification, '') = COALESCE(b.specification, '')
+            
         JOIN (SELECT DISTINCT a.request_no, b.name as division, b.number as division_code FROM purchase_requests a JOIN divisions b ON a.division = b.number) c 
             ON b.request_no = c.request_no 
             
@@ -177,7 +144,6 @@ class Report_grn_rm_actual_std_price extends CI_Controller
             ON aer.currency_from = COALESCE(i.currency, h.currency) 
             AND a.receipt_date BETWEEN aer.start_date AND aer.end_date
 
-        -- PERUBAHAN DI SINI: Ganti c.division menjadi c.division_code
         LEFT JOIN standard_price_rm spr 
             ON spr.item_rm_id = a.item_rm_id
             AND spr.division = c.division_code 
@@ -229,7 +195,7 @@ class Report_grn_rm_actual_std_price extends CI_Controller
                     Print By ' . $this->session->username . '  
                 </div>
                 <div style="clear: both;"></div> <br><br><br>
-                <h3 style="margin:0;">REPORT GRN RM ACTUAL & STANDAR PRICE</h3>
+                <h3 style="margin:0;">GRN-Report - Std Cost Vs Actual Cost</h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br>
@@ -273,10 +239,11 @@ class Report_grn_rm_actual_std_price extends CI_Controller
         $grand_std_amount_idr = 0;
         $grand_act_amount = 0;
         $grand_act_amount_idr = 0;
+        $grand_variance_unit = 0;
         $grand_variance_amount = 0;
 
         foreach ($records as $record) {
-            $qty = $record->qty_receipt2; 
+            $qty = $record->qty_receipt; 
             $actual_price = $record->actual_price;
             $standar_price = $record->standar_price;
             $currency = $record->currency;
@@ -305,6 +272,7 @@ class Report_grn_rm_actual_std_price extends CI_Controller
             $grand_std_amount_idr += $std_amount_idr;
             $grand_act_amount += $act_amount;
             $grand_act_amount_idr += $act_amount_idr;
+            $grand_variance_unit += $variance_unit;
             $grand_variance_amount += $variance_amount;
 
             $html .= '<tr>
@@ -340,16 +308,16 @@ class Report_grn_rm_actual_std_price extends CI_Controller
 
         // --- BARIS GRAND TOTAL ---
         $html .= '<tr style="background-color: #e9ecef;">
-                    <td colspan="12" style="text-align:right; padding-right:15px;"><b>GRAND TOTAL</b></td>
+                    <td colspan="11" style="text-align:right; padding-right:15px;"><b>GRAND TOTAL</b></td>
                     <td style="text-align:right;"><b>' . number_format($grand_qty, 2) . '</b></td>
-                    <td colspan="2" style="background-color: #e9ecef; text-align:center;">-</td> 
+                    <td colspan="3" style="background-color: #e9ecef; text-align:center;">-</td> 
                     <td style="text-align:right;"><b>' . number_format($grand_std_amount, 4) . '</b></td>
                     <td style="text-align:right;"><b>' . number_format($grand_std_amount_idr, 4) . '</b></td>
                     <td colspan="2" style="background-color: #e9ecef; text-align:center;">-</td>
                     <td style="text-align:right;"><b>' . number_format($grand_act_amount, 4) . '</b></td>
                     <td style="text-align:right;"><b>' . number_format($grand_act_amount_idr, 4) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format($grand_variance_unit, 4) . '</b></td>
                     <td style="text-align:right;"><b>' . number_format($grand_variance_amount, 4) . '</b></td>
-                    <td style="background-color: #e9ecef; text-align:center;"><b>-</b></td>
                 </tr>';
       
         $html .= '</table></body></html>';
