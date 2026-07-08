@@ -765,3 +765,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-07]
 - **kurniawan**: update breakdown price ([5777ef07](https://github.com/hilmanf11/erp_bpi/commit/5777ef07b6583070223341f688cb630c61c9b2ef))
+
+### [2026-07-08]
+- **kurniawan**: Update Report_grn_rm_actual_std_price.php ([859d0804](https://github.com/hilmanf11/erp_bpi/commit/859d08042319d843cc83d7fe436266f26f92fcfb))
