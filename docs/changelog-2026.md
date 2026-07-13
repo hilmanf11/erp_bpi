@@ -771,3 +771,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-13]
 - **kurniawan**: Update PO ([1ae4b231](https://github.com/hilmanf11/erp_bpi/commit/1ae4b2310b262f029ac2792bc3b21ef2ad4d4a7f))
+
+### [2026-07-13]
+- **kurniawan**: Update Generate MPP ([1e227a6a](https://github.com/hilmanf11/erp_bpi/commit/1e227a6a26890b7efc17a1419e87835b4b17834c))
