@@ -94,6 +94,10 @@
                     <input style="width:60%;" id="filter_categories" class="easyui-combobox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:60%;" id="filter_status" panelHeight="auto" class="easyui-combobox">
                         <option value="">Choose All</option>
@@ -1227,6 +1231,14 @@
                 }
             }],
         });
+
+        $('#filter_division').combobox({
+            url: '<?= base_url('master/divisions/reads'); ?>',
+            valueField: 'number',
+            textField: 'number',
+            panelHeight: 'panelHeight',
+            prompt: 'Select Division',
+        }); 
     }
 
     //Delete Data
@@ -1283,9 +1295,10 @@
         var filter_part_name = $("#filter_part_name").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
         var filter_categories = $("#filter_categories").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');       
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories + "&filter_division=" + filter_division;
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_orders/datatables') ?>' + url
         });
@@ -1307,9 +1320,10 @@
         var filter_part_name = $("#filter_part_name").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
         var filter_categories = $("#filter_categories").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');       
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories + "&filter_division=" + filter_division;
         window.location.assign('<?= base_url('purchase/purchase_orders/print/excel') ?>' + url);
     }
 
