@@ -376,7 +376,6 @@
             var dateObj = new Date(filter_year, filter_month - 1, i);
             var dayName = dayNames[dateObj.getDay()];
 
-            // Bungkus dalam function khusus agar nilai 'i' terikat aman di tiap kolom
             (function(dayIndex) {
                 scrollCols.push({
                     field: 'day_' + dayIndex,
@@ -390,11 +389,9 @@
                     formatter: function(val) {
                         return (val == 0 || val == null || val === '') ? '-' : val;
                     },
-                    // --- TAMBAHAN MEWARNAI BACKGROUND ---
                     styler: function(value, row, index) {
-                        // Jika dari PHP mengirimkan status printed = 1, warnai hijau!
+                        // Jika dari PHP mengirimkan status printed = 1, warnai hijau
                         if (row['day_' + dayIndex + '_printed'] == 1) {
-                            // Kode warna hijau pastel. Silakan ubah jika kurang cocok.
                             return 'background-color: #c8e6c9; color: #000; font-weight: bold;'; 
                         }
                     }
@@ -405,6 +402,9 @@
         // =========================================================
         // 3. INISIALISASI DATAGRID EASYUI
         // =========================================================
+        var selectedRowForPrint = null;
+        var selectedDayForPrint = null;
+        var selectedQtyForPrint = null;
         $('#dg_mpp').datagrid({
             url: '<?= base_url('planning/generate_mpp/datatables') ?>' + url,
             rownumbers: false, 
@@ -423,9 +423,9 @@
                         // TAMBAHAN: Cek apakah edit sebelumnya gagal validasi?
                         // ===================================================
                         if (isInvalidEdit) {
-                            isInvalidEdit = false; // Matikan lagi benderanya
-                            $('#dg_mpp').datagrid('selectRow', index); // Cukup sorot saja
-                            return; // HENTIKAN! Jangan paksa masuk mode edit
+                            isInvalidEdit = false;
+                            $('#dg_mpp').datagrid('selectRow', index);
+                            return;
                         }
                         // ===================================================
 
@@ -460,7 +460,6 @@
                         
                         $('#dg_mpp').datagrid('rejectChanges'); 
                         
-                        // NYALAKAN BENDERA GAGAL agar onClickRow dihentikan
                         isInvalidEdit = true; 
                         return; 
                     }
@@ -468,7 +467,7 @@
                     // Pastikan bendera mati jika lolos validasi
                     isInvalidEdit = false; 
 
-                    // 2. LANJUTKAN PROSES SIMPAN KE DATABASE (AJAX)
+                    // 2. PROSES SIMPAN KE DATABASE (AJAX)
                     $.ajax({
                         url: '<?= base_url('planning/generate_mpp/update_inline') ?>', 
                         type: 'POST',
@@ -476,15 +475,15 @@
                         data: row, 
                         success: function(response) {
                             if (response.status === 'success') {
-                                toastr.success("Data berhasil disimpan!");
+                                toastr.success("Data successfully saved.!");
                                 $('#dg_mpp').datagrid('reload');
                             } else {
-                                toastr.error("Gagal update data ke database!");
+                                toastr.error("Failed to update data in the database.");
                                 $('#dg_mpp').datagrid('rejectChanges'); 
                             }
                         },
                         error: function() {
-                            toastr.error("Terjadi kesalahan koneksi saat menyimpan!");
+                            toastr.error("A connection error occurred while saving!");
                             $('#dg_mpp').datagrid('rejectChanges'); 
                         }
                     });
@@ -504,40 +503,6 @@
                             // ...dan matikan agar tidak bisa diketik!
                             $(ed.target).numberbox('disable'); 
                         }
-                    }
-                }
-            },
-
-            // =======================================================
-            // 2. CEGAH MENU PRINT MUNCUL SAAT DIKLIK KANAN
-            // =======================================================
-            onCellContextMenu: function(e, index, field, row) {
-                if (!$(e.target).is('input')) {
-                    e.preventDefault(); 
-
-                    if (field && field.startsWith('day_')) {
-                        var dayNumber = field.split('_')[1]; 
-                        var qtyAtDay = row[field]; 
-
-                        // --- TAMBAHAN BLOKIR KLIK KANAN ---
-                        // Cek apakah tanggal ini warnanya hijau (printed)?
-                        if (row['day_' + dayNumber + '_printed'] == 1) {
-                            toastr.warning("Jadwal tanggal " + dayNumber + " sudah turun ke produksi dan tidak bisa di-Print ulang!", "Terkunci");
-                            return; // HENTIKAN eksekusi, menu klik kanan tidak akan muncul!
-                        }
-                        // ----------------------------------
-
-                        $(this).datagrid('selectRow', index); 
-
-                        $('#menu_kanan').menu('show', {
-                            left: e.pageX,
-                            top: e.pageY,
-                            onClick: function(item) {
-                                if (item.id === 'btn_print') {
-                                    prosesPrintSchedule(row, dayNumber, qtyAtDay);
-                                } 
-                            }
-                        });
                     }
                 }
             },
@@ -570,49 +535,79 @@
         // 4. TRIK MASTER: TANGKAP KLIK KANAN SECARA GLOBAL DI PANEL DATAGRID
         $('#dg_mpp').datagrid('getPanel').on('contextmenu', function(e) {
             
-            // Cek target yang diklik, lalu lacak ke atas apakah dia berada di dalam <td> kolom "day_"
-            // Tanda ^= artinya "berawalan dengan" (mencari day_1, day_2, dst)
             var td = $(e.target).closest('td[field^="day_"]');
 
-            // Jika yang diklik BENAR berada di dalam kolom hari
             if (td.length > 0) {
-                
-                e.preventDefault(); // HARGA MATI: Matikan menu klik kanan bawaan browser Chrome/Edge!
+                e.preventDefault(); 
 
-                var field = td.attr('field'); // Dapat 'day_15'
-                var tr = td.closest('tr.datagrid-row'); // Cari elemen barisnya
-                var index = parseInt(tr.attr('datagrid-row-index')); // Dapat index baris ke berapa
+                var field = td.attr('field'); 
+                var tr = td.closest('tr.datagrid-row'); 
+                var index = parseInt(tr.attr('datagrid-row-index')); 
 
-                // Cek apakah di dalam sel ini sedang ada inputan (sedang mode edit)?
                 var isEditing = td.find('input').length > 0;
 
                 if (isEditing) {
-                    // Jika sedang diketik, PAKSA SIMPAN dulu!
                     $('#dg_mpp').datagrid('endEdit', index);
-                    editIndex = undefined; // Bersihkan status edit
+                    editIndex = undefined; 
                 }
 
-                // Ambil data HARI INI SAJA (setelah disimpan jika tadi mode edit)
                 var row = $('#dg_mpp').datagrid('getRows')[index];
-                var dayNumber = field.split('_')[1]; // Dapat angka harinya saja (misal: 15)
-                var qtyAtDay = row[field]; // Dapat Qty pada hari tersebut
+                var dayNumber = field.split('_')[1]; 
+                var qtyAtDay = row[field]; 
 
-                // Sorot barisnya agar user tidak bingung
+                // ========================================================
+                // VALIDASI: BLOKIR JIKA SUDAH DIPRINT (HIJAU)
+                // ========================================================
+                if (row['day_' + dayNumber + '_printed'] == 1) {
+                    toastr.warning("Schedule for " + dayNumber + " it has already been sent to production and cannot be reprinted!", "Lock");
+                    return; // STOP DI SINI! Menu tidak akan muncul.
+                }
+
                 $('#dg_mpp').datagrid('selectRow', index);
 
-                // Tampilkan menu buatan kita persis di ujung kursor mouse
+                selectedRowForPrint = row;
+                selectedDayForPrint = dayNumber;
+                selectedQtyForPrint = qtyAtDay;
+
+                // TAMPILKAN MENU PADA KURSOR (Tanpa onClick di dalamnya!)
                 $('#menu_kanan').menu('show', {
                     left: e.pageX,
-                    top: e.pageY,
-                    onClick: function(item) {
-                        if (item.id === 'btn_print') {
-                            prosesPrintSchedule(row, dayNumber, qtyAtDay);
-                        }
-                    }
+                    top: e.pageY
                 });
             }
         });
     }
+
+    $(document).ready(function() {
+        // ... (kode Anda yang lain) ...
+
+        // BINDING MENU HANYA 1 KALI
+        $('#menu_kanan').menu({
+            onClick: function(item) {
+                if (item.id === 'btn_print') {
+                    
+                    // Pastikan ada data yang dipilih
+                    if (selectedRowForPrint !== null && selectedDayForPrint !== null) {
+                        
+                        // VALIDASI LAPIS 2: Pertahanan terakhir sebelum nge-print
+                        if (selectedRowForPrint['day_' + selectedDayForPrint + '_printed'] == 1) {
+                            toastr.error("Tindakan dicegah! Sistem mendeteksi jadwal ini sudah berwarna hijau.", "Blokir");
+                            return;
+                        }
+
+                        // Aman, eksekusi proses print!
+                        prosesPrintSchedule(selectedRowForPrint, selectedDayForPrint, selectedQtyForPrint);
+                        
+                        // KOSONGKAN memori setelah dipakai agar tidak bocor
+                        selectedRowForPrint = null;
+                        selectedDayForPrint = null;
+                        selectedQtyForPrint = null;
+                    }
+
+                } 
+            }
+        });
+    });
 
     function revisionSelected(filter_month, filter_year) {
         $.ajax({
@@ -914,7 +909,7 @@
             mold_id: row.mold_id,
             machine_id: row.machine_id,
             qty: qtyAtDay,
-            remarks: 'MPP'
+            meta_data: 'MPP'
         };
 
         // Kirim data ke PHP

@@ -799,7 +799,7 @@ class Generate_mpp extends CI_Controller
                 'machine_id'     => $machine_id,
                 'total_purging'  => $total_purging,
                 'qty'            => $post['qty'],
-                'remarks'        => $post['remarks'] 
+                'meta_data'      => $post['meta_data'] 
             ];
 
            // =========================================================
