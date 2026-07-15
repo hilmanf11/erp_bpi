@@ -82,6 +82,7 @@
                         <option value="">Select All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
+                        <option value="2">COMPLETE</option>
                     </select>
                 </div>
                 <div class="fitem">
@@ -355,7 +356,7 @@
                         field: 'qty_req',
                         width: 80,
                         halign: 'center',
-                        title: "Qty",
+                        title: "Supply",
                         editor: {
                             type: 'numberbox',
                             options: {
@@ -368,7 +369,7 @@
                         width: 100,
                         halign: 'center',
                         hidden: true,
-                        title: "Req Qty",
+                        title: "Need",
                         editor: {
                             type: 'numberbox',
                             options: {
@@ -380,7 +381,7 @@
                         field: 'qty_real',
                         width: 100,
                         halign: 'center',
-                        title: "Req Qty",
+                        title: "Need",
                         editor: {
                             type: 'numberbox',
                             options: {
@@ -541,28 +542,32 @@
                 cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    
+                    var requestsCompleted = 0;
+
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
+                        console.log(row);
                         $.ajax({
                             method: 'post',
                             url: '<?= base_url('planning/supply_sheets/delete') ?>',
                             data: {
-                                request_no: row.request_no
+                                request_no: row.request_no,
+                                workorder: row.workorder,
+                                item_fg_id: row.item_fg_id
                             },
                             success: function(result) {
-                                var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
-                                Swal.fire({
-                                    title: 'Error',
-                                    text: jqXHR.statusText,
-                                    icon: 'error',
-                                    confirmButtonText: 'Ok'
-                                });
                             },
                             complete: function(data) {
-                                window.location.reload();
+                                requestsCompleted++;
+                                if (requestsCompleted === rows.length) {
+                                    $('#dg').datagrid('reload'); 
+                                    toastr.success("Data berhasil dihapus!");
+                                    // window.location.reload(); //
+                                }
                             }
                         });
                     }
@@ -572,7 +577,6 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
 
     function filter() {
         var filter_supply_type = $("#filter_supply_type").combobox('getValue');

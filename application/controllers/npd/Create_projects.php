@@ -36,6 +36,21 @@ class Create_projects extends CI_Controller
         echo json_encode($send);
     }
 
+    //GET DATA
+    public function readItems()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $division_id = isset($_POST['division_id']) ? $_POST['division_id'] : "";
+        $filter_division = "";
+        if ($division_id != "") {
+            $filter_division = " AND division_id = '$division_id' "; 
+        }
+
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE status = '0' $filter_division AND (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%')");
+        
+        echo json_encode($send);
+    }
+
     public function readMenus()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -77,14 +92,12 @@ class Create_projects extends CI_Controller
             $this->db->select('a.*, 
             b.name as division, 
             c.name as customer_name, 
-            d.number as model_number, 
             e.name as project_category_name, 
             a.created_by as owner, 
             a.status as status_project');
             $this->db->from('create_projects a');
             $this->db->join('divisions b','b.id = a.division_id');
             $this->db->join('customers c','c.id = a.customer_id');
-            $this->db->join('item_fg_npd d','d.id = a.item_fg_id_npd');
             $this->db->join('project_categorys e','e.id = a.project_category_id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
@@ -101,8 +114,7 @@ class Create_projects extends CI_Controller
             $records = $this->db->get()->result_array();
 
             $today = new DateTime();
-            $today->setTime(0, 0, 0); // Set jam ke 00:00:00 agar perbandingan adil
-
+            $today->setTime(0, 0, 0);
             foreach ($records as &$row) {
                 
                 // ============================================
@@ -130,7 +142,7 @@ class Create_projects extends CI_Controller
                 }
 
                 // ============================================
-                // 2. LOGIKA DURASI (Skrip asli Anda)
+                // 2. LOGIKA DURASI
                 // ============================================
                 if (!empty($row['start_date']) && !empty($row['end_date'])) {
                     $start = new DateTime($row['start_date']);
@@ -152,8 +164,6 @@ class Create_projects extends CI_Controller
                 } else {
                     $row['duration'] = '-';
                 }
-
-                // (Masukkan logika hitung PROGRESS di sini jika ingin dipakai lagi)
             }
             // Return ke EasyUI
             $result['total'] = $totalRows;
@@ -162,22 +172,54 @@ class Create_projects extends CI_Controller
         }
     }
 
+    // public function datatableDetails()
+    // {
+    //     $number = base64_decode($this->input->get('number'));
+
+    //     if ($number) {
+    //         $this->db->select('details');
+    //         $this->db->from('create_projects');
+    //         $this->db->where('number', $number);
+    //         $row = $this->db->get()->row();
+
+    //         if ($row && !empty($row->details)) {
+    //             $records = json_decode($row->details, true); 
+    //             echo json_encode($records);
+    //         } else {
+    //             echo json_encode([]);
+    //         }
+    //     } else {
+    //         echo json_encode([]);
+    //     }
+    // }
+
     public function datatableDetails()
     {
         $number = base64_decode($this->input->get('number'));
 
         if ($number) {
-            $this->db->select('details');
-            $this->db->from('create_projects');
-            $this->db->where('number', $number);
-            $row = $this->db->get()->row();
+            // 1. JOIN tabel details ke header untuk mendapatkan data berdasarkan nomor project
+            $this->db->select('d.*');
+            $this->db->from('create_project_details d');
+            $this->db->join('create_projects p', 'p.id = d.create_project_id');
+            $this->db->where('p.number', $number);
+            $records = $this->db->get()->result_array();
 
-            if ($row && !empty($row->details)) {
-                $records = json_decode($row->details, true); 
-                echo json_encode($records);
-            } else {
-                echo json_encode([]);
+            $result = [];
+            // 2. Mapping ulang nama kolom DB agar sesuai dengan field datagrid frontend
+            foreach ($records as $r) {
+                $result[] = [
+                    // 'item_fg_id'     => $r['item_fg_id'],
+                    'item_fg_number' => $r['item_fg_number'],
+                    'item_fg_name'   => $r['item_fg_name'],
+                    'qty'                       => $r['qty'],
+                    'volume'                    => $r['volume'],
+                    'volume_unit'               => $r['volume_unit'],
+                    'remark'                    => $r['remark']
+                ];
             }
+
+            echo json_encode($result);
         } else {
             echo json_encode([]);
         }
@@ -205,36 +247,127 @@ class Create_projects extends CI_Controller
         
         echo $autoid;
     }
+    // //CREATE DATA
+    // public function create() {
+    //     $details_json = $this->input->post('details');
+
+    //     $data_project = array(
+    //         'number'              => $this->input->post('number'),
+    //         'name'                => $this->input->post('name'),
+    //         'division_id'         => $this->input->post('division_id'),
+    //         'customer_id'         => $this->input->post('customer_id'),
+    //         'model'               => $this->input->post('model'),
+    //         'start_date'          => $this->input->post('start_date'),
+    //         'end_date'            => $this->input->post('end_date'),
+    //         'level'               => $this->input->post('level'),
+    //         'project_category_id' => $this->input->post('project_category_id'),
+    //         'description'         => $this->input->post('description'),
+    //         'details'             => $details_json
+    //     );
+
+    //     $insert = $this->crud->create('create_projects', $data_project);
+
+    //     if ($insert) {
+    //         echo json_encode(['theme' => 'success', 'message' => 'Project and all details successfully saved!']);
+    //     } else {
+    //         echo json_encode(['theme' => 'error', 'message' => 'Failed to save project data.']);
+    //     }
+    // }
+    // //UPDATE DATA
+    // public function update() {
+    //     $id = $this->input->get('id');
+
+    //     if ($id) {
+    //         $details_json = $this->input->post('details');
+
+    //         $data_update = array(
+    //             'name'                => $this->input->post('name'),
+    //             'division_id'         => $this->input->post('division_id'),
+    //             'customer_id'         => $this->input->post('customer_id'),
+    //             'model'               => $this->input->post('model'),
+    //             'start_date'          => $this->input->post('start_date'),
+    //             'end_date'            => $this->input->post('end_date'),
+    //             'level'               => $this->input->post('level'),
+    //             'project_category_id' => $this->input->post('project_category_id'),
+    //             'description'         => $this->input->post('description'),
+    //             'details'             => $details_json
+    //         );
+
+    //         $where = array('id' => $id);
+    //         $update = $this->crud->update('create_projects', $where, $data_update);
+
+    //         if ($update) {
+    //             echo json_encode(['theme' => 'success', 'message' => 'Project successfully updated!']);
+    //         } else {
+    //             echo json_encode(['theme' => 'error', 'message' => 'Failed to update project data.']);
+    //         }
+    //     } else {
+    //         echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
+    //     }
+    // }
+    // //DELETE DATA
+    // public function delete()
+    // {
+    //     $id = $this->input->post('id');
+    //     if ($id) {
+    //         $where = array('id' => $id);
+    //         $delete = $this->crud->delete('create_projects', $where);
+    //         if ($delete) {
+    //             echo json_encode(['theme' => 'success', 'message' => 'Project successfully deleted!']);
+    //         } else {
+    //             echo json_encode(['theme' => 'error', 'message' => 'Failed to delete project.']);
+    //         }
+    //     } else {
+    //         echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
+    //     }
+    // }
+
     //CREATE DATA
     public function create() {
-        // 1. Ambil data JSON string dari Datagrid yang dikirim via AJAX
-        // Bentuknya akan berupa text panjang: [{"item_fg_id": "1", "volume": "100"}, {...}]
         $details_json = $this->input->post('details');
+        $number = $this->input->post('number');
 
-        // 2. Bungkus semua data dari form Header DAN data Detail ke dalam 1 Array
         $data_project = array(
-            'number'              => $this->input->post('number'),
+            'number'              => $number,
             'name'                => $this->input->post('name'),
             'division_id'         => $this->input->post('division_id'),
             'customer_id'         => $this->input->post('customer_id'),
-            'item_fg_id_npd'      => $this->input->post('item_fg_id_npd'),
+            'model'               => $this->input->post('model'),
             'start_date'          => $this->input->post('start_date'),
             'end_date'            => $this->input->post('end_date'),
             'level'               => $this->input->post('level'),
             'project_category_id' => $this->input->post('project_category_id'),
-            'description'         => $this->input->post('description'),
-            'details'             => $details_json // <-- SIMPAN LANGSUNG SEBAGAI TEKS DI SINI
+            'description'         => $this->input->post('description')
         );
-
-        // 3. Simpan hanya ke 1 tabel (create_projects)
         $insert = $this->crud->create('create_projects', $data_project);
-
         if ($insert) {
+            $project = $this->db->select('id')->where('number', $number)->get('create_projects')->row();
+            
+            if ($project) {
+                $details = json_decode($details_json, true);
+                if (!empty($details)) {
+                    $batch_data = [];
+                    foreach ($details as $row) {
+                        $batch_data[] = array(
+                            'create_project_id' => $project->id,
+                            // 'item_fg_id'        => $row['item_fg_id'],
+                            'item_fg_number'    => $row['item_fg_number'],
+                            'item_fg_name'      => $row['item_fg_name'],
+                            'qty'               => $row['qty'],
+                            'volume'            => $row['volume'],
+                            'volume_unit'       => $row['volume_unit'],
+                            'remark'            => $row['remark']
+                        );
+                    }
+                    $this->db->insert_batch('create_project_details', $batch_data);
+                }
+            }
             echo json_encode(['theme' => 'success', 'message' => 'Project and all details successfully saved!']);
         } else {
             echo json_encode(['theme' => 'error', 'message' => 'Failed to save project data.']);
         }
     }
+
     //UPDATE DATA
     public function update() {
         $id = $this->input->get('id');
@@ -246,19 +379,38 @@ class Create_projects extends CI_Controller
                 'name'                => $this->input->post('name'),
                 'division_id'         => $this->input->post('division_id'),
                 'customer_id'         => $this->input->post('customer_id'),
-                'item_fg_id_npd'      => $this->input->post('item_fg_id_npd'),
+                'model'               => $this->input->post('model'),
                 'start_date'          => $this->input->post('start_date'),
                 'end_date'            => $this->input->post('end_date'),
                 'level'               => $this->input->post('level'),
                 'project_category_id' => $this->input->post('project_category_id'),
-                'description'         => $this->input->post('description'),
-                'details'             => $details_json
+                'description'         => $this->input->post('description')
             );
 
             $where = array('id' => $id);
             $update = $this->crud->update('create_projects', $where, $data_update);
 
             if ($update) {
+                $this->db->where('create_project_id', $id)->delete('create_project_details');
+                
+                $details = json_decode($details_json, true);
+                if (!empty($details)) {
+                    $batch_data = [];
+                    foreach ($details as $row) {
+                        $batch_data[] = array(
+                            'create_project_id' => $id,
+                            // 'item_fg_id'        => $row['item_fg_id'],
+                            'item_fg_number'    => $row['item_fg_number'],
+                            'item_fg_name'      => $row['item_fg_name'],
+                            'qty'               => $row['qty'],
+                            'volume'            => $row['volume'],
+                            'volume_unit'       => $row['volume_unit'],
+                            'remark'            => $row['remark']
+                        );
+                    }
+                    $this->db->insert_batch('create_project_details', $batch_data);
+                }
+
                 echo json_encode(['theme' => 'success', 'message' => 'Project successfully updated!']);
             } else {
                 echo json_encode(['theme' => 'error', 'message' => 'Failed to update project data.']);
@@ -267,15 +419,20 @@ class Create_projects extends CI_Controller
             echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
         }
     }
+
     //DELETE DATA
     public function delete()
     {
         $id = $this->input->post('id');
+        
         if ($id) {
+            $this->db->where('create_project_id', $id)->delete('create_project_details');
+            
             $where = array('id' => $id);
             $delete = $this->crud->delete('create_projects', $where);
+            
             if ($delete) {
-                echo json_encode(['theme' => 'success', 'message' => 'Project successfully deleted!']);
+                echo json_encode(['theme' => 'success', 'message' => 'Project and its details successfully deleted!']);
             } else {
                 echo json_encode(['theme' => 'error', 'message' => 'Failed to delete project.']);
             }
@@ -283,6 +440,7 @@ class Create_projects extends CI_Controller
             echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
         }
     }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
@@ -298,11 +456,10 @@ class Create_projects extends CI_Controller
         $config = $this->db->get()->row();
 
         // Select Query Project
-        $this->db->select('a.*, b.name as division, c.name as customer_name, d.number as model_number, e.name as project_category_name, a.created_by as owner');
+        $this->db->select('a.*, b.name as division, c.name as customer_name, e.name as project_category_name, a.created_by as owner');
         $this->db->from('create_projects a');
         $this->db->join('divisions b', 'b.id = a.division_id', 'left');
         $this->db->join('customers c', 'c.id = a.customer_id', 'left');
-        $this->db->join('item_fg_npd d', 'd.id = a.item_fg_id_npd', 'left');
         $this->db->join('project_categorys e', 'e.id = a.project_category_id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
@@ -392,7 +549,7 @@ class Create_projects extends CI_Controller
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['division'] . '</td>
                     <td>' . $data['customer_name'] . '</td>
-                    <td>' . $data['model_number'] . '</td>
+                    <td>' . $data['model'] . '</td>
                     <td>' . $data['start_date'] . '</td>
                     <td>' . $data['end_date'] . '</td>
                     <td>' . $data['duration'] . '</td>

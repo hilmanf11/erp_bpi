@@ -50,12 +50,9 @@ class Item_fg_npd extends CI_Controller
             //Select Query
             $this->db->select('a.*, b.name as division_name, 
             (SELECT COUNT(*) FROM mold_items c WHERE c.item_fg_id = a.id) as total_mold, 
-            f.min, f.max, g.name as item_family_name');
+            g.name as item_family_name');
             $this->db->from('item_fg_npd a');
             $this->db->join('divisions b', 'a.division_id = b.id');
-            $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
-            $this->db->join('customers e', 'd.customer_id = e.id', 'left');
-            $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
             $this->db->join('item_familys g', "a.item_family_id = g.id", 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
@@ -64,10 +61,6 @@ class Item_fg_npd extends CI_Controller
                         $this->db->like("b.name", $filter->value);
                     } elseif ($filter->field == "total_mold") {
                         $this->db->like("total_mold", $filter->value);
-                    } elseif ($filter->field == "min") {
-                        $this->db->like("f.min", $filter->value);
-                    } elseif ($filter->field == "max") {
-                        $this->db->like("f.max", $filter->value);
                     } elseif ($filter->field == "item_family_name") {
                         $this->db->like("g.name", $filter->value);
                     } else {
@@ -90,19 +83,47 @@ class Item_fg_npd extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid($division)
+    // public function autoid($division)
+    // {
+    //     $month = date('my');
+    //     $combine = "FG-" . $division;
+    //     $format = "BPI" . $combine . $month;
+    //     $sql = $this->db->query("SELECT max(id) as kode FROM item_fg_npd WHERE id LIKE '%$format%'");
+    //     $row = $sql->row();
+    //     if ($row->kode == "") {
+    //         $kode = 0;
+    //     } else {
+    //         $kode = substr($row->kode, -4);
+    //     }
+    //     $autoid = $format . sprintf("%04s", $kode + 1);
+    //     echo $autoid;
+    // }
+
+    public function autoid($division)// dokumentasi: cek NPD dan FG
     {
         $month = date('my');
         $combine = "FG-" . $division;
         $format = "BPI" . $combine . $month;
-        $sql = $this->db->query("SELECT max(id) as kode FROM item_fg_npd WHERE id LIKE '%$format%'");
+        
+        $query_string = "
+            SELECT MAX(id) as kode FROM (
+                SELECT id FROM item_fg_npd WHERE id LIKE '%$format%'
+                UNION ALL
+                SELECT id FROM item_fg WHERE id LIKE '%$format%'
+            ) as combined_tables
+        ";
+        
+        $sql = $this->db->query($query_string);
         $row = $sql->row();
-        if ($row->kode == "") {
+        
+        if (empty($row->kode)) {
             $kode = 0;
         } else {
-            $kode = substr($row->kode, -4);
+            $kode = (int) substr($row->kode, -4);
         }
+        
         $autoid = $format . sprintf("%04s", $kode + 1);
+        
         echo $autoid;
     }
     //MIN STOCK
@@ -121,14 +142,37 @@ class Item_fg_npd extends CI_Controller
         echo json_encode($records);
     }
     //CREATE DATA
-    public function create()
+    // public function create() 
+    // {
+    //     if ($this->input->post()) {
+    //         if ($this->form_validation->run() == TRUE) {
+    //             $post   = $this->input->post();
+    //             $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_fg_npd/', ["id" => $post['id']], "item_fg_npd", "attachment");
+    //             $postFinal = array_merge($post, ["attachment" => $attachment]);
+    //             $send   = $this->crud->create('item_fg_npd', $postFinal);
+    //             echo $send;
+    //         } else {
+    //             show_error(validation_errors());
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+    public function create() //dokuemtasi: create ke item_fg
     {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
                 $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_fg_npd/', ["id" => $post['id']], "item_fg_npd", "attachment");
-                $postFinal = array_merge($post, ["attachment" => $attachment]);
-                $send   = $this->crud->create('item_fg_npd', $postFinal);
+                
+                $postFinal = array_merge($post, [
+                    "attachment" => $attachment,
+                    "remarks"    => "NPD"
+                ]);
+                
+                $send = $this->crud->create('item_fg_npd', $postFinal);
+                $this->crud->create('item_fg', $postFinal);
+                
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -138,14 +182,35 @@ class Item_fg_npd extends CI_Controller
         }
     }
     //UPDATE DATA
-    public function update()
+    // public function update()
+    // {
+    //     if ($this->input->post()) {
+    //         $id   = base64_decode($this->input->get('id'));
+    //         $post = $this->input->post();
+    //         $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_fg_npd/', ["id" => $id], "item_fg_npd", "attachment");
+    //         $postFinal = array_merge($post, ["attachment" => $attachment]);
+    //         $send = $this->crud->update('item_fg_npd', ["id" => $id], $postFinal);
+    //         echo $send;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+    public function update()//dokuemtasi: update ke item_fg
     {
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
             $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_fg_npd/', ["id" => $id], "item_fg_npd", "attachment");
-            $postFinal = array_merge($post, ["attachment" => $attachment]);
+            
+            $postFinal = array_merge($post, [
+                "attachment" => $attachment,
+                "remarks"    => "NPD"
+            ]);
+            
             $send = $this->crud->update('item_fg_npd', ["id" => $id], $postFinal);
+            $this->crud->update('item_fg', ["id" => $id], $postFinal);
+            
             echo $send;
         } else {
             show_error("Cannot Process your request");

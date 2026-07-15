@@ -13,8 +13,8 @@
             <th rowspan="2" data-options="field:'po_date',width:100,align:'center'">PO Date</th>
             <th rowspan="2" data-options="field:'delivery_date',width:100,align:'center'">Delivery Date</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'item_supplier',width:200,halign:'center'">Supplier Product</th>
             <th rowspan="2" data-options="field:'specification',width:200,halign:'center'">Specification</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformatDefault">MPQ</th>
@@ -92,6 +92,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Category</span>
                     <input style="width:60%;" id="filter_categories" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -376,7 +380,7 @@
                                 width: 150,
                                 readonly: true,
                                 halign: 'center',
-                                title: "Product No",
+                                title: "Part No",
                                 editor: {
                                     type: 'textbox',
                                     options: {
@@ -400,7 +404,7 @@
                                 width: 200,
                                 readonly: true,
                                 halign: 'center',
-                                title: "Product Name"
+                                title: "Part Name"
                              }, {//2
                                 field: 'item_supplier',
                                 width: 150,
@@ -835,7 +839,7 @@
                                             supplier_id.combogrid('setValue', selectedSupplier.id);
                                             updateSupplierFields(selectedSupplier);
                                         } else {
-                                            toastr.warning("Please Input Product No in Supplier Items");
+                                            toastr.warning("Please Input Part No in Supplier Items");
                                         }
                                     }
                                 },
@@ -1227,6 +1231,14 @@
                 }
             }],
         });
+
+        $('#filter_division').combobox({
+            url: '<?= base_url('master/divisions/reads'); ?>',
+            valueField: 'number',
+            textField: 'number',
+            panelHeight: 'panelHeight',
+            prompt: 'Select Division',
+        }); 
     }
 
     //Delete Data
@@ -1283,9 +1295,10 @@
         var filter_part_name = $("#filter_part_name").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
         var filter_categories = $("#filter_categories").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');       
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories + "&filter_division=" + filter_division;
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_orders/datatables') ?>' + url
         });
@@ -1307,9 +1320,10 @@
         var filter_part_name = $("#filter_part_name").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
         var filter_categories = $("#filter_categories").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');       
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories + "&filter_division=" + filter_division;
         window.location.assign('<?= base_url('purchase/purchase_orders/print/excel') ?>' + url);
     }
 

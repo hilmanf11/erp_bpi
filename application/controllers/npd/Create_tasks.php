@@ -139,43 +139,40 @@ class Create_tasks extends CI_Controller
         $number = base64_decode($this->input->get('project_number'));
 
         if ($number) {
-            $this->db->select('a.details, a.project_category');
+            // Menggunakan JOIN untuk mengambil data master dan detailnya sekaligus
+            $this->db->select('b.*, a.project_category');
             $this->db->from('create_tasks a');
+            $this->db->join('create_task_details b', 'a.id = b.task_id'); // Relasi master - detail
             $this->db->where('a.project_number', $number);
-            $row = $this->db->get()->row();
+            $records = $this->db->get()->result_array();
 
-            if ($row && !empty($row->details)) {
-                $records = json_decode($row->details, true); 
+            if (!empty($records)) {
+                foreach ($records as &$item) {
+                    
+                    // Tambahan validasi '0000-00-00' karena format DATE MySQL kadang me-return nilai ini jika kosong
+                    if (!empty($item['start_date']) && !empty($item['end_date']) && $item['start_date'] != '0000-00-00' && $item['end_date'] != '0000-00-00') {
+                        
+                        $start = new DateTime($item['start_date']);
+                        $end = new DateTime($item['end_date']);
+                        
+                        $start->setTime(12, 0, 0);
+                        $end->setTime(12, 0, 0);
+                        
+                        $end->modify('+1 day');
 
-                if (is_array($records)) {
-                    foreach ($records as &$item) {
-                        $item['project_category'] = $row->project_category;
-
-                        if (!empty($item['start_date']) && !empty($item['end_date'])) {
-                            
-                            $start = new DateTime($item['start_date']);
-                            $end = new DateTime($item['end_date']);
-                            
-                            $start->setTime(12, 0, 0);
-                            $end->setTime(12, 0, 0);
-                            
-                            $end->modify('+1 day');
-
-                            $interval = $start->diff($end);
-                            
-                            $duration_text = [];
-                            if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
-                            if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
-                            if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
-                            
-                            $item['duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
-                            
-                        } else {
-                            $item['duration'] = '-';
-                        }
+                        $interval = $start->diff($end);
+                        
+                        $duration_text = [];
+                        if ($interval->y > 0) { $duration_text[] = $interval->y . ' Year' . ($interval->y > 1 ? 's' : ''); }
+                        if ($interval->m > 0) { $duration_text[] = $interval->m . ' Month' . ($interval->m > 1 ? 's' : ''); }
+                        if ($interval->d > 0) { $duration_text[] = $interval->d . ' Day' . ($interval->d > 1 ? 's' : ''); }
+                        
+                        $item['duration'] = empty($duration_text) ? '0 Days' : implode(', ', $duration_text);
+                        
+                    } else {
+                        $item['duration'] = '-';
                     }
                 }
-
                 echo json_encode($records);
             } else {
                 echo json_encode([]);
@@ -239,9 +236,92 @@ class Create_tasks extends CI_Controller
         }
     }
 
-    //CREATE DATA
+    // //CREATE DATA
+    // public function create() {
+    //     $details_json = $this->input->post('details');
+    //     $data_project = array(
+    //         'project_number'      => $this->input->post('project_number'),
+    //         'project_name'        => $this->input->post('project_name'),
+    //         'project_level'       => $this->input->post('project_level'),
+    //         'project_category_id' => $this->input->post('project_category_id'),
+    //         'project_category'    => $this->input->post('project_category'),
+    //         'phase_id'            => $this->input->post('phase_id'),
+    //         'phase_name'          => $this->input->post('phase_name'),
+    //         'event'               => $this->input->post('event'),
+    //         'attachment1'         => $this->input->post('attachment1'),
+    //         'attachment2'         => $this->input->post('attachment2'),
+    //         'attachment3'         => $this->input->post('attachment3'),
+    //         'attachment4'         => $this->input->post('attachment4'),
+    //         'attachment5'         => $this->input->post('attachment5'),
+    //         'description'         => $this->input->post('description'),
+    //         'remark'              => $this->input->post('remark'),
+    //         'details'             => $details_json
+    //     );
+    //     $insert = $this->crud->create('create_tasks', $data_project);
+    //     if ($insert) {
+    //         echo json_encode(['theme' => 'success', 'message' => 'Task successfully saved!']);
+    //     } else {
+    //         echo json_encode(['theme' => 'error', 'message' => 'Failed to save task data.']);
+    //     }
+    // }
+    // //UPDATE DATA
+    // public function update() {
+    //     $id = $this->input->get('id');
+
+    //     if ($id) {
+    //         $details_json = $this->input->post('details');
+
+    //         $data_update = array(
+    //             'project_name'        => $this->input->post('project_name'),
+    //             'project_level'       => $this->input->post('project_level'),
+    //             'project_category_id' => $this->input->post('project_category_id'),
+    //             'project_category'    => $this->input->post('project_category'),
+    //             'phase_id'            => $this->input->post('phase_id'),
+    //             'phase_name'          => $this->input->post('phase_name'),
+    //             'event'               => $this->input->post('event'),
+    //             'attachment1'         => $this->input->post('attachment1'),
+    //             'attachment2'         => $this->input->post('attachment2'),
+    //             'attachment3'         => $this->input->post('attachment3'),
+    //             'attachment4'         => $this->input->post('attachment4'),
+    //             'attachment5'         => $this->input->post('attachment5'),
+    //             'description'         => $this->input->post('description'),
+    //             'details'             => $details_json
+    //         );
+
+    //         $where = array('id' => $id);
+    //         $update = $this->crud->update('create_tasks', $where, $data_update);
+
+    //         if ($update) {
+    //             echo json_encode(['theme' => 'success', 'message' => 'Task successfully updated!']);
+    //         } else {
+    //             echo json_encode(['theme' => 'error', 'message' => 'Failed to update task data.']);
+    //         }
+    //     } else {
+    //         echo json_encode(['theme' => 'error', 'message' => 'Task ID not found.']);
+    //     }
+    // }
+    // //DELETE DATA
+    // public function delete()
+    // {
+    //     $id = $this->input->post('id');
+    //     if ($id) {
+    //         $where = array('id' => $id);
+    //         $delete = $this->crud->delete('create_tasks', $where);
+    //         if ($delete) {
+    //             echo json_encode(['theme' => 'success', 'message' => 'Project successfully deleted!']);
+    //         } else {
+    //             echo json_encode(['theme' => 'error', 'message' => 'Failed to delete project.']);
+    //         }
+    //     } else {
+    //         echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
+    //     }
+    // }
+
+    //CREATE DATA TASK
     public function create() {
         $details_json = $this->input->post('details');
+
+        // 1. Tampung data master
         $data_project = array(
             'project_number'      => $this->input->post('project_number'),
             'project_name'        => $this->input->post('project_name'),
@@ -257,23 +337,59 @@ class Create_tasks extends CI_Controller
             'attachment4'         => $this->input->post('attachment4'),
             'attachment5'         => $this->input->post('attachment5'),
             'description'         => $this->input->post('description'),
-            'remark'              => $this->input->post('remark'),
-            'details'             => $details_json
+            'remark'              => $this->input->post('remark')
         );
+
+        // 2. Eksekusi simpan master
         $insert = $this->crud->create('create_tasks', $data_project);
+        
         if ($insert) {
-            echo json_encode(['theme' => 'success', 'message' => 'Task successfully saved!']);
+            // 3. Cari ID yang baru dibuat
+            $this->db->select('id');
+            $this->db->where('project_number', $data_project['project_number']);
+            $this->db->where('phase_id', $data_project['phase_id']);
+            $this->db->order_by('id', 'DESC');
+            $task = $this->db->get('create_tasks')->row();
+            
+            if ($task) {
+                // 4. Decode dan proses detailnya
+                $details = json_decode($details_json, true);
+                
+                if (!empty($details)) {
+                    $batch_data = [];
+                    foreach ($details as $row) {
+                        $batch_data[] = array(
+                            'task_id'        => $task->id, // Menggunakan ID hasil pencarian
+                            'phase_sub_id'   => $row['phase_sub_id'] ?? null,
+                            'phase_name_sub' => $row['phase_name_sub'] ?? null,
+                            'module'         => $row['module'] ?? null,
+                            'link'           => $row['link'] ?? null,
+                            'menus_id'       => $row['menus_id'] ?? null,
+                            'department_id'  => $row['department_id'] ?? null,
+                            'department'     => $row['department'] ?? null,
+                            'sub_department' => $row['sub_department'] ?? null,
+                            'level'          => $row['level'] ?? null,
+                            'start_date'     => (!empty($row['start_date'])) ? date('Y-m-d', strtotime($row['start_date'])) : null,
+                            'end_date'       => (!empty($row['end_date'])) ? date('Y-m-d', strtotime($row['end_date'])) : null,
+                            'remark'         => $row['remark'] ?? null
+                        );
+                    }
+                    $this->db->insert_batch('create_task_details', $batch_data);
+                }
+            }
+            echo json_encode(['theme' => 'success', 'message' => 'Task and all details successfully saved!']);
         } else {
             echo json_encode(['theme' => 'error', 'message' => 'Failed to save task data.']);
         }
     }
 
-    //UPDATE DATA
+    // UPDATE DATA
     public function update() {
         $id = $this->input->get('id');
 
         if ($id) {
             $details_json = $this->input->post('details');
+            $details = json_decode($details_json, true);
 
             $data_update = array(
                 'project_name'        => $this->input->post('project_name'),
@@ -289,13 +405,44 @@ class Create_tasks extends CI_Controller
                 'attachment4'         => $this->input->post('attachment4'),
                 'attachment5'         => $this->input->post('attachment5'),
                 'description'         => $this->input->post('description'),
-                'details'             => $details_json
+                'remark'              => $this->input->post('remark')
             );
 
-            $where = array('id' => $id);
-            $update = $this->crud->update('create_tasks', $where, $data_update);
+            $this->db->trans_start();
 
-            if ($update) {
+            // 1. Update Tabel Master
+            $this->db->where('id', $id);
+            $this->db->update('create_tasks', $data_update);
+
+            // 2. Hapus Semua Detail Lama (berdasarkan ID varchar)
+            $this->db->delete('create_task_details', array('task_id' => $id));
+
+            // 3. Masukkan Detail Baru 
+            if (!empty($details)) {
+                $detail_data = [];
+                foreach ($details as $row) {
+                    $detail_data[] = array(
+                        'task_id'        => $id, // ID langsung pakai dari $_GET['id']
+                        'phase_sub_id'   => $row['phase_sub_id'] ?? null,
+                        'phase_name_sub' => $row['phase_name_sub'] ?? null,
+                        'module'         => $row['module'] ?? null,
+                        'link'           => $row['link'] ?? null,
+                        'menus_id'       => $row['menus_id'] ?? null,
+                        'department_id'  => $row['department_id'] ?? null,
+                        'department'     => $row['department'] ?? null,
+                        'sub_department' => $row['sub_department'] ?? null,
+                        'level'          => $row['level'] ?? null,
+                        'start_date'     => (!empty($row['start_date'])) ? date('Y-m-d', strtotime($row['start_date'])) : null,
+                        'end_date'       => (!empty($row['end_date'])) ? date('Y-m-d', strtotime($row['end_date'])) : null,
+                        'remark'         => $row['remark'] ?? null
+                    );
+                }
+                $this->db->insert_batch('create_task_details', $detail_data);
+            }
+
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === TRUE) {
                 echo json_encode(['theme' => 'success', 'message' => 'Task successfully updated!']);
             } else {
                 echo json_encode(['theme' => 'error', 'message' => 'Failed to update task data.']);
@@ -304,22 +451,31 @@ class Create_tasks extends CI_Controller
             echo json_encode(['theme' => 'error', 'message' => 'Task ID not found.']);
         }
     }
-    //DELETE DATA
-    public function delete()
-    {
+
+    // DELETE DATA
+    public function delete() {
         $id = $this->input->post('id');
         if ($id) {
-            $where = array('id' => $id);
-            $delete = $this->crud->delete('create_tasks', $where);
-            if ($delete) {
-                echo json_encode(['theme' => 'success', 'message' => 'Project successfully deleted!']);
+            $this->db->trans_start();
+            $this->db->delete('create_task_details', array('task_id' => $id));
+            $this->db->delete('create_tasks', array('id' => $id));
+            $this->db->trans_complete();
+            if ($this->db->trans_status() === TRUE) {
+                echo json_encode(['theme' => 'success', 'message' => 'Task successfully deleted!']);
             } else {
-                echo json_encode(['theme' => 'error', 'message' => 'Failed to delete project.']);
+                echo json_encode(['theme' => 'error', 'message' => 'Failed to delete task.']);
             }
         } else {
-            echo json_encode(['theme' => 'error', 'message' => 'Project ID not found.']);
+            echo json_encode(['theme' => 'error', 'message' => 'Task ID not found.']);
         }
     }
+
+    public function get_details() {
+        $task_id = $this->input->get('task_id');
+        $details = $this->db->get_where('create_task_details', array('task_id' => $task_id))->result_array();
+        echo json_encode($details);
+    }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {

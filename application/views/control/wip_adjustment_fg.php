@@ -13,7 +13,7 @@
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty</th>
-            <th rowspan="2" data-options="field:'remarks',width:100,align:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -80,7 +80,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 900px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -310,6 +310,14 @@
                         options: {
                             readonly: true
                         }
+                    }
+                },{
+                    field: 'notes',
+                    width: 150,
+                    align: 'center',
+                    title: "Notes",
+                    editor: {
+                        type: 'textbox',
                     }
                 }]
             ],
@@ -563,7 +571,8 @@
                                         // wp: wp,
                                         // workorder: workorder,
                                         item_fg_id: rows[i].item_fg_id,
-                                        qty: rows[i].qty
+                                        qty: rows[i].qty,
+                                        notes: rows[i].notes
                                     },
                                     dataType: "json",
                                     success: function(result) {

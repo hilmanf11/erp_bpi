@@ -25,6 +25,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'item_number',width:250,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'type',width:100,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'location',width:150,halign:'center'">Location</th>
             <th rowspan="2" data-options="field:'area',width:150,halign:'center'">Area</th>
             <th rowspan="2" data-options="field:'rack',width:150,halign:'center'">Rack</th>

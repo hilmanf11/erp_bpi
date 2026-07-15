@@ -4,6 +4,9 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'request_no',halign:'center',width:190">Kanban No</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
+            <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
+            <th rowspan="2" data-options="field:'approved_date',width:150,halign:'center'">Approve Date</th>
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'">Kanban Date</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'">Requester</th>
             <th rowspan="2" data-options="field:'period',width:100,halign:'center'">Period</th>
@@ -20,6 +23,7 @@
             <th rowspan="2" data-options="field:'issued_qty_crusher',width:80,halign:'center',align:'right',formatter:numberformatQpa">Issued Oth <br> 1</th>
             <th rowspan="2" data-options="field:'issued_qty_peletizing',width:80,halign:'center',align:'right',formatter:numberformatQpa">Issued Oth <br> 2</th>
             <th rowspan="2" data-options="field:'outstanding',width:80,halign:'center',align:'right',formatter:numberformatQpa">Outstanding</th>
+            <th rowspan="2" data-options="field:'type',width:200,halign:'center'">Type NG</th>
             <!-- <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -132,6 +136,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Document Ng</span>
                     <input style="width:60%;" name="document" id="document" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">PIC Part Req</span>
+                    <input style="width:60%;" name="employee" id="employee" required="" class="easyui-combobox">
                 </div>
             </div>
         </fieldset>
@@ -420,10 +428,15 @@
     }
 
     function print_kanban() {
-        var row = $('#dg').treegrid('getSelected');
+        var row = $('#dg').treegrid('getSelected'); 
         if (row) {
-            window.open("<?= base_url('planning/supply_requestions/print_kanban/') ?>" + window.btoa(row.request_no));// + "/" + window.btoa(operation), "_blank"
-        }else{
+            if (row.approved_to == "" || row.approved_to == null) {
+                window.open("<?= base_url('planning/supply_requestions/print_kanban/') ?>" + window.btoa(row.request_no));
+            } else {
+                toastr.warning("Please approve data first!", "Information");
+            }
+
+        } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
@@ -446,9 +459,10 @@
                     var period = $("#period").combobox('getValue');
                     var workorder = $("#workorder").combobox('getValue');
                     var document = $("#document").combobox('getValue');
+                    var employee = $("#employee").combobox('getValue');
 
-                    if (period == "" || totalrows <= 0) {
-                        toastr.error("please complete your input data");
+                    if (period == "" || totalrows <= 0 || employee == "") {
+                        toastr.error("Please complete your input!");
                     } else {
                         $('#dg2').datagrid('acceptChanges');
                         var rows = $('#dg2').datagrid('getRows');
@@ -467,6 +481,7 @@
                                         period: period,
                                         workorder: workorder,
                                         document: document,
+                                        employee: employee,
                                         item_rm_id: rows[i].item_rm_id,
                                         qty: rows[i].qty
                                     },
@@ -641,6 +656,24 @@
         }
     }
 
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null ) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null ) {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
+
     function statusStyle(value, row, index) {
         if (value == 0) {
             return 'background-color:#C8FFCC;';
@@ -664,5 +697,14 @@
             return e + d;
         }
     }
+
+    $('#employee').combobox({
+        url: '<?= base_url('planning/supply_requestions/readEmployes'); ?>',
+        valueField: 'name',
+        textField: 'name',
+        prompt: 'Choose PIC',
+        // onSelect: function(emp){
+        // }
+    });
 
 </script>

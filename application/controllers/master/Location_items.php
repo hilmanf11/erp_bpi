@@ -48,8 +48,8 @@ class Location_items extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('a.*, 
-            (CASE WHEN a.item_rm_id is null THEN c.number ELSE b.number END) as item_number, 
-            (CASE WHEN a.item_rm_id is null THEN c.name ELSE b.name END) as item_name');
+            (CASE WHEN a.type = "FG" THEN c.number ELSE b.number END) as item_number, 
+            (CASE WHEN a.type = "FG" THEN c.name ELSE b.name END) as item_name');
             $this->db->from('warehouse_location_items a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
@@ -164,25 +164,33 @@ class Location_items extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-            $warehouse_location_items = $this->crud->read('warehouse_location_items', [], ["item_rm_id" => $data['item_number'], "type" => "RM"]);
-            $warehouse_locations = $this->crud->read('warehouse_locations', [], ["number" => $data['location_number'], "type" => "RM"]);
             
             $item_rm_id = null;
             $item_fg_id = null;
+            
             if($data['type'] == "RM"){
                 $items = $this->crud->read('item_rm', [], ["number" => $data['item_number']]);
-                $item_rm_id = $items->id;
-            }else{
+                if (!empty($items)) {
+                    $item_rm_id = $items->id;
+                }
+                $warehouse_location_items = $this->crud->read('warehouse_location_items', [], ["item_rm_id" => $item_rm_id, "type" => "RM"]);
+                
+            } else {
                 $items = $this->crud->read('item_fg', [], ["number" => $data['item_number']]);
-                $item_fg_id = $items->id;
+                if (!empty($items)) {
+                    $item_fg_id = $items->id;
+                }
+                $warehouse_location_items = $this->crud->read('warehouse_location_items', [], ["item_fg_id" => $item_fg_id, "type" => "FG"]);
             }
-        
+
+            $warehouse_locations = $this->crud->read('warehouse_locations', [], ["number" => $data['location_number'], "type" => $data['type']]);
+            
             if (empty($warehouse_locations)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Location Number " . $data['location_number'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Location Number " . $data['location_number'] . " Not Found for Type " . $data['type'], "theme" => "error"));
             } elseif (empty($items)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['item_number'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['item_number'] . " Not Found in Master " . $data['type'], "theme" => "error"));
             } elseif (!empty($warehouse_location_items)) {
-                echo json_encode(array("title" => "Duplicate", "message" => "Code " . $data['number'] . " Duplicate", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicate", "message" => "Item " . $data['item_number'] . " (Type: " . $data['type'] . ") already exist in location", "theme" => "error"));
             } else {
                 $send   = $this->crud->create('warehouse_location_items', [
                     "type" => $data['type'],
@@ -211,7 +219,9 @@ class Location_items extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, (CASE WHEN a.item_rm_id is null THEN c.number ELSE b.number END) as item_number, (CASE WHEN a.item_rm_id is null THEN c.name ELSE b.name END) as item_name');
+        $this->db->select('a.*, 
+        (CASE WHEN a.type = "FG" THEN c.number ELSE b.number END) as item_number, 
+        (CASE WHEN a.type = "FG" THEN c.name ELSE b.name END) as item_name');
         $this->db->from('warehouse_location_items a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');

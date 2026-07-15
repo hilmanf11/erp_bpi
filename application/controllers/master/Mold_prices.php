@@ -66,7 +66,8 @@ class Mold_prices extends CI_Controller
         FROM molds a 
         LEFT JOIN mold_items b ON a.id = b.mold_id
         LEFT JOIN item_fg c ON b.item_fg_id = c.id
-        WHERE a.id LIKE '%$post%' AND a.mold_name LIKE '%$post%'");
+        WHERE a.id LIKE '%$post%' 
+        OR a.mold_name LIKE '%$post%'");
         echo json_encode($send);
     }
     

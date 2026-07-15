@@ -39,16 +39,24 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 200px; padding:10px;">
-    <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
-    <div style="width: 100%;">
-        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+<div id="toolbar" style="height: auto; padding:10px;">
+    <div style="width: 100%; display: flex; align-items: flex-start; gap: 10px;">
+        <fieldset style="width: 60%; height: 235px; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Period</span>
+                    <span style="width:35%; display:inline-block;">Request Date</span>
                     <input style="width:28%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
                     <input style="width:28%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Expected Date</span>
+                    <input style="width:60%;" id="filter_expected_date" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Period</span>
+                    <input style="width:30%;" name="filter_month" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Month'">
+                    <input style="width:30%;" name="filter_year" id="filter_year" value="<?= date("Y") ?>" class="easyui-combobox" data-options="prompt:'Year'">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Request No</span>
@@ -61,6 +69,10 @@
                 </div>
             </div>
             <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Revision</span>
+                    <input style="width:60%;" name="filter_revision" id="filter_revision" class="easyui-combobox" data-options="prompt:'Revision'" panelHeight="auto">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Category</span>
                     <input style="width:60%;" id="filter_category_id" class="easyui-combobox">
@@ -79,8 +91,33 @@
                 </div>
             </div>
         </fieldset>
+        <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+            <legend><b>Process Generate Data</b></legend>
+            <div style="width: 100%; overflow: hidden;">
+                <a href="javascript:;" style="float: left; color:green;" class="easyui-linkbutton" plain="true"><i class="fa fa-check"></i> SUCCESS : <b id="p_success2">0</b></a>
+                <a href="javascript:;" style="float: right; color:red;" class="easyui-linkbutton" plain="true" onclick="downloadFailed()"><i class="fa fa-times"></i> FAILED : <b id="p_failed2">0</b></a>
+            </div>
+            <div id="p_upload2" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+            <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
+            <div id="p_remarks2" class="easyui-panel" style="width:100%; height:80px; padding:10px; margin-top: 10px; overflow: auto;">
+                <ul id="remarks2">
+                </ul>
+            </div>
+
+            <div class="fitem" style="text-align:left;">
+                <a href="javascript:;" class="easyui-linkbutton" onclick="downloadFailed()">
+                    <i class="fa fa-download"></i> List Failed
+                </a>
+            </div>
+        </fieldset>
+
+    </div>
+
+    <div style="margin-top: 10px; width: 100%;">
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="generate()"><i class="fa fa-plus"></i> Generate</a>
         <?= $button ?>
     </div>
+
 </div>
 
 <div id="toolbar2">
@@ -1319,7 +1356,6 @@
             prompt: "Select Categories"
         });
 
-        //Get Customer
         $("#filter_category_id").combobox({
             url: '<?= base_url('purchase/purchase_requests/readsnotfg/') ?>',
             valueField: 'id',
@@ -1354,6 +1390,55 @@
                 });
             }
         });
+    });
+
+    $('#filter_month').combobox({
+        url: '<?php echo base_url('planning/generate_loadcap/readMonths'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Month',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_year').combobox({
+        url: '<?php echo base_url('planning/generate_loadcap/readYears'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Year',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_revision').combobox({
+        url: '<?php echo base_url('purchase/purchase_requests/revision'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Revision',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+        onBeforeLoad: function(param) {
+            param.filter_month = $('#filter_month').combobox('getValue');
+            param.filter_year = $('#filter_year').combobox('getValue');
+        }
+    });
+
+    $('#filter_month, #filter_year').combobox({
+        onChange: function() {
+            $('#filter_revision').combobox('reload');
+        }
     });
 
     //Format Datepicker
@@ -1448,5 +1533,128 @@
         } else {
             return '';
         }
+    }
+    
+    //generate
+    function generate() {
+        var filter_month        = $("#filter_month").combobox('getValue');
+        var filter_year         = $("#filter_year").combobox('getValue');
+        var expected_date       = $("#filter_expected_date").datebox('getValue'); 
+        var filter_revision     = $("#filter_revision").combobox('getValue');
+        var filter_item_familys = $("#filter_item_familys").combogrid('getValue'); 
+        var category_pr         = filter_item_familys;
+
+        if (!filter_month || !filter_year) {
+            Swal.fire('Warning', 'Please choose Month and Year first!', 'warning');
+            return;
+        }
+        if (!category_pr) {
+            Swal.fire('Warning', 'Please choose Product Family first to determine the PR Category!', 'warning');
+            return;
+        }
+
+        $.messager.prompt('Generate PR', 'Please input Password Generate', function(r) {
+            if (r == "GENERATEPR") {
+                Swal.fire({
+                    title: 'Please Wait... Generating Data',
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => { Swal.showLoading(); },
+                });
+
+                $.ajax({
+                    type: "get",
+                    url: "<?= base_url('purchase/purchase_requests/getdata') ?>",
+                    
+                    data: "filter_month=" + window.btoa(filter_month) +
+                        "&filter_year=" + window.btoa(filter_year) +
+                        "&filter_revision=" + window.btoa(filter_revision) +
+                        "&filter_item_familys=" + window.btoa(filter_item_familys),
+                    dataType: "json",
+                    success: function(rows) {
+                        
+                        if(rows.total == 0 || rows.total == null){
+                            Swal.close();
+                            Swal.fire('Info', 'No MRP data found for this period/revision.', 'info');
+                            return;
+                        }
+
+                        $.ajax({
+                            type: "get",
+                            url: '<?= base_url('purchase/purchase_requests/request_no_mrp/') ?>' + window.btoa(filter_item_familys),
+                            success: function(request_no) {
+                                
+                                Swal.close(); 
+                                
+                                var request_date   = "<?= date('Y-m-d') ?>";
+                                var request_name   = "<?= $this->session->name ?>";
+                                var division       = "<?= $this->session->division ?>";
+                                var department     = "<?= $this->session->department ?>";
+                                var sub_department = "<?= $this->session->sub_department ?>";
+
+                                requestData(rows['total'], rows, request_no, request_date, expected_date, request_name, division, department, sub_department);
+                            }
+                        });
+
+                        function requestData(total, json, request_no, request_date, expected_date, request_name, division, department, sub_department, number = 1, value = 0, success = 1, failed = 1) {
+                            
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload2').progressbar('setValue', value);
+                                $('#p_start2').html(number);
+                                $('#p_finish2').html(total);
+
+                                $.post('<?= base_url('purchase/purchase_requests/create_mrp_pr') ?>', {
+                                    data: json[number - 1], 
+                                    request_no: request_no,
+                                    request_date: request_date,
+                                    expected_date: expected_date,
+                                    request_name: request_name,
+                                    division: division,
+                                    department: department,
+                                    sub_department: sub_department
+                                }, function(note) {
+                                    var result = eval('(' + note + ')');
+                                    
+                                    if (result.theme == "success") {
+                                        $('#p_success2').html(success);
+                                        var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                        requestData(total, json, request_no, request_date, expected_date, request_name, division, department, sub_department, number + 1, value, success + 1, failed + 0);
+                                    } 
+                                    else {
+                                        $('#p_failed2').html(failed);
+                                        var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                        requestData(total, json, request_no, request_date, expected_date, request_name, division, department, sub_department, number + 1, value, success + 0, failed + 1);
+                                    }
+
+                                    $("#p_remarks2").append(title + "<br>");
+                                    $('#p_remarks2').scrollTop($('#p_remarks2')[0].scrollHeight);
+
+                                }).fail(function(jqXHR, textStatus) {
+                                    $('#p_failed2').html(failed);
+                                    var title = "<b style='color: red;'>Failed</b> | Network or Server Error on Row " + number;
+                                    $("#p_remarks2").append(title + "<br>");
+                                    $('#p_remarks2').scrollTop($('#p_remarks2')[0].scrollHeight);
+
+                                    requestData(total, json, request_no, request_date, expected_date, request_name, division, department, sub_department, number + 1, value, success + 0, failed + 1);
+                                });
+                                
+                            } else {
+                                $('#dg').treegrid('reload');
+                                Swal.fire('Success', 'Purchase Request Generated Successfully!', 'success');
+                            }
+                        }
+                    },
+                    error: function(){
+                        Swal.fire('Failed!', 'Failed to fetch MRP data! Check your connection.', 'error');
+                    }
+                });
+            }
+        });
+    }
+    
+    function downloadFailed() {
+        window.open('<?= base_url('purchase/purchase_requests/uploadDownloadFailed') ?>', '_blank');
     }
 </script>

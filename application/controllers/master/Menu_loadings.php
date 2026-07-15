@@ -13,12 +13,31 @@ class Menu_loadings extends CI_Controller
         $this->load->model('crud');
     }
     //HALAMAN UTAMA
+    // public function index()
+    // {
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+    //         $data['button'] = $this->getbutton($this->id_menu());
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('master/menu_loadings');
+    //     } else {
+    //         redirect('error_access');
+    //     }
+    // }
+    //INDEX untuk kebutuhan NPD
     public function index()
     {
         if (empty($this->session->username)) {
             redirect('error_session');
-        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
-            $data['button'] = $this->getbutton($this->id_menu());
+        }
+        
+        $url_menu_id = $this->input->get('menu_id');
+        $active_menu = (!empty($url_menu_id)) ? $url_menu_id : $this->id_menu();
+
+        if ($this->checkuserAccess($active_menu) > 0) {
+            $data['button'] = $this->getbutton($active_menu);
+
             $this->load->view('template/header', $data);
             $this->load->view('master/menu_loadings');
         } else {
@@ -30,6 +49,13 @@ class Menu_loadings extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->reads('menu_loadings', ["name" => $post]);
+        echo json_encode($send);
+    }
+
+    public function readMolds()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM molds WHERE status = '0' AND (mold_name like '%$post%' or id like '%$post%')");
         echo json_encode($send);
     }
 
@@ -46,7 +72,29 @@ class Menu_loadings extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
+            $this->db->select('a.id,
+            a.item_fg_id,
+            a.mold_id,
+            a.machine_id,
+            a.shift,
+            a.shift_hour,
+            a.productcivity,
+            a.cycle_time,
+            a.cycle_time_process,
+            a.manpower,
+            a.runner,
+            a.priority,
+            a.created_by,
+            a.created_date,
+            a.updated_by,
+            a.updated_date,
+            b.number as item_fg_number, 
+            b.name as item_fg_name, 
+            c.number as machine_number, 
+            c.toonage as machine_toonage, 
+            d.model as mold_model, 
+            d.cavity_actual as mold_cavity_actual, 
+            d.cavity_standard as mold_cavity_standard');
             $this->db->from('menu_loadings a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('machines c', 'a.machine_id = c.id');
@@ -89,25 +137,99 @@ class Menu_loadings extends CI_Controller
             echo json_encode($result);
         }
     }
-    //CREATE DATA
+    // //CREATE DATA
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         $post   = $this->input->post();
+    //         $send   = $this->crud->create('menu_loadings', $post);
+    //         echo $send;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+    // //UPDATE DATA
+    // public function update()
+    // {
+    //     if ($this->input->post()) {
+    //         $id   = base64_decode($this->input->get('id'));
+    //         $post = $this->input->post();
+    //         $send = $this->crud->update('menu_loadings', ["id" => $id], $post);
+    //         echo $send;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+    //CREATE DATA dokumentasi : penambahan validasi
     public function create()
     {
         if ($this->input->post()) {
-            $post   = $this->input->post();
-            $send   = $this->crud->create('menu_loadings', $post);
+            $post = $this->input->post();
+            
+            $this->db->where('item_fg_id', $post['item_fg_id']);
+            $this->db->group_start();
+                $this->db->group_start();
+                    $this->db->where('machine_id', $post['machine_id']);
+                    $this->db->where('mold_id', $post['mold_id']);
+                $this->db->group_end();
+                
+                if (!empty($post['priority'])) {
+                    $this->db->or_where('priority', $post['priority']);
+                }
+            $this->db->group_end();
+            
+            $cek_duplikat = $this->db->get('menu_loadings')->num_rows();
+
+            if ($cek_duplikat > 0) {
+                echo json_encode([
+                    'theme'   => 'error',
+                    'title'   => 'Failed',
+                    'message' => 'This Part has been add for that combination Machine, Mold or Priority!'
+                ]);
+                return;
+            }
+
+            $send = $this->crud->create('menu_loadings', $post);
             echo $send;
+
         } else {
             show_error("Cannot Process your request");
         }
     }
-    //UPDATE DATA
+    //UPDATE DATA dokumentasi : penambahan validasi
     public function update()
     {
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
+            
+            $this->db->where('item_fg_id', $post['item_fg_id']);
+            $this->db->where('id !=', $id);
+            $this->db->group_start();
+                $this->db->group_start();
+                    $this->db->where('machine_id', $post['machine_id']);
+                    $this->db->where('mold_id', $post['mold_id']);
+                $this->db->group_end();
+                
+                if (!empty($post['priority'])) {
+                    $this->db->or_where('priority', $post['priority']);
+                }
+            $this->db->group_end();
+            
+            $cek_duplikat = $this->db->get('menu_loadings')->num_rows();
+
+            if ($cek_duplikat > 0) {
+                echo json_encode([
+                    'theme'   => 'error',
+                    'title'   => 'Failed',
+                    'message' => 'This Part has been add for that combination Machine, Mold or Priority!'
+                ]);
+                return;
+            }
+
             $send = $this->crud->update('menu_loadings', ["id" => $id], $post);
             echo $send;
+
         } else {
             show_error("Cannot Process your request");
         }
@@ -182,35 +304,65 @@ class Menu_loadings extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            //Cek Process Number          //table       //field        //field excel
             $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
-            $molds = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
-            $machine = $this->crud->read('machines', [], ["number" => $data['machine_id']]);
+            $molds   = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
+            $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
 
-            if (empty($item_fg->number)) {
+            if (empty($item_fg)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($molds->id)) {
+                return;
+            } 
+            if (empty($molds)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Mold Model " . $data['mold_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($machine->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Machine No. " . $data['machine_id'] . " Not Found", "theme" => "error"));
-            } else {
-                $dataFinal = array(
-                    //field
-                    "item_fg_id" => $data['item_fg_id'],
-                    "mold_id" => $data['mold_id'],
-                    "machine_id" => $machine->id,
-                    "shift" => $data['shift'],
-                    "shift_hour" => $data['shift_hour'],
-                    "productcivity" => $data['productcivity'],
-                    "cycle_time" => $data['cycle_time'],
-                    "cycle_time_process" => $data['cycle_time_process'],
-                    "manpower" => $data['manpower'],
-                    "runner" => $data['runner'],
-                    "priority" => $data['priority'],
-                );
-                $send   = $this->crud->create('menu_loadings', $dataFinal);
-                echo $send;
+                return;
+            } 
+            if (empty($machine)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Machine Id. " . $data['machine_id'] . " Not Found", "theme" => "error"));
+                return;
             }
+
+            $this->db->where('item_fg_id', $data['item_fg_id']);
+            $this->db->group_start();
+                $this->db->group_start();
+                    $this->db->where('machine_id', $machine->id);
+                    $this->db->where('mold_id', $data['mold_id']);
+                $this->db->group_end();
+                
+                if (!empty($data['priority'])) {
+                    $this->db->or_where('priority', $data['priority']);
+                }
+            $this->db->group_end();
+            
+            $cek_duplikat = $this->db->get('menu_loadings')->num_rows();
+
+            if ($cek_duplikat > 0) {
+                echo json_encode([
+                    'theme'   => 'error',
+                    'title'   => 'Failed',
+                    'message' => 'Upload Rejected for Part ' . $data['item_fg_id'] . ' This Part has been add for that combination Machine, Mold or Priority!'
+                ]);
+                return;
+            }
+
+            $dataFinal = array(
+                "item_fg_id"         => $data['item_fg_id'],
+                "mold_id"            => $data['mold_id'],
+                "machine_id"         => $machine->id,
+                "shift"              => $data['shift'],
+                "shift_hour"         => $data['shift_hour'],
+                "productcivity"      => $data['productcivity'],
+                "cycle_time"         => $data['cycle_time'],
+                "cycle_time_process" => $data['cycle_time_process'],
+                "manpower"           => $data['manpower'],
+                "runner"             => $data['runner'],
+                "priority"           => $data['priority'],
+            );
+            
+            $send = $this->crud->create('menu_loadings', $dataFinal);
+            echo $send;
+
+        } else {
+            show_error("Cannot Process your request");
         }
     }
     //PRINT & EXCEL DATA

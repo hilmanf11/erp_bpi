@@ -253,6 +253,34 @@ class Purchase_requests extends CI_Controller
         
     }
 
+    public function request_no_mrp($family_id_base64 = "")
+    {
+        $family_id = base64_decode($family_id_base64);
+
+        $this->db->select('b.number as category_code'); 
+        $this->db->from('item_familys a');
+        $this->db->join('item_categories b', 'a.item_category_id = b.id', 'left');
+        $this->db->where('a.id', $family_id);
+        $cat = $this->db->get()->row();
+
+        $category = ($cat && $cat->category_code) ? $cat->category_code : 'RM';
+
+        $datenow    = $category . date("ymd");
+        $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%' and upload = 'NO'");
+        $rowID      = $sqlGetID->row();
+        $kode       = $rowID->kode;
+
+        if ($kode == NULL) {
+            $autoID = sprintf("%04s", 1);
+        } else {
+            $urutan = (int) substr($kode, -4);
+            $urutan++;
+            $autoID = sprintf("%04s", $urutan);
+        }
+        
+        echo "PR-" . $datenow . "-" . $autoID;
+    }
+
     public function readFamily($item_category_id)
     {
         $post = $this->input->post('q');
@@ -439,6 +467,73 @@ class Purchase_requests extends CI_Controller
         }
     }
 
+    public function create_mrp_pr()
+    {
+        if ($this->input->post()) {         
+            $post = $this->input->post();
+            
+            $mrp_data = $post['data']; 
+            
+            $qty = isset($mrp_data['qty']) ? (float)$mrp_data['qty'] : 0;
+            $item_id = isset($mrp_data['item_rm_id']) ? $mrp_data['item_rm_id'] : 'Unknown Item';
+            $item = $this->crud->read('item_rm', [], ["id" => $mrp_data['item_rm_id']]);
+            $number = $item->number;
+
+            if ($qty <= 0) {
+                echo json_encode([
+                    'theme'   => 'error', 
+                    'title'   => 'Skipped', 
+                    'message' => "Item ID $item_id skipped (Qty is 0)"
+                ]);
+                return;
+            }
+
+            $insert_data = [
+                'request_no'     => $post['request_no'],
+                'request_date'   => $post['request_date'],
+                'request_name'   => $post['request_name'],
+                'division'       => $post['division'],
+                'department'     => $post['department'],
+                'sub_department' => $post['sub_department'],
+                'expected_date'  => $post['expected_date'], 
+                
+                'item_rm_id'     => $mrp_data['item_rm_id'],
+                'qty'            => $qty,
+                'length'         => $mrp_data['length'],
+                'width'          => $mrp_data['width'],
+                'thickness'      => $mrp_data['thickness'],
+                'diameter'       => $mrp_data['diameter'],
+                'weight'         => $mrp_data['weight'],
+                'remarks'        => $mrp_data['remarks'],
+                'upload'         => $mrp_data['upload']
+            ];
+
+            $send = $this->crud->create('purchase_requests', $insert_data);
+
+            if ($send) {
+                $this->db->where('id', $mrp_data['mrp_id']);
+                $this->db->update('generate_mrp_finals', [
+                    'request_no' => $post['request_no']
+                ]);
+
+                echo json_encode([
+                    'theme'   => 'success', 
+                    'title'   => 'Success', 
+                    'message' => "Item $number successfully saved! (Qty: $qty)"
+                ]);
+            } else {
+                echo json_encode([
+                    'theme'   => 'error', 
+                    'title'   => 'Failed', 
+                    'message' => "Database error: Failed to save Item $number."
+                ]);
+            }
+
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
     // public function update()
     // {
     //     if ($this->input->post()) {
@@ -572,19 +667,6 @@ class Purchase_requests extends CI_Controller
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
-    }
-
-    public function uploadDownloadFailed()
-    {
-        $file = "failed/purchase_requests.txt";
-        header('Content-Description: File Failed');
-        header('Content-Disposition: attachment; filename=' . basename($file));
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . @filesize($file));
-        header("Content-Type: text/plain");
-        @readfile($file);
     }
 
     public function uploadcreate()
@@ -827,6 +909,7 @@ class Purchase_requests extends CI_Controller
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_category_id = $this->input->get('filter_category_id');
         $filter_item_familys = $this->input->get('filter_item_familys');
+        $filter_status = $this->input->get('filter_status');
         $filter_access = $this->readUserAccess();
 
         //Config
@@ -850,6 +933,8 @@ class Purchase_requests extends CI_Controller
         }
         $this->db->like('a.request_no', $filter_request_no);
         $this->db->like('c.id', $filter_item_familys);
+        $this->db->like('c.item_category_id', $filter_category_id);
+        $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.request_date', 'DESC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: black;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
@@ -937,5 +1022,99 @@ class Purchase_requests extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-    //
+    
+    public function getData()
+    {
+        if ($this->input->get()) {
+            
+            $filter_month        = base64_decode($this->input->get('filter_month'));
+            $filter_year         = base64_decode($this->input->get('filter_year'));
+            $filter_revision     = base64_decode($this->input->get('filter_revision'));
+            $filter_item_familys = base64_decode($this->input->get('filter_item_familys'));
+
+            $this->db->select("
+                a.id as mrp_id, 
+                a.item_rm_id, 
+                a.purchase_order as qty,
+                '0' as length,
+                '0' as width,
+                '0' as thickness,
+                '0' as diameter,
+                '0' as weight,
+                'Auto Generated from MRP' as remarks,
+                'NO' as upload,
+                b.item_family_id
+            ");
+                
+            $this->db->from('generate_mrp_finals a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('supplier_items d', 'b.id = d.item_rm_id', 'left');
+            $this->db->join('suppliers c', 'd.supplier_id = c.id', 'left');
+            
+            $this->db->where('a.purchase_order >', 0);
+
+            if (!empty($filter_month) && !empty($filter_year)) {
+                $this->db->where('a.p_month', $filter_month);
+                $this->db->where('a.p_year', $filter_year);
+            }
+
+            if (!empty($filter_revision)) {
+                $this->db->where('a.revision', $filter_revision);
+            }
+
+            if (!empty($filter_item_familys)) {
+                $this->db->where('b.item_family_id', $filter_item_familys);
+            }
+
+            $this->db->group_by('a.item_rm_id');
+            $this->db->order_by('b.name', 'asc');
+            
+            $records = $this->db->get()->result_array();
+
+            $response = $records; 
+            $response['total'] = count($records); 
+
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode($response));
+
+        } else {
+            show_error("Cannot process your request");
+        }
+    }
+
+    public function revision()
+    {
+        $filter_month = $this->input->post('filter_month');
+        $filter_year  = $this->input->post('filter_year');
+
+        $this->db->select('revision as id, revision as name');
+        $this->db->from('generate_mrp_finals');
+        
+        if (!empty($filter_month) && !empty($filter_year)) {
+            $this->db->where('p_month', $filter_month);
+            $this->db->where('p_year', $filter_year);
+        }
+
+        $this->db->group_by('revision');
+        $this->db->order_by('revision', 'desc');
+        
+        $records = $this->db->get()->result_array();
+        echo json_encode($records);
+    }
+
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/generate_pr.txt";
+
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
 }

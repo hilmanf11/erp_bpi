@@ -14,7 +14,7 @@
             <th rowspan="2" data-options="field:'btn',width:80,halign:'center',align:'right',formatter:btnDescription">Description</th>
             <!-- <th rowspan="2" data-options="field:'owner',width:100,halign:'center'">Owner</th> -->
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer</th>
-            <th rowspan="2" data-options="field:'model_number',width:150,halign:'center'">Model</th>
+            <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>
             <th rowspan="2" data-options="field:'start_date',width:100,halign:'center'">Start Date</th>
             <th rowspan="2" data-options="field:'end_date',width:100,halign:'center'">End Date</th>
             <th rowspan="2" data-options="field:'duration',width:150,halign:'center',align:'center'">Duration</th>
@@ -65,7 +65,7 @@
             <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Model</span>
-                    <input style="width:60%;" name="item_fg_id_npd" id="item_fg_id_npd" class="easyui-combogrid">
+                    <input style="width:60%;" name="model" id="model" required="true" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Start/End Date</span>
@@ -130,80 +130,20 @@
             singleSelect: true,
             columns: [
                 [{
-                    field: 'item_fg_number_npd_detail',
+                    field: 'item_fg_number',
                     width: 200,
                     halign: 'center',
-                    title: "Product No.",
-                    editor: {
-                        type: 'combogrid',
-                        options: {
-                            url: '<?= base_url('npd/item_fg_npd/reads'); ?>',
-                            required: true,
-                            panelWidth: 400,
-                            idField: 'number',
-                            textField: 'number',
-                            mode: 'remote',
-                            fitColumns: true,
-                            prompt: 'Choose Product No.',
-                            columns: [
-                                [{
-                                    field: 'id',
-                                    title: 'Product ID',
-                                    width: 200
-                                }, {
-                                    field: 'number',
-                                    title: 'Product No.',
-                                    width: 200
-                                }, {
-                                    field: 'name',
-                                    title: 'Product Name',
-                                    width: 200
-                                }]
-                            ],
-                            onSelect: function(value, rows) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                var ed = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_number_npd_detail'
-                                });
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_id_npd_detail'
-                                });
-                                var ed3 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_name_npd_detail'
-                                });
-
-                                $(ed.target).textbox('setValue', rows.number);
-                                $(ed2.target).textbox('setValue', rows.id);
-                                $(ed3.target).textbox('setValue', rows.name);
-                                // $(ed4.target).combobox('setValue', rows.currency);
-                            }
-                        }
-                    }
-                }, {
-                    field: 'item_fg_id_npd_detail',
-                    width: 150,
-                    hidden: true,
-                    halign: 'center',
-                    title: "Product ID",
+                    title: "Product Number",
                     editor: {
                         type: 'textbox'
                     }
                 }, {
-                    field: 'item_fg_name_npd_detail',
+                    field: 'item_fg_name',
                     width: 200,
                     halign: 'center',
                     title: "Product Customer",
                     editor: {
-                        type: 'textbox',
-                        options: {
-                            readonly: true
-                        }
+                        type: 'textbox'
                     }
                 }, {
                     field: 'volume',
@@ -305,6 +245,38 @@
     }
 
     // EDIT DATA
+    // function update() {
+    //     var row = $('#dg').datagrid('getSelected');
+        
+    //     if (row) {
+    //         $('#dlg_insert').dialog('open').dialog('center').dialog('setTitle', 'Edit Project');
+            
+    //         $('#frm_insert').form('load', row);
+            
+    //         if (row.description) {
+    //             $('#description').summernote('code', row.description);
+    //         } else {
+    //             $('#description').summernote('code', '');
+    //         }
+
+    //         var detailData = [];
+    //         if (row.details) {
+    //             try {
+    //                 detailData = typeof row.details === 'string' ? JSON.parse(row.details) : row.details;
+    //             } catch (e) {
+    //                 console.error("Format JSON detail tidak valid", e);
+    //             }
+    //         }
+    //         $('#dg2').datagrid('loadData', detailData);
+
+    //         url_save = '<?= base_url('npd/create_projects/update') ?>?id=' + row.id; 
+            
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
+    // EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
         
@@ -319,15 +291,16 @@
                 $('#description').summernote('code', '');
             }
 
-            var detailData = [];
-            if (row.details) {
-                try {
-                    detailData = typeof row.details === 'string' ? JSON.parse(row.details) : row.details;
-                } catch (e) {
-                    console.error("Format JSON detail tidak valid", e);
-                }
-            }
-            $('#dg2').datagrid('loadData', detailData);
+            // --- BAGIAN YANG DIRUBAH ---
+            // Karena data tidak ada di row, kita ambil dari fungsi datatableDetails
+            var url_details = '<?= base_url('npd/create_projects/datatableDetails?number=') ?>' + window.btoa(row.number);
+            
+            // Lakukan AJAX Get untuk mengambil data detailnya lalu load ke datagrid dg2
+            $.get(url_details, function(data) {
+                var detailData = typeof data === 'string' ? JSON.parse(data) : data;
+                $('#dg2').datagrid('loadData', detailData);
+            });
+            // ---------------------------
 
             url_save = '<?= base_url('npd/create_projects/update') ?>?id=' + row.id; 
             
@@ -421,17 +394,12 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'item_fg_id_npd_detail',
-                            title: 'Product ID',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'item_fg_number_npd_detail',
+                            field: 'item_fg_number',
                             title: 'Product No.',
                             halign: 'center',
                             width: 200
                         }, {
-                            field: 'item_fg_name_npd_detail',
+                            field: 'item_fg_name',
                             title: 'Product Name',
                             halign: 'center',
                             width: 200
@@ -479,19 +447,30 @@
 
                     endEditing();
                     $("#dg2").datagrid('acceptChanges');
+                    
                     var rows = $('#dg2').datagrid('getRows');
 
-                    if (rows.length === 0) {
-                        toastr.warning("Please add at least one product detail!");
-                        return false;
+                    for (var i = rows.length - 1; i >= 0; i--) {
+                        var val = rows[i].item_fg_number; 
+                        
+                        if (val === undefined || val === null || val === "") {
+                            var rowIndex = $('#dg2').datagrid('getRowIndex', rows[i]);
+                            $('#dg2').datagrid('deleteRow', rowIndex);
+                        }
+                    }
+
+                    var finalRows = $('#dg2').datagrid('getRows');
+
+                    if (finalRows.length === 0) {
+                        toastr.warning("Please add and fill at least one valid product detail!");
+                        return false; 
                     }
 
                     var formData = new FormData($('#frm_insert')[0]);
-
                     var desc_value = $('#description').summernote('code');
                     formData.set('description', desc_value);
 
-                    formData.append('details', JSON.stringify(rows));
+                    formData.append('details', JSON.stringify(finalRows));
 
                     $.ajax({
                         type: "POST",
@@ -502,7 +481,6 @@
                         dataType: "json",
                         success: function(result) {
                             if (result.theme === "success" || result.status === "success") {
-                                
                                 $('#dlg_insert').dialog('close');
                                 $('#dg').datagrid('reload'); 
 
@@ -521,6 +499,7 @@
                         },
                         error: function(jqXHR, textStatus, errorThrown) {
                             toastr.error("Server Error: " + textStatus);
+                            console.log(jqXHR.responseText);
                         }
                     });
                 }
@@ -544,27 +523,6 @@
         textField: 'number',
         panelHeight: 'panelHeight',
         prompt: 'Choose Division',
-    });
-
-    $('#item_fg_id_npd').combogrid({
-        url: '<?= base_url('npd/item_fg_npd/reads'); ?>',
-        panelWidth: 400,
-        idField: 'id',
-        textField: 'number',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Model No",
-        columns: [
-            [{
-                field: 'number',
-                title: 'Model No',
-                width: 150
-            }, {
-                field: 'name',
-                title: 'Model Name',
-                width: 250
-            }, ]
-        ],
     });
 
     $('#customer_id').combogrid({

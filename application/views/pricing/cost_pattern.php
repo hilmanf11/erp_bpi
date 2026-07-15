@@ -1,15 +1,17 @@
-<table id="dg"class="easyui-datagrid"style="width:99.5%;"toolbar="#toolbar"rownumbers="true"singleSelect="true"fitColumns="false"data-options="onLoadSuccess: onMergeFG">
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar" rownumbers="true" singleSelect="false" fitColumns="false" data-options="onLoadSuccess: onMergeFG">
     <thead>
         <tr>
+            <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2"data-options="field:'print',width:60,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2"data-options="field:'item_fg_number',width:120,halign:'center'">Part No</th>
             <th rowspan="2"data-options="field:'item_fg_name',width:150,halign:'center'">Part Name</th>
+            <th rowspan="2"data-options="field:'customer_name',width:150,halign:'center'">Customer Name</th>
             <th rowspan="2"data-options="field:'p_month',width:80,halign:'center'">Month</th>
             <th rowspan="2"data-options="field:'p_year',width:80,halign:'center'">Year</th>
             <th rowspan="2"data-options="field:'revision',width:100,halign:'center'">Revision</th>
 
             <th colspan="3"data-options="halign:'center'">MATERIAL SPEC</th>
-            <th colspan="4"data-options="halign:'center'">MATERIAL USED</th>
+            <th colspan="5"data-options="halign:'center'">MATERIAL USED</th>
             <th colspan="4"data-options="halign:'center'">MATERIAL COST (RP)</th>
             <th colspan="6"data-options="halign:'center'">PROCESS COST</th>
             <th rowspan="2"data-options="field:'sub_total',width:100,halign:'center'">Total</th>
@@ -37,8 +39,9 @@
             <th data-options="field:'part_name_vg',width:150">Material Name</th>
             <th data-options="field:'part_name_mb',width:150">MB Name</th>
             <th data-options="field:'part_name_cp',width:150">CP Name</th>
-            <th data-options="field:'used_vg',width:100">Bruto (Gr)</th>
-            <th data-options="field:'uom',width:80">Nett (Gr)</th>
+            <th data-options="field:'used_vg',width:100">Gross</th>
+            <th data-options="field:'nett_vg',width:80">Nett (Gr)</th>
+            <th data-options="field:'uom',width:80">Uom</th>
             <th data-options="field:'used_mb',width:100">Master Batch</th>
             <th data-options="field:'used_cp',width:100">Child Part (Pcs)</th>
             <th data-options="field:'virgin_cost',width:100">Material</th>
@@ -61,18 +64,21 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 240px; padding:10px;">
+<div id="toolbar" style="height: 280px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;">Period</span>
-                <input style="width:20%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
-                <input style="width:20%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
+                <input style="width:15%;" id="filter_period_month_from" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'From'">
+                <span> to </span>
+                <input style="width:15%;" id="filter_period_month_to" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'To'">
+                
+                <input style="width:17%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;">Revision</span>
-                <select style="width:40%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
+                <select style="width:50%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
                     <option value="" selected disabled>Choose All</option>
                     <option value="0">0</option>
                     <option value="1">1</option>
@@ -84,7 +90,11 @@
             </div>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;">Product No</span>
-                <input style="width:40%;" id="filter_item_fg_id" class="easyui-combogrid">
+                <input style="width:50%;" id="filter_item_fg_id" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:25%; display:inline-block;">Customer</span>
+                <input style="width:50%;" id="filter_customer_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:25%; display:inline-block;"></span>
@@ -172,10 +182,10 @@
             </div>
         </fieldset>
     </form>
-    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
-    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
-    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success2">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed2">0</b></span>
+    <div id="p_upload2" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
+    <div id="p_remarks2" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
         <ul id="remarks">
         </ul>
     </div>
@@ -264,51 +274,64 @@
 
     //Delete Data
     function deleted() {
-        var rows = $('#dg').datagrid('getSelections');
-        console.log(rows);
-        if (rows.length > 0) {
-                $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                    if (r) {
-                        for (var i = 0; i < rows.length; i++) {
-                            var row = rows[i];
-                            if(row.status == 0){
-                                $.ajax({
-                                    method: 'post',
-                                    url: '<?= base_url('pricing/cost_pattern/delete') ?>',
-                                    data: {
-                                        id: row.id,
-                                        item_fg_id: row.item_fg_id
-                                    },
-                                    success: function(result) {
-                                        var result = eval('(' + result + ')');
-                                    },
-                                    error: function(jqXHR, textStatus, errorThrown) {
-                                        toastr.error(jqXHR.statusText);
-                                        $.messager.alert("Error", jqXHR.statusText, 'error');
-                                    },
-                                    complete: function(data) {
-                                        $('#dg').datagrid('reload');
-                                    }
-                                });
-                            } else {
-                                toastr.warning("Production Schedule is Closed!", "Information");
-                            }
+    var rows = $('#dg').datagrid('getSelections');
+    
+    if (rows.length > 0) {
+        $.messager.confirm('Warning', 'Are you sure you want to delete the selected data?', function(r) {
+            if (r) {
+                var ids = [];
+                for (var i = 0; i < rows.length; i++) {
+                    ids.push(rows[i].id); 
+                }
+                if (ids.length === 0) {
+                    toastr.warning("Failed to extract data ID!", "Information");
+                    return; 
+                }
+
+                $.ajax({
+                    method: 'post',
+                    url: '<?= base_url('pricing/cost_pattern/delete') ?>',
+                    data: {
+                        ids: ids 
+                    },
+                    success: function(result) {
+                        var res = JSON.parse(result);
+                        if(res.success) {
+                            toastr.success(res.message);
+                        } else {
+                            toastr.error(res.message);
                         }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        toastr.error(jqXHR.statusText);
+                        $.messager.alert("Error", jqXHR.statusText, 'error');
+                    },
+                    complete: function(data) {
+                        $('#dg').datagrid('reload');
+                        $('#dg').datagrid('clearSelections');
                     }
                 });
-        } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            }
+        });
+    } else {
+        toastr.warning("Please select at least one data in the table first!", "Information");
         }
     }
 
     function filter() {
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
+        var filter_period_month_from = $("#filter_period_month_from").combobox('getValue');
+        var filter_period_month_to = $("#filter_period_month_to").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
 
-        var url = "?filter_period_month=" + filter_period_month + "&filter_period_year=" + filter_period_year +
-            "&filter_item_fg_id=" + filter_item_fg_id + "&filter_revision=" + filter_revision;
+        var url = "?filter_period_month_from=" + filter_period_month_from + 
+                "&filter_period_month_to=" + filter_period_month_to + 
+                "&filter_period_year=" + filter_period_year +
+                "&filter_item_fg_id=" + filter_item_fg_id + 
+                "&filter_revision=" + filter_revision + 
+                "&filter_customer_id=" + filter_customer_id;
 
         $('#dg').datagrid({
             url: '<?= base_url('pricing/cost_pattern/datatables') ?>' + url,
@@ -322,19 +345,34 @@
         $("#printout").attr('src', '<?= base_url('pricing/cost_pattern/print') ?>' + url);
     }
 
+    // UPLOAD DATA
+    function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+
+    // DOWNLOAD
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_cost_pattern.xls') ?>');
+    }
+
     function pdf() {
         $("#printout").get(0).contentWindow.print();
     }
 
     function excel() {
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
+        var filter_period_month_from = $("#filter_period_month_from").combobox('getValue');
+        var filter_period_month_to = $("#filter_period_month_to").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
 
-        var url = "?filter_period_month=" + filter_period_month + "&filter_period_year=" + filter_period_year +
-            "&filter_item_fg_id=" + filter_item_fg_id + "&filter_revision=" + filter_revision;
-
+        var url = "?filter_period_month_from=" + filter_period_month_from + 
+                "&filter_period_month_to=" + filter_period_month_to + 
+                "&filter_period_year=" + filter_period_year +
+                "&filter_item_fg_id=" + filter_item_fg_id + 
+                "&filter_revision=" + filter_revision + 
+                "&filter_customer_id=" + filter_customer_id;;
 
         window.location.assign('<?= base_url('pricing/cost_pattern/print/excel') ?>' + url);
     }
@@ -516,6 +554,7 @@
         function processSave(total, json, index = 0, success = 0, failed = 0) {
 
             if (index >= total) {
+                localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                 $('#dlg_insert').dialog('close');
                 Swal.fire({
                     icon: 'success',
@@ -574,7 +613,14 @@
         }
     });
 
-    $('#filter_period_month').combobox({
+    $('#filter_period_month_from').combobox({
+        url: '<?= base_url('pricing/material_costs/readPeriod/month'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Months',
+    });
+
+    $('#filter_period_month_to').combobox({
         url: '<?= base_url('pricing/material_costs/readPeriod/month'); ?>',
         valueField: 'id',
         textField: 'name',
@@ -732,6 +778,37 @@
         // }
     });
 
+    $('#filter_customer_id').combogrid({
+        url: '<?= base_url('master/customers/reads'); ?>',
+        panelWidth: 500,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Customer",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Customer ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Customer Code',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Customer Name',
+                width: 200
+            }]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+    });
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();
@@ -863,4 +940,84 @@
 
         window.open(url, "_blank", "width=1200,height=600");
     }
+
+    // UPLOAD
+    $('#dlg_upload').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('pricing/cost_pattern/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('pricing/cost_pattern/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('pricing/cost_pattern/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload2').progressbar('setValue', value);
+                                $('#p_start2').html(number);
+                                $('#p_finish2').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('pricing/cost_pattern/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success2').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed2').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('pricing/cost_pattern/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks2").append(title + "<br>");
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        }]
+    });
 </script>

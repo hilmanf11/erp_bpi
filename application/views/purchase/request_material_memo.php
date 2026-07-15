@@ -656,7 +656,7 @@
                                             type: "post",
                                             url: url_save,
                                             data: {
-                                                id: row.id,
+                                                id: row.id || "",
                                                 filter_from: filter_from,
                                                 filter_to: filter_to,
                                                 cutoff: cutoff,

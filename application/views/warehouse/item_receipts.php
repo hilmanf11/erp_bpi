@@ -147,8 +147,8 @@
 
     $('#plant').combobox({
         url: '<?= base_url('warehouse/item_receipts/readArea/'); ?>',
-        valueField: 'area',
-        textField: 'area',
+        valueField: 'location',
+        textField: 'location',
         prompt: 'Choose Plant',
         panelHeight: 'auto',
         icons: [{

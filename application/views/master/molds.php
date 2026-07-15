@@ -27,6 +27,7 @@
             <th rowspan="2" data-options="field:'shoot_weight',width:100,halign:'center'">Shoot Weight</th>
             <th rowspan="2" data-options="field:'runner_weight',width:100,halign:'center'">Runner Weight</th>
             <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center'">Mold Type</th>
+            <th rowspan="2" data-options="field:'lifetime',width:80,halign:'center'">Lifetime</th>
             <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -115,6 +116,10 @@
                         <option value="SINGLE">SINGLE</option>
                         <option value="DOUBLE">DOUBLE</option>
                     </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lifetime</span>
+                    <input style="width:60%;" name="lifetime" id="lifetime" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remarks</span>

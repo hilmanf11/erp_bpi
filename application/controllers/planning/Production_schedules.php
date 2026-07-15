@@ -450,8 +450,8 @@ class Production_schedules extends CI_Controller
                     'message' => "WO No $wo_no has been processed cannot be deleted!"
                 ]);
             } else {
-                // $send = $this->crud->delete('production_schedules', ["id" => $id]);
-                // echo json_encode(['success' => true]);
+                $send = $this->crud->delete('production_schedules', ["id" => $id]);
+                echo json_encode(['success' => true]);
             }
         } else {
             echo json_encode(['success' => false, 'message' => "Data not found!"]);
@@ -1011,6 +1011,15 @@ class Production_schedules extends CI_Controller
                 $this->db->where('item_fg_id', $data['item_fg_id']);
                 $bom_items = $this->db->get()->result_array();
 
+                $shift_hour = !empty($data['shift_hour']) ? $data['shift_hour'] : 0;
+                $cycle_time = !empty($data['cycle_time']) && $data['cycle_time'] > 0 ? $data['cycle_time'] : 1;
+                $cavity_std = !empty($data['cavity_standard']) ? $data['cavity_standard'] : 0;
+                $shift_qty  = !empty($data['shift']) ? $data['shift'] : 0;
+                $prod_rate  = isset($data['productcivity']) ? ($data['productcivity'] / 100) : 1; 
+
+                $cap_day = ((3600 * $shift_hour) / $cycle_time) * $cavity_std * $shift_qty * $prod_rate;
+                $target_per_shift = ceil($cap_day / 3);
+
                 // Gabungkan item_rm_id menjadi satu string
                 $material_list = '';
                 $qty = '';
@@ -1137,8 +1146,7 @@ class Production_schedules extends CI_Controller
                                         <tr>
                                             <td style="text-align: center;">'.$data['cavity_standard'].'</td>
                                             <td style="text-align: center;">'.$data['cycle_time'].'</td>
-                                            <td style="text-align: center;" rowspan="3">'.ceil(3600 / ($data['cycle_time'] + $data['cycle_time_process']) * $data['cavity_standard'] * 7 * 0.85).'</td>
-                                        </tr>
+                                            <td style="text-align: center;" rowspan="3">'.$target_per_shift.'</td>
                                         <tr>
                                             <td style="text-align: center;">Cavity Actual</td>
                                             <td style="text-align: center;">C/T Finishing (sec)</td>

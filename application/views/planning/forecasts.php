@@ -613,6 +613,7 @@
             },
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+                var filter_items = $("#filter_items").combogrid('getValue');
 
                 $.ajax({
                     type: "post",
@@ -621,7 +622,7 @@
                     dataType: "json",
                     success: function(result) {
                         ddv.datagrid({
-                            url: '<?= base_url('planning/forecasts/datatableDetails?customer_id=') ?>' + window.btoa(row.customer_id) + "&p_month=" + window.btoa(row.p_month) + "&p_year=" + window.btoa(row.p_year) + "&revision=" + window.btoa(row.revision) + "&document_no=" + window.btoa(row.document_no),
+                            url: '<?= base_url('planning/forecasts/datatableDetails?customer_id=') ?>' + window.btoa(row.customer_id) + "&p_month=" + window.btoa(row.p_month) + "&p_year=" + window.btoa(row.p_year) + "&revision=" + window.btoa(row.revision) + "&document_no=" + window.btoa(row.document_no) + "&filter_items=" + window.btoa(filter_items),
                             singleSelect: true,
                             rownumbers: true,
                             columns: [

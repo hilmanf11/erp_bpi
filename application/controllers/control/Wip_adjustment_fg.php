@@ -216,7 +216,7 @@ class Wip_adjustment_fg extends CI_Controller
                         "item_name" => $record['item_name'],
                         "qty" => $record['qty'],
                         "uom" => $record['uom'],
-                        "remarks" => $record['remarks'],
+                        "remarks" => $record['notes'],
                         "transaction_type" => $record['transaction_type'],
                         "status" => $record['status'],
                         "created_by" => $record['created_by'],
@@ -345,6 +345,7 @@ class Wip_adjustment_fg extends CI_Controller
                 <th>Product Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
+                <th>Notes</th>
                 <th>Remarks</th>
             </tr>';
         $no = 1;
@@ -359,6 +360,7 @@ class Wip_adjustment_fg extends CI_Controller
                         <td style="mso-number-format:\@;">' . $data['item_name'] . '</td>
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['uom'] . '</td>
+                        <td>' . $data['notes'] . '</td>
                         <td>' . $data['remarks'] . '</td>
                     </tr>';
             $no++;

@@ -15,12 +15,31 @@ class item_fg extends CI_Controller
         $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[100]|is_unique[item_fg.number]');
     }
     //HALAMAN UTAMA
+    // public function index()
+    // {
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+    //         $data['button'] = $this->getbutton($this->id_menu());
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('master/item_fg');
+    //     } else {
+    //         redirect('error_access');
+    //     }
+    // }
+    //INDEX untuk kebutuhan NPD
     public function index()
     {
         if (empty($this->session->username)) {
             redirect('error_session');
-        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
-            $data['button'] = $this->getbutton($this->id_menu());
+        }
+        
+        $url_menu_id = $this->input->get('menu_id');
+        $active_menu = (!empty($url_menu_id)) ? $url_menu_id : $this->id_menu();
+
+        if ($this->checkuserAccess($active_menu) > 0) {
+            $data['button'] = $this->getbutton($active_menu);
+
             $this->load->view('template/header', $data);
             $this->load->view('master/item_fg');
         } else {
@@ -31,7 +50,7 @@ class item_fg extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_fg WHERE status = '0' AND number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%'");
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE status = '0' AND (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%')");
         echo json_encode($send);
     }
 
@@ -50,12 +69,11 @@ class item_fg extends CI_Controller
             //Select Query
             $this->db->select('a.*, b.name as division_name, 
             (SELECT COUNT(*) FROM mold_items c WHERE c.item_fg_id = a.id) as total_mold, 
-            f.min, f.max, g.name as item_family_name');
+            g.name as item_family_name');
             $this->db->from('item_fg a');
             $this->db->join('divisions b', 'a.division_id = b.id');
             $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
             $this->db->join('customers e', 'd.customer_id = e.id', 'left');
-            $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
             $this->db->join('item_familys g', "a.item_family_id = g.id", 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
@@ -323,13 +341,12 @@ class item_fg extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, f.min, f.max, g.name as item_family_name');
+        $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, g.name as item_family_name');
         $this->db->from('item_fg a');
         $this->db->join('divisions b', 'a.division_id = b.id');
         $this->db->join('mold_items c', 'a.id = c.item_fg_id', 'left');
         $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
         $this->db->join('customers e', 'd.customer_id = e.id', 'left');
-        $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
         $this->db->join('item_familys g', "a.item_family_id = g.id", 'left');
         $this->db->where('a.deleted', 0);
         $this->db->group_by('a.id');

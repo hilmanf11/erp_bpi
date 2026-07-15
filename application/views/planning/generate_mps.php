@@ -69,13 +69,17 @@
             <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
             <div id="p_remarks" class="easyui-panel" style="width:100%; height:120px; padding:10px; margin-top: 10px; overflow: auto;">
                 <ul id="remarks">
-
                 </ul>
+            </div>
+            <div class="fitem" style="text-align:left;">
+                <a href="javascript:;" class="easyui-linkbutton" onclick="downloadFailed()">
+                    <i class="fa fa-download"></i> List Failed
+                </a>
             </div>
         </fieldset>
     </div>
     <?= $button ?>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="checkMenuLoading();"><i class="fa fa-check"></i> Check Menu Loading</a>
+    <!-- <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="checkMenuLoading();"><i class="fa fa-check"></i> Check Menu Loading</a> -->
 </div>
 
 <div id="p" class="easyui-panel" title="Print Preview" style="width:100%;">
@@ -172,38 +176,35 @@
 
                                     $.post('<?= base_url('planning/generate_mps/create') ?>', {
                                         data: json[number - 1]
-                                    }, function(note) {
-                                        var result = eval('(' + note + ')');
-                                        if (result.theme == "success") {
-                                            Swal.close();
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                        }, function(note) {
+                                            var result = eval('(' + note + ')');
+                                            var title = "";
 
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('planning/generate_mps/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
+                                            if (result.theme == "success") {
+                                                Swal.close();
+                                                $('#p_success').html(success);
+                                                title = "<b style='color: green;'>" + result.title + " | " + result.message + "</b>";
+                                                
+                                                $("#remarks").append("<li>" + title + "</li>");
+                                                $('#p_remarks').scrollTop($('#p_remarks')[0].scrollHeight);
 
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
+                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                                
+                                            } else {
+                                                $('#p_failed').html(failed);
+                                                title = "<span class='log-failed' style='color: red;'>" + result.title + " | " + result.message + "</span>";
+                                                
+                                                $("#remarks").append("<li>" + title + "</li>");
+                                                $('#p_remarks').scrollTop($('#p_remarks')[0].scrollHeight);
 
-                                        if (value == 100) {
-                                            Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
-                                        }
+                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                            }
 
-                                        $("#p_remarks").append(title + "<br>");
-                                    }).fail(function(jqXHR, textStatus) {
+                                            if (value >= 100) {
+                                                Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
+                                            }
+
+                                        }).fail(function(jqXHR, textStatus) {
                                         if (textStatus == "error") {
                                             Swal.fire({
                                                 title: 'Connection Time Out, Check Your Connection',
@@ -232,132 +233,157 @@
         }
     }
 
-    function push_data(){
-        var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").textbox('getValue');
-        var filter_revision = $("#filter_revision").combobox('getValue');
-        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
-        var filter_customer = $("#filter_customer").combobox('getValue');
-        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+    // function push_data(){
+    //     var filter_month = $("#filter_month").combobox('getValue');
+    //     var filter_year = $("#filter_year").textbox('getValue');
+    //     var filter_revision = $("#filter_revision").combobox('getValue');
+    //     var filter_cutoff = $("#filter_cutoff").datebox('getValue');
+    //     var filter_customer = $("#filter_customer").combobox('getValue');
+    //     var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
 
-        $.messager.prompt('Push Data MPS', 'Please input Password Push Data', function(r){
-            if (r == "PUSHDATAMPS"){
-                Swal.fire({
-                    title: 'Please Wait for Push Data',
-                    showConfirmButton: false,
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    },
-                });
+    //     $.messager.prompt('Push Data MPS', 'Please input Password Push Data', function(r){
+    //         if (r == "PUSHDATAMPS"){
+    //             Swal.fire({
+    //                 title: 'Please Wait for Push Data',
+    //                 showConfirmButton: false,
+    //                 allowOutsideClick: false,
+    //                 allowEscapeKey: false,
+    //                 didOpen: () => {
+    //                     Swal.showLoading();
+    //                 },
+    //             });
 
-                $.ajax({
-                    type: "get",
-                    url: "<?= base_url('planning/generate_mps/push_data_check') ?>",
-                    data: "filter_month=" + window.btoa(filter_month) +
-                        "&filter_year=" + window.btoa(filter_year) +
-                        "&filter_revision=" + window.btoa(filter_revision) +
-                        "&filter_cutoff=" + window.btoa(filter_cutoff),
-                    dataType: "json",
-                    success: function(check) {
-                        if(check.theme == "error"){
-                            Swal.fire(check.title, check.message, 'error');
-                            return false;
-                        }else{
-                            $("#push_data").linkbutton('disable');
+    //             $.ajax({
+    //                 type: "get",
+    //                 url: "<?= base_url('planning/generate_mps/push_data_check') ?>",
+    //                 data: "filter_month=" + window.btoa(filter_month) +
+    //                     "&filter_year=" + window.btoa(filter_year) +
+    //                     "&filter_revision=" + window.btoa(filter_revision) +
+    //                     "&filter_cutoff=" + window.btoa(filter_cutoff),
+    //                 dataType: "json",
+    //                 success: function(check) {
+    //                     if(check.theme == "error"){
+    //                         Swal.fire(check.title, check.message, 'error');
+    //                         return false;
+    //                     }else{
+    //                         $("#push_data").linkbutton('disable');
                             
-                            $.ajax({
-                                type: "get",
-                                url: "<?= base_url('planning/generate_mps/push_data_header') ?>",
-                                data: "filter_month=" + window.btoa(filter_month) +
-                                    "&filter_year=" + window.btoa(filter_year) +
-                                    "&filter_revision=" + window.btoa(filter_revision),
-                                dataType: "json",
-                                success: function(headerData) {
-                                    $.ajax({
-                                        type: "get",
-                                        url: "<?= base_url('planning/generate_mps/push_data') ?>",
-                                        data: "filter_month=" + window.btoa(filter_month) +
-                                            "&filter_year=" + window.btoa(filter_year) +
-                                            "&filter_revision=" + window.btoa(filter_revision) +
-                                            "&filter_item_fg=" + window.btoa(filter_item_fg) +
-                                            "&filter_customer=" + window.btoa(filter_customer),
-                                        dataType: "json",
-                                        success: function(rows) {
-                                            Swal.close();
-                                            requestDataPush(rows['total'], rows);
+    //                         $.ajax({
+    //                             type: "get",
+    //                             url: "<?= base_url('planning/generate_mps/push_data_header') ?>",
+    //                             data: "filter_month=" + window.btoa(filter_month) +
+    //                                 "&filter_year=" + window.btoa(filter_year) +
+    //                                 "&filter_revision=" + window.btoa(filter_revision),
+    //                             dataType: "json",
+    //                             success: function(headerData) {
+    //                                 $.ajax({
+    //                                     type: "get",
+    //                                     url: "<?= base_url('planning/generate_mps/push_data') ?>",
+    //                                     data: "filter_month=" + window.btoa(filter_month) +
+    //                                         "&filter_year=" + window.btoa(filter_year) +
+    //                                         "&filter_revision=" + window.btoa(filter_revision) +
+    //                                         "&filter_item_fg=" + window.btoa(filter_item_fg) +
+    //                                         "&filter_customer=" + window.btoa(filter_customer),
+    //                                     dataType: "json",
+    //                                     success: function(rows) {
+    //                                         Swal.close();
+    //                                         requestDataPush(rows['total'], rows);
 
-                                            function requestDataPush(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                                if (value < 100) {
-                                                    value = Math.floor((number / total) * 100);
-                                                    $('#p_upload').progressbar('setValue', value);
-                                                    $('#p_start').html(number);
-                                                    $('#p_finish').html(total);
+    //                                         function requestDataPush(total, json, number = 1, value = 0, success = 1, failed = 1) {
+    //                                             if (value < 100) {
+    //                                                 value = Math.floor((number / total) * 100);
+    //                                                 $('#p_upload').progressbar('setValue', value);
+    //                                                 $('#p_start').html(number);
+    //                                                 $('#p_finish').html(total);
 
-                                                    $.post('<?= base_url('planning/generate_mps/push_data_create') ?>', {
-                                                        data: json[number - 1], header: headerData
-                                                    }, function(note) {
-                                                        var result = eval('(' + note + ')');
-                                                        if (result.theme == "success") {
-                                                            Swal.close();
-                                                            $('#p_success').html(success);
-                                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                            requestDataPush(total, json, number + 1, value, success + 1, failed + 0);
-                                                        } else {
-                                                            $('#p_failed').html(failed);
-                                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+    //                                                 $.post('<?= base_url('planning/generate_mps/push_data_create') ?>', {
+    //                                                     data: json[number - 1], header: headerData
+    //                                                 }, function(note) {
+    //                                                     var result = eval('(' + note + ')');
+    //                                                     if (result.theme == "success") {
+    //                                                         Swal.close();
+    //                                                         $('#p_success').html(success);
+    //                                                         var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+    //                                                         requestDataPush(total, json, number + 1, value, success + 1, failed + 0);
+    //                                                     } else {
+    //                                                         $('#p_failed').html(failed);
+    //                                                         var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
 
-                                                            //Json Failed
-                                                            $.ajax({
-                                                                type: "POST",
-                                                                async: true,
-                                                                url: "<?= base_url('planning/generate_mps/uploadcreateFailed') ?>",
-                                                                data: {
-                                                                    data: json[number - 1],
-                                                                    message: result.message
-                                                                },
-                                                                cache: false
-                                                            });
+    //                                                         //Json Failed
+    //                                                         $.ajax({
+    //                                                             type: "POST",
+    //                                                             async: true,
+    //                                                             url: "<?= base_url('planning/generate_mps/uploadcreateFailed') ?>",
+    //                                                             data: {
+    //                                                                 data: json[number - 1],
+    //                                                                 message: result.message
+    //                                                             },
+    //                                                             cache: false
+    //                                                         });
 
-                                                            requestDataPush(total, json, number + 1, value, success + 0, failed + 1);
-                                                        }
+    //                                                         requestDataPush(total, json, number + 1, value, success + 0, failed + 1);
+    //                                                     }
 
-                                                        if (value == 100) {
-                                                            Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
-                                                        }
+    //                                                     if (value == 100) {
+    //                                                         Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
+    //                                                     }
 
-                                                        $("#p_remarks").append(title + "<br>");
-                                                    }).fail(function(jqXHR, textStatus) {
-                                                        if (textStatus == "error") {
-                                                            Swal.fire({
-                                                                title: 'Connection Time Out, Check Your Connection',
-                                                                showConfirmButton: false,
-                                                                allowOutsideClick: false,
-                                                                allowEscapeKey: false,
-                                                                didOpen: () => {
-                                                                    Swal.showLoading();
-                                                                },
-                                                            });
+    //                                                     $("#p_remarks").append(title + "<br>");
+    //                                                 }).fail(function(jqXHR, textStatus) {
+    //                                                     if (textStatus == "error") {
+    //                                                         Swal.fire({
+    //                                                             title: 'Connection Time Out, Check Your Connection',
+    //                                                             showConfirmButton: false,
+    //                                                             allowOutsideClick: false,
+    //                                                             allowEscapeKey: false,
+    //                                                             didOpen: () => {
+    //                                                                 Swal.showLoading();
+    //                                                             },
+    //                                                         });
 
-                                                            requestDataPush(total, json, number, value, success + 0, failed + 0);
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    }
-                });
-            }
-        });
-    }
+    //                                                         requestDataPush(total, json, number, value, success + 0, failed + 0);
+    //                                                     }
+    //                                                 });
+    //                                             }
+    //                                         }
+    //                                     }
+    //                                 });
+    //                             }
+    //                         });
+    //                     }
+    //                 }
+    //             });
+    //         }
+    //     });
+    // }
     
     function downloadFailed() {
-        window.open('<?= base_url('planning/generate_mps/uploadDownloadFailed') ?>', '_blank');
+        var failedCount = parseInt($('#p_failed').text());
+        
+        if (failedCount === 0) {
+            Swal.fire('Info', 'There are no failed records to download.', 'info');
+            return;
+        }
+
+        var failedTexts = [];
+        $('#remarks .log-failed').each(function() {
+            failedTexts.push($(this).text()); 
+        });
+
+        var textContent = "==== LIST FAILED GENERATE MPS ====\r\n\r\n";
+        textContent += failedTexts.join("\r\n");
+
+        var blob = new Blob([textContent], { type: "text/plain" });
+        var url = window.URL.createObjectURL(blob);
+        
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "generate_mps_failed_" + new Date().getTime() + ".txt"; 
+        document.body.appendChild(a);
+        a.click();
+        
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     }
 
     function filter() {
@@ -685,7 +711,7 @@
                     columns: [
                         [{
                             field: 'number',
-                            title: 'Product EBWS',
+                            title: 'Product No',
                             width: 150
                         },{
                             field: 'number_customer',
@@ -702,7 +728,7 @@
         });
 
         $('#filter_item_fg').combogrid({
-            url: '<?= base_url('master/customer_items/reads') ?>',
+            url: '<?= base_url('master/item_fg/reads') ?>',
             panelWidth: 600,
             idField: 'id',
             textField: 'number',
@@ -718,7 +744,7 @@
             columns: [
                 [{
                     field: 'number',
-                    title: 'Product EBWS',
+                    title: 'Product No',
                     width: 150
                 },{
                     field: 'number_customer',

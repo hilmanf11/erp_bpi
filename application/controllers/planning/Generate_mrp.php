@@ -52,16 +52,18 @@ class Generate_mrp extends CI_Controller
         echo json_encode($arr);
     }
 
-    public function readRevisions(){
+    public function readRevisions() {
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
 
-        //Select Query
-        $this->db->select('revision');
-        $this->db->from('generate_mrp');
+        $this->db->select('revision, DATE(cutoff) as cutoff', FALSE);
+        $this->db->from('generate_mrp_finals');
         $this->db->where('p_month', $filter_month);
         $this->db->where('p_year', $filter_year);
+        
         $this->db->group_by('revision');
+        $this->db->group_by('DATE(cutoff)');
+        
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));
@@ -328,7 +330,7 @@ class Generate_mrp extends CI_Controller
             $filter_trans_date = $filter_year . "-" . $filter_month. "-01";
 
             $this->db->select('max(revision) as revision');
-            $this->db->from('generate_mrp');
+            $this->db->from('generate_mrp_finals');
             $this->db->where('p_month', $filter_month);
             $this->db->where('p_year', $filter_year);
             $this->db->like('revision', $filter_revision);
@@ -422,7 +424,7 @@ class Generate_mrp extends CI_Controller
             $cutoffDate = date("j", strtotime($filter_cutoff));
 
             $this->db->select('max(revision) as revision');
-            $this->db->from('generate_mrp');
+            $this->db->from('generate_mrp_finals');
             $this->db->where('p_month', $filter_month);
             $this->db->where('p_year', $filter_year);
             $this->db->like('revision', $revision);
@@ -462,11 +464,11 @@ class Generate_mrp extends CI_Controller
             $this->db->join("( SELECT * FROM generate_mrp WHERE p_month = '$filter_month' AND p_year = '$filter_year' AND revision = '$filter_revision') a", "a.item_rm_id = i.id", 'left');
             $this->db->join("(SELECT * FROM supplier_items WHERE mpq > 0 AND moq > 0 AND leadtime > 0 AND share_order > 0) b", "i.id = b.item_rm_id", "left");
             
-            $this->db->join("(SELECT a.item_rm_id, ((COALESCE(b.issued, 0) + COALESCE(c.issued_non_supply_sheet, 0)) - SUM(a.total) - COALESCE(d.issued_crusher, 0)) AS balance FROM (
+            $this->db->join("(SELECT a.item_rm_id, ((COALESCE(b.issued, 0) + COALESCE(c.issued_non_supply_sheet, 0)) - (SUM(a.total) - COALESCE(d.issued_crusher, 0)) AS balance FROM (
                     SELECT b.item_rm_id, a.item_fg_id, SUM(a.qty), b.composition, (SUM(a.qty) * b.composition) AS total
                     FROM production_schedules a
                     JOIN bom b ON a.item_fg_id = b.item_fg_id
-                    WHERE a.trans_date BETWEEN '$month1_1' AND '$filter_cutoff' AND (a.status_subcont = 'NO' OR (a.status_subcont = 'YES' AND a.subcont_type = 'Jasa'))
+                    WHERE a.trans_date BETWEEN '$month1_1' AND '$filter_cutoff' AND a.status_subcont = 'NO'
                     GROUP BY a.item_fg_id, b.item_rm_id) a
                 LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and request_no like '%SH%' GROUP BY item_rm_id) b ON a.item_rm_id = b.item_rm_id
                 LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) AS issued_non_supply_sheet 
@@ -620,11 +622,11 @@ class Generate_mrp extends CI_Controller
                     if($no == 1){
                         $need_1 += $period['need'];
 
-                        if($filter_revision == 0){
-                            $need_11 += $period['need'];
-                        }else{
-                            $need_11 += 0;
-                        }
+                        // if($filter_revision == 0){
+                        //     $need_11 += $period['need'];
+                        // }else{
+                        //     $need_11 += 0;
+                        // }
                         
                         $no = 2;
                     }elseif($no == 2){
@@ -654,7 +656,7 @@ class Generate_mrp extends CI_Controller
 
                 // $balance_1 = ($total_stock - ($total_wo + $need_11));
                 // $balance_1 = (($os_supply + $stock) - $need_11);
-                $balance_1 = ($stock + $qty_wip + $os_po - $os_wo - $qty_supply - $need_11);
+                $balance_1 = ($stock + $qty_wip + $os_po - $os_wo - $qty_supply - $need_1);
                 $balance_2 = ($balance_1 - $need_2);
                 $balance_3 = ($balance_2 - $need_3);
                 $balance_4 = ($balance_3 - $need_4);
@@ -907,7 +909,7 @@ class Generate_mrp extends CI_Controller
             $filter_part_no = base64_decode($this->input->get('filter_part_no'));
 
             $this->db->select('max(revision) as revision');
-            $this->db->from('generate_mrp');
+            $this->db->from('generate_mrp_finals');
             $this->db->where('p_month', $filter_month);
             $this->db->where('p_year', $filter_year);
             $this->db->like('revision', $revision);
@@ -927,14 +929,45 @@ class Generate_mrp extends CI_Controller
 
             $this->db->query("DELETE FROM generate_mrp_abcclass WHERE p_month = '$filter_month' and p_year = '$filter_year' and revision = '$filter_revision' $where_del_part_no");
 
-            //Select Query
-            $this->db->select('a.*, b.item_family_id');
+            $currency_date_from = $filter_year . '-01-01';
+            $currency_date_to = $filter_year . '-12-31';
+
+            $query_supplier_price ="SELECT a.supplier_id, a.item_rm_id, a.currency, a.price, coalesce(b.middle,1) as middle
+            from supplier_items a
+            left join exchange_rates b on a.currency=b.currency_from and start_date <= DATE(NOW()) and end_date>=DATE(NOW())";
+
+
+            // Menghitung Total Nominal per Family (Qty * Harga * Kurs)
+            $this->db->select('b.item_family_id, SUM(a.total_need) as total_need, SUM(a.total_need * COALESCE(d.price, 0) * COALESCE(d.middle, 1)) as total_need_amount', FALSE);
             $this->db->from('generate_mrp_finals a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
+            $this->db->join('(' . $query_supplier_price . ') d', 'a.item_rm_id = d.item_rm_id and a.supplier_id = d.supplier_id', 'left');
             $this->db->where('a.p_month', $filter_month);
             $this->db->where('a.p_year', $filter_year);
             $this->db->where('a.revision', $filter_revision);
+            $this->db->group_by('b.item_family_id');
+            $mrp = $this->db->get()->result_array();
+
+            $g_total_need = [];
+            $g_total_need_amount = [];
+            
+
+            foreach ($mrp as $generate) {
+                $g_total_need[$generate['item_family_id']] = $generate['total_need'];
+                $g_total_need_amount[$generate['item_family_id']] = $generate['total_need_amount'];
+            }
+
+            //Select Query
+            $this->db->select('a.*, b.item_family_id, (a.total_need * COALESCE(d.price, 0) * COALESCE(d.middle, 1)) as total_need_amount', FALSE);
+            $this->db->from('generate_mrp_finals a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('item_familys c', 'b.item_family_id = c.id');
+            $this->db->join('(' . $query_supplier_price . ') d', 'a.item_rm_id = d.item_rm_id and a.supplier_id = d.supplier_id', 'left');
+            $this->db->where('a.p_month', $filter_month);
+            $this->db->where('a.p_year', $filter_year);
+            $this->db->where('a.revision', $filter_revision);
+            // $this->db->where_in('c.id', 'P06');
             if($filter_product_family != ""){
                 $this->db->where('b.item_family_id', $filter_product_family);
             }
@@ -942,39 +975,37 @@ class Generate_mrp extends CI_Controller
                 $this->db->where('a.item_rm_id', $filter_part_no);
             }
             $this->db->order_by('c.name', 'asc');
-            $this->db->order_by('a.`total_need`', 'asc');
+            $this->db->order_by('total_need_amount', 'desc');
+            
             $generates = $this->db->get()->result_array();
 
-            $total_need = 0;
+            
+
+            $total_need_amount = 0;
             $product_family = "";
             $arr = array();
+            
             foreach ($generates as $generate) {
                 if($generate['item_family_id'] != $product_family){
-                    $total_need = $generate['total_need'];
+                    $total_need_amount = 0;
+                    $kumulative_need = $generate['total_need_amount'] / $g_total_need_amount[$generate['item_family_id']] * 100;
+                    $composition = number_format($total_need_amount, 2 );
+                    $total_need_amount += $kumulative_need;
                 }else{
-                    $total_need += $generate['total_need'];
+                    $kumulative_need = $generate['total_need_amount'] / $g_total_need_amount[$generate['item_family_id']] * 100;
+                    $composition = number_format($total_need_amount, 2 );
+                    $total_need_amount += $kumulative_need;
                 }
 
-                $this->db->select('c.number, SUM(a.total_need) as total');
-                $this->db->from('generate_mrp_finals a');
-                $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-                $this->db->join('item_familys c', 'b.item_family_id = c.id');
-                $this->db->where('a.p_month', $filter_month);
-                $this->db->where('a.p_year', $filter_year);
-                $this->db->where('a.revision', $filter_revision);
-                $this->db->where('b.item_family_id', $generate['item_family_id']);
-                $this->db->group_by('b.item_family_id');
-                $mrp = $this->db->get()->row();
+                // echo $composition . "<br>";
 
-                if(@$total_need > 0 || @$mrp->total > 0){
-                    $composition = round(($total_need / @$mrp->total) * 100);
-                }else{
-                    $composition = 0;
-                }
+                $round_composition = ceil($composition);
 
                 $this->db->select('*');
                 $this->db->from('safety_stock_abc');
-                $this->db->where("start <= '$composition' and ending >= '$composition'");
+                $this->db->where("start <= '$round_composition' AND '$round_composition' <= ending");
+                $this->db->order_by('start', 'ASC');
+                $this->db->limit(1); // Menambahkan limit 1 baris data
                 $safety_stock = $this->db->get()->row();
 
                 $arr[] = array(
@@ -984,11 +1015,12 @@ class Generate_mrp extends CI_Controller
                     "item_rm_id" => $generate['item_rm_id'],
                     "supplier_id" => $generate['supplier_id'],
                     "need" => $generate['total_need'],
-                    "total" => @$mrp->total,
+                    "total" => $g_total_need[$generate['item_family_id']],
                     "composition" => $composition,
                     "class" => $safety_stock->name,
                     "safety" => $safety_stock->safety,
                     "safety_stock" => round($generate['total_need'] * (@$safety_stock->safety / 100)),
+                    "need_amount" => $generate['total_need_amount'],
                 );
 
                 $product_family = $generate['item_family_id'];
@@ -1210,8 +1242,9 @@ class Generate_mrp extends CI_Controller
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
             $this->db->join('generate_mrp_abcclass d', 'a.item_rm_id = d.item_rm_id and a.p_month = d.p_month and a.p_year = d.p_year and a.revision = d.revision', 'left');
-            $this->db->join('suppliers e', 'a.supplier_id = e.id');
-            $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id');
+            $this->db->join('suppliers e', 'a.supplier_id = e.id','left');
+            $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id','left');
+            $this->db->join('purchase_orders po', 'a.request_no = po.request_no and a.item_rm_id = po.item_rm_id', 'left');
             // $this->db->where('a.purchase_order >', 0);
             if($approved_to != ""){
                 $this->db->where('a.p_month', $filter_month);
@@ -1229,8 +1262,10 @@ class Generate_mrp extends CI_Controller
             // $this->db->where('leadtime >', 0);
             $this->db->group_by('a.item_rm_id');
             $this->db->group_by('a.supplier_id');
-            $this->db->order_by('c.name', 'asc');
-            $this->db->order_by('d.class', 'asc');
+            $this->db->order_by('c.name', 'asc');//order by product family
+            $this->db->order_by('d.class', 'asc');//order by class A/B/C
+            $this->db->order_by('d.need_amount', 'desc');//order by need amount desc
+            $this->db->order_by('a.total_need', 'desc');
             $this->db->order_by('b.number', 'asc');
             // $this->db->limit(10);
             $records = $this->db->get()->result_array();
@@ -1287,7 +1322,9 @@ class Generate_mrp extends CI_Controller
                         <th rowspan="2" style="text-align:center;">MPQ</th>
                         <th rowspan="2" style="text-align:center;">MOQ</th>
                         <th colspan="3" style="text-align:center;">STOCK OF RAW MATERIAL</th>
+
                         <th colspan="4" style="text-align:center;">ISSUED MATERIAL</th>
+
                         <th rowspan="2" style="text-align:center;">OS PO</th>
                         <th rowspan="2" style="text-align:center;">OS<br>Supply</th>
                         <th rowspan="2" style="text-align:center;">OS<br>WO</th>
@@ -1303,15 +1340,20 @@ class Generate_mrp extends CI_Controller
                         <th rowspan="2" style="text-align:center;">PLAN<br>ORDER</th>
                         <th rowspan="2" style="text-align:center;">FIX<br>ORDER</th>
                         <th rowspan="2" style="text-align:center;">STATUS<br>ORDER</th>
+                        <th rowspan="2" style="text-align:center;">STATUS<br>APPROVE</th>
+                        <th rowspan="2" style="text-align:center;">PR</th>
+                        <th rowspan="2" style="text-align:center;">PO</th>
                     </tr>
                     <tr>
                         <th style="text-align:center;">WHS</th>
                         <th style="text-align:center;">WIP</th>
                         <th style="text-align:center;">TOTAL</th>
+
                         <th style="text-align:center;">USED 1</th>
                         <th style="text-align:center;">USED 2</th>
                         <th style="text-align:center;">USED 3</th>
                         <th style="text-align:center;">AVERAGE</th>
+
                         <th style="text-align:center;">NEED</th>
                         <th style="text-align:center;">BAL</th>
                         <th style="text-align:center;">NEED</th>
@@ -1357,6 +1399,22 @@ class Generate_mrp extends CI_Controller
                             $styleApp = "background:orange; color:white;";
                         }
 
+                        if(empty($record['request_no'])) { 
+                            $pr_status = "OPEN"; 
+                            $style_pr = "background:red; color:white;"; 
+                        } else { 
+                            $pr_status = "CREATED"; 
+                            $style_pr = "background:green; color:white;"; 
+                        }
+
+                        if(empty($record['po_id'])) { 
+                            $po_status = "OPEN"; 
+                            $style_po = "background:red; color:white;"; 
+                        } else { 
+                            $po_status = "CREATED"; 
+                            $style_po = "background:green; color:white;"; 
+                        }
+
                         $html .= "  <tr>
                                         <td>".$no."</td>
                                         <td style='mso-number-format:\@;'>".trim($record['item_rm_number'])."</td>
@@ -1395,6 +1453,9 @@ class Generate_mrp extends CI_Controller
                                         <td style='text-align:right;'>".round($record['total_need'])."</td>
                                         <td style='text-align:right;'>".round($record['purchase_order'])."</td>
                                         <td style='text-align:right;".$style_7."'>".$status."</td>
+                                        <td style='text-align:right;".$styleApp."'>".$approved."</td>
+                                        <td style='text-align:right;".$style_pr."'>".$pr_status."</td>
+                                        <td style='text-align:right;".$style_po."'>".$po_status."</td>
                                     </tr>";
                         $no++;
                     }
@@ -1403,4 +1464,156 @@ class Generate_mrp extends CI_Controller
             echo $html;
         // }
     }
+
+    function datatables_forecast_supplier() {
+        $p_month = $this->input->get('p_month') ? $this->input->get('p_month') : '';
+        $p_year = $this->input->get('p_year') ? $this->input->get('p_year') : '';
+        $revision = $this->input->get('revision');
+        $supplier_id = $this->input->get('supplier_id');
+        $product_family = $this->input->get('product_family');
+        $items = $this->input->get('items');
+        $status = $this->input->get('status');
+
+        $period_1 = date("F Y", strtotime($p_year."-".$p_month."-01"));
+        $period_2 = date("F Y",  strtotime("1 month", strtotime($p_year."-".$p_month."-01")));
+        $period_3 = date("F Y",  strtotime("2 month", strtotime($p_year."-".$p_month."-01")));
+        $period_4 = date("F Y",  strtotime("3 month", strtotime($p_year."-".$p_month."-01")));
+
+        // 1. Count Query
+        $this->db->select('count(*) as total');
+        $this->db->from('generate_mrp_finals a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->join('generate_mrp_abcclass d', 'a.item_rm_id = d.item_rm_id and a.p_month = d.p_month and a.p_year = d.p_year and a.revision = d.revision', 'left');
+        $this->db->join('suppliers e', 'a.supplier_id = e.id','left');
+        $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id','left');
+
+        $this->db->where('a.p_month', $p_month);
+        $this->db->where('a.p_year', $p_year);
+        
+        if ($revision != "") {
+            $this->db->where('a.revision', $revision);
+        } else {
+            $this->db->where('a.revision >=', 0);
+        }
+
+        if ($supplier_id != "") {
+            $this->db->where('a.supplier_id', $supplier_id);
+        }
+        if ($product_family != "") {
+            $this->db->where('b.item_family_id', $product_family);
+        }
+        if ($items != "") {
+            $this->db->where('a.item_rm_id', $items);
+        }
+        if ($status != "") {
+            if ($status == "open") {
+                $this->db->where("(a.status = 'open' or a.status = 'draft')");
+            } else {
+                $this->db->where("a.status = 'close'");
+            }
+        }
+
+        $total_query = $this->db->get()->row();
+        $total = $total_query ? $total_query->total : 0;
+
+        // 2. Data Query
+        $per_page = $this->input->get_post('rows') ? $this->input->get_post('rows') : 10;
+        $page = $this->input->get_post('page') ? $this->input->get_post('page') : 1;
+        $offset = ($page - 1) * $per_page;
+
+        $this->db->select('a.*, b.number as part_no, b.name as part_name, c.id as product_family_id, c.name as product_family, e.name as supplier_name, d.class as class_abc, f.leadtime, f.moq, f.mpq');
+        $this->db->from('generate_mrp_finals a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->join('generate_mrp_abcclass d', 'a.item_rm_id = d.item_rm_id and a.p_month = d.p_month and a.p_year = d.p_year and a.revision = d.revision', 'left');
+        $this->db->join('suppliers e', 'a.supplier_id = e.id','left');
+        $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id','left');
+
+        $this->db->where('a.p_month', $p_month);
+        $this->db->where('a.p_year', $p_year);
+        
+        if ($revision != "") {
+            $this->db->where('a.revision', $revision);
+        } else {
+            $this->db->where('a.revision >=', 0);
+        }
+
+        if ($supplier_id != "") {
+            $this->db->where('a.supplier_id', $supplier_id);
+        }
+        if ($product_family != "") {
+            $this->db->where('b.item_family_id', $product_family);
+        }
+        if ($items != "") {
+            $this->db->where('a.item_rm_id', $items);
+        }
+        if ($status != "") {
+            if ($status == "open") {
+                $this->db->where("(a.status = 'open' or a.status = 'draft')");
+            } else {
+                $this->db->where("a.status = 'close'");
+            }
+        }
+        
+        $this->db->group_by('a.item_rm_id');
+        $this->db->group_by('a.supplier_id');
+        $this->db->order_by('c.name', 'asc');
+        $this->db->order_by('d.class', 'asc');
+        $this->db->order_by('d.need_amount', 'desc');
+        $this->db->order_by('a.total_need', 'desc');
+        $this->db->order_by('b.number', 'asc');
+        // $this->db->limit($per_page, $offset);
+        $query = $this->db->get()->result_array();
+
+        $result = array(
+            'total' => $total,
+            'rows' => array(),
+            'period_1' => $period_2,
+            'period_2' => $period_3,
+            'period_3' => $period_4
+        );
+
+        $no = $offset + 1;
+        foreach ($query as $record) {//belum fix
+            $row = array(
+                'no' => $no++,
+                'item_rm_id' => isset($record['item_rm_id']) ? $record['item_rm_id'] : '',
+                'part_no' => isset($record['part_no']) ? $record['part_no'] : '',
+                'part_name' => isset($record['part_name']) ? $record['part_name'] : '',
+                'product_family_id' => isset($record['product_family_id']) ? $record['product_family_id'] : '',
+                'product_family' => isset($record['product_family']) ? $record['product_family'] : '',
+                'supplier_id' => isset($record['supplier_id']) ? $record['supplier_id'] : '',
+                'supplier_name' => isset($record['supplier_name']) ? $record['supplier_name'] : '',
+                'class_abc' => isset($record['class_abc']) ? $record['class_abc'] : '',
+                'leadtime' => isset($record['leadtime']) ? $record['leadtime'] : 0,
+                'mpq' => isset($record['moq']) ? $record['moq'] : 0,
+                'moq' => isset($record['mpq']) ? $record['mpq'] : 0,
+                'month_1' => $period_2,
+                'month_2' => $period_3,
+                'month_3' => $period_4,
+                'used_1' => isset($record['used_1']) ? $record['used_1'] : 0,
+                'used_2' => isset($record['used_2']) ? $record['used_2'] : 0,
+                'used_3' => isset($record['used_3']) ? $record['used_3'] : 0,
+                'average' => isset($record['average']) ? $record['average'] : 0,
+                'os_po' => isset($record['os_po']) ? $record['os_po'] : 0,
+                'need_1' => isset($record['need_2']) ? $record['need_2'] : 0, //lompat next month
+                'balance_1' => isset($record['balance_2']) ? $record['balance_2'] : 0, //lompat next month
+                'need_2' => isset($record['need_3']) ? $record['need_3'] : 0, //lompat next month
+                'balance_2' => isset($record['balance_3']) ? $record['balance_3'] : 0, //lompat next month
+                'need_3' => isset($record['need_4']) ? $record['need_4'] : 0, //lompat next month
+                'balance_3' => isset($record['balance_4']) ? $record['balance_4'] : 0, //lompat next month
+                'approved_by' => (empty($record['approved_by'])) ? 'Approved' : 'Checking',
+                'approved_date' => isset($record['approved_date']) ? $record['approved_date'] : '',
+                'created_by' => isset($record['created_by']) ? $record['created_by'] : '',
+                'created_date' => isset($record['created_date']) ? $record['created_date'] : ''
+            );
+
+            $result['rows'][] = $row;
+        }
+
+        echo json_encode($result);
+    }
 }
+
+

@@ -603,3 +603,174 @@ Change Sunday can be edit ([a91b0388](https://github.com/hilmanf11/erp_bpi/commi
 
 ### [2026-04-29]
 - **Rizki Puji**: Fixing: export and options chart on Purchase by Product Family Dashboard Purchase ([ff8a09df](https://github.com/hilmanf11/erp_bpi/commit/ff8a09df754fc96822386a541d30ddee7ee74421))
+
+## May 2026
+
+### [2026-05-06]
+- **kurniawan**: Update PR
+
+Mrp to PR ([1b230172](https://github.com/hilmanf11/erp_bpi/commit/1b230172a94dc447ddba4c1fc12693c9e7ce85e9))
+
+### [2026-05-06]
+- **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([116cb847](https://github.com/hilmanf11/erp_bpi/commit/116cb847bd28256813abda84656f2519e1953c3a))
+
+### [2026-05-20]
+- **kurniawan**: Update menu_loadings.php ([16740a0a](https://github.com/hilmanf11/erp_bpi/commit/16740a0a4306df26044207f48f4c47732ab27937))
+
+### [2026-05-20]
+- **kurniawan**: Update Script
+
+Bom , Item_categaories, Mold_prices, Standard_price_fg ([be3ac2ae](https://github.com/hilmanf11/erp_bpi/commit/be3ac2ae463546244dc41c71ac52ac026618bb87))
+
+### [2026-05-20]
+- **kurniawan**: Update Script
+
+Item_fg, molds ([3b8a7413](https://github.com/hilmanf11/erp_bpi/commit/3b8a7413d067005e006de5c20b9d94bbdd97107d))
+
+### [2026-05-20]
+- **kurniawan**: New Module in Master
+
+Departmen, sub_department, historical_price_material, setting_parameters ([437c8501](https://github.com/hilmanf11/erp_bpi/commit/437c850173591c5fbeae3d54f6f33add8bbcad80))
+
+### [2026-05-20]
+- **kurniawan**: Update Users ([d527bbbd](https://github.com/hilmanf11/erp_bpi/commit/d527bbbdb8927c624c4222e40da02876070c5d35))
+
+### [2026-05-20]
+- **kurniawan**: Update Control ([874821cd](https://github.com/hilmanf11/erp_bpi/commit/874821cd180e10f2bcdbebd073d22343e4cefa45))
+
+### [2026-05-20]
+- **kurniawan**: Update Report ([2a006a45](https://github.com/hilmanf11/erp_bpi/commit/2a006a453c5f0aaccafb663f808445ce841b667e))
+
+## June 2026
+
+### [2026-06-02]
+- **kurniawan**: Update Script Warehouse ([b45f6121](https://github.com/hilmanf11/erp_bpi/commit/b45f6121d1bfbb44b0599df999fd8b8cda54127e))
+
+### [2026-06-02]
+- **kurniawan**: Update supplier_items.php ([56b0e7f9](https://github.com/hilmanf11/erp_bpi/commit/56b0e7f98e5afc18a644a39a639e6728c7f7a909))
+
+### [2026-06-02]
+- **kurniawan**: Update Script NPD ([2042c7c4](https://github.com/hilmanf11/erp_bpi/commit/2042c7c48a3e9eea1197586b6a3616c480a0c05a))
+
+### [2026-06-02]
+- **kurniawan**: Update script Purchase ([bceca171](https://github.com/hilmanf11/erp_bpi/commit/bceca171e81aa10cf15c2e183b94a9714d193b7f))
+
+### [2026-06-02]
+- **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([0fb0f73d](https://github.com/hilmanf11/erp_bpi/commit/0fb0f73d2fa47d3042a6891fb5dd006010fc6443))
+
+### [2026-06-02]
+- **kurniawan**: Update Script planning ([6705dd68](https://github.com/hilmanf11/erp_bpi/commit/6705dd6859c709c6e0a8864d8b69d8acd158232c))
+
+### [2026-06-02]
+- **kurniawan**: Update Script WIP adj fg ([e92e1092](https://github.com/hilmanf11/erp_bpi/commit/e92e1092080eb649bdabb5f072ca0fd92ea94a78))
+
+### [2026-06-05]
+- **kurniawan**: update NPD script ([c818f8aa](https://github.com/hilmanf11/erp_bpi/commit/c818f8aa5cddc637ab41bf75580983988482a6c7))
+
+### [2026-06-09]
+- **Yudhazaldi**: Penambahan Status di supply sheet ([05d322f6](https://github.com/hilmanf11/erp_bpi/commit/05d322f6be551b3a63c491bbccb82d9187eb5a72))
+
+### [2026-06-09]
+- **kurniawan**: Update master/location_items ([358b6cfe](https://github.com/hilmanf11/erp_bpi/commit/358b6cfeca89c2bc56a3928cd083080f9617d349))
+
+### [2026-06-10]
+- **kurniawan**: Update Scipt Supply Sheet
+
+update fungsi Delete ([7d05293a](https://github.com/hilmanf11/erp_bpi/commit/7d05293a5854aa4bf068ae4a23748bf88c60c4fe))
+
+### [2026-06-10]
+- **kurniawan**: Update Script Wip Balance
+
+add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184caeb2b3ec26f113445cdf3332d4983ed45a))
+
+### [2026-06-10]
+- **Yudhazaldi**: Ganti Header Datagrid Add Supply Sheet ([61adbaea](https://github.com/hilmanf11/erp_bpi/commit/61adbaeae567280565cdad0c14a60cbb0bbb3a91))
+
+### [2026-06-10]
+- **kurniawan**: Update Wip_balances.php ([4f85759b](https://github.com/hilmanf11/erp_bpi/commit/4f85759b29e559c46e8604b44320747793f56f71))
+
+### [2026-06-10]
+- **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([62283753](https://github.com/hilmanf11/erp_bpi/commit/62283753b763c4aaca0a88c5b95d17bc62927dd2))
+
+### [2026-06-12]
+- **kurniawan**: Update forecast & Generate loadcap ([b5385c5b](https://github.com/hilmanf11/erp_bpi/commit/b5385c5b9cc78652e5bc918f10c5c8c01355fd1b))
+
+### [2026-06-12]
+- **kurniawan**: Update DN ([40996600](https://github.com/hilmanf11/erp_bpi/commit/409966009b5ef58e6da800d36cec41b0d15f80be))
+
+### [2026-06-12]
+- **kurniawan**: Update Locations.php ([e40d2ad8](https://github.com/hilmanf11/erp_bpi/commit/e40d2ad8e06368d574919969fc3220d508f4a4fe))
+
+### [2026-06-12]
+- **kurniawan**: update item receipt ([645de328](https://github.com/hilmanf11/erp_bpi/commit/645de328aec29cb797f9541cedeec09ac09beff6))
+
+### [2026-06-12]
+- **kurniawan**: Update Generate_mps.php ([034a20bf](https://github.com/hilmanf11/erp_bpi/commit/034a20bff9342f3071e6edd8854d0917c8d2fbce))
+
+### [2026-06-18]
+- **kurniawan**: update menu loadings ([83f0904a](https://github.com/hilmanf11/erp_bpi/commit/83f0904a50940fd1ba105bd2dbdcb073b61c1682))
+
+### [2026-06-23]
+- **kurniawan**: Update report_outstanding_pr.php ([815b654b](https://github.com/hilmanf11/erp_bpi/commit/815b654b0b824d7e1a2055ac527e26d155e3f735))
+
+### [2026-06-23]
+- **kurniawan**: Update Delivery_notes.php ([697b505f](https://github.com/hilmanf11/erp_bpi/commit/697b505ff975e4dbe021760ad10861a96c769130))
+
+### [2026-06-24]
+- **kurniawan**: Update Purchase_order_receipts.php ([52866c1e](https://github.com/hilmanf11/erp_bpi/commit/52866c1eb47132daa7f05fd45eebbcb52540ca7a))
+
+### [2026-06-24]
+- **kurniawan**: Update Checksheets ([c1c35902](https://github.com/hilmanf11/erp_bpi/commit/c1c35902d1c387d7f45e7055fd1b3b2d1a627c3d))
+
+### [2026-06-24]
+- **kurniawan**: Update Report_history_transactions_fg.php ([84d3674b](https://github.com/hilmanf11/erp_bpi/commit/84d3674b9c8881b2d92865ad8f58ef8df5d8ff1c))
+
+### [2026-06-24]
+- **kurniawan**: update finance ([70944e84](https://github.com/hilmanf11/erp_bpi/commit/70944e849649f61796748f1c6d305750e52483c1))
+
+### [2026-06-24]
+- **kurniawan**: Update Wip_balances.php ([392efc53](https://github.com/hilmanf11/erp_bpi/commit/392efc5394af64c7371486777f5e1a7a65eddb23))
+
+### [2026-06-24]
+- **kurniawan**: Update Checksheets.php ([757c13a5](https://github.com/hilmanf11/erp_bpi/commit/757c13a5d164f12639236d2e0a40cb342163785b))
+
+### [2026-06-25]
+- **kurniawan**: Update Checksheets ([23af3c8d](https://github.com/hilmanf11/erp_bpi/commit/23af3c8debd566dd83c88658ab864200260b90cb))
+
+### [2026-06-30]
+- **kurniawan**: Update Cost Pattern ([5783657a](https://github.com/hilmanf11/erp_bpi/commit/5783657a259b9f7c8c68e8ef6345af98ee523d40))
+
+## July 2026
+
+### [2026-07-02]
+- **kurniawan**: Update Report_outstanding_po.php ([e1ed7179](https://github.com/hilmanf11/erp_bpi/commit/e1ed7179ba55a0e5b571d4217c02299c29c3e543))
+
+### [2026-07-02]
+- **kurniawan**: Update cost pattern ([0a83f47a](https://github.com/hilmanf11/erp_bpi/commit/0a83f47a8c79386bfca7c7d2729e2f12a8b416f7))
+
+### [2026-07-02]
+- **kurniawan**: Updat Pricing for NPD ([091698f9](https://github.com/hilmanf11/erp_bpi/commit/091698f952293f9d048243e8573befa5a16b63d5))
+
+### [2026-07-02]
+- **kurniawan**: Update NPD ([9811b28b](https://github.com/hilmanf11/erp_bpi/commit/9811b28bcb126a8c5efab76e2288e6c5e2883b2f))
+
+### [2026-07-02]
+- **kurniawan**: update Master for NPD ([34cf98c3](https://github.com/hilmanf11/erp_bpi/commit/34cf98c3a04b44f52d359ba9f6292da5f880e8de))
+
+### [2026-07-06]
+- **kurniawan**: GENERATE MRP ([ffc68fa3](https://github.com/hilmanf11/erp_bpi/commit/ffc68fa3f4cd181eb80203f1a00e64c686adceec))
+
+### [2026-07-06]
+- **kurniawan**: new module ([5af5156f](https://github.com/hilmanf11/erp_bpi/commit/5af5156fca082275f65b0c67932ca64a2d785558))
+
+### [2026-07-07]
+- **kurniawan**: update breakdown price ([5777ef07](https://github.com/hilmanf11/erp_bpi/commit/5777ef07b6583070223341f688cb630c61c9b2ef))
+
+### [2026-07-08]
+- **kurniawan**: Update Report_grn_rm_actual_std_price.php ([859d0804](https://github.com/hilmanf11/erp_bpi/commit/859d08042319d843cc83d7fe436266f26f92fcfb))
+
+### [2026-07-13]
+- **kurniawan**: Update PO ([1ae4b231](https://github.com/hilmanf11/erp_bpi/commit/1ae4b2310b262f029ac2792bc3b21ef2ad4d4a7f))
+
+### [2026-07-13]
+- **kurniawan**: Update Generate MPP ([1e227a6a](https://github.com/hilmanf11/erp_bpi/commit/1e227a6a26890b7efc17a1419e87835b4b17834c))

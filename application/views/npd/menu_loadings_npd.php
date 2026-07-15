@@ -239,7 +239,7 @@
     });
 
     $('#item_fg_id').combobox({
-        url:'<?= base_url('master/item_fg/reads/'); ?>',
+        url:'<?= base_url('npd/item_fg_npd/reads/'); ?>',
         valueField:'id',
         textField:'number',
         prompt: 'Choose Product No.'

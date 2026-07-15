@@ -369,6 +369,7 @@ class Supply_sheets extends CI_Controller
                 "request_name" => $record['request_name'],
                 "lot_no" => $record['lot_no'],
                 "workorder" => $record['workorder'],
+                "item_fg_id" => $record['item_fg_id'],
                 "item_fg_number" => $record['item_fg_number'],
                 "item_fg_name" => $record['item_fg_name'],
                 "uom" => $record['uom'],
@@ -869,7 +870,7 @@ class Supply_sheets extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('supply_sheets', ["request_no" => $data['request_no']]);
-        $update = $this->crud->update('production_schedules', ["workorder" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
+        $update = $this->crud->update('production_schedules', ["wo_no" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
         $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no']]);
         echo $send;
     }
@@ -1571,6 +1572,7 @@ class Supply_sheets extends CI_Controller
                 <th>Status</th>
                 <th>Supply Date</th>
                 <th>Requester</th>
+                <th>Lot No</th>
                 <th>Period</th>
                 <th>WP</th>
                 <th>Work Order</th>
@@ -1605,6 +1607,7 @@ class Supply_sheets extends CI_Controller
                         <td>' . $status . '</td>
                         <td>' . $data['request_date'] . '</td>
                         <td>' . $data['request_name'] . '</td>
+                        <td>' . $data['lot_no'] . '</td>
                         <td>' . $data['period'] . '</td>
                         <td>' . $data['wp'] . '</td>
                         <td>' . $data['workorder'] . '</td>

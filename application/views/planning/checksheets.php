@@ -3,6 +3,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'number',width:150,halign:'center'" sortable="true">Checksheet ID</th>
+            <th rowspan="2" data-options="field:'checksheet_type',width:150,halign:'center'" sortable="true">Checksheet Type</th>
             <th rowspan="2" data-options="field:'wo_no',width:150,halign:'center'" sortable="true">WO/DOC No</th>
             <th rowspan="2" data-options="field:'division',width:80,halign:'center'" sortable="true">Division</th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'" sortable="true">Trans Date</th>
@@ -112,6 +113,15 @@
                         <option value="Finished Good">Finished Good</option>
                     </select>
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Final Checksheet Type</span>
+                        <select style="width:60%;" id="filter_checksheet_type" panelHeight="auto" class="easyui-combobox">
+                            <option value="">Select All</option>
+                            <option value="Output Production">Output Production</option>
+                            <option value="Output Repacking">Output Repacking</option>
+                            <option value="Output Repair">Output Repair</option>
+                        </select>
+                </div>
             </div>
         </fieldset>
         <?= $button ?>
@@ -129,6 +139,7 @@
                         <select style="width:60%;" name="checksheet_type" id="checksheet_type" required="" panelHeight="auto" class="easyui-combobox">
                             <option value="">Choose Type</option>
                             <option value="Output Production">Output Production</option>
+                            <option value="Output Repacking">Output Repacking</option>
                             <option value="Output Repair">Output Repair</option>
                         </select>
                 </div>
@@ -322,6 +333,91 @@
                 var type = $("#checksheet_type").combobox('getValue');
 
                 if(type == "Output Production"){
+                    $("#lotno").hide();
+
+                    $('#product_no').combogrid({
+                        url: '<?= base_url('planning/checksheets/readWoNo') ?>',
+                        panelWidth: 550,
+                        idField: 'product_no',
+                        textField: 'product_no',
+                        mode: 'remote',
+                        fitColumns: true,
+                        prompt: "Choose Product No",
+                        columns: [
+                            [{
+                                field: 'period',
+                                title: 'Period',
+                                width: 150
+                            }, {
+                                field: 'lot_no',
+                                title: 'Lot No',
+                                width: 100,
+                                align: 'left'
+                            }, {
+                                field: 'wo_no',
+                                title: 'Wo No',
+                                width: 100,
+                                align: 'left'
+                            }, {
+                                field: 'product_no',
+                                title: 'Product No',
+                                width: 200,
+                                align: 'left'
+                            }]
+                        ],
+                        onSelect: function(val, row) {
+                            console.log(row);
+                            $("#period").textbox('setValue', row.period);
+                            $("#item_fg_id").textbox('setValue', row.item_fg_id);
+                            $("#product_name").textbox('setValue', row.product_name);
+                            $("#qty").numberbox('setValue', row.qty);
+                            $("#wo_no").textbox('setValue', row.wo_no);
+                            $("#balance").textbox('setValue', '0');
+                            $("#division").textbox('setValue', row.division);
+                            $("#status_subcont").textbox('setValue', row.status_subcont);
+                            $("#subcont_type").textbox('setValue', row.subcont_type);
+
+                            var wo_no = row.wo_no;
+                            console.log(wo_no);
+                            $.ajax({
+                                url: '<?= base_url("planning/checksheets/checkWo_no/") ?>' + window.btoa(wo_no), 
+                                method: 'GET',
+                                dataType: 'json',
+                                success: function(data) {
+                                    console.log(data);
+                                    accumulateAjax = data[0].qty;
+                                    $("#accumulate").numberbox('setValue', data[0].qty);
+                                }
+                            });
+
+                            $('#receipt').numberbox({
+                                onChange: function(value) {
+                                    if(value != ""){
+                                        var qty = $("#qty").numberbox("getValue");
+                                        var receipt = $("#receipt").numberbox('getValue');
+
+                                        var calculate = parseFloat(receipt) + parseFloat(accumulateAjax);
+                                        var result = parseFloat(qty) - parseFloat(calculate);
+
+                                        var balance = $("#balance").numberbox('setValue', result);
+                                        var accumulate_total = $("#accumulate").numberbox('setValue', calculate);
+
+                                        if (result < 0) {
+                                            toastr.warning("Balance minus, please correct your Receipt!");
+                                            $("#receipt").numberbox('setValue', 0);
+                                            $("#accumulate").numberbox('setValue', accumulate);
+                                            balanceMinus.play();
+                                        } else {
+                                            return result;
+                                        }
+                                    }else{
+                                        $("#receipt").numberbox('setValue', 0);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                } else if(type == "Output Repacking"){
                     $("#lotno").hide();
 
                     $('#product_no').combogrid({
@@ -627,13 +723,14 @@
         var filter_status = $("#filter_status").combobox('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
-
+        var filter_checksheet_type = $("#filter_checksheet_type").combobox('getValue');
 
         var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_wo_no=" + filter_wo_no + "&filter_checksheet=" + filter_checksheet + 
         "&filter_shift=" + filter_shift + "&filter_item_fg_id=" + filter_item_fg_id + 
         "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
-        "&filter_division=" + filter_division + "&filter_status=" + filter_status;
+        "&filter_division=" + filter_division + "&filter_status=" + filter_status + 
+        "&filter_checksheet_type=" + filter_checksheet_type;
 
         $('#dg').datagrid({
             url: '<?= base_url('planning/checksheets/datatables') ?>' + url,
@@ -663,13 +760,14 @@
         var filter_status = $("#filter_status").combobox('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
-
+        var filter_checksheet_type = $("#filter_checksheet_type").combobox('getValue');
 
         var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_wo_no=" + filter_wo_no + "&filter_checksheet=" + filter_checksheet + 
         "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
         "&filter_shift=" + filter_shift + "&filter_item_fg_id=" + filter_item_fg_id + 
-        "&filter_division=" + filter_division + "&filter_status=" + filter_status;
+        "&filter_division=" + filter_division + "&filter_status=" + filter_status +
+        "&filter_checksheet_type=" + filter_checksheet_type;
         
         window.location.assign('<?= base_url('planning/checksheets/print/excel') ?>' + url);
     }

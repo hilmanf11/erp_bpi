@@ -45,22 +45,19 @@ class Users extends CI_Controller
         echo json_encode($users);
     }
 
-    public function readDepartement(){
-        $ch = curl_init(); 
-        curl_setopt($ch, CURLOPT_URL, "https://hrbpi.hris-server.com/api/master/departements");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $output = curl_exec($ch);
-        curl_close($ch);
-        echo $output;
+    public function readDepartement()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        // $send = $this->crud->query("SELECT * FROM departments WHERE name LIKE '%$post%'AND number != 'FG'");
+        $send = $this->crud->reads('departments', ["name" => $post]);
+        echo json_encode($send);
     }
 
-    public function readDepartementSub($departement_id){
-        $ch = curl_init(); 
-        curl_setopt($ch, CURLOPT_URL, "https://hrbpi.hris-server.com/api/master/departementSubs/" . $departement_id);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $output = curl_exec($ch);
-        curl_close($ch);
-        echo $output;
+    public function readDepartementSub($department_id)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM sub_departments WHERE department_id LIKE '%$department_id%' AND (name LIKE '%$post%') GROUP BY name");
+        echo json_encode($send);
     }
 
     //GET DATATABLES

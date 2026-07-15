@@ -355,6 +355,7 @@ class Checksheets extends CI_Controller
             $filter_status = $this->input->get('filter_status');
             $filter_status_subcont = $this->input->get('filter_status_subcont');
             $filter_subcont_type = $this->input->get('filter_subcont_type');
+            $filter_checksheet_type = $this->input->get('filter_checksheet_type');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -405,11 +406,11 @@ class Checksheets extends CI_Controller
             if ($filter_subcont_type != "") {
                 $this->db->where('a.subcont_type', $filter_subcont_type);
             }
-            // $this->db->like('a.status', $filter_status);
-            // $this->db->like('a.wo_no', $filter_wo_no);
-            // $this->db->like('a.number', $filter_checksheet);
-            // $this->db->like('a.shift', $filter_shift);
-            // $this->db->like('a.item_fg_id', $filter_item_fg_id);
+
+            if ($filter_checksheet_type != "") {
+                $this->db->where('a.checksheet_type', $filter_checksheet_type);
+            }
+            
             $this->db->group_by('a.number');
             $this->db->order_by($sort, $order);
             //Total Data
@@ -861,25 +862,18 @@ class Checksheets extends CI_Controller
         $checksheet_number = base64_decode($checksheet_number);
         //Cek Label
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.checksheet_label, 
-        b.trans_date, b.prod_date, b.shift, d.control_id, d.logo, d.uom, 
+        b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, b.checksheet_type,
         (CASE 
-            WHEN b.lot_no IS NULL or b.lot_no = "" THEN c.lot_no 
+            WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no 
             ELSE b.lot_no 
-        END) as lot_no, 
-        b.qc_1, b.qc_2, b.op_1, b.op_2, b.qcnumber_1, b.qcnumber_2, b.opnumber_1, b.opnumber_2, h.location'); // d.description,
+        END) as lot_no,
+        b.qc_1, b.qc_2, b.op_1, b.op_2, b.qcnumber_1, b.qcnumber_2, b.opnumber_1, b.opnumber_2, g.location'); // d.description,
 
         $this->db->from('wip_receipt_labels a');
         $this->db->join('checksheets b', 'a.checksheet_number = b.number');
         $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
         $this->db->join('item_fg d', 'b.item_fg_id = d.id');
-        // $this->db->join('uom e', 'd.uom_id = e.id');
-        // $this->db->join('wip_receipts f', 'a.checksheet_number = f.checksheet_number');
-        $this->db->join('warehouse_location_items g', 'd.id = g.item_fg_id', 'left');
-        $this->db->join('warehouse_locations h', 'g.location = h.location', 'left');
-        // $this->db->join('warehouse_location_items g', 'd.id = g.item_rm_id', 'left');
-        // $this->db->join('customer_items h', 'h.customer_id = c.customer_id and d.id = h.item_fg_id', 'left');
-        // $this->db->join('customers i', 'i.id = h.customer_id', 'left');
-        // $this->db->join('sales_orders j', 'c.so_number = j.sales_order_no', 'left');
+        $this->db->join('warehouse_location_items g', 'b.item_fg_id = g.item_fg_id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.checksheet_number', $checksheet_number);
@@ -904,6 +898,12 @@ class Checksheets extends CI_Controller
                 //     $padding = "padding:0 0mm 1mm 4mm;";
                 // }
 
+                if($wip_receipt_label->checksheet_type == "Output Repacking"){
+                    $repacking = "R";
+                }else{
+                    $repacking = "";
+                }
+
                 if ($wip_receipt_label->logo == "0") {
                     $img_bpi = '<img style="width:50%;" src="' . base_url("assets/image/bpi_logo.png") . '" />';
                 } else {
@@ -927,7 +927,13 @@ class Checksheets extends CI_Controller
                                         <th colspan="4" style="font-size: 8px; text-align: right; border: none;"><b>' . $config_iso->doc_barcode_fg . '</b></th>
                                     </tr>
                                     <tr>
-                                        <th colspan="4" style="font-size: 15px; text-align: center; border: none;"><b>LABEL PACKING</b></th>
+                                        <th colspan="4" style="border: none; padding: 0;">
+                                            <table style="width: 100%; border: none; border-collapse: collapse;">
+                                                <tr>
+                                                    <td style="width: 100%; font-size: 15px; text-align: center; border: none;"><b>LABEL PACKING</b></td>
+                                                </tr>
+                                            </table>
+                                        </th>
                                     </tr>
                                     <tr>
                                         <td style="width:5mm; height: 5mm; border: none; text-align: center;">' . $img_bpi . '</td>
@@ -937,8 +943,14 @@ class Checksheets extends CI_Controller
                                         <td colspan="2" style="text-align:left; border: 1px solid black;">
                                             <small style="font-size:10px;">Part No</small><br><b style="font-size:16px;">' . $wip_receipt_label->item_number . '</b>
                                         </td>
-                                        <td colspan="2" style="text-align:left; border: 1px solid black;">
+                                        
+                                        <td style="text-align:left; border-top: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black; border-right: none;">
                                             <small style="font-size:10px;">Lot No.</small><br><b style="font-size:12px;">' . $wip_receipt_label->lot_no . '</b>
+                                        </td>
+                                        
+                                        <td style="text-align:left; border-top: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black; border-left: none;">
+                                            <br>
+                                            <b style="font-size:14px;">' . $repacking . '</b>
                                         </td>
                                     </tr>
                                     <tr>
@@ -949,7 +961,7 @@ class Checksheets extends CI_Controller
                                         <td colspan="2" style="text-align:left; border: 1px solid black;">
                                             <small style="font-size:10px;">Prod Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->prod_date . '</b>
                                             <br>
-                                            <small style="font-size:10px;">Pack Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->trans_date . '</b>
+                                            <small style="font-size:10px;">Pack Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->packing_date . '</b>
                                         </td>
                                     </tr>
                                      <tr>
@@ -1026,24 +1038,18 @@ class Checksheets extends CI_Controller
         $checksheet_number = base64_decode($checksheet_number);
         //Cek Label
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.checksheet_label, 
-        b.trans_date, b.prod_date, b.shift, d.control_id, d.logo, d.uom, 
+        b.trans_date, b.prod_date, b.packing_date, b.shift, d.control_id, d.logo, d.uom, b.checksheet_type,
         (CASE 
-            WHEN b.lot_no IS NULL or b.lot_no = "" THEN c.lot_no 
+            WHEN b.lot_no IS NULL OR b.lot_no = "" THEN c.lot_no 
             ELSE b.lot_no 
-        END) as lot_no, 
-        b.qc_1, b.qc_2, b.op_1, b.op_2, b.qcnumber_1, b.qcnumber_2, b.opnumber_1, b.opnumber_2, h.location'); // d.description,    
+        END) as lot_no,
+        b.qc_1, b.qc_2, b.op_1, b.op_2, b.qcnumber_1, b.qcnumber_2, b.opnumber_1, b.opnumber_2, g.location'); // d.description,    
 
         $this->db->from('wip_receipt_boxs a');
         $this->db->join('checksheets b', 'a.checksheet_number = b.number');
         $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
         $this->db->join('item_fg d', 'b.item_fg_id = d.id');
-        // $this->db->join('uom e', 'd.uom_id = e.id');
-        // $this->db->join('wip_receipts f', 'a.checksheet_number = f.checksheet_number');
-        $this->db->join('warehouse_location_items g', 'd.id = g.item_fg_id', 'left');
-        $this->db->join('warehouse_locations h', 'g.location = h.location', 'left');
-        // $this->db->join('customer_items h', 'h.customer_id = c.customer_id and d.id = h.item_fg_id', 'left');
-        // $this->db->join('customers i', 'i.id = h.customer_id', 'left');
-        // $this->db->join('sales_orders j', 'c.so_number = j.sales_order_no', 'left');
+        $this->db->join('warehouse_location_items g', 'b.item_fg_id = g.item_fg_id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.checksheet_number', $checksheet_number);
@@ -1069,6 +1075,12 @@ class Checksheets extends CI_Controller
                 // }
                 //Generate QRcode
 
+                if($wip_receipt_label->checksheet_type == "Output Repacking"){
+                    $repacking = "R";
+                }else{
+                    $repacking = "";
+                }
+
                 if ($wip_receipt_label->logo == "0") {
                     $img_bpi = '<img style="width:50%;" src="' . base_url("assets/image/bpi_logo.png") . '" />';
                 } else {
@@ -1091,7 +1103,13 @@ class Checksheets extends CI_Controller
                                         <th colspan="4" style="font-size: 8px; text-align: right; border: none;"><b>' . $config_iso->doc_barcode_fg . '</b></th>
                                     </tr>
                                     <tr>
-                                        <th colspan="4" style="font-size: 15px; text-align: center; border: none;"><b>LABEL BOX</b></th>
+                                        <th colspan="4" style="border: none; padding: 0;">
+                                            <table style="width: 100%; border: none; border-collapse: collapse;">
+                                                <tr>
+                                                    <td style="width: 100%; font-size: 15px; text-align: center; border: none;"><b>LABEL BOX</b></td>
+                                                </tr>
+                                            </table>
+                                        </th>
                                     </tr>
                                     <tr>
                                         <td style="width:5mm; height: 5mm; border: none; text-align: center;">' . $img_bpi . '</td>
@@ -1101,8 +1119,12 @@ class Checksheets extends CI_Controller
                                         <td colspan="2" style="text-align:left; border: 1px solid black;">
                                             <small style="font-size:10px;">Part No</small><br><b style="font-size:16px;">' . $wip_receipt_label->item_number . '</b>
                                         </td>
-                                        <td colspan="2" style="text-align:left; border: 1px solid black;">
+                                        <td style="text-align:left; border-top: 1px solid black; border-bottom: 1px solid black; border-left: 1px solid black; border-right: none;">
                                             <small style="font-size:10px;">Lot No.</small><br><b style="font-size:12px;">' . $wip_receipt_label->lot_no . '</b>
+                                        </td>
+                                        <td style="text-align:left; border-top: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black; border-left: none;">
+                                            <br>
+                                            <b style="font-size:14px;">' . $repacking . '</b>
                                         </td>
                                     </tr>
                                     <tr>
@@ -1113,7 +1135,7 @@ class Checksheets extends CI_Controller
                                         <td colspan="2" style="text-align:left; border: 1px solid black;">
                                             <small style="font-size:10px;">Prod Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->prod_date . '</b>
                                             <br>
-                                            <small style="font-size:10px;">Pack Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->trans_date . '</b>
+                                            <small style="font-size:10px;">Pack Date.</small><br><b style="font-size:12px;">' . $wip_receipt_label->packing_date . '</b>
                                         </td>
                                     </tr>
                                      <tr>
@@ -1200,6 +1222,9 @@ class Checksheets extends CI_Controller
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         $filter_division = $this->input->get('filter_division');
         $filter_status = $this->input->get('filter_status');
+        $filter_status_subcont = $this->input->get('filter_status_subcont');
+        $filter_subcont_type = $this->input->get('filter_subcont_type');
+        $filter_checksheet_type = $this->input->get('filter_checksheet_type');
 
         //Config
         $this->db->select('*');
@@ -1224,8 +1249,30 @@ class Checksheets extends CI_Controller
         if ($filter_status != "") {
             $this->db->where('a.status', $filter_status);
         }
-        $this->db->like('a.wo_no', $filter_wo_no);
-        $this->db->like('a.item_fg_id', $filter_item_fg_id);
+        if ($filter_wo_no != "") {
+            $this->db->where('a.wo_no', $filter_wo_no);
+        }
+        if ($filter_checksheet != "") {
+            $this->db->where('a.number', $filter_checksheet);
+        }
+        if ($filter_shift != "") {
+            $this->db->where('a.shift', $filter_shift);
+        }
+        if ($filter_item_fg_id != "") {
+            $this->db->where('a.item_fg_id', $filter_item_fg_id);
+        }
+
+        if ($filter_status_subcont != "") {
+            $this->db->where('a.status_subcont', $filter_status_subcont);
+        }
+
+        if ($filter_subcont_type != "") {
+            $this->db->where('a.subcont_type', $filter_subcont_type);
+        }
+
+        if ($filter_checksheet_type != "") {
+            $this->db->where('a.checksheet_type', $filter_checksheet_type);
+        }
         $this->db->order_by('a.number', 'ASC');
         $this->db->order_by('a.wo_no', 'ASC');
         $records = $this->db->get()->result_array();
@@ -1256,6 +1303,7 @@ class Checksheets extends CI_Controller
                 <tr>
                     <th width="20">No</th>
                     <th>Checksheet ID</th>
+                    <th>Checksheet Type</th>
                     <th>Wo_No</th>
                     <th>Trans Date</th>
                     <th>Product No</th>
@@ -1282,6 +1330,7 @@ class Checksheets extends CI_Controller
             $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $data['number'] . '</td>
+                            <td>' . $data['checksheet_type'] . '</td>
                             <td>' . $data['wo_no'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
                             <td>' . $data['product_no'] . '</td>

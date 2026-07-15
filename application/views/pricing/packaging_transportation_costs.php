@@ -566,63 +566,6 @@
     </form>
 </div>
 
-<!-- Update -->
-<div id="dlg_insert2" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 40%; padding:10px; top: 10px;">
-    <form id="frm_insert2" method="post" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Form Data</b></legend>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">ID</span>
-                    <input style="width:30%;" name="id" id="id" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Customer ID</span>
-                    <input style="width:30%;" name="customer_id" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" name="customer_name" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division ID</span>
-                    <input style="width:60%;" name="division_id"  class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Plant ID</span>
-                    <input style="width:30%;" name="customer_address_id" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant</span>
-                    <input style="width:60%;" name="plant" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Part Id</span>
-                    <input style="width:60%;" name="item_fg_id" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Part Number</span>
-                    <input style="width:60%;" name="item_fg_number" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Price</span>
-                    <input style="width:60%;" name="price" class="easyui-numberbox" precision='4'>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Currency</span>
-                    <input style="width:60%;" name="currency" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Valid Date</span>
-                    <input style="width:60%;" name="valid_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Remark</span>
-                    <input style="width:60%;" name="remark"  class="easyui-textbox">
-                </div>
-        </fieldset>
-    </form>
-</div>
-
 <!-- Detail Histories -->
 <div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 600px; height: 300px; top: 20px;">
     <table id="dg_history" class="easyui-datagrid" style="width:100%;">
@@ -638,7 +581,7 @@
 </div>
 
 <!-- Upload -->
-<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+<!-- <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -655,7 +598,7 @@
         <ul id="remarks">
         </ul>
     </div>
-</div>
+</div> -->
 
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('pricing/packaging_transportation_costs/print') ?>" style="width: 100%;" hidden></iframe>
@@ -744,13 +687,13 @@
         }
     }
     // UPLOAD DATA
-    function upload() {
-        $('#dlg_upload').dialog('open');
-    }
+    // function upload() {
+    //     $('#dlg_upload').dialog('open');
+    // }
     // DOWNLOAD
-    function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_customer_items.xls') ?>');
-    }
+    // function download_excel() {
+    //     window.location.assign('<?= base_url('template/tmp_customer_items.xls') ?>');
+    // }
 
     //FILTER DATA
     function filter() {
@@ -819,6 +762,7 @@
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
+                                localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                             } else {
                                 toastr.error(result.message, result.title);
                             }
@@ -1172,32 +1116,6 @@
         var transportCostPcs = operation / armadaCapPcs;
         $('#transportasion_cost_pcs').numberbox('setValue', transportCostPcs.toFixed(2));
     }
-
-    //SAVE DATA2
-    $('#dlg_insert2').dialog({
-        buttons: [{
-            text: 'Save',
-            iconCls: 'icon-ok',
-            handler: function() {
-                $('#frm_insert2').form('submit', {
-                    url: url_save,
-                    onSubmit: function() {
-                        return $(this).form('validate');
-                    },
-                    success: function(result) {
-                        var result = eval('(' + result + ')');
-                        if (result.theme == "success") {
-                            toastr.success(result.message, result.title);
-                        } else {
-                            toastr.error(result.message, result.title);
-                        }
-                        $('#dlg_insert2').dialog('close');
-                        $('#dg').datagrid('reload');
-                    }
-                });
-            }
-        }]
-    });
 
     $('#customer_name').combogrid({
         url: '<?= base_url('master/customers/reads/'); ?>',
@@ -1629,82 +1547,132 @@
     }
 
     // UPLOAD DATA
-    $('#dlg_upload').dialog({
-        buttons: [{
-            text: 'List Failed',
-            handler: function() {
-                window.open('<?= base_url('pricing/packaging_transportation_costs/uploadDownloadFailed') ?>', '_blank');
-            }
-        }, {
-            text: 'Upload',
-            iconCls: 'icon-ok',
-            handler: function() {
-                $('#frm_upload').form('submit', {
-                    url: '<?= base_url('pricing/packaging_transportation_costs/upload') ?>',
-                    onSubmit: function() {
-                        if ($(this).form('validate') == false) {
-                            return $(this).form('validate');
-                        } else {
-                            $.messager.progress({
-                                title: 'Please Wait',
-                                msg: 'Importing Excel to Database'
-                            });
-                        }
-                    },
-                    success: function(result) {
-                        $.messager.progress('close');
-                        //Clear File
-                        $.ajax({
-                            url: "<?= base_url('pricing/packaging_transportation_costs/uploadclearFailed') ?>"
-                        });
-                        var json = eval('(' + result + ')');
-                        requestData(json.total, json);
+    // $('#dlg_upload').dialog({
+    //     buttons: [{
+    //         text: 'List Failed',
+    //         handler: function() {
+    //             window.open('<?= base_url('pricing/packaging_transportation_costs/uploadDownloadFailed') ?>', '_blank');
+    //         }
+    //     }, {
+    //         text: 'Upload',
+    //         iconCls: 'icon-ok',
+    //         handler: function() {
+    //             $('#frm_upload').form('submit', {
+    //                 url: '<?= base_url('pricing/packaging_transportation_costs/upload') ?>',
+    //                 onSubmit: function() {
+    //                     if ($(this).form('validate') == false) {
+    //                         return $(this).form('validate');
+    //                     } else {
+    //                         $.messager.progress({
+    //                             title: 'Please Wait',
+    //                             msg: 'Importing Excel to Database'
+    //                         });
+    //                     }
+    //                 },
+    //                 success: function(result) {
+    //                     $.messager.progress('close');
+    //                     //Clear File
+    //                     $.ajax({
+    //                         url: "<?= base_url('pricing/packaging_transportation_costs/uploadclearFailed') ?>"
+    //                     });
+    //                     var json = eval('(' + result + ')');
+    //                     requestData(json.total, json);
 
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
+    //                     function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+    //                         if (value < 100) {
+    //                             value = Math.floor((number / total) * 100);
+    //                             $('#p_upload').progressbar('setValue', value);
+    //                             $('#p_start').html(number);
+    //                             $('#p_finish').html(total);
 
-                                $.ajax({
-                                    type: "POST",
-                                    async: true,
-                                    url: "<?= base_url('pricing/packaging_transportation_costs/uploadCreate') ?>",
-                                    data: {
-                                        "data": json[number - 1]
-                                    },
-                                    cache: false,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('pricing/packaging_transportation_costs/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-                                        $("#p_remarks").append(title + "<br>");
-                                    }
-                                });
+    //                             $.ajax({
+    //                                 type: "POST",
+    //                                 async: true,
+    //                                 url: "<?= base_url('pricing/packaging_transportation_costs/uploadCreate') ?>",
+    //                                 data: {
+    //                                     "data": json[number - 1]
+    //                                 },
+    //                                 cache: false,
+    //                                 dataType: "json",
+    //                                 success: function(result) {
+    //                                     if (result.theme == "success") {
+    //                                         $('#p_success').html(success);
+    //                                         var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+    //                                         requestData(total, json, number + 1, value, success + 1, failed + 0);
+    //                                     } else {
+    //                                         $('#p_failed').html(failed);
+    //                                         var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+    //                                         //Json Failed
+    //                                         $.ajax({
+    //                                             type: "POST",
+    //                                             async: true,
+    //                                             url: "<?= base_url('pricing/packaging_transportation_costs/uploadcreateFailed') ?>",
+    //                                             data: {
+    //                                                 data: json[number - 1],
+    //                                                 message: result.message
+    //                                             },
+    //                                             cache: false
+    //                                         });
+    //                                         requestData(total, json, number + 1, value, success + 0, failed + 1);
+    //                                     }
+    //                                     $("#p_remarks").append(title + "<br>");
+    //                                 }
+    //                             });
+    //                         }
+    //                     }
+    //                 }
+    //             });
+    //         }
+    //     }]
+    // });
+
+    //untuk kebutuhan NPD
+    $(document).ready(function() {
+        if (localStorage.getItem('trigger_add') === 'yes') {
+            localStorage.removeItem('trigger_add');
+
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof add === "function") {
+                    add(); 
+
+                    var checkClose = setInterval(function() {
+                        var isHidden = $('#dlg_insert').closest('.window').is(':hidden');
+                        if (isHidden) {
+                            clearInterval(checkClose); // Hentikan monitoring
+                            if (window.parent.$('#dlg_outer_wrapper').length) {
+                                window.parent.$('#dlg_outer_wrapper').dialog('close');
                             }
                         }
-                    }
-                });
-            }
-        }]
+                    }, 500);
+                }
+            }, 1000); 
+        }
+
+        // ==========================================
+        // SKRIP TRIGGER UPLOAD
+        // ==========================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var action = urlParams.get('action');
+
+        if (action === 'upload') {
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof upload === 'function') {
+                    upload(); 
+                    var checkCloseUpload = setInterval(function() {
+                        var isHidden = $('#dlg_upload').closest('.window').is(':hidden'); 
+                        if (isHidden) {
+                            clearInterval(checkCloseUpload); 
+                            if (window.parent.$('#dlg_upload_wrapper').length) {
+                                window.parent.$('#dlg_upload_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 500);
+        }
     });
 </script>

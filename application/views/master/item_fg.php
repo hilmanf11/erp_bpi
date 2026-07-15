@@ -53,6 +53,7 @@
             <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
             <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
             <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
+            <th rowspan="2" data-options="field:'remarks',width:80,align:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'logo',width:100,align:'center', styler:cellStyler, formatter:cellFormatterLogo">Logo</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
@@ -182,8 +183,6 @@
                         <option value="NO">NO</option>
                     </select>
                 </div>
-            </div>
-            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Subcont Type</span>
                     <select style="width:60%;" name="subcont_type" id="subcont_type" panelHeight="auto" class="easyui-combobox">
@@ -191,6 +190,8 @@
                         <option value="Finished Good">Finished Good</option>
                     </select>
                 </div>
+            </div>
+            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MPQ</span>
                     <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
@@ -235,6 +236,14 @@
                         <option value="0">Active</option>
                         <option value="1">Not Active</option>
                     </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">MIN</span>
+                    <input style="width:60%;" name="min" id="min" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">MAX</span>
+                    <input style="width:60%;" name="max" id="max" class="easyui-numberbox">
                 </div>
             </div>
         </fieldset>
@@ -396,13 +405,14 @@
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
+                                localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                             } else {
                                 toastr.error(result.message, result.title);
                             }
 
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
-                            window.location.reload();
+                            // window.location.reload();
                         }
                     });
                 }
@@ -600,5 +610,55 @@
                 });
             }
         }]
+    });
+
+    //untuk kebutuhan NPD
+    $(document).ready(function() {
+        if (localStorage.getItem('trigger_add') === 'yes') {
+            localStorage.removeItem('trigger_add');
+
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof add === "function") {
+                    add(); 
+
+                    var checkClose = setInterval(function() {
+                        var isHidden = $('#dlg_insert').closest('.window').is(':hidden');
+                        if (isHidden) {
+                            clearInterval(checkClose); // Hentikan monitoring
+                            if (window.parent.$('#dlg_outer_wrapper').length) {
+                                window.parent.$('#dlg_outer_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 1000); 
+        }
+
+        // ==========================================
+        // SKRIP TRIGGER UPLOAD
+        // ==========================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var action = urlParams.get('action');
+
+        if (action === 'upload') {
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof upload === 'function') {
+                    upload(); 
+                    var checkCloseUpload = setInterval(function() {
+                        var isHidden = $('#dlg_upload').closest('.window').is(':hidden'); 
+                        if (isHidden) {
+                            clearInterval(checkCloseUpload); 
+                            if (window.parent.$('#dlg_upload_wrapper').length) {
+                                window.parent.$('#dlg_upload_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 500);
+        }
     });
 </script>

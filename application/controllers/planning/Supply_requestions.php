@@ -77,6 +77,16 @@ class Supply_requestions extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readEmployes()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT *
+            FROM employees a
+            WHERE `status` = 0 and name like '%$post%' and `position` like '%$post%'  
+            ORDER BY name ASC");
+        echo json_encode($send);
+    }
+
     // public function readItems($wo_no="", $type)
     // {   
     //     $worko = base64_decode($wo_no);
@@ -203,19 +213,24 @@ class Supply_requestions extends CI_Controller
                 f.qty_sh as qty_wo,
                 f.qty_product as qty_ng,
                 f.shift,
+                f.type,
                 (CASE 
                     WHEN i.total_status_open = COUNT(a.status) THEN '0'
                     WHEN h.total_status_close = COUNT(a.status) THEN '1'
                     WHEN i.total_status_open >= 1 THEN '0'
                     WHEN h.total_status_close >= 1 THEN '1'
                     ELSE '0'
-                END) as status2");
+                END) as status2,
+                k.total_approved_to_checking,
+                l.total_approved_to_approved,
+                COUNT(a.approved_to) as total_approved_to");
                 $this->db->from('supply_requestions a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('supply_sheets c', 'a.workorder = c.workorder','left');
                 $this->db->join('(SELECT request_no, COUNT(status) as total_status_close FROM supply_requestions WHERE status = 1 GROUP BY request_no) h', 'a.request_no = h.request_no', 'left');
                 $this->db->join('(SELECT request_no, COUNT(status) as total_status_open FROM supply_requestions WHERE status = 0 GROUP BY request_no) i', 'a.request_no = i.request_no', 'left');        
-                // $this->db->join('uom d', 'b.uom_id = d.id');
+                $this->db->join('(SELECT request_no, COUNT(approved_to) as total_approved_to_checking FROM supply_requestions WHERE approved_to != "" || approved_to = NULL GROUP BY request_no) k', 'a.request_no = k.request_no', 'left');
+                $this->db->join('(SELECT request_no, COUNT(approved_to) as total_approved_to_approved FROM supply_requestions WHERE approved_to = "" || approved_to = NULL GROUP BY request_no) l', 'a.request_no = l.request_no', 'left');
                 $this->db->join('item_fg e', 'c.item_fg_id = e.id','left');
                 $this->db->join('item_ng f', 'a.document = f.document','left');
                 $this->db->where('a.deleted', 0);
@@ -252,6 +267,18 @@ class Supply_requestions extends CI_Controller
                         $status = "0";
                     }
 
+                    if ($record['total_approved_to'] == $record['total_approved_to_checking']) {
+                        $approved_to = "Checking";
+                    } elseif ($record['total_approved_to'] == $record['total_approved_to_approved']) {
+                        $approved_to = "";
+                    } elseif ($record['total_approved_to_checking'] >= 1) {
+                        $approved_to = "Checking";
+                    } elseif ($record['total_approved_to_approved'] >= 1) {
+                        $approved_to = "";
+                    } else {
+                        $approved_to = "";
+                    }
+
                     $arr[] = array(
                         "id" => $record['request_no'],
                         "request_no" => $record['request_no'],
@@ -262,6 +289,12 @@ class Supply_requestions extends CI_Controller
                         "document" => $record['document'],
                         "item_number" => $record['item_number'],
                         "item_name" => $record['item_name'],
+                        "approved_to" => $approved_to,
+                        "approved_by" => $record['approved_by'],
+                        "approved_date" => $record['approved_date'],
+                        "total_approved" => $record['total_approved_to_approved'],
+                        "total_checking" => $record['total_approved_to_checking'],
+                        "total_approved_to" => $record['total_approved_to'],
                         "status" => $status,
                         "total_status" => $record['total_status'],
                         "total_status_open" => $record['total_status_open'],
@@ -269,6 +302,7 @@ class Supply_requestions extends CI_Controller
                         // "qty_wo" => $record['qty_wo'],
                         // "qty_ng" => $record['qty_ng'],
                         "shift" => $record['shift'],
+                        "type" => $record['type'],
                         "state" => "closed"
                     );
                 }
@@ -360,7 +394,10 @@ class Supply_requestions extends CI_Controller
                         "created_by" => $record['created_by'],
                         "created_date" => $record['created_date'],
                         "updated_by" => $record['updated_by'],
-                        "updated_date" => $record['updated_date']
+                        "updated_date" => $record['updated_date'],
+                        "approved_to" => $record['approved_to'],
+                        "approved_by" => $record['approved_by'],
+                        "approved_date" => $record['approved_date']
                     );
                 }
                 $result = !empty($arr) ? $arr : [];
@@ -497,11 +534,53 @@ class Supply_requestions extends CI_Controller
         $kanban = $this->crud->read('supply_requestions', [], ["request_no" => base64_decode($request_no)]);
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
+        $approval = $this->crud->read('approvals', [], ["table_name" => "supply_requestions"]);
+        
+        $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
+        if (!empty($approval->user_approval_2)) {
+            $user_2 = $this->crud->read('users', [], ["username" => $approval->user_approval_2]);
+        } else {
+            $user_2 = (object) ["name" => ""];
+        }
+        
+        if (!empty($approval->user_approval_3)) {
+            $user_3 = $this->crud->read('users', [], ["username" => $approval->user_approval_3]);
+        } else {
+            $user_3 = (object) ["name" => ""];
+        }
+        
+        $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $kanban->employee . '.png') . '" width="80"/>';
+
+        if($kanban->approved == 0){
+            $users_1 = '';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($kanban->approved == 1) {
+            $users_1 = '';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($kanban->approved == 2) {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($kanban->approved == 3) {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
+            $users_3 = '';
+        } else {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
+            $users_3 = '<img src="' . base_url('assets/image/qrcode/' . $user_3->name . '.png') . '" width="80"/>';
+        }
 
         $rows = 8;
         $page = ceil(count($kanbans) / $rows);
         //Generate QRcode
         $this->createQrcode($kanban->request_no, "assets/image/qrcode/");
+        $this->createQrcode($user_3->name, "assets/image/qrcode/");
+        $this->createQrcode($user_2->name, "assets/image/qrcode/");
+        $this->createQrcode($user_1->name, "assets/image/qrcode/");
+        $this->createQrcode($kanban->employee, "assets/image/qrcode/");
         $html = '<html>
                     <head>
                         <title>' . $kanban->request_no . '</title>
@@ -512,17 +591,25 @@ class Supply_requestions extends CI_Controller
                             font-family: Arial, Helvetica, sans-serif;
                         }
                         #customers {
-                            border-collapse: collapse;width: 100%;
+                            border-collapse: collapse;
+                            width: 100%;
                             font-size: 12px;
                         }
+                        
+                        /* Tambahkan text-align: center di sini untuk th dan td */
                         #customers td, #customers th {
-                            border: 1px solid black;padding: 2px;
+                            border: 1px solid black;
+                            padding: 2px;
+                            text-align: center; 
                         }
+                        
                         #customers th {
                             padding-top: 2px;
                             padding-bottom: 2px;
-                            text-align: left;color: black;
+                            color: black;
+                            /* Hapus text-align: left dari sini agar tidak bentrok */
                         }
+                        
                         @media screen {
                             .print {
                                 display: none !important;
@@ -548,10 +635,10 @@ class Supply_requestions extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_number, b.name as item_name, f.location, b.uom');
+            $this->db->select('a.*, b.number as item_number, b.name as item_name, f.location, b.uom, c.type');
             $this->db->from('supply_requestions a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            // $this->db->join('uom d', 'b.uom_id = d.id');
+            $this->db->join('item_ng c', 'a.document = c.document','left');
             $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and f.type = 'RM'", 'left');
             $this->db->where('a.deleted', 0);
             $this->db->like('a.request_no', base64_decode($request_no));
@@ -570,12 +657,12 @@ class Supply_requestions extends CI_Controller
                                             <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $kanban->request_no . '.png') . '" width="60"/></td>
                                             <td width="60">Doc No</td>
                                             <td width="5">:</td>
-                                            <td width="100">' . $config_iso->doc_material_requestion . '</td>
+                                            <td width="100">' . $config_iso->doc_material_request . '</td>
                                         </tr>
                                         <tr>
                                             <td>Form</td>
                                             <td>:</td>
-                                            <td>' . $config_iso->form_material_requestion . '</td>
+                                            <td>' . $config_iso->form_material_request . '</td>
                                         </tr>
                                         <tr>
                                             <td>Print Date</td>
@@ -654,6 +741,7 @@ class Supply_requestions extends CI_Controller
                                         <th width="80">WHS Stock</th>
                                         <th width="80">WIP Balance</th>
                                         <th width="80">WHS Location</th>
+                                        <th width="200">Type NG</th>
                                     </tr>';
             $no = 1;
             foreach ($records as $record) {
@@ -697,23 +785,38 @@ class Supply_requestions extends CI_Controller
                                 <td style="text-align:right;">' . number_format((@$stockWarehouse[0]->end_stock), 2) . '</td>
                                 <td style="text-align:right;">' . number_format((@$wip_balances->balance), 2) . '</td>
                                 <td style="text-align:center;">' . $record['location'] . '</td>
+                                <td style="text-align:left;">' . $record['type'] . '</td>
                             </tr>';
                 $no++;
             }
             $html .= '</table>
                 <br>
-                <table id="customers">
+                
+                <table id="customers" style="width: 100%; text-align: center;">
                     <tr>
-                        <th style="text-align:center;">Production</th>
-                        <th style="text-align:center;">Warehouse</th>
+                        <th style="width: 50%;">Warehouse</th>
+                        <th colspan="3" style="width: 50%;">Production</th>
                     </tr>
                     <tr>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
+                        <td></td>
+                        
+                        <td style="font-size: 10px; font-weight: bold; width: 16.6%;">Prepared</td>
+                        <td style="font-size: 10px; font-weight: bold; width: 16.6%;">Checked</td>
+                        <td style="font-size: 10px; font-weight: bold; width: 16.6%;">Approved</td>
                     </tr>
                     <tr>
-                        <td style="height:20px;"></td>
-                        <td style="height:20px;"></td>
+                        <td style="height: 80px; vertical-align: middle;"></td>
+                        
+                        <td style="height: 80px; vertical-align: middle;">' . $users_0 . '</td>
+                        <td style="height: 80px; vertical-align: middle;">' . $users_1 . '</td>
+                        <td style="height: 80px; vertical-align: middle;">' . $users_2 . '</td>
+                    </tr>
+                    <tr>
+                        <td style="height: 20px;"></td>
+                        
+                        <td style="height: 20px; font-size: 10px;">' . $kanban->employee . '</td>
+                        <td style="height: 20px; font-size: 10px;">' . $user_1->name . '</td>
+                        <td style="height: 20px; font-size: 10px;">' . $user_2->name . '</td>
                     </tr>
                 </table>
                 </div>
@@ -753,9 +856,11 @@ class Supply_requestions extends CI_Controller
         b.uom, 
         e.number as item_fg_number, 
         e.name as item_fg_name,
-        COALESCE(d.qty,0) as qty_actual');
+        COALESCE(d.qty,0) as qty_actual,
+        f.name as item_family');
         $this->db->from('supply_requestions a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys f', 'b.item_family_id = f.id','left');
         $this->db->join('supply_sheets c', 'a.workorder = c.workorder','left');
         $this->db->join('item_fg e', 'c.item_fg_id = e.id','left');
         $this->db->join("(SELECT item_rm_id, request_no, COALESCE(SUM(qty),0) as qty FROM issued_material_details GROUP BY item_rm_id, request_no ) d",'a.request_no = d.request_no and a.item_rm_id = d.item_rm_id','left');
@@ -805,6 +910,7 @@ class Supply_requestions extends CI_Controller
                 <th>Document</th>
                 <th>Part No</th>
                 <th>Part Name</th>
+                <th>Family Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
                 <th>Issued</th>
@@ -868,6 +974,7 @@ class Supply_requestions extends CI_Controller
                         <td>' . $data['document'] . '</td>
                         <td>' . $data['item_number'] . '</td>
                         <td>' . $data['item_name'] . '</td>
+                        <td>' . $data['item_family'] . '</td>
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . number_format($issued, 2) . '</td>

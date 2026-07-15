@@ -16,12 +16,31 @@ class Bom extends CI_Controller
         $this->form_validation->set_rules('item_rm_id', 'Part No.', 'required|min_length[1]|max_length[20]|is_unique[bom.item_rm_id]');
     }
     //HALAMAN UTAMA
+    // public function index()
+    // {
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+    //         $data['button'] = $this->getbutton($this->id_menu());
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('master/bom');
+    //     } else {
+    //         redirect('error_access');
+    //     }
+    // }
+    //INDEX untuk kebutuhan NPD
     public function index()
     {
         if (empty($this->session->username)) {
             redirect('error_session');
-        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
-            $data['button'] = $this->getbutton($this->id_menu());
+        }
+        
+        $url_menu_id = $this->input->get('menu_id');
+        $active_menu = (!empty($url_menu_id)) ? $url_menu_id : $this->id_menu();
+
+        if ($this->checkuserAccess($active_menu) > 0) {
+            $data['button'] = $this->getbutton($active_menu);
+
             $this->load->view('template/header', $data);
             $this->load->view('master/bom');
         } else {
@@ -310,6 +329,7 @@ class Bom extends CI_Controller
             $dataFinal = array(
                 //field
                 "item_rm_id" => $post['item_rm_id'],
+                "item_fg_number" => $post['item_fg_number'],
                 "type" => $post['type'],
                 "recyle" => $post['recyle'],
                 "composition" => $post['composition'],
@@ -556,7 +576,7 @@ class Bom extends CI_Controller
                 <th>Part No</th>
                 <th>Part Name</th>
                 <th>Type of Product</th>
-                <th>% Recycle Part</th>
+                <th>Recycle Part</th>
                 <th>Product Family</th>
                 <th>Unit Of Measure</th>
                 <th>Composition</th>

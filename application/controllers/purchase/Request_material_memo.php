@@ -632,11 +632,8 @@ class Request_material_memo extends CI_Controller
     {
         if ($this->input->post()) {
             $post = $this->input->post();
-            $id = $post['id'];
-            // var_dump($post);
-            // return;
+            $id = isset($post['id']) ? $post['id'] : ''; 
             
-            // Cek ID ada di database
             $exists = false;
             if (!empty($id)) {
                 $exists = $this->db->get_where('request_materials', ['id' => $id])->num_rows() > 0;
@@ -645,8 +642,10 @@ class Request_material_memo extends CI_Controller
             if ($exists) {
                 $send = $this->crud->update('request_materials', ["id" => $id], $post);
             } else {
-                unset($post['id']); 
-                $send = $this->crud->insert('request_materials', $post);
+                if (isset($post['id'])) {
+                    unset($post['id']); 
+                }
+                $send = $this->crud->create('request_materials', $post); 
             }
 
             echo $send;

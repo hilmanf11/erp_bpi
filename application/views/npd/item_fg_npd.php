@@ -53,6 +53,7 @@
             <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
             <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
             <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
+            <th rowspan="2" data-options="field:'remarks',width:80,align:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'logo',width:100,align:'center', styler:cellStyler, formatter:cellFormatterLogo">Logo</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
@@ -298,7 +299,7 @@
         }, 500);
 
         $('#division_id').combobox({
-            url: '<?= base_url('npd/divisions/reads/'); ?>',
+            url: '<?= base_url('master/divisions/reads/'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Division',
@@ -421,28 +422,28 @@
     });
 
     $('#process').combobox({
-        url: '<?= base_url('npd/item_process_flow/reads'); ?>',
+        url: '<?= base_url('master/item_process_flow/reads'); ?>',
         valueField: 'name',
         textField: 'name',
         prompt: 'Choose Process Type',
     });
 
     $('#boxs').combobox({
-        url: '<?= base_url('npd/item_boxs/reads'); ?>',
+        url: '<?= base_url('master/item_boxs/reads'); ?>',
         valueField: 'name',
         textField: 'name',
         prompt: 'Choose Boxs',
     });
 
     $('#color').combobox({
-        url: '<?= base_url('npd/item_colors/reads'); ?>',
+        url: '<?= base_url('master/item_colors/reads'); ?>',
         valueField: 'name',
         textField: 'name',
         prompt: 'Choose Colors',
     });
 
     $('#division_id').combobox({
-        url: '<?= base_url('npd/divisions/reads/'); ?>',
+        url: '<?= base_url('master/divisions/reads/'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Division',
@@ -459,7 +460,7 @@
     });
 
     $('#uom').combobox({
-        url: '<?= base_url('npd/uom/reads'); ?>',
+        url: '<?= base_url('master/uom/reads'); ?>',
         valueField: 'name',
         textField: 'name',
         prompt: 'Choose Unit of Measure',

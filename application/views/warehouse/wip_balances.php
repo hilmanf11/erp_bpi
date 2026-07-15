@@ -3,12 +3,15 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_number',width:200,halign:'center'">Item ID</th>
-            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Item Name</th>
+            <th rowspan="2" data-options="field:'item_number',width:200,halign:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'uom',width:100,align:'center'">Uom</th>
             <th rowspan="2" data-options="field:'request_no',width:150,align:'center'">Supply Sheet</th>
+            <th rowspan="2" data-options="field:'product_number',width:150,align:'center'">Product No</th>
+            <th rowspan="2" data-options="field:'workorder',width:150,align:'center'">Workorder</th>
             <th rowspan="2" data-options="field:'begin',width:80,halign:'center',align:'right', formatter:numberformats">Begin</th>
             <th rowspan="2" data-options="field:'needs',width:80,halign:'center',align:'right', formatter:numberformats">Need</th>  <!-- need setelah di tambah purging -->
+            <th rowspan="2" data-options="field:'qty_purging',width:80,halign:'center',align:'right', formatter:numberformats">Purging</th>
             <th rowspan="2" data-options="field:'supply',width:80,halign:'center',align:'right', formatter:numberformats">Supply</th>
             <th rowspan="2" data-options="field:'balance',width:80,halign:'center',align:'right', formatter:numberformats">Balance</th>
             <th rowspan="2" data-options="field:'warehouse',width:80,halign:'center',align:'right', formatter:numberformats">Warehouse</th>
@@ -219,33 +222,58 @@
     function adjWipBalance() {
         $.messager.confirm('Confirm', 'Are you sure you want to create WIP balance?', function(r) {
             if (r) {
-                // Tampilkan loading pakai SweetAlert2
                 Swal.fire({
-                    title: 'Please wait...',
-                    text: 'Creating WIP balances...',
+                    title: 'Enter Password',
+                    input: 'password',
+                    inputPlaceholder: 'Enter your password',
+                    showCancelButton: true,
+                    confirmButtonText: 'Submit',
                     allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'You need to write something!'
+                        }
                     }
-                });
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Validasi Password
+                        if (result.value === 'PM001@123#') {
+                            Swal.fire({
+                                title: 'Please wait...',
+                                text: 'Creating WIP balances...',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
 
-                $.post("<?= site_url('warehouse/wip_balances/create_all') ?>", function(response) {
-                    Swal.close(); // Tutup loading SweetAlert
-                    Swal.fire({
-                        title: 'Success',
-                        text: response.message,
-                        icon: 'success'
-                    });
-                    $('#dg').datagrid('reload');
-                }, 'json')
-                .fail(function() {
-                    Swal.close();
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Failed to create WIP balances.',
-                        icon: 'error'
-                    });
-                    $('#dg').datagrid('reload');
+                            $.post("<?= site_url('warehouse/wip_balances/create_all') ?>", function(response) {
+                                Swal.close();
+                                Swal.fire({
+                                    title: 'Success',
+                                    text: response.message,
+                                    icon: 'success'
+                                });
+                                $('#dg').datagrid('reload');
+                            }, 'json')
+                            .fail(function() {
+                                Swal.close();
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Failed to create WIP balances.',
+                                    icon: 'error'
+                                });
+                                $('#dg').datagrid('reload');
+                            });
+                        } else {
+                            // Jika password salah
+                            Swal.fire({
+                                title: 'Access Denied',
+                                text: 'Incorrect password!',
+                                icon: 'error'
+                            });
+                        }
+                    }
                 });
             }
         });

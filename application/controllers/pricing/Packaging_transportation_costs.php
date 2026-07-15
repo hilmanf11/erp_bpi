@@ -13,12 +13,31 @@ class Packaging_transportation_costs extends CI_Controller
         $this->load->model('crud');
     }
     //HALAMAN UTAMA
+    // public function index()
+    // {
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+    //         $data['button'] = $this->getbutton($this->id_menu());
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('pricing/packaging_transportation_costs');
+    //     } else {
+    //         redirect('error_access');
+    //     }
+    // }
+    //INDEX untuk kebutuhan NPD
     public function index()
     {
         if (empty($this->session->username)) {
             redirect('error_session');
-        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
-            $data['button'] = $this->getbutton($this->id_menu());
+        }
+        
+        $url_menu_id = $this->input->get('menu_id');
+        $active_menu = (!empty($url_menu_id)) ? $url_menu_id : $this->id_menu();
+
+        if ($this->checkuserAccess($active_menu) > 0) {
+            $data['button'] = $this->getbutton($active_menu);
+
             $this->load->view('template/header', $data);
             $this->load->view('pricing/packaging_transportation_costs');
         } else {
@@ -30,7 +49,6 @@ class Packaging_transportation_costs extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT a.*, 
-            b.price, 
             d.name as box_kind_name,
             c.id as box_id,
             c.name as box_name,
@@ -39,8 +57,7 @@ class Packaging_transportation_costs extends CI_Controller
             c.width as box_width,
             c.height as box_height,
             c.color as box_color 
-        FROM item_fg_npd a 
-        JOIN customer_items b ON a.id = b.item_fg_id
+        FROM item_fg a 
         JOIN item_boxs c ON a.boxs = c.name
         JOIN item_kinds d ON c.item_kind_id = d.id
         WHERE a.status = '0' 

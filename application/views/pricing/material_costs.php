@@ -122,7 +122,7 @@
             toastr.warning('Please select Product No', 'Required');
         } else {
             var dg = $('#dg_request').datagrid({
-                url: '<?= base_url('pricing/Material_costs/datatablesTemp/') ?>?item_fg_id=' + item_fg_id,
+                url: '<?= base_url('pricing/material_costs/datatablesTemp/') ?>?item_fg_id=' + item_fg_id,
                 // singleSelect: true,
                 idField: 'item_rm_id',
                 columns: [
@@ -561,6 +561,8 @@
                                                     $('#dg').datagrid('reload');
                                                 }
                                             });
+                                            
+                                            localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                                         } else {
                                             toastr.error(result.message, "Error");
                                         }
@@ -641,7 +643,7 @@
             prompt: 'Choose Division',
             onSelect: function(div) {
                 $('#item_fg_number').combogrid({
-                    url: '<?= base_url('npd/item_fg_npd/reads/') ?>' + window.btoa(div.id),
+                    url: '<?= base_url('pricing/material_costs/readItems/') ?>' + window.btoa(div.id),
                     panelWidth: 500,
                     idField: 'number',
                     textField: 'number',
@@ -676,41 +678,6 @@
                 });
             }
         });
-
-        // $('#item_fg_number').combogrid({
-        //     url: '<?= base_url('npd/item_fg_npd/reads'); ?>',
-        //     panelWidth: 500,
-        //     idField: 'number',
-        //     textField: 'number',
-        //     mode: 'remote',
-        //     fitColumns: true,
-        //     prompt: "Choose Product Number.",
-        //     columns: [
-        //         [{
-        //             field: 'id',
-        //             title: 'Product ID',
-        //             width: 200
-        //         }, {
-        //             field: 'number',
-        //             title: 'Product No.',
-        //             width: 150
-        //         }, {
-        //             field: 'name',
-        //             title: 'Product Name',
-        //             width: 150
-        //         }]
-        //     ],
-        //     icons: [{
-        //         iconCls: 'icon-clear',
-        //         handler: function(e) {
-        //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-        //         }
-        //     }],
-        //     onSelect: function(value, rows) {
-        //         $('#item_fg_id').textbox('setValue', rows.id);
-        //         $('#item_fg_name').textbox('setValue', rows.name);
-        //     }
-        // });
     });
 
     // $("#filter_lot_no").combobox({
@@ -884,4 +851,54 @@
             // });
         }
     }
+
+    //untuk kebutuhan NPD
+    $(document).ready(function() {
+        if (localStorage.getItem('trigger_add') === 'yes') {
+            localStorage.removeItem('trigger_add');
+
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof add === "function") {
+                    add(); 
+
+                    var checkClose = setInterval(function() {
+                        var isHidden = $('#dlg_insert').closest('.window').is(':hidden');
+                        if (isHidden) {
+                            clearInterval(checkClose); // Hentikan monitoring
+                            if (window.parent.$('#dlg_outer_wrapper').length) {
+                                window.parent.$('#dlg_outer_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 1000); 
+        }
+
+        // ==========================================
+        // SKRIP TRIGGER UPLOAD
+        // ==========================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var action = urlParams.get('action');
+
+        if (action === 'upload') {
+            $('<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ffffff;z-index:8999;"></div>').appendTo('body');
+
+            setTimeout(function() {
+                if (typeof upload === 'function') {
+                    upload(); 
+                    var checkCloseUpload = setInterval(function() {
+                        var isHidden = $('#dlg_upload').closest('.window').is(':hidden'); 
+                        if (isHidden) {
+                            clearInterval(checkCloseUpload); 
+                            if (window.parent.$('#dlg_upload_wrapper').length) {
+                                window.parent.$('#dlg_upload_wrapper').dialog('close');
+                            }
+                        }
+                    }, 500);
+                }
+            }, 500);
+        }
+    });
 </script>

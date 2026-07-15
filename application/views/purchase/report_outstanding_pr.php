@@ -172,7 +172,7 @@
 
         } else {
 
-            window.location.assign('<?= base_url('purchase/report_outstanding_pr/print') ?>' + url);
+            window.location.assign('<?= base_url('purchase/report_outstanding_pr/print/excel') ?>' + url);
 
         }
 

@@ -17,8 +17,8 @@
             <th rowspan="2" data-options="field:'l_t_dies_actual',width:100,halign:'center'" sortable="true">L/T Dies <br>Actual</th>
             <th rowspan="2" data-options="field:'supplier',width:200,halign:'center'" sortable="true">VENDOR/SUPPLIER/MAKER</th>
             <th rowspan="2" data-options="field:'quotation_date',width:100,halign:'center'" sortable="true">Quotation <br>Date</th>
-            <th rowspan="2" data-options="field:'quotation_number',width:150,halign:'center'" sortable="true">Quotation <br>Number</th>
-            <th rowspan="2" data-options="field:'revision_quotation_number',width:100,halign:'center'" sortable="true">Rev Quotation</th>
+            <th rowspan="2" data-options="field:'quotation_number',width:150,halign:'center'" sortable="true">Breakdown <br>Number</th>
+            <th rowspan="2" data-options="field:'revision_quotation_number',width:100,halign:'center'" sortable="true">Rev Brakdown</th>
             <th rowspan="2" data-options="field:'price_cond',width:100,halign:'center'" sortable="true">Price Cond</th>
             <th colspan="2" data-options="field:'',width:150,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:150,halign:'center'"> Updated</th>
@@ -31,15 +31,20 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 240px; padding: 10px;">
+<div id="toolbar" style="height: 270px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
-                <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
+                <input style="width:30%;" id="filter_period_month" class="easyui-combobox">
+                <input style="width:30%;" id="filter_period_year" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Quotation Date</span>
+                <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                <input style="width:29%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Revision</span>
@@ -76,27 +81,6 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Period</span>
-                    <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox">
-                    <input style="width:30%;" name="p_year" id="p_year" required="" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Revision</span>
-                    <select style="width:60%;" name="revision" id="revision" required="" class="easyui-combobox" panelHeight="auto">
-                        <option value="" selected disabled>Choose Revision</option>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                    </select>
-                </div>
-                <!-- <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Division</span>
-                    <input style="width:60%;" id="division_id" class="easyui-combobox">
-                </div> -->
                 <div class="fitem" hidden>
                     <span style="width:30%; display:inline-block;">Part Id</span>
                     <input style="width:60%;" name="item_fg_id" id="item_fg_id" readonly class="easyui-textbox">
@@ -104,6 +88,15 @@
                 <div class="fitem">
                     <span style="width:30%; display:inline-block;">Part No</span>
                     <input style="width:60%;" name="item_fg_number" id="item_fg_number" required="" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:30%; display:inline-block;">Period</span>
+                    <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox">
+                    <input style="width:30%;" name="p_year" id="p_year" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:30%; display:inline-block;">Cost Pattern Revision</span>
+                    <input style="width:60%;" name="revision" id="revision" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:30%; display:inline-block;">Part Name</span>
@@ -141,7 +134,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:30%; display:inline-block;">Quotation date</span>
-                    <input style="width:60%;" name="quotation_date" id="quotation_date" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:60%;" name="quotation_date" id="quotation_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
                     <span style="width:30%; display:inline-block;">Quotation Number</span>
@@ -192,6 +185,27 @@
         </table> -->
     </form>
 </div>
+
+<!-- Upload -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks">
+        </ul>
+    </div>
+</div>
+
 <!-- PDF -->
 <iframe id="printout" style="width: 100%;" hidden></iframe>
 <script>
@@ -273,11 +287,15 @@
     function filter() {
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_period_month=" + filter_period_month +
             "&filter_period_year=" + filter_period_year +
+            "&filter_from=" + filter_from +
+            "&filter_to=" + filter_to +
             "&filter_item_fg_id=" + filter_item_fg_id +
             "&filter_revision=" + filter_revision;
 
@@ -294,15 +312,19 @@
     }
 
     function excel() {
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
+       var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
-        var url = "?filter_period_month=" + window.btoa(filter_period_month) +
-            "&filter_period_year=" + window.btoa(filter_period_year) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_revision=" + window.btoa(filter_revision);
+        var url = "?filter_period_month=" + filter_period_month +
+            "&filter_period_year=" + filter_period_year +
+            "&filter_from=" + filter_from +
+            "&filter_to=" + filter_to +
+            "&filter_item_fg_id=" + filter_item_fg_id +
+            "&filter_revision=" + filter_revision;
 
         window.location.assign('<?= base_url('pricing/breakdown_prices/print/excel') ?>' + url);
     }
@@ -311,6 +333,16 @@
         window.location.reload();
     }
     
+    // UPLOAD DATA
+    function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+
+    // DOWNLOAD
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_breakdown_prices.xls') ?>');
+    }
+
     $(function() {
         filter();
 
@@ -341,6 +373,7 @@
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
+                                localStorage.setItem('task_saved', 'yes');//untuk keperluan npd
                             } else {
                                 toastr.error(result.message, result.title);
                             }
@@ -385,20 +418,6 @@
             }],
         });
 
-        $('#p_month').combobox({
-            url: '<?= base_url('pricing/breakdown_prices/readPeriod/month'); ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: 'Choose Months',
-        });
-
-        $('#p_year').combobox({
-            url: '<?= base_url('pricing/breakdown_prices/readPeriod/year'); ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: 'Choose Years',
-        });
-
         $('#filter_period_month').combobox({
             url: '<?= base_url('pricing/breakdown_prices/readPeriod/month'); ?>',
             valueField: 'id',
@@ -434,17 +453,88 @@
             ]
         });
 
+        // $('#p_month').combobox({
+        //     url: '<?= base_url('pricing/breakdown_prices/readPeriod/month'); ?>',
+        //     valueField: 'id',
+        //     textField: 'name',
+        //     prompt: 'Choose Months',
+        // });
+
+        // $('#p_year').combobox({
+        //     url: '<?= base_url('pricing/breakdown_prices/readPeriod/year'); ?>',
+        //     valueField: 'id',
+        //     textField: 'name',
+        //     prompt: 'Choose Years',
+        // });
+
+        // $('#item_fg_number').combogrid({
+        //     url: '<?= base_url('pricing/breakdown_prices/readItems'); ?>',
+        //     panelWidth: 300,
+        //     idField: 'item_fg_number',
+        //     textField: 'item_fg_number',
+        //     mode: 'remote',
+            
+        //     // HAPUS queryParams statis dari sini!
+            
+        //     fitColumns: true,
+        //     prompt: "Choose Part Number.",
+        //     columns: [
+        //         [{
+        //             field: 'item_fg_number',
+        //             title: 'Part No.',
+        //             width: 150
+        //         }, {
+        //             field: 'item_fg_name',
+        //             title: 'Part Name',
+        //             width: 150
+        //         }]
+        //     ],
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+        //         }
+        //     }],
+            
+        //     // TAMBAHKAN INI: Inject parameter terbaru setiap kali combogrid request ke server
+        //     onBeforeLoad: function(param) {
+        //         param.p_month = $('#p_month').combobox('getValue');
+        //         param.p_year = $('#p_year').combobox('getValue');
+        //         param.revision = $('#revision').combobox('getValue');
+        //     },
+            
+        //     onSelect: function(value, row) {
+        //         $('#item_fg_id').textbox('setValue', row.item_fg_id);
+        //         $('#item_fg_name').textbox('setValue', row.item_fg_name);
+        //         $('#order_estimation').numberbox('setValue', row.volume);
+        //         $('#model_name').textbox('setValue', row.model_name);
+        //     }
+        // });
+
+        $('#p_month').combobox({
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose Months',
+        });
+
+        $('#p_year').combobox({
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose Years',
+        });
+
+        $('#revision').combobox({
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose Revision',
+        });
+
         $('#item_fg_number').combogrid({
             url: '<?= base_url('pricing/breakdown_prices/readItems'); ?>',
             panelWidth: 300,
             idField: 'item_fg_number',
             textField: 'item_fg_number',
             mode: 'remote',
-            queryParams: {
-                p_month: $('#p_month').combobox('getValue'),
-                p_year: $('#p_year').combobox('getValue'),
-                revision: $('#revision').combobox('getValue')
-            },
             fitColumns: true,
             prompt: "Choose Part Number.",
             columns: [
@@ -462,6 +552,9 @@
                 iconCls: 'icon-clear',
                 handler: function(e) {
                     $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                    $('#p_month').combobox('loadData', []);
+                    $('#p_year').combobox('loadData', []);
+                    $('#revision').combobox('loadData', []);
                 }
             }],
             onSelect: function(value, row) {
@@ -469,6 +562,11 @@
                 $('#item_fg_name').textbox('setValue', row.item_fg_name);
                 $('#order_estimation').numberbox('setValue', row.volume);
                 $('#model_name').textbox('setValue', row.model_name);
+
+                var item_id = row.item_fg_id;
+                $('#p_month').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/p_month?item_id='); ?>' + item_id);
+                $('#p_year').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/p_year?item_id='); ?>' + item_id);
+                $('#revision').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/revision?item_id='); ?>' + item_id);
             }
         });
        
@@ -671,4 +769,84 @@
             }, 500);
         }
     }); 
+
+    // UPLOAD DATA
+    $('#dlg_upload').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('pricing/breakdown_prices/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('pricing/breakdown_prices/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('pricing/breakdown_prices/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('pricing/breakdown_prices/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('pricing/breakdown_prices/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        }]
+    });
 </script>

@@ -217,6 +217,7 @@ class Purchase_orders extends CI_Controller
             $filter_part_name = $this->input->get('filter_part_name');
             $filter_suppliers = $this->input->get('filter_suppliers');
             $filter_categories = $this->input->get('filter_categories');
+            $filter_division = $this->input->get('filter_division');
             $filter_status = $this->input->get('filter_status');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -283,6 +284,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('item_categories j', 'b.item_category_id = j.id','left');
                 $this->db->join('(SELECT po_no, COUNT(approved_to) as total_approved_to_checking FROM purchase_orders WHERE approved_to != "" || approved_to = NULL GROUP BY po_no) k', 'a.po_no = k.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(approved_to) as total_approved_to_approved FROM purchase_orders WHERE approved_to = "" || approved_to = NULL GROUP BY po_no) l', 'a.po_no = l.po_no', 'left');
+                $this->db->join('purchase_requests s', 'a.request_no = s.request_no');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
@@ -297,6 +299,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->like('b.name', $filter_part_name);
                 $this->db->like('d.id', $filter_suppliers);
                 $this->db->like('b.item_category_id', $filter_categories);
+                $this->db->like('s.division', $filter_division);
                 $this->db->like('a.status', $filter_status);
                 $this->db->group_by('a.po_no');
 
@@ -849,7 +852,15 @@ class Purchase_orders extends CI_Controller
             'item_rm_id' => $item->id
         ];
         if (isset($post['specification'])) {
-            $where['specification'] = $post['specification'];
+            $spec = trim($post['specification']);
+            
+            $spec = preg_replace('/\s*[xX]\s*/', ' x ', $spec);
+
+            $spec_formatted = preg_replace_callback('/\b\d+(\.\d+)?\b/', function($matches) {
+                return number_format((float)$matches[0], 2, '.', '');
+            }, $spec);
+
+            $where['specification'] = $spec_formatted;
         }
 
         if ($isDimensionItem) {
@@ -1642,6 +1653,7 @@ class Purchase_orders extends CI_Controller
         $filter_part_name = $this->input->get('filter_part_name');
         $filter_suppliers = $this->input->get('filter_suppliers');
         $filter_categories = $this->input->get('filter_categories');
+        $filter_division = $this->input->get('filter_division');
         $filter_status = $this->input->get('filter_status');
         //Config
         $this->db->select('*');
@@ -1655,12 +1667,15 @@ class Purchase_orders extends CI_Controller
             d.name as supplier_name, 
             d.currency, 
             e.mpq, 
-            e.moq');
+            e.moq,
+            j.number as category_code');
         $this->db->from('purchase_orders a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
+        $this->db->join('item_categories j', 'b.item_category_id = j.id','left');
+        $this->db->join('purchase_requests s', 'a.request_no = s.request_no');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.po_date >=', $filter_from);
@@ -1674,6 +1689,8 @@ class Purchase_orders extends CI_Controller
         $this->db->like('b.number', $filter_part_no);
         $this->db->like('b.name', $filter_part_name);
         $this->db->like('d.id', $filter_suppliers);
+        $this->db->like('b.item_category_id', $filter_categories);
+        $this->db->like('s.division', $filter_division);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.po_date', 'DESC');
         $records = $this->db->get()->result_array();
@@ -1708,6 +1725,7 @@ class Purchase_orders extends CI_Controller
                     <th>Supplier</th>
                     <th>Product No</th>
                     <th>Product Name</th>
+                    <th>Category</th>
                     <th>MPQ</th>
                     <th>MOQ</th>
                     <th>Qty</th>
@@ -1739,6 +1757,7 @@ class Purchase_orders extends CI_Controller
                         <td>' . $data['supplier_name'] . '</td>
                         <td>' . $data['item_number'] . '</td>
                         <td>' . $data['item_name'] . '</td>
+                        <td>' . $data['category_code'] . '</td>
                         <td>' . number_format($data['mpq'], 2) . '</td>
                         <td>' . number_format($data['moq'], 2) . '</td>
                         <td>' . number_format($data['qty'], 2, ",", ".") . '</td>

@@ -95,8 +95,8 @@
     </table>
 </div>
 
-<div id="p" class="easyui-panel" title="Print Preview" style="width:100%;" data-options="fit:true">
-    <iframe id="printout" src="" style="width: 100%; height:95%; border: 0;"></iframe>
+<div id="p" class="easyui-panel" title="Print Preview" style="height: 50%;" >
+    <iframe id="printout" src="" style="width: 100%; height: 99%; border: 0; "></iframe>
 </div>
 <script>
     function formula(){
@@ -215,6 +215,11 @@
                             },
                         });
 
+                        var fullUrl = "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>?" +
+                            "filter_month=" + window.btoa(filter_month) + "&filter_year=" + window.btoa(filter_year) +
+                            "&filter_revision=" + window.btoa(filter_revision) + "&filter_product_family=" + window.btoa(filter_product_family) +
+                            "&filter_part_no=" + window.btoa(filter_part_no) + "&filter_cutoff=" + window.btoa(filter_cutoff);
+                        // console.log("Accessing URL:", fullUrl);
                         $.ajax({
                             type: "get",
                             url: "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>",
@@ -616,6 +621,10 @@
                             $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
+                    onSelect: function(revision){
+                        console.log(revision.cutoff);
+                        $("#filter_cutoff").datebox('setValue', revision.cutoff);
+                    }
                 });
             }
         });
@@ -651,6 +660,9 @@
                             $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
+                    onSelect: function(val){
+                        $("#filter_cutoff").datebox('setValue', val.cutoff);
+                    }
                 });
             }
         });
