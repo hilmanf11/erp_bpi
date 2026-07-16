@@ -296,7 +296,7 @@ class Dn_crusher extends CI_Controller
     {
         $scan_dn_crusher_total = $this->crud->reads('scan_dn_crusher', [], ["document_no" => base64_decode($document_no)]);
         $scan_dn_crushers = $this->crud->read('scan_dn_crusher', [], ["document_no" => base64_decode($document_no)]);
-        $suppliers = $this->crud->read('suppliers', [], ["supplier_id" => $scan_dn_crushers->supplier_id]);
+        $suppliers = $this->crud->read('suppliers', [], ["id" => $scan_dn_crushers->supplier_id]);
 
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
