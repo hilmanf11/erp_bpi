@@ -777,3 +777,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-16]
 - **kurniawan**: Change Customer to Supplier ([c0922c2a](https://github.com/hilmanf11/erp_bpi/commit/c0922c2adc78b3e7b30e538cc9ff84c5f850a69e))
+
+### [2026-07-16]
+- **kurniawan**: Update Dn_crusher.php ([1c29a227](https://github.com/hilmanf11/erp_bpi/commit/1c29a227c311ad3896e9f54fad9e48239a07cbea))
