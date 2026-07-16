@@ -774,3 +774,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-13]
 - **kurniawan**: Update Generate MPP ([1e227a6a](https://github.com/hilmanf11/erp_bpi/commit/1e227a6a26890b7efc17a1419e87835b4b17834c))
+
+### [2026-07-16]
+- **kurniawan**: Change Customer to Supplier ([c0922c2a](https://github.com/hilmanf11/erp_bpi/commit/c0922c2adc78b3e7b30e538cc9ff84c5f850a69e))
