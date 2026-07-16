@@ -4,7 +4,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'document_no',width:150,align:'left'">Document No</th>
-            <th rowspan="2" data-options="field:'customer_name',width:200,align:'left'">Customer</th>
+            <th rowspan="2" data-options="field:'supplier_name',width:200,align:'left'">Supplier</th>
             <th rowspan="2" data-options="field:'division',width:100,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'transaction_dates',width:200,halign:'center'">Trans Date</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>

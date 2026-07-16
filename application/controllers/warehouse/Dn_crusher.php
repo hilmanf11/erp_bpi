@@ -105,12 +105,12 @@ class Dn_crusher extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select("a.*, DATE(a.transaction_date) as transaction_dates, e.name as customer_name");
+            $this->db->select("a.*, DATE(a.transaction_date) as transaction_dates, e.name as supplier_name");
             $this->db->from('scan_dn_crusher a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id', 'left');
             $this->db->join('item_categories d', 'b.item_category_id = d.id', 'left');
-            $this->db->join('customers e', 'a.customer_id = e.id', 'left');
+            $this->db->join('suppliers e', 'a.supplier_id = e.id', 'left');
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.transaction_date >=', $filter_from);
                 $this->db->where('a.transaction_date <=', $filter_to);
@@ -296,7 +296,7 @@ class Dn_crusher extends CI_Controller
     {
         $scan_dn_crusher_total = $this->crud->reads('scan_dn_crusher', [], ["document_no" => base64_decode($document_no)]);
         $scan_dn_crushers = $this->crud->read('scan_dn_crusher', [], ["document_no" => base64_decode($document_no)]);
-        $customer_address = $this->crud->read('customer_address', [], ["customer_id" => $scan_dn_crushers->customer_id, "plant" => $scan_dn_crushers->plant]);
+        $suppliers = $this->crud->read('suppliers', [], ["supplier_id" => $scan_dn_crushers->supplier_id]);
 
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
@@ -467,7 +467,7 @@ class Dn_crusher extends CI_Controller
                                     <tr>
                                         <td width="80">Ship to</td>
                                         <td width="10">:</td>
-                                        <td width="30%"><b>' . @$customer_address->address . '</b></td>
+                                        <td width="30%"><b>' . @$suppliers->name . '</b></td>
                                         <td style="text-align:right; padding-right: 20px;" rowspan="7">
                                             Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
                                             Transaction Date:<br><b>' . date("d F Y", strtotime($scan_dn_crushers->transaction_date)) . '</b><br>

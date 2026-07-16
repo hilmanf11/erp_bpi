@@ -93,8 +93,7 @@ class Scan_dn_crusher extends CI_Controller
             $dataInsert = [
                 "document_no"      => $autonumber,
                 "transaction_date" => $header['transaction_date'],
-                "customer_id"      => $header['customer_id'],
-                "plant"            => $header['plant'],
+                "supplier_id"      => $header['supplier_id'],
                 "division"         => $header['division'],
                 "remarks"          => $header['remarks'],
                 "label_no"         => $row['label_no'],

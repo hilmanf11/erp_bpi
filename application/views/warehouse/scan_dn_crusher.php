@@ -27,18 +27,14 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 400px;">
+<div id="toolbar" style="height: 350px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%; padding: 10px;">
         <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Scan Barcode</b></legend>
             <div class="fitem" style="padding:10 200px 0 200px;">
                 <span style="width:20%; display:inline-block;">Customer</span>
-                <input style="width:20%;" id="customer_id" required="" class="easyui-combogrid">
-            </div>
-            <div class="fitem" style="padding:10 200px 0 200px;">
-                <span style="width:20%; display:inline-block;">Plant</span>
-                <input style="width:20%;" id="plant" required="" class="easyui-combogrid">
+                <input style="width:20%;" id="supplier_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem" style="padding:10 200px 0 200px;">
                 <span style="width:20%; display:inline-block;">Division</span>
@@ -195,47 +191,25 @@
         }],
     });
 
-    $('#customer_id').combogrid({
-        url: '<?= base_url('master/customers/reads/'); ?>',
-        panelWidth: 300,
+    $('#supplier_id').combogrid({
+        url: '<?= base_url('master/suppliers/reads/'); ?>',
+        panelWidth: 400,
         idField: 'id',
         textField: 'name',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Customer",
+        prompt: "Choose Supplier",
         columns: [
             [{
                 field: 'number',
-                title: 'Customer Code',
-                width: 120
+                title: 'Code',
+                width: 150
             }, {
                 field: 'name',
-                title: 'Customer Name',
+                title: 'Name',
                 width: 250
             }, ]
         ],
-        onSelect: function(value, rows) {
-            $('#plant').combogrid({
-                url: '<?= base_url('master/customer_items/readPlant/'); ?>' + window.btoa(rows.id),
-                panelWidth: 420,
-                idField: 'plant',
-                textField: 'plant',
-                mode: 'remote',
-                fitColumns: true,
-                prompt: 'Choose Plant',
-                columns: [
-                    [{
-                        field: 'plant',
-                        title: 'Plant',
-                        width: 120
-                    }, {
-                        field: 'address',
-                        title: 'Address',
-                        width: 300
-                    },]
-                ]
-            });
-        }
     });
 
     function save() {
@@ -245,8 +219,7 @@
         }
 
         var headerData = {
-            customer_id: $('#customer_id').combogrid('getValue'),
-            plant: $('#plant').combogrid('getValue'),
+            supplier_id: $('#supplier_id').combogrid('getValue'),
             transaction_date: $('#transaction_date').datebox('getValue'),
             division: $('#division').combobox('getValue'),
             remarks: $('#remarks').textbox('getValue'),
