@@ -1,4 +1,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Memaksa semua gambar di dalam deskripsi agar tidak melebihi lebar kotak dialog */
+    #content_description img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+</style>
 <!-- TABLE DATAGRID -->
 <div style="padding: 15px;">
     <div style="display: flex; gap: 15px; margin-bottom: 20px;">
@@ -47,6 +54,17 @@
                     <option value="ALL">ALL</option>
                     <option value="COMPLETE">COMPLETE</option>
                     <option value="UN COMPLETE">UN COMPLETE</option>
+                </select>
+
+                <span style="font-weight: bold; font-size: 12px; margin-left: 10px; margin-right: 5px;">Year</span>
+                <select id="filter_year" class="easyui-combobox" panelHeight="auto" style="width:100px">
+                    <option value="ALL">ALL</option>
+                    <?php 
+                        $current_year = date('Y');
+                        for($y = $current_year; $y >= $current_year - 3; $y--) {
+                            echo "<option value='$y'>$y</option>";
+                        }
+                    ?>
                 </select>
                 
                 <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="fa fa-refresh" plain="true" title="Reload" onclick="reload()"></a>
@@ -306,7 +324,7 @@
         if (row && row.link && row.menus_id) {
             localStorage.setItem('trigger_add', 'yes');
 
-            // 1. MUNCULKAN OVERLAY LOADING YANG ELEGAN
+            // 1. MUNCULKAN OVERLAY LOADING
             var loader = '<div id="smooth_loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(3px);">' +
                         '<div style="text-align:center; color:#fff;">' +
                         '<i class="fa fa-circle-o-notch fa-spin fa-4x fa-fw"></i>' +
@@ -350,9 +368,7 @@
             $('#frame_modul').on('load', function() {
                 var $iframe = $(this);
                 
-                // KUNCI KEHALUSAN: Tahan loading selama 1.5 detik (1500ms) 
-                // Waktu ini memberikan kesempatan bagi script di dalam iframe untuk mengeksekusi add()
-                // dan membiarkan animasi form EasyUI mekar dengan sempurna tanpa terlihat user.
+              
                 setTimeout(function() {
                     
                     // Hapus layar loading hitam secara perlahan

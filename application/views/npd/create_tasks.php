@@ -1,5 +1,12 @@
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<style>
+    /* Memaksa semua gambar di dalam deskripsi agar tidak melebihi lebar kotak dialog */
+    #content_description img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+</style>
 
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
@@ -38,7 +45,7 @@
     <?= $button ?>
 </div>
 <div id="toolbar2">
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
+    <!-- <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a> -->
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
@@ -71,9 +78,12 @@
                     <span style="width:35%; display:inline-block;">Phase Id</span>
                     <input style="width:60%;" name="phase_id" id="phase_id" required="" class="easyui-textbox">
                 </div>
+                <div class="fitem" hidden>
+                    <input style="width:60%;" name="phase_name" id="phase_name_string" class="easyui-textbox">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Phase</span>
-                    <input style="width:60%;" name="phase_name" id="phase_name" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="phase_combo" id="phase_name" class="easyui-combobox" required>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Event</span>
@@ -134,7 +144,7 @@
             </div>
         </fieldset>
         <div style="clear:both;"></div>
-        <table id="dg2" class="easyui-datagrid" style="width:100%; height: 200px;" title="Project Detail Lists" toolbar="#toolbar2"></table>
+        <table id="dg2" class="easyui-datagrid" style="width:100%; height: 300px;" title="Project Detail Lists" toolbar="#toolbar2"></table>
         <div style="margin-top: 15px; width: 100%;">
             <textarea name="description" id="description" style="width:100%; height:150px;"></textarea>
         </div>
@@ -181,63 +191,9 @@
                     halign: 'center',
                     title: "Phase Sub.",
                     editor: {
-                        type: 'combogrid',
+                        type: 'textbox',
                         options: {
-                            url: '<?= base_url('npd/project_phase_subs/reads'); ?>',
-                            required: true,
-                            panelWidth: 600,
-                            idField: 'phase_name_sub',
-                            textField: 'phase_name_sub',
-                            mode: 'remote',
-                            fitColumns: true,
-                            prompt: 'Choose Phase Sub.',
-                            columns: [
-                                [{
-                                    field: 'phase_name',
-                                    title: 'Phase Name.',
-                                    width: 200
-                                }, {
-                                    field: 'phase_name_sub',
-                                    title: 'Phase Name Sub',
-                                    width: 200
-                                }, {
-                                    field: 'module',
-                                    title: 'Module',
-                                    width: 200
-                                }]
-                            ],
-                            onSelect: function(value, rows) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                var ed = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'phase_name_sub'
-                                });
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'phase_sub_id'
-                                });
-                                var ed3 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'module'
-                                });
-                                var ed4 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'link'
-                                });
-                                var ed5 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'menus_id'
-                                });
-
-                                $(ed.target).textbox('setValue', rows.phase_name_sub);
-                                $(ed2.target).textbox('setValue', rows.id);
-                                $(ed3.target).textbox('setValue', rows.module);
-                                $(ed4.target).textbox('setValue', rows.link);
-                                $(ed5.target).textbox('setValue', rows.menus_id);
-                            }
+                            readonly: true
                         }
                     }
                 }, {
@@ -274,7 +230,7 @@
                 }, {
                     field: 'menus_id',
                     width: 150,
-                    // hidden: true,
+                    hidden: true,
                     halign: 'center',
                     title: "Menu Id",
                     editor: {
@@ -295,32 +251,9 @@
                     align: 'center',
                     title: "Department",
                     editor: {
-                        type: 'combobox',
+                        type: 'textbox',
                         options: {
-                            url: '<?= base_url('master/departments/reads') ?>',
-                            editable: false,
-                            valueField: 'name', // Tetap name
-                            textField: 'name',
-                            prompt: 'Choose Department',
-                            onSelect: function(record) {
-                                var dg = $('#dg2'); 
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                // 1. Isi kolom hidden department_id
-                                var ed_dept_id = dg.datagrid('getEditor', { index: rowIndex, field: 'department_id' });
-                                if (ed_dept_id) {
-                                    $(ed_dept_id.target).textbox('setValue', record.id);
-                                }
-
-                                // 2. Load Sub Department seperti biasa
-                                var ed_sub = dg.datagrid('getEditor', { index: rowIndex, field: 'sub_department' });
-                                if (ed_sub) {
-                                    $(ed_sub.target).combobox('clear');
-                                    var url_sub = '<?= base_url('master/sub_departments/readss') ?>?department_id=' + record.id;
-                                    $(ed_sub.target).combobox('reload', url_sub);
-                                }
-                            }
+                            readonly: true
                         }
                     }
                 }, {
@@ -329,34 +262,22 @@
                     halign: 'center',
                     title: "Sub Department",
                     editor: {
-                        type: 'combobox', // Ubah dari textbox menjadi combobox
+                        type: 'textbox',
                         options: {
-                            // url: tidak diisi di sini karena akan diisi otomatis oleh onSelect di atas
-                            editable: false,
-                            valueField: 'name', 
-                            textField: 'name',
-                            prompt: 'Choose Sub Dept'
+                            readonly: true
                         }
                     }
-                },{
+                }, {
                     field: 'level',
+                    hidden: true,
                     width: 80,
                     halign: 'center',
                     align: 'center', 
                     title: "Level",
                     editor: {
-                        type: 'combobox',
+                        type: 'textbox',
                         options: {
-                            data: [
-                                { value: 'LOW', text: 'LOW' },
-                                { value: 'MEDIUM', text: 'MEDIUM' },
-                                { value: 'HIGH', text: 'HIGH' }
-                            ],
-                            valueField: 'value',
-                            textField: 'text',
-                            panelHeight: 'auto', 
-                            editable: false,
-                            prompt: 'Choose Level'
+                            readonly: true
                         }
                     }
                 }, {
@@ -437,23 +358,23 @@
         }
     }
 
-    function append() {
-        var project_name = $("#project_name").combogrid('getValue');
-        if (project_name != "") {
-            if (endEditing()) {
-                var firstRowIndex = $('#dg2').datagrid('getRows').length > 0 ? 0 : undefined;
-                $('#dg2').datagrid('insertRow', {
-                    index: firstRowIndex,
-                    row: {
-                        qty: '0'
-                    }
-                });
-                $('#dg2').datagrid('selectRow', firstRowIndex).datagrid('beginEdit', firstRowIndex);
-            }
-        } else {
-            toastr.error("Please Choose Project Name first");
-        }
-    }
+    // function append() {
+    //     var project_name = $("#project_name").combogrid('getValue');
+    //     if (project_name != "") {
+    //         if (endEditing()) {
+    //             var firstRowIndex = $('#dg2').datagrid('getRows').length > 0 ? 0 : undefined;
+    //             $('#dg2').datagrid('insertRow', {
+    //                 index: firstRowIndex,
+    //                 row: {
+    //                     qty: '0'
+    //                 }
+    //             });
+    //             $('#dg2').datagrid('selectRow', firstRowIndex).datagrid('beginEdit', firstRowIndex);
+    //         }
+    //     } else {
+    //         toastr.error("Please Choose Project Name first");
+    //     }
+    // }
 
     function removeit() {
         var row = $('#dg2').datagrid('getSelected');
@@ -469,13 +390,69 @@
     }
 
     // EDIT DATA
+    // function update() {
+    //     var row = $('#dg').datagrid('getSelected');
+    //     if (row) {
+    //         $('#dlg_insert').dialog('open').dialog('center').dialog('setTitle', 'Edit Task');
+            
+    //         $('#frm_insert').form('load', row);
+            
+    //         for (var i = 1; i <= 5; i++) {
+    //             var fileName = row['attachment' + i];
+    //             if (fileName) {
+    //                 $('#attachment_upload' + i).filebox('setText', fileName);
+    //             } else {
+    //                 $('#attachment_upload' + i).filebox('clear');
+    //             }
+    //         }
+           
+    //         if (row.description) {
+    //             $('#description').summernote('code', row.description);
+    //         } else {
+    //             $('#description').summernote('code', '');
+    //         }
+
+    //         // Kosongkan datagrid terlebih dahulu
+    //         $('#dg2').datagrid('loadData', []); 
+            
+    //         // Ambil data dari tabel detail menggunakan AJAX
+    //         $.ajax({
+    //             url: '<?= base_url('npd/create_tasks/get_details') ?>',
+    //             type: 'GET',
+    //             data: { task_id: row.id },
+    //             dataType: 'json',
+    //             success: function(response) {
+    //                 // Masukkan data ke dalam datagrid
+    //                 $('#dg2').datagrid('loadData', response);
+    //             },
+    //             error: function() {
+    //                 toastr.error("Failed to load task details.");
+    //             }
+    //         });
+
+    //         url_save = '<?= base_url('npd/create_tasks/update') ?>?id=' + row.id; 
+            
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open').dialog('center').dialog('setTitle', 'Edit Task');
             
+            // 1. Load data standard ke form
             $('#frm_insert').form('load', row);
             
+            // 2. TANGANI COMBOBOX MULTIPLE
+            // Asumsi 'phase_name' adalah string "Phase A,Phase B" dari database
+            if (row.phase_name) {
+                var phaseArray = row.phase_name.split(','); 
+                $('#phase_name').combobox('setValues', phaseArray); // 'setValues' (pakai 's') untuk array
+            }
+            
+            // 3. Load Filebox & Summernote (kode Anda sebelumnya sudah benar)
             for (var i = 1; i <= 5; i++) {
                 var fileName = row['attachment' + i];
                 if (fileName) {
@@ -484,35 +461,28 @@
                     $('#attachment_upload' + i).filebox('clear');
                 }
             }
-           
+            
             if (row.description) {
                 $('#description').summernote('code', row.description);
             } else {
                 $('#description').summernote('code', '');
             }
 
-            // Kosongkan datagrid terlebih dahulu
+            // 4. Load Datagrid Detail
             $('#dg2').datagrid('loadData', []); 
-            
-            // Ambil data dari tabel detail menggunakan AJAX
             $.ajax({
                 url: '<?= base_url('npd/create_tasks/get_details') ?>',
                 type: 'GET',
                 data: { task_id: row.id },
                 dataType: 'json',
                 success: function(response) {
-                    // Masukkan data ke dalam datagrid
                     $('#dg2').datagrid('loadData', response);
-                },
-                error: function() {
-                    toastr.error("Failed to load task details.");
                 }
             });
 
             url_save = '<?= base_url('npd/create_tasks/update') ?>?id=' + row.id; 
-            
         } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            toastr.warning("Please select one of the data in the table first!");
         }
     }
 
@@ -711,7 +681,9 @@
 
                             } else {
                                 toastr.error(result.message);
-                                Swal.fire('Error', result.message, 'error');
+                               
+                                $('#dlg_insert').dialog('close');
+                                $('#dg').datagrid('reload'); 
                             }
                         },
                         error: function(jqXHR, textStatus, errorThrown) {
@@ -751,12 +723,52 @@
     });
 
     $('#phase_name').combobox({
-        url:'<?= base_url('npd/project_phases/reads'); ?>',
-        valueField:'name',
-        textField:'name',
-        prompt: 'Choose Phase Name',
-        onSelect: function(phase_name){
-            $('#phase_id').textbox('setValue',phase_name.id);
+        url: '<?= base_url('npd/create_tasks/readPhases'); ?>',
+        valueField: 'name', 
+        textField: 'name',
+        multiple: true,
+        prompt: 'Choose Phase Name(s)',
+        onChange: function(newValues, oldValues) {
+            
+            var phaseNamesStr = newValues.join(',');
+            $('#phase_name_string').textbox('setValue', phaseNamesStr);
+
+
+            var allData = $(this).combobox('getData'); 
+            var selectedIds = [];
+            
+            for (var i = 0; i < newValues.length; i++) {
+                for (var j = 0; j < allData.length; j++) {
+                    if (allData[j].name === newValues[i]) {
+                        selectedIds.push(allData[j].id);
+                        break;
+                    }
+                }
+            }
+            
+            var phaseIdsStr = selectedIds.join(',');
+            $('#phase_id').textbox('setValue', phaseIdsStr);
+
+            if (phaseIdsStr !== "") {
+                $.ajax({
+                    url: '<?= base_url('npd/create_tasks/read_by_phase_ids'); ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { phase_ids: phaseIdsStr },
+                    success: function(response) {
+                        var pLevel = $('#project_level').textbox('getValue');
+                        for (var k = 0; k < response.length; k++) {
+                            response[k].level = pLevel; 
+                        }
+                        $('#dg2').datagrid('loadData', response);
+                    },
+                    error: function() {
+                        toastr.error("Failed to load Sub Phases.");
+                    }
+                });
+            } else {
+                $('#dg2').datagrid('loadData', []);
+            }
         }
     });
 
@@ -766,8 +778,43 @@
             ['style', ['bold', 'italic', 'underline', 'clear']],
             ['para', ['ul', 'ol', 'paragraph']],
             ['insert', ['link', 'picture']]
-        ]
+        ],
+        callbacks: {
+            onImageUpload: function(image) {
+                for (var i = 0; i < image.length; i++) {
+                    uploadImageDesc(image[i], this);
+                }
+            }
+        }
     });
+
+    function uploadImageDesc(image, editor) {
+        var data = new FormData();
+        data.append("file", image);
+        
+        $.ajax({
+            url: '<?= base_url('npd/create_tasks/upload_image_summernote') ?>', 
+            cache: false,
+            contentType: false,
+            processData: false,
+            data: data,
+            type: "POST",
+            success: function(url) {
+                var cleanUrl = url.trim();
+
+                if (cleanUrl.toLowerCase().endsWith('.pdf')) {
+                    var pdfLink = '<br><a href="' + cleanUrl + '" target="_blank" style="color: red; font-weight: bold; text-decoration: underline;">Open / Download Dokumen PDF</a><br>';
+                    
+                    $(editor).summernote('pasteHTML', pdfLink);
+                } else {
+                    $(editor).summernote('insertImage', cleanUrl);
+                }
+            },
+            error: function(data) {
+                toastr.error("Gagal meng-upload file ke editor.");
+            }
+        });
+    }
 
     // FORMAT tahun-bulan-tanggal
     function myformatter(date) {

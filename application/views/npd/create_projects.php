@@ -1,5 +1,12 @@
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<style>
+    /* Memaksa semua gambar di dalam deskripsi agar tidak melebihi lebar kotak dialog */
+    #content_description img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+</style>
 
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
@@ -573,8 +580,43 @@
             ['style', ['bold', 'italic', 'underline', 'clear']],
             ['para', ['ul', 'ol', 'paragraph']],
             ['insert', ['link', 'picture']]
-        ]
+        ],
+        callbacks: {
+            onImageUpload: function(image) {
+                for (var i = 0; i < image.length; i++) {
+                    uploadImageDesc(image[i], this);
+                }
+            }
+        }
     });
+
+    function uploadImageDesc(image, editor) {
+        var data = new FormData();
+        data.append("file", image);
+        
+        $.ajax({
+            url: '<?= base_url('npd/create_projects/upload_image_summernote') ?>', 
+            cache: false,
+            contentType: false,
+            processData: false,
+            data: data,
+            type: "POST",
+            success: function(url) {
+                var cleanUrl = url.trim();
+
+                if (cleanUrl.toLowerCase().endsWith('.pdf')) {
+                    var pdfLink = '<br><a href="' + cleanUrl + '" target="_blank" style="color: red; font-weight: bold; text-decoration: underline;">Open / Download Dokumen PDF</a><br>';
+                    
+                    $(editor).summernote('pasteHTML', pdfLink);
+                } else {
+                    $(editor).summernote('insertImage', cleanUrl);
+                }
+            },
+            error: function(data) {
+                toastr.error("Gagal meng-upload file ke editor.");
+            }
+        });
+    }
 
     // FORMAT tahun-bulan-tanggal
     function myformatter(date) {

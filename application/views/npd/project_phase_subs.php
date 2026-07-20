@@ -13,6 +13,8 @@
             <th rowspan="2" data-options="field:'assign',width:150,halign:'center'">Assign</th>
             <th rowspan="2" data-options="field:'checked_by',width:150,halign:'center'">Checked</th>
             <th rowspan="2" data-options="field:'approve',width:150,halign:'center'">Approve</th>
+            <th rowspan="2" data-options="field:'department',width:150,halign:'center'">Department</th>
+            <th rowspan="2" data-options="field:'sub_department',width:150,halign:'center'">Sub Department</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -81,22 +83,18 @@
                 <span style="width:35%; display:inline-block;">Approve</span>
                 <input style="width:60%;" name="approve" id="approve" class="easyui-combobox" required>
             </div>
-            <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <select class="easyui-combobox" name="status" id="status" style="width:60%;" data-options="
-                    prompt:'<Active/Inactive>',
-                    valueField: 'value',
-                    textField: 'text',
-                    data: [{
-                        text: 'Active',
-                        value: '0'
-                    },{
-                        text: 'Inactive',
-                        value: '1'
-                    }]
-                ">
-                </select>
-            </div> -->
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Department ID</span>
+                <input style="width:60%;" name="department_id" id="department_id" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Department</span>
+                <input style="width:60%;" name="department" id="department" class="easyui-combobox" required>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Sub Department</span>
+                <input style="width:60%;" name="sub_department" id="sub_department" class="easyui-combobox" required>
+            </div>
         </fieldset>
     </form>
 </div>
@@ -268,6 +266,27 @@
         valueField: 'name',
         textField: 'name',
         prompt: 'Choose Section',
+    });
+
+    $('#department').combobox({
+        url: '<?= base_url('master/departments/reads') ?>',
+        valueField: 'name',
+        textField: 'name',
+        prompt: 'Choose Department',
+        editable: false,
+        onSelect: function(record) {
+            $('#department_id').textbox('setValue', record.id);
+            $('#sub_department').combobox('clear');
+            var url_sub = '<?= base_url('master/sub_departments/readss') ?>?department_id=' + record.id;
+            $('#sub_department').combobox('reload', url_sub);
+        }
+    });
+
+    $('#sub_department').combobox({
+        valueField: 'name',
+        textField: 'name',
+        prompt: 'Choose Sub Department',
+        editable: false
     });
 
     function statusformat(value, row) {

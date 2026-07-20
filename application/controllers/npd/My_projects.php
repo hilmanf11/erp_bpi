@@ -87,7 +87,8 @@ class My_projects extends CI_Controller
                             a.number as project_number, 
                             a.name as project_name,
                             a.start_date,
-                            a.end_date');
+                            a.end_date,
+                            a.status as status_project');
             $this->db->from('create_projects a');
             $this->db->where('a.status', 0); 
             $this->db->order_by('a.id', 'asc');
@@ -413,6 +414,7 @@ class My_projects extends CI_Controller
         $this->db->join('create_project_details p_det', 'p.id = p_det.create_project_id', 'left');
         $this->db->join('create_task_details t_det', 't.id = t_det.task_id', 'inner'); 
         $this->db->where('p.status', 0);
+        $this->db->group_by('t_det.id');
         
         $all_tasks = $this->db->get()->result_array();
 

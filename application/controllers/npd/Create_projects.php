@@ -563,4 +563,26 @@ class Create_projects extends CI_Controller
         
         echo $html;
     }
+
+    // UPLOAD GAMBAR SUMMERNOTE
+    public function upload_image_summernote() {
+        if (isset($_FILES["file"]["name"])) {
+            $config['upload_path']   = './assets/uploads/descriptions/'; 
+            $config['allowed_types'] = 'jpg|jpeg|png|gif|pdf';
+            $config['max_size']      = 5000; 
+            $config['encrypt_name']  = TRUE; 
+
+            $this->load->library('upload', $config);
+            $this->upload->initialize($config);
+
+            if (!$this->upload->do_upload('file')) {
+                echo $this->upload->display_errors();
+            } else {
+                $data = $this->upload->data();
+                
+                $image_url = base_url('assets/uploads/descriptions/' . $data['file_name']);
+                echo $image_url;
+            }
+        }
+    }
 }
