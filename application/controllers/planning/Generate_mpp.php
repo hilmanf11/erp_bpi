@@ -1154,6 +1154,305 @@ class Generate_mpp extends CI_Controller
         echo $html;
     }
 
+    // public function print_wo($id)
+    // {
+    //     //Config
+    //     $this->db->select('*');
+    //     $this->db->from('config');
+    //     $config = $this->db->get()->row();
+    //     $config_iso = $this->db->get('config_iso')->row();
+
+    //     $this->db->select("a.*, 
+    //         c.number as item_number, 
+    //         c.name as item_name, 
+    //         c.uom, 
+    //         c.is_no, 
+    //         e.number as machine_number, 
+    //         f.mold_name, 
+    //         f.cavity_standard, 
+    //         f.cavity_actual, 
+    //         f.id as mold_id, 
+    //         h.cycle_time, 
+    //         h.cycle_time_process, 
+    //         h.manpower,
+    //         h.shift,
+    //         h.shift_hour,
+    //         h.productcivity");
+    //     $this->db->from('production_schedules a');
+    //     $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
+    //     $this->db->join('mold_items d', 'c.id = d.item_fg_id', 'left');
+    //     $this->db->join('machines e', 'a.machine_id = e.id', 'left');
+    //     $this->db->join('molds f', 'd.mold_id = f.id', 'left');
+    //     $this->db->join('scan_item_receipts_fg g', 'a.so_number = g.so_number and a.wo_no = g.workorder', 'left');
+    //     $this->db->join('menu_loadings h', 'c.id = h.item_fg_id','left');
+    //     $this->db->join('bom i', 'a.item_fg_id = i.item_fg_id','left');
+    //     $this->db->where('a.deleted', 0);
+    //     $this->db->where('a.id', $id);
+    //     $this->db->group_by('a.wo_no');
+    //     $records = $this->db->get()->result_array();
+
+    //     $html = '';
+    //     // Cek apakah ada data
+    //     if (!empty($records)) {
+    //         foreach ($records as $data) {
+    //             // Query tambahan untuk mengambil item_rm_id dari tabel bom
+    //             $this->db->select('b.number as item_number, a.composition, b.uom');
+    //             $this->db->from('bom a');
+    //             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+    //             $this->db->where('item_fg_id', $data['item_fg_id']);
+    //             $bom_items = $this->db->get()->result_array();
+
+    //             $shift_hour = !empty($data['shift_hour']) ? $data['shift_hour'] : 0;
+    //             $cycle_time = !empty($data['cycle_time']) && $data['cycle_time'] > 0 ? $data['cycle_time'] : 1;
+    //             $cavity_std = !empty($data['cavity_standard']) ? $data['cavity_standard'] : 0;
+    //             $shift_qty  = !empty($data['shift']) ? $data['shift'] : 0;
+    //             $prod_rate  = isset($data['productcivity']) ? ($data['productcivity'] / 100) : 1; 
+
+    //             $cap_day = ((3600 * $shift_hour) / $cycle_time) * $cavity_std * $shift_qty * $prod_rate;
+    //             $target_per_shift = ceil($cap_day / 3);
+
+    //             // Gabungkan item_rm_id menjadi satu string
+    //             $material_list = '';
+    //             $qty = '';
+    //             $uom = '';
+    //             foreach ($bom_items as $item) {
+    //                 $material_list .= $item['item_number'] . '<br>';
+    //                 $qty .= number_format($item['composition'] * $data['qty']) . '<br>';
+    //                 $uom .= $item['uom'] . '<br>';
+    //             }
+
+    //             $html = '<html><head><title>'.$data['item_number'].'</title></head>
+    //                 <script>
+    //                     window.onload = function() {
+    //                         window.print();
+    //                     };
+    //                 </script>
+    //                 <style>
+    //                     body {font-family: Arial, Helvetica, sans-serif;}
+    //                     .bordered-table1 {width: 80%; border-collapse: collapse; margin: auto;}
+    //                     .bordered-table1 td {border: 1px solid #000; padding: 5px; text-align: left;}
+    //                     .bordered-table2 {width: 50%; border-collapse: collapse; margin: auto;}
+    //                     .bordered-table2 td {border: 1px solid #000; padding: 5px; text-align: left; height: 50px; font-size: 25px;}
+    //                     .bordered-table3 {width: 100%; border-collapse: collapse; margin: auto;}
+    //                     .bordered-table3 td {border: 1px solid #000; padding: 5px; text-align: left;}
+    //                     .no-border-table {width: 100%; border-collapse: collapse;}
+    //                     .no-border-table td {border: none; padding: 5px; text-align: left;}
+    //                     .header-table {width: 100%; margin-bottom: 10px; border-collapse: collapse;}
+    //                     .header-table td {border: none; padding: 5px; text-align: left; vertical-align: top;}
+
+    //                     .bordered-table {border-collapse: collapse;width: 30%;margin: 10px;}
+    //                     .bordered-table td, .bordered-table th {border: 1px solid #000;padding: 5px;text-align: center;}
+    //                     .signature-section {width: 40%;height: 30px;}
+    //                     .signature-section2 {width: 40%;height: 100px;}
+    //                     .signature-header {font-weight: bold;}
+    //                     .left-table {float: left;}
+    //                     .right-table {float: right;}
+
+    //                     .content-table {width: 100%; margin-top: 20px;}
+    //                     .content-table td {padding: 5px; vertical-align: top;}
+    //                     .right-align {text-align: right;}
+    //                 </style>
+
+    //                 <body>
+    //                     <center>
+    //                         <table class="header-table">
+    //                             <tr>
+    //                                 <td style="font-size: 40px; text-align: center;">
+    //                                     WORK ORDER (WO) & <br>PRODUCTION REPORT (PR)
+    //                                 </td>
+    //                             </tr>
+    //                         </table>
+    //                     </center>
+    //                     <br>
+    //                     <table class="bordered-table1">
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">Issued Date</td>
+    //                             <td style="width: 70%; text-align: center;">'.$data['trans_date'].'</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">No Doc</td>
+    //                             <td style="width: 70%; text-align: center;">'.$data['wo_no'].'</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">Part No</td>
+    //                             <td style="width: 70%; text-align: center;">'.$data['item_number'].'</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">Part Name</td>
+    //                             <td style="width: 70%; text-align: center;">'.$data['item_name'].'</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">IS No</td>
+    //                             <td style="width: 70%; text-align: center;">'.$data['is_no'].'</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">Mold No</td>
+    //                             <td style="width: 70%; text-align: center;">'.$data['mold_id'].'</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">Machine No</td>
+    //                             <td style="width: 70%; text-align: center;">'.$data['machine_number'].'</td>
+    //                         </tr>
+    //                     </table>
+    //                     <br>
+    //                     <table class="bordered-table2">
+    //                         <tr>
+    //                             <td style="width: 50%; text-align: left;">Lot No</td>
+    //                             <td style="width: 50%; text-align: center;">'.$data['lot_no'].'</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 50%; text-align: left;">Qty (Pcs)</td>
+    //                             <td style="width: 50%; text-align: center;">'.$data['qty'].'</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 50%; text-align: left;">Lead Time (Hour)</td>
+    //                             <td style="width: 50%; text-align: center;">'.number_format(($data['qty']) / (3600 / ($data['cycle_time'] + $data['cycle_time_process']) * $data['cavity_standard'] * 0.85), 2).'</td>
+    //                         </tr>
+    //                     </table>
+    //                     <br>
+    //                     <table class="bordered-table1">
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">Polybag Label</td>
+    //                             <td style="width: 70%; text-align: center;">Tidak Pakai Label Manual</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 30%; text-align: left;">Box Label</td>
+    //                             <td style="width: 70%; text-align: center;">Tidak Pakai Label Manual</td>
+    //                         </tr>
+    //                     </table>
+    //                     <br>
+    //                     <table class="bordered-table1">
+    //                         <tr>
+    //                             <td style="width: 50%; text-align: center;"><b>Cycle Time</b></td>
+    //                             <td style="width: 50%; text-align: center;"><b>Man Power</b></td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="vertical-align: top;">
+    //                                 <table class="bordered-table1">
+    //                                     <tr>
+    //                                         <td style="text-align: center;">Cavity Std</td>
+    //                                         <td style="text-align: center;">C/T Machine (sec)</td>
+    //                                         <td style="text-align: center;">Target/Shift (pcs)</td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td style="text-align: center;">'.$data['cavity_standard'].'</td>
+    //                                         <td style="text-align: center;">'.$data['cycle_time'].'</td>
+    //                                         <td style="text-align: center;" rowspan="3">'.$target_per_shift.'</td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td style="text-align: center;">Cavity Actual</td>
+    //                                         <td style="text-align: center;">C/T Finishing (sec)</td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td style="text-align: center;">'.$data['cavity_actual'].'</td>
+    //                                         <td style="text-align: center;">'.$data['cycle_time_process'].'</td>
+    //                                     </tr>
+    //                                 </table>
+    //                             </td>
+    //                             <td style="vertical-align: top;">
+    //                                 <table class="bordered-table1">
+    //                                     <tr>
+    //                                         <td style="text-align: left;" colspan="2">Person</td>
+    //                                         <td style="text-align: center;">'.$data['manpower'].'</td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td style="text-align: center;" colspan="3">Material</td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td style="text-align: left;">'.$material_list.'</td>
+    //                                         <td style="text-align: center;">'.$qty.'</td>
+    //                                         <td style="text-align: center;">'.$uom.'</td>
+    //                                     </tr>
+    //                                 </table>
+    //                             </td>
+    //                         </tr>
+    //                     </table>
+    //                     <br>
+    //                     <table class="bordered-table3">
+    //                         <tr>
+    //                             <td colspan="3"><b>Condition Check Mold:</b></td>
+    //                             <td style="text-align: center;" colspan="2"><b>Diperiksa</b></td>
+                                
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 50%; text-align: left;">Cavity Mold</td>
+    //                             <td style="width: 15%; text-align: center;">
+    //                                 <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> OK
+    //                             </td>
+    //                             <td style="width: 15%; text-align: center;">
+    //                                 <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> .....
+    //                             </td>
+    //                             <td rowspan="3" colspan="2"</td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 35%; text-align: left;">Cooling Mold</td>
+    //                             <td style="width: 15%; text-align: center;">
+    //                                 <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> OK
+    //                             </td>
+    //                             <td style="width: 15%; text-align: center;">
+    //                                 <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> .....
+    //                             </td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td style="width: 35%; text-align: left;">Nepple Mold</td>
+    //                             <td style="width: 15%; text-align: center;">
+    //                                 <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> OK
+    //                             </td>
+    //                             <td style="width: 15%; text-align: center;">
+    //                                 <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> .....
+    //                             </td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td colspan="4" style="width: 35%; text-align: left; height: 120px; vertical-align: top;">Catatan :</td>
+    //                         </tr>
+    //                     </table>
+
+    //                     <br>
+    //                     <table class="bordered-table left-table">
+    //                         <tr>
+    //                             <th class="signature-header" colspan="2">MENGETAHUI</th>
+    //                         </tr>
+    //                         <tr>
+    //                             <td class="signature-section2"></td>
+    //                             <td class="signature-section2"></td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td class="signature-section"></td>
+    //                             <td class="signature-section"></td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td>SPV QC</td>
+    //                             <td>SPV PRD</td>
+    //                         </tr>
+    //                     </table>
+
+    //                     <table class="bordered-table right-table">
+    //                         <tr>
+    //                             <th class="signature-header">DIPERIKSA</th>
+    //                             <th class="signature-header">DIBUAT</th>
+    //                         </tr>
+    //                         <tr>
+    //                             <td class="signature-section2"></td>
+    //                             <td class="signature-section2"></td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td class="signature-section"></td>
+    //                             <td class="signature-section"></td>
+    //                         </tr>
+    //                         <tr>
+    //                             <td>SPV PPC</td>
+    //                             <td>PPC</td>
+    //                         </tr>
+    //                     </table>
+    //                 </body></html>';
+    //         } 
+    //     } else {
+    //         $html = "Data tidak ditemukan.";
+    //     }
+
+    //     echo $html;
+    // }
+
     public function print_wo($id)
     {
         //Config
@@ -1172,11 +1471,12 @@ class Generate_mpp extends CI_Controller
             f.cavity_standard, 
             f.cavity_actual, 
             f.id as mold_id, 
+            f.mold_no, 
+            h.shift_hour,
+            h.shift,
             h.cycle_time, 
             h.cycle_time_process, 
             h.manpower,
-            h.shift,
-            h.shift_hour,
             h.productcivity");
         $this->db->from('production_schedules a');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
@@ -1196,7 +1496,7 @@ class Generate_mpp extends CI_Controller
         if (!empty($records)) {
             foreach ($records as $data) {
                 // Query tambahan untuk mengambil item_rm_id dari tabel bom
-                $this->db->select('b.number as item_number, a.composition, b.uom');
+                $this->db->select('b.name as item_name,b.number as item_number, a.composition, b.uom');
                 $this->db->from('bom a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->where('item_fg_id', $data['item_fg_id']);
@@ -1211,240 +1511,329 @@ class Generate_mpp extends CI_Controller
                 $cap_day = ((3600 * $shift_hour) / $cycle_time) * $cavity_std * $shift_qty * $prod_rate;
                 $target_per_shift = ceil($cap_day / 3);
 
-                // Gabungkan item_rm_id menjadi satu string
                 $material_list = '';
+                $material_list2 = '';
+                $material_list3 = '';
                 $qty = '';
                 $uom = '';
+                $wo_no = '';
                 foreach ($bom_items as $item) {
-                    $material_list .= $item['item_number'] . '<br>';
-                    $qty .= number_format($item['composition'] * $data['qty']) . '<br>';
-                    $uom .= $item['uom'] . '<br>';
+                    // $material_list2 .= $item['item_number'] . '<br>';
+                    $material_list3 .= $item['item_name'] . '<br>';
+                    $qty .= number_format($item['composition'] * $data['qty']). '<br>';
+                    $uom = $item['uom'];
+
+                    $calc_qty = number_format($item['composition'] * $data['qty']);
+                    $material_list .= $item['item_number'] . ' &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' . $uom . '<br>';
+                    $material_list2 .= $item['item_number'] . ' &nbsp; ' . $uom . '<br>';
                 }
 
-                $html = '<html><head><title>'.$data['item_number'].'</title></head>
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                        };
-                    </script>
+                // Kalkulasi Lead Time
+                $calc_denominator = (3600 / ($data['cycle_time'] + $data['cycle_time_process']) * $data['cavity_standard'] * 0.85);
+                $lead_time = ($calc_denominator > 0) ? number_format(($data['qty']) / $calc_denominator, 2) : 0;
+
+                $html = '<!DOCTYPE html>
+                <html>
+                <head>
+                    <title>'.$data['item_number'].'</title>
+                    <link href="https://fonts.googleapis.com/css?family=Libre+Barcode+39" rel="stylesheet">
                     <style>
-                        body {font-family: Arial, Helvetica, sans-serif;}
-                        .bordered-table1 {width: 80%; border-collapse: collapse; margin: auto;}
-                        .bordered-table1 td {border: 1px solid #000; padding: 5px; text-align: left;}
-                        .bordered-table2 {width: 50%; border-collapse: collapse; margin: auto;}
-                        .bordered-table2 td {border: 1px solid #000; padding: 5px; text-align: left; height: 50px; font-size: 25px;}
-                        .bordered-table3 {width: 100%; border-collapse: collapse; margin: auto;}
-                        .bordered-table3 td {border: 1px solid #000; padding: 5px; text-align: left;}
-                        .no-border-table {width: 100%; border-collapse: collapse;}
-                        .no-border-table td {border: none; padding: 5px; text-align: left;}
-                        .header-table {width: 100%; margin-bottom: 10px; border-collapse: collapse;}
-                        .header-table td {border: none; padding: 5px; text-align: left; vertical-align: top;}
+                        /* Optimasi Kertas untuk Print */
+                        @media print {
+                            @page { size: A4 portrait; margin: 5mm; }
+                            body { -webkit-print-color-adjust: exact !important; margin: 0; padding: 0; }
+                        }
+                        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000; }
+                        
+                        /* Styling Warna & Border */
+                        .bg-grey { background-color: #d9d9d9 !important; }
+                        .border-box { border: 1px solid #000; }
+                        .border-box-thick { border: 2px solid #000; }
+                        
+                        /* Styling Teks */
+                        .text-center { text-align: center; }
+                        .text-bold { font-weight: bold; }
+                        .text-right { text-align: right; }
+                        
+                        /* Styling Barcode */
+                        .barcode { font-family: "Libre Barcode 39", sans-serif; font-size: 30px; line-height: 0.8; }
+                        .barcode-vertical { 
+                            font-family: "Libre Barcode 39", sans-serif; 
+                            font-size: 24px; 
+                            writing-mode: vertical-rl; 
+                            transform: rotate(180deg); 
+                            letter-spacing: 2px;
+                        }
+                        
+                        /* Tabel Standard */
+                        table { border-collapse: collapse; }
+                        .table-info td { padding: 3px 5px; }
+                        .table-grid td { border: 1px solid #000; padding: 4px; }
+                        
+                        /* Tabel Kanban Kanan */
+                        .table-kanban td { border: 1px solid #000; padding: 2px; font-size: 10px; }
+                        .table-kanban th { border: 1px solid #000; padding: 4px; font-size: 12px; font-weight: bold; }
 
-                        .bordered-table {border-collapse: collapse;width: 30%;margin: 10px;}
-                        .bordered-table td, .bordered-table th {border: 1px solid #000;padding: 5px;text-align: center;}
-                        .signature-section {width: 40%;height: 30px;}
-                        .signature-section2 {width: 40%;height: 100px;}
-                        .signature-header {font-weight: bold;}
-                        .left-table {float: left;}
-                        .right-table {float: right;}
+                        /* Custom Checkbox Hitam Putih */
+                        .square-box { 
+                            display: inline-block; 
+                            width: 12px; height: 12px; 
+                            border: 1px solid #000; 
+                            vertical-align: middle; 
+                            margin-right: 3px; 
+                        }
 
-                        .content-table {width: 100%; margin-top: 20px;}
-                        .content-table td {padding: 5px; vertical-align: top;}
-                        .right-align {text-align: right;}
+                        /* Container pembungkus utama */
+                        .full-outline-wrapper {
+                            width: 80%;
+                            margin: 0 auto;
+                            border: 2px solid #000; 
+                            padding: 15px;           
+                            border-collapse: collapse;
+                        }
                     </style>
-
-                    <body>
-                        <center>
-                            <table class="header-table">
-                                <tr>
-                                    <td style="font-size: 40px; text-align: center;">
-                                        WORK ORDER (WO) & <br>PRODUCTION REPORT (PR)
-                                    </td>
-                                </tr>
-                            </table>
-                        </center>
-                        <br>
-                        <table class="bordered-table1">
-                            <tr>
-                                <td style="width: 30%; text-align: left;">Issued Date</td>
-                                <td style="width: 70%; text-align: center;">'.$data['trans_date'].'</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 30%; text-align: left;">No Doc</td>
-                                <td style="width: 70%; text-align: center;">'.$data['wo_no'].'</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 30%; text-align: left;">Part No</td>
-                                <td style="width: 70%; text-align: center;">'.$data['item_number'].'</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 30%; text-align: left;">Part Name</td>
-                                <td style="width: 70%; text-align: center;">'.$data['item_name'].'</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 30%; text-align: left;">IS No</td>
-                                <td style="width: 70%; text-align: center;">'.$data['is_no'].'</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 30%; text-align: left;">Mold No</td>
-                                <td style="width: 70%; text-align: center;">'.$data['mold_id'].'</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 30%; text-align: left;">Machine No</td>
-                                <td style="width: 70%; text-align: center;">'.$data['machine_number'].'</td>
-                            </tr>
-                        </table>
-                        <br>
-                        <table class="bordered-table2">
-                            <tr>
-                                <td style="width: 50%; text-align: left;">Lot No</td>
-                                <td style="width: 50%; text-align: center;">'.$data['lot_no'].'</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 50%; text-align: left;">Qty (Pcs)</td>
-                                <td style="width: 50%; text-align: center;">'.$data['qty'].'</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 50%; text-align: left;">Lead Time (Hour)</td>
-                                <td style="width: 50%; text-align: center;">'.number_format(($data['qty']) / (3600 / ($data['cycle_time'] + $data['cycle_time_process']) * $data['cavity_standard'] * 0.85), 2).'</td>
-                            </tr>
-                        </table>
-                        <br>
-                        <table class="bordered-table1">
-                            <tr>
-                                <td style="width: 30%; text-align: left;">Polybag Label</td>
-                                <td style="width: 70%; text-align: center;">Tidak Pakai Label Manual</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 30%; text-align: left;">Box Label</td>
-                                <td style="width: 70%; text-align: center;">Tidak Pakai Label Manual</td>
-                            </tr>
-                        </table>
-                        <br>
-                        <table class="bordered-table1">
-                            <tr>
-                                <td style="width: 50%; text-align: center;"><b>Cycle Time</b></td>
-                                <td style="width: 50%; text-align: center;"><b>Man Power</b></td>
-                            </tr>
-                            <tr>
-                                <td style="vertical-align: top;">
-                                    <table class="bordered-table1">
-                                        <tr>
-                                            <td style="text-align: center;">Cavity Std</td>
-                                            <td style="text-align: center;">C/T Machine (sec)</td>
-                                            <td style="text-align: center;">Target/Shift (pcs)</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="text-align: center;">'.$data['cavity_standard'].'</td>
-                                            <td style="text-align: center;">'.$data['cycle_time'].'</td>
-                                            <td style="text-align: center;" rowspan="3">'.$target_per_shift.'</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="text-align: center;">Cavity Actual</td>
-                                            <td style="text-align: center;">C/T Finishing (sec)</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="text-align: center;">'.$data['cavity_actual'].'</td>
-                                            <td style="text-align: center;">'.$data['cycle_time_process'].'</td>
-                                        </tr>
-                                    </table>
-                                </td>
-                                <td style="vertical-align: top;">
-                                    <table class="bordered-table1">
-                                        <tr>
-                                            <td style="text-align: left;" colspan="2">Person</td>
-                                            <td style="text-align: center;">'.$data['manpower'].'</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="text-align: center;" colspan="3">Material</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="text-align: left;">'.$material_list.'</td>
-                                            <td style="text-align: center;">'.$qty.'</td>
-                                            <td style="text-align: center;">'.$uom.'</td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                        <br>
-                        <table class="bordered-table3">
-                            <tr>
-                                <td colspan="3"><b>Condition Check Mold:</b></td>
-                                <td style="text-align: center;" colspan="2"><b>Diperiksa</b></td>
+                </head>
+                <body onload="window.print()">
+                    
+                    <table width="100%" style="border: none;">
+                        <tr>
+                            <td style="width: 75%; vertical-align: top; padding-right: 15px;">
                                 
-                            </tr>
-                            <tr>
-                                <td style="width: 50%; text-align: left;">Cavity Mold</td>
-                                <td style="width: 15%; text-align: center;">
-                                    <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> OK
-                                </td>
-                                <td style="width: 15%; text-align: center;">
-                                    <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> .....
-                                </td>
-                                <td rowspan="3" colspan="2"</td>
-                            </tr>
-                            <tr>
-                                <td style="width: 35%; text-align: left;">Cooling Mold</td>
-                                <td style="width: 15%; text-align: center;">
-                                    <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> OK
-                                </td>
-                                <td style="width: 15%; text-align: center;">
-                                    <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> .....
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="width: 35%; text-align: left;">Nepple Mold</td>
-                                <td style="width: 15%; text-align: center;">
-                                    <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> OK
-                                </td>
-                                <td style="width: 15%; text-align: center;">
-                                    <span style="display: inline-block; width: 20px; height: 20px; border: 1px solid black;"></span> .....
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="4" style="width: 35%; text-align: left; height: 120px; vertical-align: top;">Catatan :</td>
-                            </tr>
-                        </table>
+                                <table width="100%" style="border: none; margin-bottom: 15px;">
+                                    <tr>
+                                        <td width="1%" style="vertical-align: middle; padding-right: 8px;">
+                                            <img src="' . $config->favicon . '" alt="Logo Perusahaan" style="height: 35px;">
+                                        </td>
+                                        
+                                        <td width="49%" style="font-size: 14px; text-align: left; vertical-align: middle;">
+                                            <b>' . $config->name . '</b><br>
+                                            <small style="font-size: 10px; color: #555;">' . $config->description . '</small>
+                                        </td>
+                                        
+                                        <td width="50%" class="text-right" style="vertical-align: top;">
+                                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">'.$data['item_number'].'</div>
+                                            <div style="font-size: 9px; margin-right: 35px;">FM-PPC-021-Rev-06</div>
+                                        </td>
+                                    </tr>
+                                </table>
 
-                        <br>
-                        <table class="bordered-table left-table">
-                            <tr>
-                                <th class="signature-header" colspan="2">MENGETAHUI</th>
-                            </tr>
-                            <tr>
-                                <td class="signature-section2"></td>
-                                <td class="signature-section2"></td>
-                            </tr>
-                            <tr>
-                                <td class="signature-section"></td>
-                                <td class="signature-section"></td>
-                            </tr>
-                            <tr>
-                                <td>SPV QC</td>
-                                <td>SPV PRD</td>
-                            </tr>
-                        </table>
+                                <div class="text-center text-bold" style="font-size: 22px; margin-bottom: 15px; letter-spacing: 0.5px;">
+                                    WORK ORDER (WO) &<br>PRODUCTION REPORT (PR)
+                                </div>
 
-                        <table class="bordered-table right-table">
-                            <tr>
-                                <th class="signature-header">DIPERIKSA</th>
-                                <th class="signature-header">DIBUAT</th>
-                            </tr>
-                            <tr>
-                                <td class="signature-section2"></td>
-                                <td class="signature-section2"></td>
-                            </tr>
-                            <tr>
-                                <td class="signature-section"></td>
-                                <td class="signature-section"></td>
-                            </tr>
-                            <tr>
-                                <td>SPV PPC</td>
-                                <td>PPC</td>
-                            </tr>
-                        </table>
-                    </body></html>';
+                                <div class="full-outline-wrapper">
+
+                                    <table width="100%" class="table-info" style="margin-bottom: 5px;">
+                                        <tr>
+                                            <td width="25%" class="text-bold" style="font-size: 11px;">Issued Date</td>
+                                            <td width="5%">:</td>
+                                            <td width="70%" class="bg-grey text-center text-bold">'.$data['trans_date'].'</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-bold" style="font-size: 11px;">No Doc</td>
+                                            <td>:</td>
+                                            <td class="bg-grey text-center text-bold">'.$data['wo_no'].'</td>
+                                        </tr>
+                                        <tr>
+                                            <td></td><td></td>
+                                            <td class="text-center barcode">*'.$data['wo_no'].'*</td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" style="margin-bottom: 10px;">
+                                        <tr>
+                                            <td width="25%" class="text-bold" style="font-size: 11px; padding: 3px 5px;">Part No</td>
+                                            <td width="5%" style="padding: 3px 5px;">:</td>
+                                            <td width="70%" class="bg-grey text-center text-bold border-box-thick" style="padding: 5px; font-size: 14px;">'.$data['item_number'].'</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">Part Name</td>
+                                            <td style="padding: 3px 5px;">:</td>
+                                            <td class="text-center text-bold border-box" style="padding: 5px; font-size: 12px;">'.$data['item_name'].'</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">IS No</td>
+                                            <td style="padding: 3px 5px;">:</td>
+                                            <td class="text-center text-bold border-box" style="padding: 5px;">'.$data['is_no'].'</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">Mold No</td>
+                                            <td style="padding: 3px 5px;">:</td>
+                                            <td class="text-center border-box" style="padding: 5px;">'.$data['mold_no'].'</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">Mesin No</td>
+                                            <td style="padding: 3px 5px;">:</td>
+                                            <td class="text-center border-box" style="padding: 5px;">'.$data['machine_number'].'</td>
+                                        </tr>
+                                    </table>
+
+                                </div> 
+
+                                <table width="50%" align="center" class="table-grid border-box-thick" style="margin-bottom: 10px;">
+                                    <tr>
+                                        <br>
+                                        <td width="50%" class="text-center text-bold" style="font-size: 16px;">LOT No</td>
+                                        <td width="50%" class="text-center text-bold" style="font-size: 16px;">Qty (pcs)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center text-bold" style="font-size: 18px; padding: 8px;">'.$data['lot_no'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 18px; padding: 8px;">'.number_format($data['qty']).'</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center text-bold" style="font-size: 13px;">lead time (hour)</td>
+                                        <td class="text-right text-bold" style="font-size: 15px; padding-right: 15px;">'.$lead_time.'</td>
+                                    </tr>
+                                </table>
+
+                                <table width="80%" align="center" class="table-info" style="margin-bottom: 15px;">
+                                    <tr>
+                                        <td width="25%" class="text-bold" style="font-size: 9px;">Polybag Label</td><td width="5%" style="font-size: 9px;">:</td>
+                                        <td width="70%" class="bg-grey text-center text-bold" style="font-size: 9px;">Label Manual Logo BPI</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-bold" style="font-size: 9px;">Box Label</td><td style="font-size: 9px;">:</td>
+                                        <td class="bg-grey text-center text-bold" style="font-size: 9px;">Tidak Pakai Label Manual</td>
+                                    </tr>
+                                </table>
+
+                                <table width="80%" align="center" class="table-grid border-box-thick" style="margin-bottom: 10px;">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-bold" style="font-size: 14px; width: 60%;">Cycle Time</td>
+                                        <td colspan="2" class="text-center text-bold" style="font-size: 14px; width: 40%;">Man Power</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" style="font-size: 9px; width: 20%;">Cavity Std</td>
+                                        <td class="text-center" style="font-size: 9px; width: 20%;">C/T Machine (sec)</td>
+                                        <td class="text-center" style="font-size: 9px; width: 20%;">Target/Shift (pcs)</td>
+                                        <td class="text-center text-bold" style="width: 20%;">'.$data['manpower'].'</td>
+                                        <td class="text-center" style="font-size: 9px; width: 20%;">Person</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center text-bold" style="font-size: 14px;">'.$data['cavity_standard'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 14px;">'.$data['cycle_time'].'</td>
+                                        <td rowspan="3" class="text-center text-bold" style="font-size: 14px;">'.$target_per_shift.'</td>
+                                        <td colspan="2" class="text-center" style="font-size: 10px;">Material</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center" style="font-size: 9px;">Cavity Actual</td>
+                                        <td class="text-center" style="font-size: 9px;">C/T Finishing (sec)</td>
+                                        <td colspan="2" rowspan="2" class="text-left text-bold" style="vertical-align: bottom; padding-bottom: 8px; font-size: 9px;">
+                                            '.$material_list.'
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center text-bold" style="font-size: 14px;">'.$data['cavity_actual'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 14px;">'.$data['cycle_time_process'].'</td>
+                                    </tr>
+                                </table>
+
+                                <table width="80%" align="center" class="table-grid border-box-thick" style="margin-bottom: 10px;">
+                                    <tr>
+                                        <td colspan="2" class="text-bold" style="font-size: 12px; border-bottom: none; border-right: none;">Condition Check Mold:</td>
+                                        <td width="25%" class="text-center" style="font-size: 10px;">DIPERIKSA</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="35%" style="border-top: none; border-right: none; padding-left: 10px; font-size: 10px; line-height: 1.5;">
+                                            Cavity Mold &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:<br>
+                                            Cooling Mold &nbsp;&nbsp;&nbsp;:<br>
+                                            Nepple Mold &nbsp;&nbsp;&nbsp;&nbsp;:
+                                        </td>
+                                        <td width="40%" style="border-top: none; border-left: none; font-size: 10px; line-height: 1.5;">
+                                            <span class="square-box"></span> OK &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="square-box"></span> ........<br>
+                                            <span class="square-box"></span> OK &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="square-box"></span> ........<br>
+                                            <span class="square-box"></span> OK &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="square-box"></span> ........
+                                        </td>
+                                        <td rowspan="1"></td> </tr>
+                                    <tr>
+                                        <td colspan="3" style="height: 40px; vertical-align: top; font-size: 10px;">Catatan :</td>
+                                    </tr>
+                                </table>
+
+                                <table width="80%" align="center" style="margin-bottom: 5px;">
+                                    <tr>
+                                        <td width="48%">
+                                            <table width="100%" class="table-grid border-box-thick">
+                                                <tr><td colspan="2" class="text-center" style="font-size: 10px;">MENGETAHUI</td></tr>
+                                                <tr><td style="height: 40px; width: 50%;"></td><td style="width: 50%;"></td></tr>
+                                                <tr><td class="text-center" style="font-size: 10px;">SPV.QC</td><td class="text-center" style="font-size: 10px;">SPV.PRD</td></tr>
+                                            </table>
+                                        </td>
+                                        <td width="4%"></td>
+                                        <td width="48%">
+                                            <table width="100%" class="table-grid border-box-thick">
+                                                <tr>
+                                                    <td class="text-center" style="font-size: 10px; width: 50%;">DIPERIKSA</td>
+                                                    <td class="text-center" style="font-size: 10px; width: 50%;">DIBUAT</td>
+                                                </tr>
+                                                <tr><td style="height: 40px;"></td><td></td></tr>
+                                                <tr><td class="text-center" style="font-size: 10px;">SPV.PPC</td><td class="text-center" style="font-size: 10px;">PPC</td></tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+
+                            <td style="width: 15%; vertical-align: top;">
+                                <table class="table-kanban" style="width: 100%; border: 2px solid #000;">
+                                    <tr>
+                                        <td rowspan="31" style="width: 25px; border-right: 1px solid #000; padding: 0; vertical-align: top; text-align: center;">
+                                            <div class="barcode-vertical" style="margin-top: 10px;">*MAT-'.$data['wo_no'].'*</div>
+                                        </td>
+                                        <th class="text-center" style="font-size: 14px; padding: 8px 2px;">Kanban<br>Material</th>
+                                    </tr>
+                                    <tr><td class="text-center" style="font-size: 9px;">Date Supply</td></tr>
+                                    <tr><td class="text-center" style="padding: 4px; font-size: 11px;">'.$data['trans_date'].'</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px;">No Doc PRR</td></tr>
+                                    <tr><td class="text-center" style="padding: 4px; font-size: 11px;">'.$data['wo_no'].'</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px;">Part No</td></tr>
+                                    <tr><td class="text-center text-bold" style="padding: 4px; font-size: 11px;">'.$data['item_number'].'</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px;">Part Name</td></tr>
+                                    <tr><td class="text-center" style="padding: 4px; font-size: 11px;">'.$data['item_name'].'</td></tr>
+                                    
+                                    <tr><th class="text-center" style="padding: 6px; font-size: 12px;">SUPPLY</th></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px;">Material No</td></tr>
+                                    <tr><td class="text-center" style="padding: 4px; font-size: 8px;">'.$material_list2.'</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px;">Material Name</td></tr>
+                                    <tr><td class="text-center" style="padding: 4px; font-size: 11px;">'.$material_list3.'</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px;">Qty Request</td></tr>
+                                    <tr><td class="text-center" style="padding: 4px; font-size: 11px;">'.$qty.'</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Actual Supply</td></tr>
+                                    <tr><td style="height: 40px;"></td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Supplied by,</td></tr>
+                                    <tr><td style="height: 40px;"></td></tr>
+
+                                    <tr><td class="text-center" style="padding: 2px; font-size: 10px;">Warehouse</td></tr>
+                                    <tr><td style="height: 40px;"></td></tr>
+
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Received by,</td></tr>
+                                    <tr><td style="height: 40px;"></td></tr>
+                                    
+                                    <tr><td class="text-center" style="padding: 2px; font-size: 10px;">Production</td></tr>
+                                    <tr><td class="text-center text-bold" style="padding: 4px; font-size: 12px;">'.$data['machine_number'].'</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Supply to M/C</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">LOT</td></tr>
+                                    <tr><td class="text-center text-bold" style="padding: 2px; font-size: 11px;">'.$data['lot_no'].'</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Issued date</td></tr>
+                                    <tr><td class="text-center text-bold" style="padding: 2px; font-size: 11px;">'.$data['trans_date'].'</td></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                </body>
+                </html>';
             } 
         } else {
             $html = "Data tidak ditemukan.";

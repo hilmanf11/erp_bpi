@@ -45,6 +45,7 @@
             <th rowspan="2" data-options="field:'status_subcont',width:100,align:'center'">Status Subcont</th>
             <th rowspan="2" data-options="field:'subcont_type',width:100,align:'center'">Subcont Type</th>
             <th rowspan="2" data-options="field:'type',width:100,align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'meta_data',width:100,align:'center'">Meta Data</th>
             <th rowspan="2" data-options="field:'remarks',width:100,align:'center'">Remark</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>

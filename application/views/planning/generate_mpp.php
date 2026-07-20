@@ -248,6 +248,29 @@
         window.open('<?= base_url('planning/generate_mpp/uploadDownloadFailed') ?>', '_blank');
     }
 
+    // Fungsi khusus untuk merapikan kembali baris yang pecah
+    function reMergeCells(target) {
+        var rows = $(target).datagrid('getRows');
+        var rowspan = 1;
+        var startIndex = 0;
+
+        for (var i = 0; i < rows.length; i++) {
+            if (i === rows.length - 1 || rows[i].machine_number !== rows[i+1].machine_number) {
+                if (rowspan > 1) {
+                    $(target).datagrid('mergeCells', {
+                        index: startIndex,
+                        field: 'machine_number', // Tambahkan field lain di sini jika ada yg di-merge juga
+                        rowspan: rowspan
+                    });
+                }
+                startIndex = i + 1; 
+                rowspan = 1;                
+            } else {
+                rowspan++; 
+            }
+        }
+    }
+
     function filter() {
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
@@ -382,15 +405,19 @@
                     title: dayName + '<br>' + dayIndex, 
                     width: 50,
                     align: 'right',
+                    
+                    // ==========================================
+                    // UBAH EDITOR MENJADI TEXT BIASA (SUPER RINGAN)
+                    // ==========================================
                     editor: {
-                        type: 'numberbox',
-                        options: { min: 0, precision: 0 } 
+                        type: 'text' 
                     },
+                    // ==========================================
+
                     formatter: function(val) {
                         return (val == 0 || val == null || val === '') ? '-' : val;
                     },
                     styler: function(value, row, index) {
-                        // Jika dari PHP mengirimkan status printed = 1, warnai hijau
                         if (row['day_' + dayIndex + '_printed'] == 1) {
                             return 'background-color: #c8e6c9; color: #000; font-weight: bold;'; 
                         }
@@ -402,9 +429,6 @@
         // =========================================================
         // 3. INISIALISASI DATAGRID EASYUI
         // =========================================================
-        var selectedRowForPrint = null;
-        var selectedDayForPrint = null;
-        var selectedQtyForPrint = null;
         $('#dg_mpp').datagrid({
             url: '<?= base_url('planning/generate_mpp/datatables') ?>' + url,
             rownumbers: false, 
@@ -412,35 +436,76 @@
             fitColumns: false,
             frozenColumns: [frozenCols], 
             columns: [scrollCols], 
-            // ------------------------------------------
 
             // --- LOGIKA INLINE EDITING (SINGLE CLICK) ---
             onClickRow: function(index, row) {
                 if (editIndex != index) {
                     if (endEditing()) { 
                         
-                        // ===================================================
-                        // TAMBAHAN: Cek apakah edit sebelumnya gagal validasi?
-                        // ===================================================
                         if (isInvalidEdit) {
                             isInvalidEdit = false;
-                            $('#dg_mpp').datagrid('selectRow', index);
-                            return;
+                            // Hilangkan pemanggilan selectRow di sini, biarkan saja
+                            return; 
                         }
-                        // ===================================================
 
-                        $(this).datagrid('selectRow', index)
-                               .datagrid('beginEdit', index); 
-                        editIndex = index;
+                        editIndex = index; // Set index lebih awal
+                        
+                        // Jeda super singkat (10ms) hanya untuk melepas antrean main-thread browser
+                        // sehingga warna baris (highlight selected) muncul duluan sebelum browser freeze merender editor
+                        setTimeout(function() {
+                            $('#dg_mpp').datagrid('beginEdit', index); 
+                        }, 10);
+
                     } else {
-                        $(this).datagrid('selectRow', editIndex); 
+                        // Kembalikan seleksi ke baris yang sedang diedit jika gagal validasi
+                        setTimeout(function() {
+                            $('#dg_mpp').datagrid('selectRow', editIndex); 
+                        }, 10);
+                    }
+                }
+            },
+
+            // =======================================================
+            // KUNCI KOTAK INPUT (MATIKAN EDITOR) & PASANG TOMBOL ENTER
+            // =======================================================
+            onBeginEdit: function(index, row) {
+                var editors = $(this).datagrid('getEditors', index);
+
+                for (var i = 0; i < editors.length; i++) {
+                    var ed = editors[i];
+                    
+                    // KARENA KITA PAKAI 'TEXT', ed.target SUDAH LANGSUNG BERUPA INPUT
+                    var tbox = $(ed.target);
+
+                    // 1. SIHIR TOMBOL ENTER UNTUK SAVE
+                    tbox.bind('keydown', function(e) {
+                        if (e.keyCode === 13) { 
+                            e.preventDefault(); 
+                            $('#dg_mpp').datagrid('endEdit', index);
+                            editIndex = undefined;
+                        }
+                    });
+
+                    // 2. OPTIMASI READONLY (HARI YANG SUDAH DIPRINT)
+                    if (ed.field.indexOf('day_') === 0) {
+                        var dayNum = ed.field.split('_')[1]; 
+                        
+                        if (row['day_' + dayNum + '_printed'] == 1) {
+                            tbox.attr('readonly', true).css({
+                                'background-color': '#eeeeee',
+                                'color': '#888888',
+                                'cursor': 'not-allowed'
+                            });
+                        } else {
+                            // Opsional: Agar teks rata kanan saat sedang diketik (seperti numberbox)
+                            tbox.css('text-align', 'right');
+                        }
                     }
                 }
             },
 
             onAfterEdit: function(index, row, changes) {
                 if (!$.isEmptyObject(changes)) {
-                    
                     var newTotalMpp = 0;
                     for (var i = 1; i <= 31; i++) {
                         var val = parseInt(row['day_' + i]) || 0;
@@ -449,25 +514,29 @@
 
                     var prodplanMpp = parseInt(row.prodplan_mpp) || 0;
 
-                    // Jika melebihi batas, BATALKAN!
                     if (newTotalMpp > prodplanMpp) {
-                        // Tambahkan parameter timeOut agar notif bertahan 5 detik
                         toastr.warning(
                             "Total MPP (" + newTotalMpp + ") > Prodplan Mpp (" + prodplanMpp + ")!", 
                             "Data Returned",
                             { timeOut: 5000 } 
                         );
-                        
                         $('#dg_mpp').datagrid('rejectChanges'); 
-                        
                         isInvalidEdit = true; 
                         return; 
                     }
 
-                    // Pastikan bendera mati jika lolos validasi
                     isInvalidEdit = false; 
 
-                    // 2. PROSES SIMPAN KE DATABASE (AJAX)
+                    // Update lokal agar user melihat angka langsung berubah
+                    $('#dg_mpp').datagrid('updateRow', {
+                        index: index,
+                        row: { total_mpp: newTotalMpp }
+                    });
+                    $('#dg_mpp').datagrid('acceptChanges');
+
+                    reMergeCells('#dg_mpp');
+
+                    // kirim ke server 
                     $.ajax({
                         url: '<?= base_url('planning/generate_mpp/update_inline') ?>', 
                         type: 'POST',
@@ -476,7 +545,6 @@
                         success: function(response) {
                             if (response.status === 'success') {
                                 toastr.success("Data successfully saved.!");
-                                $('#dg_mpp').datagrid('reload');
                             } else {
                                 toastr.error("Failed to update data in the database.");
                                 $('#dg_mpp').datagrid('rejectChanges'); 
@@ -490,51 +558,18 @@
                 }
             },
 
-            // =======================================================
-            // 1. KUNCI KOTAK INPUT (MATIKAN EDITOR) SAAT DIKLIK KIRI
-            // =======================================================
-            onBeginEdit: function(index, row) {
-                for (var i = 1; i <= 31; i++) {
-                    // Jika hari ini sudah diprint
-                    if (row['day_' + i + '_printed'] == 1) {
-                        // Cari elemen kotak inputnya...
-                        var ed = $(this).datagrid('getEditor', {index: index, field: 'day_' + i});
-                        if (ed) {
-                            // ...dan matikan agar tidak bisa diketik!
-                            $(ed.target).numberbox('disable'); 
-                        }
-                    }
-                }
-            },
-            
             // --- LOGIKA MERGE CELLS (ROWSPAN) ---
             onLoadSuccess: function(data) {
-                var rows = data.rows;
-                var rowspan = 1;
-                var startIndex = 0;
-
-                for (var i = 0; i < rows.length; i++) {
-                    if (i === rows.length - 1 || rows[i].machine_number !== rows[i+1].machine_number) {
-                        if (rowspan > 1) {
-                            $(this).datagrid('mergeCells', {
-                                index: startIndex,
-                                field: 'machine_number',
-                                rowspan: rowspan
-                            });
-                        }
-                        startIndex = i + 1; 
-                        rowspan = 1;        
-                    } else {
-                        rowspan++; 
-                    }
-                }
-                editIndex = undefined; 
+                reMergeCells(this); 
+                editIndex = undefined;
             }
         });
 
         // 4. TRIK MASTER: TANGKAP KLIK KANAN SECARA GLOBAL DI PANEL DATAGRID
         $('#dg_mpp').datagrid('getPanel').on('contextmenu', function(e) {
-            
+            window.selectedRowForPrint = row;
+            window.selectedDayForPrint = dayNumber;
+            window.selectedQtyForPrint = qtyAtDay;
             var td = $(e.target).closest('td[field^="day_"]');
 
             if (td.length > 0) {
@@ -579,7 +614,6 @@
     }
 
     $(document).ready(function() {
-        // ... (kode Anda yang lain) ...
 
         // BINDING MENU HANYA 1 KALI
         $('#menu_kanan').menu({
@@ -587,21 +621,20 @@
                 if (item.id === 'btn_print') {
                     
                     // Pastikan ada data yang dipilih
-                    if (selectedRowForPrint !== null && selectedDayForPrint !== null) {
-                        
-                        // VALIDASI LAPIS 2: Pertahanan terakhir sebelum nge-print
-                        if (selectedRowForPrint['day_' + selectedDayForPrint + '_printed'] == 1) {
-                            toastr.error("Tindakan dicegah! Sistem mendeteksi jadwal ini sudah berwarna hijau.", "Blokir");
+                    if (window.selectedRowForPrint !== null && window.selectedDayForPrint !== null) {
+    
+                        // Gunakan window.selectedRowForPrint dst
+                        if (window.selectedRowForPrint['day_' + window.selectedDayForPrint + '_printed'] == 1) {
+                            toastr.error("Tindakan dicegah!...", "Blokir");
                             return;
                         }
 
-                        // Aman, eksekusi proses print!
-                        prosesPrintSchedule(selectedRowForPrint, selectedDayForPrint, selectedQtyForPrint);
+                        prosesPrintSchedule(window.selectedRowForPrint, window.selectedDayForPrint, window.selectedQtyForPrint);
                         
-                        // KOSONGKAN memori setelah dipakai agar tidak bocor
-                        selectedRowForPrint = null;
-                        selectedDayForPrint = null;
-                        selectedQtyForPrint = null;
+                        // Reset
+                        window.selectedRowForPrint = null;
+                        window.selectedDayForPrint = null;
+                        window.selectedQtyForPrint = null;
                     }
 
                 } 
@@ -940,7 +973,7 @@
                         setTimeout(function() {
                             var printUrl = '<?= base_url("planning/generate_mpp/print_wo/") ?>' + response.id;
                             window.open(printUrl, '_blank'); 
-                        }, 5000); // <--- Angka 1500 adalah delay 1.5 detik. Bisa diubah sesuai selera (misal 2000 untuk 2 detik).
+                        }, 5000); 
                         // ======================================================
 
                     } else {
