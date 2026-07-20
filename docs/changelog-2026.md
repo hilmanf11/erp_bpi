@@ -786,3 +786,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-20]
 - **kurniawan**: Update Planning MPP dan PS ([675c2673](https://github.com/hilmanf11/erp_bpi/commit/675c267391726b61f2e5fff77d0507be4a659c68))
+
+### [2026-07-20]
+- **kurniawan**: update shipping ([0e429798](https://github.com/hilmanf11/erp_bpi/commit/0e4297980ba9e039ee2635171b51c0abcce44c2e))
