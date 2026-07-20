@@ -464,21 +464,62 @@ class Generate_mrp extends CI_Controller
             $this->db->join("( SELECT * FROM generate_mrp WHERE p_month = '$filter_month' AND p_year = '$filter_year' AND revision = '$filter_revision') a", "a.item_rm_id = i.id", 'left');
             $this->db->join("(SELECT * FROM supplier_items WHERE mpq > 0 AND moq > 0 AND leadtime > 0 AND share_order > 0) b", "i.id = b.item_rm_id", "left");
             
-            $this->db->join("(SELECT a.item_rm_id, ((COALESCE(b.issued, 0) + COALESCE(c.issued_non_supply_sheet, 0)) - (SUM(a.total) - COALESCE(d.issued_crusher, 0)) AS balance FROM (
-                    SELECT b.item_rm_id, a.item_fg_id, SUM(a.qty), b.composition, (SUM(a.qty) * b.composition) AS total
-                    FROM production_schedules a
-                    JOIN bom b ON a.item_fg_id = b.item_fg_id
-                    WHERE a.trans_date BETWEEN '$month1_1' AND '$filter_cutoff' AND a.status_subcont = 'NO'
-                    GROUP BY a.item_fg_id, b.item_rm_id) a
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and request_no like '%SH%' GROUP BY item_rm_id) b ON a.item_rm_id = b.item_rm_id
-                LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) AS issued_non_supply_sheet 
-                    FROM issued_material_details a 
-                    LEFT JOIN supply_materials b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
-                    LEFT JOIN item_rm c ON b.item_rm_id = c.id
-                    WHERE DATE_FORMAT(a.created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and a.request_no like '%REQ%' AND c.item_family_id IN ('P01','P02','P06') AND b.type = 'Issued Production'
-                    GROUP BY a.item_rm_id) c ON a.item_rm_id = c.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued_crusher FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and type like '%other%' GROUP BY item_rm_id) d ON a.item_rm_id = d.item_rm_id
-                GROUP BY a.item_rm_id) d", "i.id = d.item_rm_id", "left");
+            // $this->db->join("(SELECT a.item_rm_id, ((COALESCE(b.issued, 0) + COALESCE(c.issued_non_supply_sheet, 0)) - (SUM(a.total) - COALESCE(d.issued_crusher, 0)) AS balance FROM (
+            //         SELECT b.item_rm_id, a.item_fg_id, SUM(a.qty), b.composition, (SUM(a.qty) * b.composition) AS total
+            //         FROM production_schedules a
+            //         JOIN bom b ON a.item_fg_id = b.item_fg_id
+            //         WHERE a.trans_date BETWEEN '$month1_1' AND '$filter_cutoff' AND a.status_subcont = 'NO'
+            //         GROUP BY a.item_fg_id, b.item_rm_id) a
+            //     LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and request_no like '%SH%' GROUP BY item_rm_id) b ON a.item_rm_id = b.item_rm_id
+            //     LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) AS issued_non_supply_sheet 
+            //         FROM issued_material_details a 
+            //         LEFT JOIN supply_materials b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+            //         LEFT JOIN item_rm c ON b.item_rm_id = c.id
+            //         WHERE DATE_FORMAT(a.created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and a.request_no like '%REQ%' AND c.item_family_id IN ('P01','P02','P06') AND b.type = 'Issued Production'
+            //         GROUP BY a.item_rm_id) c ON a.item_rm_id = c.item_rm_id
+            //     LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued_crusher FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and type like '%other%' GROUP BY item_rm_id) d ON a.item_rm_id = d.item_rm_id
+            //     GROUP BY a.item_rm_id) d", "i.id = d.item_rm_id", "left");
+
+            $this->db->join("(SELECT a.item_rm_id, (COALESCE(b.issued, 0) + COALESCE(c.issued_non_supply_sheet, 0)) - (SUM(a.total) - COALESCE(d.issued_crusher, 0)) AS balance 
+            FROM (
+                SELECT b.item_rm_id, a.item_fg_id, SUM(a.qty) as qty, b.composition, (SUM(a.qty) * b.composition) AS total
+                FROM production_schedules a
+                JOIN bom b ON a.item_fg_id = b.item_fg_id
+                
+                LEFT JOIN (
+                    SELECT workorder, MAX(status) AS max_status 
+                    FROM supply_sheets 
+                    GROUP BY workorder
+                ) ss ON a.wo_no = ss.workorder
+                
+                WHERE a.trans_date BETWEEN '$month1_1' AND '$filter_cutoff' 
+                AND a.status_subcont = 'NO'
+                
+                AND NOT (a.status = 2 AND COALESCE(ss.max_status, 0) = 0)
+                
+                GROUP BY a.item_fg_id, b.item_rm_id
+            ) a
+            LEFT JOIN (
+                SELECT item_rm_id, SUM(qty) AS issued 
+                FROM issued_material_details 
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' AND request_no LIKE '%SH%' 
+                GROUP BY item_rm_id
+            ) b ON a.item_rm_id = b.item_rm_id
+            LEFT JOIN (
+                SELECT a.item_rm_id, SUM(a.qty) AS issued_non_supply_sheet 
+                FROM issued_material_details a 
+                LEFT JOIN supply_materials b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id
+                LEFT JOIN item_rm c ON b.item_rm_id = c.id
+                WHERE DATE_FORMAT(a.created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' AND a.request_no LIKE '%REQ%' AND c.item_family_id IN ('P01','P02','P06') AND b.type = 'Issued Production'
+                GROUP BY a.item_rm_id
+            ) c ON a.item_rm_id = c.item_rm_id
+            LEFT JOIN (
+                SELECT item_rm_id, SUM(qty) AS issued_crusher 
+                FROM issued_material_details 
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' AND type LIKE '%other%' 
+                GROUP BY item_rm_id
+            ) d ON a.item_rm_id = d.item_rm_id
+            GROUP BY a.item_rm_id) d", "i.id = d.item_rm_id", "left");
 
             // (CASE WHEN e.actual >= 0 THEN coalesce(e.actual, 0) ELSE 0 END) as qty_vendor,
             // $this->db->join("(SELECT z.id, SUM(z.begin_stock) AS actual FROM (
@@ -832,7 +873,7 @@ class Generate_mrp extends CI_Controller
 
                     $share_order_qty = ($total_need * ($generate['share_order'] / 100)); 
                     $safety_stock = round($share_order_qty * ($generate['safety_stock'] / 100));
-                    $total_need = ($share_order_qty + $safety_stock);
+                    // $total_need = ($share_order_qty + $safety_stock);
 
                     if($total_need > 0 && $generate['moq'] > 0){
                         if($total_need > $generate['moq']){
@@ -1299,6 +1340,7 @@ class Generate_mrp extends CI_Controller
                                     <b>' . $config->name . '</b><br>
                                     <small>GENERATE MRP</small><br>
                                     <small>CUTOFF DATE : '.@$records[0]['cutoff'].'</small>
+                                    <small>GENERATE DATE : '.date('Y-m-d', strtotime($records[0]['created_date'])).'</small>
                                 </td>
                             </tr>
                         </table>
