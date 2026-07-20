@@ -780,3 +780,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-16]
 - **kurniawan**: Update Dn_crusher.php ([1c29a227](https://github.com/hilmanf11/erp_bpi/commit/1c29a227c311ad3896e9f54fad9e48239a07cbea))
+
+### [2026-07-20]
+- **kurniawan**: Update Generate_mrp.php ([b9dca1ea](https://github.com/hilmanf11/erp_bpi/commit/b9dca1ea1eb0598d62a75b83e7a6e0812f5fdf98))
