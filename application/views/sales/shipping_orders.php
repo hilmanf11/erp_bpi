@@ -121,69 +121,118 @@
         });
 
         // Scan Label
+        // $('#checksheet_label').keypress(function(e) {
+        //     if (e.which == 13) {
+        //         var checksheet_label = $(this).val();
+        //         var delivery_order_no = $("#delivery_order_no").val();
+
+        //         $.ajax({
+        //             type: "POST",
+        //             url: "<?= base_url('sales/shipping_orders/getChecksheetLabel') ?>",
+        //             data: "checksheet_label=" + checksheet_label + "&delivery_order_no=" + delivery_order_no,
+        //             dataType: "json",
+        //             success: function(json) {
+        //                 // console.log(json);
+        //                 if (json.total > 0) {
+        //                     var row = json.rows;
+        //                     for (let i = 0; i < json.total; i++) {
+        //                         $.ajax({
+        //                             type: "POST",
+        //                             url: "<?= base_url('sales/shipping_orders/create') ?>",
+        //                             data: {
+        //                                 checksheet_label: checksheet_label,
+        //                                 delivery_order_no: delivery_order_no,
+        //                                 sales_order_no: globalSalesOrderNo, // Menggunakan variabel global
+        //                                 customer_order_no: globalCustomerOrderNo, // Menggunakan variabel global
+        //                                 item_fg_id: row[i].item_fg_id,
+        //                                 delivery: row[i].delivery,
+        //                                 qty: row[i].qty
+        //                             },
+        //                             dataType: "json",
+        //                             success: function(result) {
+        //                                 console.log(result);
+        //                                 if (result.theme == "success") {
+        //                                     serialSuccess.play();
+        //                                     toastr.success(result.message, result.title);
+        //                                     $("#checksheet_label").val('');
+        //                                     $('#checksheet_label').focus();
+        //                                 } else {
+        //                                     if (result.title == "Not Scanned In" || result.title == "Not Registered") {
+        //                                         serialNotFound.play();
+        //                                     }else if (result.title == "More Then Qty") {
+        //                                         moreThanQty.play();
+        //                                     }else if (result.title == "Available") {
+        //                                         serialDuplicate.play();
+        //                                     } else {
+        //                                         // serialDuplicate.play();
+        //                                     }
+        //                                     toastr.error(result.message, result.title);
+        //                                     $("#checksheet_label").val('');
+        //                                     $('#checksheet_label').focus();
+        //                                 }
+        //                             }
+        //                         });
+        //                     }
+
+        //                     $('#dg').datagrid({
+        //                         url: '<?= base_url('sales/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
+        //                         rownumbers: true
+        //                     });
+        //                 } else {
+        //                     serialNotFound.play();
+        //                     toastr.warning("Label not found!");
+        //                     $("#checksheet_label").val('');
+        //                     $('#checksheet_label').focus();
+        //                 }
+        //             }
+        //         });
+        //     }
+        // });
+
         $('#checksheet_label').keypress(function(e) {
             if (e.which == 13) {
                 var checksheet_label = $(this).val();
                 var delivery_order_no = $("#delivery_order_no").val();
+                // toastr.info("Processing label..."); 
 
                 $.ajax({
                     type: "POST",
-                    url: "<?= base_url('sales/shipping_orders/getChecksheetLabel') ?>",
-                    data: "checksheet_label=" + checksheet_label + "&delivery_order_no=" + delivery_order_no,
+                    url: "<?= base_url('sales/shipping_orders/process_scan') ?>",
+                    data: {
+                        checksheet_label: checksheet_label,
+                        delivery_order_no: delivery_order_no,
+                        sales_order_no: globalSalesOrderNo, 
+                        customer_order_no: globalCustomerOrderNo 
+                    },
                     dataType: "json",
-                    success: function(json) {
-                        // console.log(json);
-                        if (json.total > 0) {
-                            var row = json.rows;
-                            for (let i = 0; i < json.total; i++) {
-                                $.ajax({
-                                    type: "POST",
-                                    url: "<?= base_url('sales/shipping_orders/create') ?>",
-                                    data: {
-                                        checksheet_label: checksheet_label,
-                                        delivery_order_no: delivery_order_no,
-                                        sales_order_no: globalSalesOrderNo, // Menggunakan variabel global
-                                        customer_order_no: globalCustomerOrderNo, // Menggunakan variabel global
-                                        item_fg_id: row[i].item_fg_id,
-                                        delivery: row[i].delivery,
-                                        qty: row[i].qty
-                                    },
-                                    dataType: "json",
-                                    success: function(result) {
-                                        console.log(result);
-                                        if (result.theme == "success") {
-                                            serialSuccess.play();
-                                            toastr.success(result.message, result.title);
-                                            $("#checksheet_label").val('');
-                                            $('#checksheet_label').focus();
-                                        } else {
-                                            if (result.title == "Not Scanned In" || result.title == "Not Registered") {
-                                                serialNotFound.play();
-                                            }else if (result.title == "More Then Qty") {
-                                                moreThanQty.play();
-                                            }else if (result.title == "Available") {
-                                                serialDuplicate.play();
-                                            } else {
-                                                // serialDuplicate.play();
-                                            }
-                                            toastr.error(result.message, result.title);
-                                            $("#checksheet_label").val('');
-                                            $('#checksheet_label').focus();
-                                        }
-                                    }
-                                });
-                            }
-
+                    success: function(result) {
+                        if (result.theme == "success") {
+                            serialSuccess.play();
+                            toastr.success(result.message, result.title);
+                            
                             $('#dg').datagrid({
                                 url: '<?= base_url('sales/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
                                 rownumbers: true
                             });
+                            // $('#dg').datagrid('reload');
                         } else {
-                            serialNotFound.play();
-                            toastr.warning("Label not found!");
-                            $("#checksheet_label").val('');
-                            $('#checksheet_label').focus();
+                            if (result.title == "Not Scanned In" || result.title == "Not Registered") {
+                                serialNotFound.play();
+                            } else if (result.title == "More Then Qty") {
+                                moreThanQty.play();
+                            } else if (result.title == "Available") {
+                                serialDuplicate.play();
+                            }
+                            toastr.error(result.message, result.title);
                         }
+                        
+                        $("#checksheet_label").val('');
+                        $('#checksheet_label').focus();
+                    },
+                    error: function() {
+                        toastr.error("Terjadi kesalahan jaringan atau server.", "Error");
+                        $("#checksheet_label").val('');
+                        $('#checksheet_label').focus();
                     }
                 });
             }
