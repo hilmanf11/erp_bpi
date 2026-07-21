@@ -72,43 +72,34 @@ class Breakdown_prices extends CI_Controller
         }
     }
 
-    // public function readItems()
-    // {
-    //     $p_month  = (int) $this->input->post('p_month'); 
-    //     $p_year   = $this->input->post('p_year');
-    //     $revision = $this->input->post('revision');
-    //     $post = $this->input->post('q') ? $this->input->post('q') : "";
+    public function readItems()
+    {
+        $post = $this->input->post('q') ? $this->input->post('q') : "";
 
-    //     $this->db->select('*');
-    //     $this->db->from('cost_patterns');
+        $this->db->select('*');
+        $this->db->from('cost_patterns');
 
-    //     if (!empty($p_month)) {
-    //         $this->db->where('p_month', $p_month);
-    //     }
-        
-    //     if (!empty($p_year)) {
-    //         $this->db->where('p_year', $p_year);
-    //     }
-        
-    //     if ($revision !== "") {
-    //         $this->db->where('revision', $revision);
-    //     }
+        if (!empty($post)) {
+            $this->db->group_start();
+            $this->db->like('item_fg_number', $post);
+            $this->db->or_like('item_fg_name', $post);
+            $this->db->or_like('item_fg_id', $post);
+            $this->db->or_like('customer_name', $post);
+            $this->db->group_end();
+        }
 
-    //     if (!empty($post)) {
-    //         $this->db->group_start();
-    //         $this->db->like('item_fg_number', $post);
-    //         $this->db->or_like('item_fg_name', $post);
-    //         $this->db->or_like('item_fg_id', $post);
-    //         $this->db->group_end();
-    //     }
-
-    //     $this->db->group_by('item_fg_id');
-    //     $this->db->order_by('item_fg_number', 'ASC');
+        // Tampilkan semua item secara unik
+        $this->db->group_by('item_fg_id');
+        $this->db->group_by('p_month');
+        $this->db->group_by('p_year');
+        $this->db->group_by('revision');
+        $this->db->group_by('customer_id');
+        $this->db->order_by('item_fg_number', 'ASC');
         
-    //     $records = $this->db->get()->result_array();
+        $records = $this->db->get()->result_array();
         
-    //     echo json_encode($records);
-    // }
+        echo json_encode($records);
+    }
 
     public function readItemOptions($type)
     {
@@ -144,28 +135,49 @@ class Breakdown_prices extends CI_Controller
         echo json_encode($result);
     }
 
-    public function readItems()
+    public function get_sub_total_1()
     {
-        $post = $this->input->post('q') ? $this->input->post('q') : "";
+        $item_fg_id = $this->input->post('item_fg_id');
+        $p_month    = $this->input->post('p_month');
+        $p_year     = $this->input->post('p_year');
+        $revision   = $this->input->post('revision');
+        $customer_id= $this->input->post('customer_id');
 
-        $this->db->select('item_fg_id, item_fg_number, item_fg_name, volume, model_name');
-        $this->db->from('cost_patterns');
+        // Tarik nilai cost langsung dari cost_patterns
+        $this->db->select("item_rm_id_vg, virgin_cost, item_rm_id_mb, mb_cost, item_rm_id_cp, child_part_cost");
+        $this->db->from("cost_patterns");
+        $this->db->where([
+            "item_fg_id" => $item_fg_id,
+            "customer_id"=> $customer_id,
+            "p_month"    => $p_month,
+            "p_year"     => $p_year,
+            "revision"   => $revision,
+            "deleted"    => 0
+        ]);
 
-        if (!empty($post)) {
-            $this->db->group_start();
-            $this->db->like('item_fg_number', $post);
-            $this->db->or_like('item_fg_name', $post);
-            $this->db->or_like('item_fg_id', $post);
-            $this->db->group_end();
+        $details = $this->db->get()->result();
+
+        $sub_total_1 = 0;
+
+        if (!empty($details)) {
+            foreach ($details as $d) {
+                // Jumlahkan jika id materialnya terisi
+                if (!empty($d->item_rm_id_vg)) {
+                    $sub_total_1 += (float)$d->virgin_cost;
+                }
+                if (!empty($d->item_rm_id_mb)) {
+                    $sub_total_1 += (float)$d->mb_cost;
+                }
+                if (!empty($d->item_rm_id_cp)) {
+                    $sub_total_1 += (float)$d->child_part_cost;
+                }
+            }
         }
 
-        // Tampilkan semua item secara unik
-        $this->db->group_by('item_fg_id');
-        $this->db->order_by('item_fg_number', 'ASC');
-        
-        $records = $this->db->get()->result_array();
-        
-        echo json_encode($records);
+        echo json_encode([
+            'status'      => 'success',
+            'sub_total_1' => $sub_total_1
+        ]);
     }
 
     public function get_quotation_number()
@@ -205,6 +217,7 @@ class Breakdown_prices extends CI_Controller
         $filter_to = $get['filter_to'];
         $filter_item_fg_id = $get['filter_item_fg_id'];
         $filter_revision = $get['filter_revision'];
+        $filter_customer_id = $get['filter_customer_id'];
 
         // Ambil pagination dan sorting
         $page = $this->input->post('page');
@@ -242,10 +255,16 @@ class Breakdown_prices extends CI_Controller
             $this->db->where('a.item_fg_id', $filter_item_fg_id);
         }
 
+        if ($filter_customer_id != "") {
+            $this->db->where('a.customer_id', $filter_customer_id);
+        }
+
         $this->db->group_by('a.p_month');
         $this->db->group_by('a.p_year');
         $this->db->group_by('a.item_fg_id');
         $this->db->group_by('a.revision');
+        $this->db->group_by('a.customer_id');
+        $this->db->group_by('a.revision_quotation_number');
         
         $this->db->order_by($sort, $order);
         $totalRows = $this->db->count_all_results('', false);
@@ -261,13 +280,51 @@ class Breakdown_prices extends CI_Controller
     }
 
     //CREATE DATA
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+
+    //         $post = $this->input->post();
+
+    //         // cek data duplikat
+    //         $exists = $this->db->get_where('breakdown_prices', [
+    //             'item_fg_id' => $post['item_fg_id'],
+    //             'revision'   => $post['revision'],
+    //             'p_month'    => $post['p_month'],
+    //             'p_year'     => $post['p_year'],
+    //         ])->num_rows();
+
+    //         if ($exists > 0) {
+    //             echo json_encode([
+    //                 'status'  => false,
+    //                 'message' => 'Items and revisions for the period already exist'
+    //             ]);
+    //             return;
+    //         }
+
+    //         // simpan data
+    //         $send = $this->crud->create('breakdown_prices', $post);
+
+    //         echo json_encode([
+    //             'status'  => true,
+    //             'theme'   => 'success',
+    //             'message' => 'Data Save Succesfully',
+    //             'data'    => $send
+    //         ]);
+
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+    //CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
 
             $post = $this->input->post();
 
-            // cek data duplikat
+            // 1. Cek data duplikat
             $exists = $this->db->get_where('breakdown_prices', [
                 'item_fg_id' => $post['item_fg_id'],
                 'revision'   => $post['revision'],
@@ -278,20 +335,89 @@ class Breakdown_prices extends CI_Controller
             if ($exists > 0) {
                 echo json_encode([
                     'status'  => false,
+                    'theme'   => 'error',
                     'message' => 'Items and revisions for the period already exist'
                 ]);
                 return;
             }
 
-            // simpan data
+            // =========================================================
+            // 2. MULAI PERHITUNGAN (KALKULASI)
+            // =========================================================
+            
+            // A. Sub Total 1 (Sudah didapat dari form hidden input hasil AJAX)
+            $sub_total_1 = isset($post['sub_total_1']) ? (float)$post['sub_total_1'] : 0;
+
+            // B. Sub Total 2 (Process Cost)
+            $cavity_standard = (float)$post['cavity_standard'];
+            $cav_std = ($cavity_standard > 0) ? $cavity_standard : 1;
+            
+            $cycle_time         = (float)$post['cycle_time'];
+            $plain_rate_sec     = (float)$post['plain_rate_sec'];
+            $cycle_time_process = (float)$post['cycle_time_process'];
+            $labour_cost        = (float)$post['labour_cost'];
+
+            $inj_cost         = ($cycle_time / $cav_std) * $plain_rate_sec;
+            $sec_process_cost = $cycle_time_process * $labour_cost;
+            
+            $sub_total_2 = $inj_cost + $sec_process_cost;
+
+            // C. Sub Total 3 (Amortization)
+            $mold_depr          = isset($post['mold_depreciation']) ? (float)$post['mold_depreciation'] : 0;
+            $dies_price         = (float)$post['dies_price'];
+            $jig_price          = (float)$post['jig_price'];
+            $tooling_price      = (float)$post['tooling_price'];
+            $fixture_cost_price = (float)$post['fixture_cost_price'];
+
+            // Sesuai permintaan user: Mold Depr + Dies + Jig + Tooling + Fixture
+            $sub_total_3 = $mold_depr + $dies_price + $jig_price + $tooling_price + $fixture_cost_price;
+
+            // D. Hitung Biaya Tambahan (Overhead & Profit)
+            $adm_foh_cost            = (float)$post['adm_foh_cost'];
+            $ng_ratio_cost           = (float)$post['ng_ratio_cost'];
+            $mtn_cost                = (float)$post['mtn_cost'];
+            $total_packing_cost      = (float)$post['total_packing_cost'];
+            $transportasion_cost_pcs = (float)$post['transportasion_cost_pcs'];
+            $purging_cost            = (float)$post['purging_cost'];
+            $profit_nominal          = (float)$post['profit_nominal'];
+
+            // E. Kalkulasi Grand Total dan Selling Price
+            $grand_total = $sub_total_1 + $sub_total_2 + $sub_total_3 
+                        + $adm_foh_cost + $ng_ratio_cost + $mtn_cost 
+                        + $total_packing_cost + $transportasion_cost_pcs 
+                        + $purging_cost + $profit_nominal;
+
+            $selling_price = round($grand_total); // Pembulatan standar
+
+            // =========================================================
+            // 3. PREPARE DATA UNTUK DISIMPAN
+            // =========================================================
+            
+            // Tambahkan hasil perhitungan ke dalam array $post agar ikut tersimpan
+            $post['sub_total_2'] = $sub_total_2;   // Menyimpan nilai desimal asli
+            $post['sub_total_3'] = $sub_total_3;   // Menyimpan nilai desimal asli
+            $post['sub_total']   = $grand_total;   // Menyimpan nilai desimal asli
+            $post['grand_total'] = $selling_price; // Menyimpan nilai hasil round
+            
+            
+
+            // 4. Simpan Data ke Database
             $send = $this->crud->create('breakdown_prices', $post);
 
-            echo json_encode([
-                'status'  => true,
-                'theme'   => 'success',
-                'message' => 'Data Save Succesfully',
-                'data'    => $send
-            ]);
+            if ($send) {
+                echo json_encode([
+                    'status'  => true,
+                    'theme'   => 'success',
+                    'message' => 'Data Save Successfully. Selling Price: ' . number_format($selling_price, 2),
+                    'data'    => $send
+                ]);
+            } else {
+                echo json_encode([
+                    'status'  => false,
+                    'theme'   => 'error',
+                    'message' => 'Failed to save data to database.'
+                ]);
+            }
 
         } else {
             show_error("Cannot Process your request");
@@ -299,21 +425,118 @@ class Breakdown_prices extends CI_Controller
     }
 
     //UPDATE DATA
+    // public function update()
+    // {
+    //     if ($this->input->post()) {
+    //         $id = base64_decode($this->input->get('id'));
+    //         $post = $this->input->post();
+
+    //         $old = $this->db->get_where('breakdown_prices', ['id' => $id])->row();
+
+    //         if (!$old) {
+    //             show_error("Data not found");
+    //         }
+
+    //         $post['revision_quotation_number'] = (int)$old->revision_quotation_number + 1;
+    //         $send = $this->crud->update('breakdown_prices',['id' => $id],$post);
+    //         echo $send;
+
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function update()
     {
         if ($this->input->post()) {
             $id = base64_decode($this->input->get('id'));
             $post = $this->input->post();
 
+            // 1. Dapatkan data lama sebagai patokan
             $old = $this->db->get_where('breakdown_prices', ['id' => $id])->row();
 
             if (!$old) {
-                show_error("Data not found");
+                echo json_encode([
+                    'status'  => false,
+                    'theme'   => 'error',
+                    'message' => 'Data not found in database.'
+                ]);
+                return;
             }
 
+            // =========================================================
+            // 2. MODIFIKASI UNTUK MENJADI DATA BARU
+            // =========================================================
+            
+            // Buang ID bawaan dari form (jika ada) agar library CRUD men-generate ID baru
+            if (isset($post['id'])) {
+                unset($post['id']);
+            }
+
+            // Naikkan revisi quotation
             $post['revision_quotation_number'] = (int)$old->revision_quotation_number + 1;
-            $send = $this->crud->update('breakdown_prices',['id' => $id],$post);
-            echo $send;
+
+            // =========================================================
+            // 3. KALKULASI ULANG HARGA SEPERTI PADA FUNGSI CREATE
+            // =========================================================
+            
+            // A. Sub Total 1
+            $sub_total_1 = isset($post['sub_total_1']) ? (float)$post['sub_total_1'] : 0;
+
+            // B. Sub Total 2 (Process Cost)
+            $cavity_standard = (float)$post['cavity_standard'];
+            $cav_std = ($cavity_standard > 0) ? $cavity_standard : 1;
+            $inj_cost = ((float)$post['cycle_time'] / $cav_std) * (float)$post['plain_rate_sec'];
+            $sec_process_cost = (float)$post['cycle_time_process'] * (float)$post['labour_cost'];
+            $sub_total_2 = $inj_cost + $sec_process_cost;
+
+            // C. Sub Total 3 (Amortization)
+            $mold_depr = isset($post['mold_depreciation']) ? (float)$post['mold_depreciation'] : 0;
+            $sub_total_3 = $mold_depr + (float)$post['dies_price'] + (float)$post['jig_price'] + 
+                        (float)$post['tooling_price'] + (float)$post['fixture_cost_price'];
+
+            // D. Overhead & Profit
+            $overhead_profit = (float)$post['adm_foh_cost'] + (float)$post['ng_ratio_cost'] + 
+                            (float)$post['mtn_cost'] + (float)$post['total_packing_cost'] + 
+                            (float)$post['transportasion_cost_pcs'] + (float)$post['purging_cost'] + 
+                            (float)$post['profit_nominal'];
+
+            // E. Kalkulasi Grand Total
+            $grand_total = $sub_total_1 + $sub_total_2 + $sub_total_3 + $overhead_profit;
+            $selling_price = round($grand_total);
+
+            // Masukkan hasil hitung ke $post
+            $post['sub_total']   = $grand_total;
+            $post['grand_total'] = $selling_price;
+            
+            // (Opsional) Hapus unset jika kolom sub_total_1 dll ada di database
+            // if(isset($post['sub_total_1'])) unset($post['sub_total_1']);
+            // if(isset($post['sub_total_2'])) unset($post['sub_total_2']);
+            // if(isset($post['sub_total_3'])) unset($post['sub_total_3']);
+
+            // =========================================================
+            // 4. SIMPAN SEBAGAI DATA BARU (INSERT)
+            // =========================================================
+            
+            // Kita gunakan create(), bukan update()
+            $send = $this->crud->create('breakdown_prices', $post);
+
+            if ($send) {
+                echo json_encode([
+                    'status'  => true,
+                    'theme'   => 'success',
+                    'title'   => 'Success',
+                    'message' => 'New revision created successfully! Selling Price: ' . number_format($selling_price, 2),
+                    'data'    => $send
+                ]);
+            } else {
+                echo json_encode([
+                    'status'  => false,
+                    'theme'   => 'error',
+                    'title'   => 'Failed',
+                    'message' => 'Failed to create new revision data.'
+                ]);
+            }
 
         } else {
             show_error("Cannot Process your request");
@@ -526,6 +749,7 @@ class Breakdown_prices extends CI_Controller
         $filter_to = $get['filter_to'];
         $filter_item_fg_id = $get['filter_item_fg_id'];
         $filter_revision = $get['filter_revision'];
+        $filter_customer_id = $get['filter_customer_id'];
 
         // $filter_operation = $this->input->get('filter_operation');
         //Config
@@ -554,6 +778,10 @@ class Breakdown_prices extends CI_Controller
 
         if ($filter_item_fg_id != "") {
             $this->db->where('a.item_fg_id', $filter_item_fg_id);
+        }
+
+        if ($filter_customer_id != "") {
+            $this->db->where('a.customer_id', $filter_customer_id);
         }
 
         // $this->db->group_by('a.p_month');
@@ -592,7 +820,9 @@ class Breakdown_prices extends CI_Controller
                 <th>No</th>
                 <th>Product Number</th>
                 <th>Product Name</th>
+                <th>Customer Name</th>
                 <th>Rev Cost Pattern</th>
+                <th>Rev Breakdown Price</th>
                 <th>Month Cost Pattern</th>
                 <th>Year Cost Pattern</th>
                 <th>Order Estimation</th>
@@ -602,7 +832,7 @@ class Breakdown_prices extends CI_Controller
                 <th>VENDOR/SUPPLIER/MAKER</th>
                 <th>Quotation Date</th>
                 <th>Quotation Number</th>
-                <th>Rev Quotation</th>
+                <th>Price Cond</th>
                 <th>Price Cond</th>
             </tr>';
         $no = 1;
@@ -612,7 +842,9 @@ class Breakdown_prices extends CI_Controller
                         <td style="text-align:center">' . $no . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['customer_name'] . '</td>
                         <td>' . $data['revision'] . '</td>
+                        <td>' . $data['revision_quotation_number'] . '</td>
                         <td>' . $data['p_month'] . '</td>
                         <td>' . $data['p_year'] . '</td>
                         <td>' . $data['order_estimation'] . '</td>
@@ -622,8 +854,8 @@ class Breakdown_prices extends CI_Controller
                         <td>' . $data['supplier'] . '</td>
                         <td>' . $data['quotation_date'] . '</td>
                         <td>' . $data['quotation_number'] . '</td>
-                        <td>' . $data['revision_quotation_number'] . '</td>
                         <td>' . $data['price_cond'] . '</td>
+                        <td>' . $data['grand_total'] . '</td>
                     </tr>';
             $no++;
         }
@@ -638,7 +870,6 @@ class Breakdown_prices extends CI_Controller
         // 1. Ambil data Header dari breakdown_prices
         $this->db->select('a.*');
         $this->db->from('breakdown_prices a');
-        // $this->db->join('quotations b','a.quotation_number = b.quotation_number2','left');
         $this->db->where('a.id', $ids);
         $header = $this->db->get()->row();
 
@@ -695,16 +926,12 @@ class Breakdown_prices extends CI_Controller
             si_vg.maker as maker_vg,
             si_mb.maker as maker_mb,
             si_cp.maker as maker_cp,
-            si_vg.price as price_vg,
-            si_mb.price as price_mb,
-            si_cp.price as price_cp,
 
             bn_vg.composition as comp_vg,
             bn_mb.composition as comp_mb,
             bn_cp.composition as comp_cp,
 
-            ml.runner,
-            mld.cavity_standard
+            ml.runner
         ");
         $this->db->from('cost_patterns cp');
         $this->db->join('item_fg ifg', 'ifg.id = cp.item_fg_id', 'left');
@@ -743,8 +970,16 @@ class Breakdown_prices extends CI_Controller
             'cp.p_month'    => $header->p_month,
             'cp.p_year'     => $header->p_year,
             'cp.item_fg_id' => $header->item_fg_id,
+            'cp.customer_id'=> $header->customer_id,
             'cp.revision'   => $header->revision
         ]);
+
+        $this->db->group_by('cp.p_month');
+        $this->db->group_by('cp.p_year');
+        $this->db->group_by('cp.item_fg_id');
+        $this->db->group_by('cp.customer_id');
+        $this->db->group_by('cp.revision');
+        
 
         $details = $this->db->get()->result();
 
@@ -754,6 +989,7 @@ class Breakdown_prices extends CI_Controller
             'cp.p_month'    => (int) $header->p_month,
             'cp.p_year'     => (int) $header->p_year,
             'cp.item_fg_id' => $header->item_fg_id,
+            'cp.customer_id'=> $header->customer_id,
             'cp.revision'   => $header->revision
         ]);
         $details2 = $this->db->get()->row();
@@ -763,7 +999,7 @@ class Breakdown_prices extends CI_Controller
         $html = '
         <html>
         <head>
-            <title>Breakdown Price - '.$header->quotation_number.' REV 0'.$header->revision.'</title>
+            <title>Breakdown Price - '.$header->quotation_number.' REV 0'.$header->revision_quotation_number.'</title>
             <style>
                 body { font-family: Calibri, sans-serif; font-size: 11px; }
                 .container { width: 210mm; padding: 10mm; margin: auto; }
@@ -799,7 +1035,7 @@ class Breakdown_prices extends CI_Controller
                     </tr>
                     <tr>
                         <td width="15%" class="bg-blue">Model Name</td><td width="35%">'.$header->model_name.'</td>
-                        <td width="15%" class="bg-blue">Quotation Number</td><td class="bg-blue">'.$header->quotation_number.' REV 0'.$header->revision.'</td>
+                        <td width="15%" class="bg-blue">Quotation Number</td><td class="bg-blue">'.$header->quotation_number.' REV 0'.$header->revision_quotation_number.'</td>
                     </tr>
                     <tr>
                         <td class="bg-blue">Part Number</td><td>'.$header->item_fg_number.'</td>
@@ -874,22 +1110,30 @@ class Breakdown_prices extends CI_Controller
                         $cavity = (float)$d->cavity_standard > 0 ? (float)$d->cavity_standard : 1;
                         $runner_per_pcs = $runner / $cavity;
 
+                        if($header->show_maker == 'YES'){
+                            $maker = $d->maker_vg;
+                        }else{
+                            $maker = '-';
+                        }
+
                         // --- 1. BLOK VIRGIN (VG) ---
                         if(!empty($d->item_rm_id_vg)) {
-                            $gross_vg = (float)$d->comp_vg * 1000; // Mengambil dari BOM
+                            // $gross_vg = (float)$d->comp_vg * 1000; // Mengambil dari BOM
                             // $net_vg   = $gross_vg - $runner_per_pcs; // Rumus: Gross - (Runner/Cavity)
                             // $net_vg   = (float)$d->nett_vg;
                             // $cost_vg  = ($gross_vg * (float)$d->virgin_cost) / 1000; //perlu di tanyakn lagi
+                            $gross_vg = (float)$details2->used_vg * 1000; // ambil dari cost pattern req Bu Septi 2026-07-15
+                            $nett_vg = (float)$details2->nett_vg * 1000; // ambil dari cost pattern req Bu Septi 2026-07-15
                             $sub_total_1 += (float)$d->virgin_cost;
 
                             $html .= '<tr>
                                 <td align="left">'.$d->name_vg.'</td> 
-                                <td>'.($d->maker_vg ?: '-').'</td> 
+                                <td>'.($maker).'</td> 
                                 <td>'.$d->color_vg.'</td>
                                 <td align="right">'.number_format($gross_vg, 3).'</td> 
-                                <td align="right">'.number_format($d->weight, 3).'</td>   
+                                <td align="right">'.number_format($nett_vg, 3).'</td>   
                                 <td align="center">gr</td>
-                                <td align="right">'.number_format($d->price_vg, 2).'</td>
+                                <td align="right">'.number_format($header->price_vg, 2).'</td>
                                 <td align="right">'.number_format($d->virgin_cost, 2).'</td>
                             </tr>';
                         }
@@ -939,15 +1183,23 @@ class Breakdown_prices extends CI_Controller
                     $sub_total_3 = 0;
                     if ($process) {
                         // Hitung Injection Cost (Formula: (Cycle Time / Cavity) * Plain Rate)
-                        $cav_std = ($process->cavity_standard > 0) ? $process->cavity_standard : 1;
-                        $inj_cost = ($process->cycle_time / $cav_std) * $process->plain_rate_sec;
+                        $cav_std = ($header->cavity_standard > 0) ? $header->cavity_standard : 1;
+                        $inj_cost = ($header->cycle_time / $cav_std) * $header->plain_rate_sec;
                         
-                        $sec_process_cost = $process->cycle_time_process * $process->labour_cost;
+                        $sec_process_cost = $header->cycle_time_process * $header->labour_cost;
                         $sub_total_2 = $inj_cost + $sec_process_cost;
 
                         $is_depreciation = ($process->depreciation == 'YES');
 
                         $volume = (float)$process->volume > 0 ? (float)$process->volume : 1;
+
+                        if($header->cycle_time_process = 0 || $header->labour_cost = 0){
+                            $tonage = $header->toonage;
+                            $cavity_standard = $header->cavity_standard;
+                        }else{
+                            $tonage = 0;
+                            $cavity_standard = 0;
+                        }
 
                         // --- 1. Logika MOLD ---
                         $mold_name = ($is_depreciation) ? $process->mold_name : 'Mold';
@@ -960,25 +1212,25 @@ class Breakdown_prices extends CI_Controller
                         $dies_unit = $is_depreciation ? (float)($header->dies_unit ?? 1) : 1;
                         $dies_price = $is_depreciation ? (float)($header->dies_price ?? 0) : 0;
                         $dies_amount = $dies_unit * $dies_price;
-                        $dies_amortization = $process->mold_depreciation;
+                        $dies_amortization = $dies_price;
 
                         // --- 3. Logika JIG ---
                         $jig_unit = $is_depreciation ? (float)($header->jig_unit ?? 1) : 1;
                         $jig_price = $is_depreciation ? (float)($header->jig_price ?? 0) : 0;
                         $jig_amount = $jig_unit * $jig_price;
-                        $jig_amortization = $process->mold_depreciation;
+                        $jig_amortization = $jig_price;
 
                         // --- 4. Logika TOOLING ---
                         $tooling_unit = $is_depreciation ? (float)($header->tooling_unit ?? 1) : 1;
                         $tooling_price = $is_depreciation ? (float)($header->tooling_price ?? 0) : 0;
                         $tooling_amount = $tooling_unit * $tooling_price;
-                        $tooling_amortization = $process->mold_depreciation;
+                        $tooling_amortization = $tooling_price;
 
                         // --- 5. Logika FIXTURE ---
                         $fixture_cost_unit = $is_depreciation ? (float)($header->fixture_cost_unit ?? 1) : 1;
                         $fixture_cost_price = $is_depreciation ? (float)($header->fixture_cost_price ?? 0) : 0;
                         $fixture_amount = $fixture_cost_unit * $fixture_cost_price;
-                        $fixture_amortization = $process->mold_depreciation;
+                        $fixture_amortization = $fixture_cost_price;
 
                         // Hitung Sub Total 3
                         $sub_total_3 = $mold_amortization + $dies_amortization + $jig_amortization + $tooling_amortization + $fixture_amortization;
@@ -987,15 +1239,15 @@ class Breakdown_prices extends CI_Controller
                         $total_cost = $sub_total_1 
                                     + $sub_total_2 
                                     + $sub_total_3 
-                                    + (float)($process->adm_foh_cost ?? 0)
-                                    + (float)($process->ng_ratio_cost ?? 0)
-                                    + (float)($process->mtn_cost ?? 0)
-                                    + (float)($process->total_packing_cost ?? 0)
-                                    + (float)($process->transportasion_cost_pcs ?? 0)
-                                    + (float)($process->purging_cost ?? 0)
-                                    + (float)($process->profit_nominal ?? 0);
+                                    + (float)($header->adm_foh_cost ?? 0)
+                                    + (float)($header->ng_ratio_cost ?? 0)
+                                    + (float)($header->mtn_cost ?? 0)
+                                    + (float)($header->total_packing_cost ?? 0)
+                                    + (float)($header->transportasion_cost_pcs ?? 0)
+                                    + (float)($header->purging_cost ?? 0)
+                                    + (float)($header->profit_nominal ?? 0);
 
-                        $selling_price = $total_cost;
+                        $selling_price = round($total_cost);
 
                     }
 
@@ -1016,18 +1268,18 @@ class Breakdown_prices extends CI_Controller
                     
                     <tr>
                         <td align="left">INJECTION</td>
-                        <td>'.number_format($process->toonage).' T</td>
-                        <td>'.number_format($process->cavity_standard).'</td>
-                        <td>'.number_format($process->cycle_time, 2).' sec</td>
-                        <td class="text-right">'.number_format($process->plain_rate_sec, 4).'</td>
+                        <td>'.number_format($header->toonage).' T</td>
+                        <td>'.number_format($header->cavity_standard).'</td>
+                        <td>'.number_format($header->cycle_time, 2).' sec</td>
+                        <td class="text-right">'.number_format($header->plain_rate_sec, 4).'</td>
                         <td class="text-right">'.number_format($inj_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td align="left" class="bg-blue">SECOND PROCESS</td>
-                        <td>'.number_format($process->toonage).' T</td>
-                        <td>'.number_format($process->cavity_standard).'</td>
-                        <td>'.number_format($process->cycle_time_process, 2).' sec</td>
-                        <td class="text-right">'.number_format($process->labour_cost, 4).'</td>
+                        <td>'.number_format($tonage).' T</td>
+                        <td>'.number_format($cavity_standard).'</td>
+                        <td>'.number_format($header->cycle_time_process, 2).' sec</td>
+                        <td class="text-right">'.number_format($header->labour_cost, 4).'</td>
                         <td class="text-right">'.number_format($sec_process_cost, 2).'</td>
                     </tr>
                     <tr class="bg-gray">
@@ -1134,43 +1386,43 @@ class Breakdown_prices extends CI_Controller
                         <td>4.</td>
                         <td>FOH and Administration</td>
                         <td class="text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($process->adm_foh_cost, 2).'</td>
+                        <td class="text-right">'.number_format($header->adm_foh_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>5.</td>
                         <td>NG</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($process->ng_ratio_cost, 2).'</td>
+                        <td class="text-right">'.number_format($header->ng_ratio_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>6.</td>
                         <td>Maintenance</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($process->mtn_cost, 2).'</td>
+                        <td class="text-right">'.number_format($header->mtn_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>7.</td>
                         <td>Packaging</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($process->total_packing_cost, 2).'</td>
+                        <td class="text-right">'.number_format($header->total_packing_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>8.</td>
                         <td>Transport</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($process->transportasion_cost_pcs, 2).'</td>
+                        <td class="text-right">'.number_format($header->transportasion_cost_pcs, 2).'</td>
                     </tr>
                     <tr>
                         <td>9.</td>
                         <td>Purging</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($process->purging_cost, 2).'</td>
+                        <td class="text-right">'.number_format($header->purging_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>10.</td>
                         <td>Profit</td>
                         <td class="text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($process->profit_nominal, 2).'</td>
+                        <td class="text-right">'.number_format($header->profit_nominal, 2).'</td>
                     </tr>
                     <tr>
                         <td colspan="3" class="text-right">Total Cost</td>

@@ -139,7 +139,7 @@
                         options: {
                             url: '<?= base_url('pricing/quotations/readItems'); ?>',
                             required: true,
-                            panelWidth: 450,
+                            panelWidth: 550,
                             idField: 'item_fg_number',
                             textField: 'item_fg_number',
                             mode: 'remote',
@@ -156,8 +156,8 @@
                                     width: 250
                                 }, {
                                     field: 'revision_quotation_number',
-                                    title: 'Rev',
-                                    width: 80
+                                    title: 'Breakdown Price Rev',
+                                    width: 150
                                 }, ]
                             ],
                             onSelect: function (value, rows) {

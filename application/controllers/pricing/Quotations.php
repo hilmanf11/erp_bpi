@@ -108,25 +108,26 @@ class Quotations extends CI_Controller
                     a.p_month,
                     a.p_year,
                     a.revision,
+                    a.grand_total,
                     b.mpq, 
                     b.moq
                 FROM breakdown_prices a
                 JOIN item_fg b ON a.item_fg_id = b.id
                 WHERE (a.item_fg_number LIKE '%$post%' OR a.item_fg_name LIKE '%$post%')
-                GROUP BY a.item_fg_id, a.p_month, a.p_year, a.revision
-                ORDER BY a.item_fg_name ASC LIMIT 50";
+                GROUP BY a.item_fg_id, a.p_month, a.p_year, a.revision, a.customer_id, a.revision_quotation_number
+                ORDER BY a.quotation_number ASC LIMIT 50";
                 
         $records = $this->db->query($sql)->result();
         $results = [];
 
         foreach ($records as $r) {
-            $total_cost = $this->calculate_total_cost($r);
+            // $total_cost = $this->calculate_total_cost($r);
 
             $results[] = [
                 'item_fg_id'        => $r->item_fg_id,
                 'item_fg_number'    => $r->item_fg_number,
                 'item_fg_name'      => $r->item_fg_name,
-                'price'             => $total_cost,
+                'price'             => $r->grand_total,
                 'mpq'               => $r->mpq,
                 'moq'               => $r->moq,
                 'quotation_number'  => $r->quotation_number,
@@ -137,61 +138,62 @@ class Quotations extends CI_Controller
         echo json_encode($results);
     }
 
-    private function calculate_total_cost($header)
-    {
-        $this->db->select("cp.*, ml.runner, mld.cavity_standard, 
-                        bn_vg.composition as comp_vg, 
-                        bn_mb.composition as comp_mb, 
-                        bn_cp.composition as comp_cp");
-        $this->db->from('cost_patterns cp');
-        $this->db->join('menu_loadings ml', 'ml.item_fg_id = cp.item_fg_id', 'left');
-        $this->db->join('molds mld', 'ml.mold_id = mld.id');
-        $this->db->join('bom bn_vg', 'bn_vg.item_fg_id = cp.item_fg_id AND bn_vg.item_rm_id = cp.item_rm_id_vg', 'left');
-        $this->db->join('bom bn_mb', 'bn_mb.item_fg_id = cp.item_fg_id AND bn_mb.item_rm_id = cp.item_rm_id_mb', 'left');
-        $this->db->join('bom bn_cp', 'bn_cp.item_fg_id = cp.item_fg_id AND bn_cp.item_rm_id = cp.item_rm_id_cp', 'left');
+    // private function calculate_total_cost($header)
+    // {
+    //     $this->db->select("cp.*, ml.runner, mld.cavity_standard, 
+    //                     bn_vg.composition as comp_vg, 
+    //                     bn_mb.composition as comp_mb, 
+    //                     bn_cp.composition as comp_cp");
+    //     $this->db->from('cost_patterns cp');
+    //     $this->db->join('menu_loadings ml', 'ml.item_fg_id = cp.item_fg_id', 'left');
+    //     $this->db->join('molds mld', 'ml.mold_id = mld.id');
+    //     $this->db->join('bom bn_vg', 'bn_vg.item_fg_id = cp.item_fg_id AND bn_vg.item_rm_id = cp.item_rm_id_vg', 'left');
+    //     $this->db->join('bom bn_mb', 'bn_mb.item_fg_id = cp.item_fg_id AND bn_mb.item_rm_id = cp.item_rm_id_mb', 'left');
+    //     $this->db->join('bom bn_cp', 'bn_cp.item_fg_id = cp.item_fg_id AND bn_cp.item_rm_id = cp.item_rm_id_cp', 'left');
         
-        $this->db->where([
-            'cp.p_month'    => $header->p_month,
-            'cp.p_year'     => $header->p_year,
-            'cp.item_fg_id' => $header->item_fg_id,
-            'cp.revision'   => $header->revision
-        ]);
+    //     $this->db->where([
+    //         'cp.p_month'    => $header->p_month,
+    //         'cp.p_year'     => $header->p_year,
+    //         'cp.item_fg_id' => $header->item_fg_id,
+    //         'cp.customer_id'=> $header->customer_id,
+    //         'cp.revision'   => $header->revision
+    //     ]);
 
-        $details = $this->db->get()->result();
+    //     $details = $this->db->get()->result();
         
-        if (empty($details)) return 0;
+    //     if (empty($details)) return 0;
 
-        $sub_total_1 = 0;
-        foreach ($details as $d) {
-            $runner_per_pcs = (float)$d->runner / ((float)$d->cavity_standard > 0 ? (float)$d->cavity_standard : 1);
+    //     $sub_total_1 = 0;
+    //     foreach ($details as $d) {
+    //         $runner_per_pcs = (float)$d->runner / ((float)$d->cavity_standard > 0 ? (float)$d->cavity_standard : 1);
 
-            // Material VG
-            if($d->item_rm_id_vg) $sub_total_1 += ((float)$d->comp_vg * (float)$d->virgin_cost) / 1000;
-            // Material MB
-            if($d->item_rm_id_mb) $sub_total_1 += ((float)$d->comp_mb * (float)$d->mb_cost) / 1000;
-            // Child Part
-            if($d->item_rm_id_cp) $sub_total_1 += ((float)$d->comp_cp * (float)$d->child_part_cost);
-        }
+    //         // Material VG
+    //         if($d->item_rm_id_vg) $sub_total_1 += ((float)$d->comp_vg * (float)$d->virgin_cost) / 1000;
+    //         // Material MB
+    //         if($d->item_rm_id_mb) $sub_total_1 += ((float)$d->comp_mb * (float)$d->mb_cost) / 1000;
+    //         // Child Part
+    //         if($d->item_rm_id_cp) $sub_total_1 += ((float)$d->comp_cp * (float)$d->child_part_cost);
+    //     }
 
-        $process = $details[0];
-        $cav_std = ($process->cavity_standard > 0) ? $process->cavity_standard : 1;
+    //     $process = $details[0];
+    //     $cav_std = ($process->cavity_standard > 0) ? $process->cavity_standard : 1;
         
-        // Sub Total 2 (Process)
-        $inj_cost = ($process->cycle_time / $cav_std) * $process->plain_rate_sec;
-        $sec_process_cost = $process->cycle_time_process * $process->labour_cost;
-        $sub_total_2 = $inj_cost + $sec_process_cost;
+    //     // Sub Total 2 (Process)
+    //     $inj_cost = ($process->cycle_time / $cav_std) * $process->plain_rate_sec;
+    //     $sec_process_cost = $process->cycle_time_process * $process->labour_cost;
+    //     $sub_total_2 = $inj_cost + $sec_process_cost;
 
-        // Sub Total 3 (Amortization)
-        $sub_total_3 = ($process->mold_depreciation * 5);
+    //     // Sub Total 3 (Amortization)
+    //     $sub_total_3 = ($process->mold_depreciation * 5);
 
-        $total_cost = $sub_total_1 + $sub_total_2 + $sub_total_3 
-                    + (float)$process->adm_foh_cost + (float)$process->ng_ratio_cost 
-                    + (float)$process->mtn_cost + (float)$process->total_packing_cost 
-                    + (float)$process->transportasion_cost_pcs + (float)$process->purging_cost 
-                    + (float)$process->profit_nominal;
+    //     $total_cost = $sub_total_1 + $sub_total_2 + $sub_total_3 
+    //                 + (float)$process->adm_foh_cost + (float)$process->ng_ratio_cost 
+    //                 + (float)$process->mtn_cost + (float)$process->total_packing_cost 
+    //                 + (float)$process->transportasion_cost_pcs + (float)$process->purging_cost 
+    //                 + (float)$process->profit_nominal;
 
-        return $total_cost;
-    }
+    //     return $total_cost;
+    // }
 
      //GET DATA
      public function readWeight()

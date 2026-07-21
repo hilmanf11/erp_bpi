@@ -526,7 +526,7 @@ class Cost_pattern extends CI_Controller
             $runner = !empty($loading['runner']) ? (float)$loading['runner'] : 0;
             $cavity = (!empty($loading['cavity_standard']) && (float)$loading['cavity_standard'] > 0) ? (float)$loading['cavity_standard'] : 1;
             
-            $runner_per_pcs = $runner / $cavity;
+            $runner_per_pcs = ($runner / $cavity) / 1000; 
 
             /* ================================
             * 7. GROUPING MATERIAL COST
@@ -957,7 +957,7 @@ class Cost_pattern extends CI_Controller
             'transportasion_cost_pcs' => $post['transportasion_cost_pcs'],
 
             'sub_total' => $post['total_process_cost'] + $post['total_material_cost'],
-            'grand_total' => $post['total_process_cost'] + $post['total_material_cost'] + $post['ng_ratio_cost'] + $post['adm_foh_cost'] + $post['mtn_cost'] + $post['total_packing_cost'] + $post['transportasion_cost_pcs'] + $post['purging_value'] + $post['mold_depreciation'] + $post['profit_nominal'] ,
+            'grand_total' => round($post['total_process_cost'] + $post['total_material_cost'] + $post['ng_ratio_cost'] + $post['adm_foh_cost'] + $post['mtn_cost'] + $post['total_packing_cost'] + $post['transportasion_cost_pcs'] + $post['purging_value'] + $post['mold_depreciation'] + $post['profit_nominal']),
         ];
 
         $insert = $this->crud->create('cost_patterns', $postFinal);
@@ -1223,6 +1223,7 @@ class Cost_pattern extends CI_Controller
             if (!empty($item_fg->id)) {
                 $cek_duplicate = $this->crud->read('cost_patterns', [], [
                     "item_fg_id" => $item_fg->id,
+                    "customer_id" => $customer->id,
                     "revision"   => $data['revision'],
                     "p_month"    => $data['p_month'],
                     "p_year"     => $data['p_year']
@@ -1321,7 +1322,7 @@ class Cost_pattern extends CI_Controller
                     "transportasion_cost_pcs" => $num($data['transportasion_cost_pcs']),
                     
                     "sub_total"               => $num($data['total_process_cost']) + $num($data['total_material_cost']),
-                    "grand_total"             => $num($data['total_process_cost']) + $num($data['total_material_cost']) + $num($data['ng_ratio_cost']) + $num($data['adm_foh_cost']) + $num($data['mtn_cost']) + $num($data['total_packing_cost']) + $num($data['transportasion_cost_pcs']) + $num($data['purging_value']) + $num($data['mold_depreciation']) + $num($data['profit_nominal']),
+                    "grand_total"             => round($num($data['total_process_cost']) + $num($data['total_material_cost']) + $num($data['ng_ratio_cost']) + $num($data['adm_foh_cost']) + $num($data['mtn_cost']) + $num($data['total_packing_cost']) + $num($data['transportasion_cost_pcs']) + $num($data['purging_value']) + $num($data['mold_depreciation']) + $num($data['profit_nominal'])),
                     "model_name"              => $data['model_name']
                 );
                 
@@ -1477,7 +1478,7 @@ class Cost_pattern extends CI_Controller
             $first   = true;
 
             foreach ($group as $data) {
-                    $grand_total =$data['total_process_cost'] + $data['total_material_cost'] + $data['ng_ratio_cost'] + $data['adm_foh_cost'] + $data['mtn_cost'] + $data['total_packing_cost'] + $data['transportasion_cost_pcs'] + $data['purging_value'] + $data['mold_depreciation'] + $data['profit_nominal'];
+                    $grand_total = round($data['total_process_cost'] + $data['total_material_cost'] + $data['ng_ratio_cost'] + $data['adm_foh_cost'] + $data['mtn_cost'] + $data['total_packing_cost'] + $data['transportasion_cost_pcs'] + $data['purging_value'] + $data['mold_depreciation'] + $data['profit_nominal']);
                     $html .= '<tr>';
                     if ($first) {
                         $html .= '<td rowspan="'.$rowspan.'" align="center">'.$no.'</td>
@@ -1489,9 +1490,9 @@ class Cost_pattern extends CI_Controller
                                 <td rowspan="'.$rowspan.'" align="center">'.$data['revision'].'</td>';
                     }
 
-                    $html .= '<td>'.$data['part_name_vg'].'</td>
-                            <td>'.$data['part_name_mb'].'</td>
-                            <td>'.$data['part_name_cp'].'</td>
+                    $html .= '<td>'.$data['part_no_vg'].'</td>
+                            <td>'.$data['part_no_mb'].'</td>
+                            <td>'.$data['part_no_cp'].'</td>
                             <td align="right">'.number_format($data['used_vg'],4).'</td>
                             <td align="center">'.$data['nett_vg'].'</td>
                             <td align="center">'.$data['uom'].'</td>
@@ -1523,7 +1524,7 @@ class Cost_pattern extends CI_Controller
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_value'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mold_depreciation'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['profit_nominal'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($grand_total).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.$grand_total.'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['moq'],2).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['volume'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_cost'],4).'</td>
@@ -1715,7 +1716,7 @@ class Cost_pattern extends CI_Controller
                 $first = true;
 
                 foreach ($group as $data) {
-                    $grand_total =$data['total_process_cost'] + $data['total_material_cost'] + $data['ng_ratio_cost'] + $data['adm_foh_cost'] + $data['mtn_cost'] + $data['total_packing_cost'] + $data['transportasion_cost_pcs'] + $data['purging_value'] + $data['mold_depreciation'] + $data['profit_nominal'];
+                    $grand_total = round($data['total_process_cost'] + $data['total_material_cost'] + $data['ng_ratio_cost'] + $data['adm_foh_cost'] + $data['mtn_cost'] + $data['total_packing_cost'] + $data['transportasion_cost_pcs'] + $data['purging_value'] + $data['mold_depreciation'] + $data['profit_nominal']);
                     $html .= '<tr>';
                     if ($first) {
                         $html .= '<td rowspan="'.$rowspan.'" align="center">'.$no.'</td>
@@ -1727,9 +1728,9 @@ class Cost_pattern extends CI_Controller
                                 <td rowspan="'.$rowspan.'" align="center">'.$data['revision'].'</td>';
                     }
 
-                    $html .= '<td>'.$data['part_name_vg'].'</td>
-                            <td>'.$data['part_name_mb'].'</td>
-                            <td>'.$data['part_name_cp'].'</td>
+                    $html .= '<td>'.$data['part_no_vg'].'</td>
+                            <td>'.$data['part_no_mb'].'</td>
+                            <td>'.$data['part_no_cp'].'</td>
                             <td align="right">'.number_format($data['used_vg'],4).'</td>
                             <td align="center">'.$data['nett_vg'].'</td>
                             <td align="center">'.$data['uom'].'</td>
@@ -1761,7 +1762,7 @@ class Cost_pattern extends CI_Controller
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_value'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mold_depreciation'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['profit_nominal'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($grand_total).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.$grand_total.'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['moq'],2).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['volume'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_cost'],4).'</td>

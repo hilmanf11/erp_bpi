@@ -7,8 +7,10 @@
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
             <th rowspan="2" data-options="field:'approved_date',width:150,halign:'center'">Approve Date</th>
             <th rowspan="2" data-options="field:'item_fg_number',halign:'center',width:150" sortable="true">Product Number</th>
-            <th rowspan="2" data-options="field:'item_fg_name',halign:'center',width:150" sortable="true">Product Name</th>
+            <th rowspan="2" data-options="field:'item_fg_name',halign:'center',width:200" sortable="true">Product Name</th>
+            <th rowspan="2" data-options="field:'customer_name',halign:'center',width:200" sortable="true">Customer Name</th>
             <th rowspan="2" data-options="field:'revision',width:80,halign:'center'" sortable="true">Rev Cost <br>Pattern</th>
+            <th rowspan="2" data-options="field:'revision_quotation_number',width:100,halign:'center'" sortable="true">Rev Brakdown<br>Price</th>
             <th rowspan="2" data-options="field:'p_month',width:80,halign:'center'" sortable="true">Month Cost <br>Pattern</th>
             <th rowspan="2" data-options="field:'p_year',width:80,halign:'center'" sortable="true">Year Cost <br>Pattern</th>
             <th rowspan="2" data-options="field:'order_estimation',width:100,halign:'center'" sortable="true">Order <br>Estimation</th>
@@ -18,8 +20,8 @@
             <th rowspan="2" data-options="field:'supplier',width:200,halign:'center'" sortable="true">VENDOR/SUPPLIER/MAKER</th>
             <th rowspan="2" data-options="field:'quotation_date',width:100,halign:'center'" sortable="true">Quotation <br>Date</th>
             <th rowspan="2" data-options="field:'quotation_number',width:150,halign:'center'" sortable="true">Breakdown <br>Number</th>
-            <th rowspan="2" data-options="field:'revision_quotation_number',width:100,halign:'center'" sortable="true">Rev Brakdown</th>
             <th rowspan="2" data-options="field:'price_cond',width:100,halign:'center'" sortable="true">Price Cond</th>
+            <th rowspan="2" data-options="field:'grand_total',width:100,halign:'center'" sortable="true">Selling Price</th>
             <th colspan="2" data-options="field:'',width:150,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:150,halign:'center'"> Updated</th>
         </tr>
@@ -31,7 +33,7 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 270px; padding: 10px;">
+<div id="toolbar" style="height: 300px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -63,6 +65,10 @@
                 <input style="width:60%;" id="filter_item_fg_id" class="easyui-combobox">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Customer</span>
+                <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
@@ -76,72 +82,85 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 80%; height: 500px; padding:10px; top: 20px; left: 10px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 100%; height: 550px; padding:10px; top: 20px; left: 10px;">
     <form id="frm_insert" method="post" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; box-sizing: border-box;">
             <legend><b>Form Data</b></legend>
-            <div style="float:left; width:50%;">
+
+            <div style="float:left; width:25%; box-sizing: border-box; padding-right: 10px;">
                 <div class="fitem" hidden>
-                    <span style="width:30%; display:inline-block;">Part Id</span>
+                    <span style="width:35%; display:inline-block;">Part Id</span>
                     <input style="width:60%;" name="item_fg_id" id="item_fg_id" readonly class="easyui-textbox">
                 </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Customer ID</span>
+                    <input style="width:60%;" name="customer_id" id="customer_id" readonly class="easyui-textbox">
+                </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Part No</span>
+                    <span style="width:35%; display:inline-block;">Part No</span>
                     <input style="width:60%;" name="item_fg_number" id="item_fg_number" required="" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Period</span>
-                    <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox">
-                    <input style="width:30%;" name="p_year" id="p_year" required="" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Cost Pattern Revision</span>
-                    <input style="width:60%;" name="revision" id="revision" required="" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Part Name</span>
+                    <span style="width:35%; display:inline-block;">Part Name</span>
                     <input style="width:60%;" name="item_fg_name" id="item_fg_name" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Model Name</span>
+                    <span style="width:35%; display:inline-block;">Customer Name</span>
+                    <input style="width:60%;" name="customer_name" id="customer_name" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Model Name</span>
                     <input style="width:60%;" name="model_name" id="model_name" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Order Estimation</span>
-                    <input style="width:60%;" name="order_estimation" id="order_estimation" readonly class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Model Life Time</span>
-                    <input style="width:60%;" name="model_life_time" id="model_life_time" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Start Mass Pro</span>
-                    <input style="width:60%;" name="start_mass_pro" id="start_mass_pro" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">L/T Dies Actual</span>
-                    <input style="width:60%;" name="l_t_dies_actual" id="l_t_dies_actual" class="easyui-numberbox">
-                </div>
-                <!-- <div class="fitem">
-                    <span style="width:30%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
-                </div> -->
-            </div>
-            <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">VENDOR/SUPPLIER/MAKER</span>
+                    <span style="width:35%; display:inline-block;">Vendor / Maker</span>
                     <input style="width:60%;" name="supplier" id="supplier" value="PT. BANSHU PLASTIC INDONESIA" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Quotation date</span>
-                    <input style="width:60%;" name="quotation_date" id="quotation_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <span style="width:35%; display:inline-block;">Show Maker</span>
+                    <select style="width:60%;" name="show_maker" id="show_maker" class="easyui-combobox" panelHeight="auto">
+                        <option value="YES">YES</option>
+                        <option value="NO">NO</option>
+                    </select>
                 </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Quotation Number</span>
+                    <span style="width:35%; display:inline-block;">Period (M/Y)</span>
+                    <input style="width:29%;" name="p_month" id="p_month" required="" class="easyui-combobox">
+                    <input style="width:29%;" name="p_year" id="p_year" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Cost Revision</span>
+                    <input style="width:60%;" name="revision" id="revision" required="" class="easyui-combobox">
+                </div>
+            </div>
+
+            <div style="float:left; width:25%; box-sizing: border-box; padding-right: 10px;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Quotation Number</span>
                     <input style="width:60%;" name="quotation_number" id="quotation_number" class="easyui-textbox" readonly>
                 </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Price Cond</span>
+                    <span style="width:35%; display:inline-block;">Quotation Date</span>
+                    <input style="width:60%;" name="quotation_date" id="quotation_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Order Estimation</span>
+                    <input style="width:60%;" name="order_estimation" id="order_estimation" readonly class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Model Life Time</span>
+                    <input style="width:60%;" name="model_life_time" id="model_life_time" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Start Mass Pro</span>
+                    <input style="width:60%;" name="start_mass_pro" id="start_mass_pro" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">L/T Dies Actual</span>
+                    <input style="width:60%;" name="l_t_dies_actual" id="l_t_dies_actual" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Price Cond</span>
                     <select style="width:60%;" name="price_cond" id="price_cond" class="easyui-combobox" panelHeight="auto">
                         <option value="" selected disabled>Choose Price Cond</option>
                         <option value="FOB">FOB</option>
@@ -151,38 +170,107 @@
                     </select>
                 </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Price Unit in</span>
+                    <span style="width:35%; display:inline-block;">Price Unit in</span>
                     <input style="width:60%;" name="currency" id="currency" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Mold</span>
-                    <input style="width:30%;" name="mold_unit" id="mold_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
+                    <span style="width:35%; display:inline-block;">Price VG</span>
+                    <input style="width:60%;" name="price_vg" id="price_vg" class="easyui-numberbox" data-options="precision:'2'">
                 </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Dies</span>
-                    <input style="width:30%;" name="dies_unit" id="dies_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
-                    <input style="width:30%;" name="dies_price" id="dies_price" class="easyui-numberbox" data-options="prompt:'Price'">
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Sub Total 1</span>
+                    <input style="width:60%;" name="sub_total_1" id="sub_total_1" class="easyui-numberbox" data-options="precision:'4'">
                 </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Jig</span>
-                    <input style="width:30%;" name="jig_unit" id="jig_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
-                    <input style="width:30%;" name="jig_price" id="jig_price" class="easyui-numberbox" data-options="prompt:'Price'">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Tooling</span>
-                    <input style="width:30%;" name="tooling_unit" id="tooling_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
-                    <input style="width:30%;" name="tooling_price" id="tooling_price" class="easyui-numberbox" data-options="prompt:'Price'">
-                </div>
-                <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Fixture Cost</span>
-                    <input style="width:30%;" name="fixture_cost_unit" id="fixture_cost_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
-                    <input style="width:30%;" name="fixture_cost_price" id="fixture_cost_price" class="easyui-numberbox" data-options="prompt:'Price'">
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Mold Depreciation</span>
+                    <input style="width:60%;" name="mold_depreciation" id="mold_depreciation" class="easyui-numberbox" data-options="precision:'4'">
                 </div>
             </div>
-        </fieldset>
-        <!-- <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Component List" data-options="rownumbers: true, singleSelect: false" idField="component_number">
 
-        </table> -->
+            <div style="float:left; width:25%; box-sizing: border-box; padding-right: 10px;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Tonage</span>
+                    <input style="width:60%;" name="toonage" id="toonage" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Cavity</span>
+                    <input style="width:60%;" name="cavity_standard" id="cavity_standard" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Cycle Time INJ</span>
+                    <input style="width:60%;" name="cycle_time" id="cycle_time" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Cycle Time 2nd</span>
+                    <input style="width:60%;" name="cycle_time_process" id="cycle_time_process" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Charge Rate INJ</span>
+                    <input style="width:60%;" name="plain_rate_sec" id="plain_rate_sec" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Charge Rate 2nd</span>
+                    <input style="width:60%;" name="labour_cost" id="labour_cost" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Mold (Unit)</span>
+                    <input style="width:60%;" name="mold_unit" id="mold_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Dies</span>
+                    <input style="width:29%;" name="dies_unit" id="dies_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
+                    <input style="width:29%;" name="dies_price" id="dies_price" class="easyui-numberbox" data-options="prompt:'Price'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Jig</span>
+                    <input style="width:29%;" name="jig_unit" id="jig_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
+                    <input style="width:29%;" name="jig_price" id="jig_price" class="easyui-numberbox" data-options="prompt:'Price'">
+                </div>
+            </div>
+
+            <div style="float:left; width:25%; box-sizing: border-box;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Tooling</span>
+                    <input style="width:29%;" name="tooling_unit" id="tooling_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
+                    <input style="width:29%;" name="tooling_price" id="tooling_price" class="easyui-numberbox" data-options="prompt:'Price'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Fixture Cost</span>
+                    <input style="width:29%;" name="fixture_cost_unit" id="fixture_cost_unit" class="easyui-numberbox" data-options="prompt:'Unit'">
+                    <input style="width:29%;" name="fixture_cost_price" id="fixture_cost_price" class="easyui-numberbox" data-options="prompt:'Price'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">FOH and ADM</span>
+                    <input style="width:60%;" name="adm_foh_cost" id="adm_foh_cost" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">NG</span>
+                    <input style="width:60%;" name="ng_ratio_cost" id="ng_ratio_cost" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Maintenance</span>
+                    <input style="width:60%;" name="mtn_cost" id="mtn_cost" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Packaging</span>
+                    <input style="width:60%;" name="total_packing_cost" id="total_packing_cost" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Transport</span>
+                    <input style="width:60%;" name="transportasion_cost_pcs" id="transportasion_cost_pcs" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Purging</span>
+                    <input style="width:60%;" name="purging_cost" id="purging_cost" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Profit</span>
+                    <input style="width:60%;" name="profit_nominal" id="profit_nominal" class="easyui-numberbox" data-options="precision:'4'">
+                </div>
+            </div>
+
+            <div style="clear:both;"></div>
+        </fieldset>
     </form>
 </div>
 
@@ -291,13 +379,15 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
 
         var url = "?filter_period_month=" + filter_period_month +
             "&filter_period_year=" + filter_period_year +
             "&filter_from=" + filter_from +
             "&filter_to=" + filter_to +
             "&filter_item_fg_id=" + filter_item_fg_id +
-            "&filter_revision=" + filter_revision;
+            "&filter_revision=" + filter_revision +
+            "&filter_customer_id=" + filter_customer_id;
 
         $('#dg').datagrid({
             url: '<?= base_url('pricing/breakdown_prices/datatables') ?>' + url
@@ -312,19 +402,21 @@
     }
 
     function excel() {
-       var filter_period_month = $("#filter_period_month").combobox('getValue');
+        var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
 
         var url = "?filter_period_month=" + filter_period_month +
             "&filter_period_year=" + filter_period_year +
             "&filter_from=" + filter_from +
             "&filter_to=" + filter_to +
             "&filter_item_fg_id=" + filter_item_fg_id +
-            "&filter_revision=" + filter_revision;
+            "&filter_revision=" + filter_revision +
+            "&filter_customer_id=" + filter_customer_id;
 
         window.location.assign('<?= base_url('pricing/breakdown_prices/print/excel') ?>' + url);
     }
@@ -398,7 +490,7 @@
             textField: 'number',
             mode: 'remote',
             fitColumns: true,
-            prompt: "Select Product No",
+            prompt: "Choose Product No",
             columns: [
                 [{
                     field: 'number',
@@ -430,6 +522,19 @@
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Years',
+        });
+
+        $('#filter_customer_id').combobox({
+            url: '<?= base_url('master/customers/reads'); ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose Customer',
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
         });
 
         $('#supplier_id').combogrid({
@@ -531,7 +636,7 @@
 
         $('#item_fg_number').combogrid({
             url: '<?= base_url('pricing/breakdown_prices/readItems'); ?>',
-            panelWidth: 300,
+            panelWidth: 550,
             idField: 'item_fg_number',
             textField: 'item_fg_number',
             mode: 'remote',
@@ -545,7 +650,11 @@
                 }, {
                     field: 'item_fg_name',
                     title: 'Part Name',
-                    width: 150
+                    width: 200
+                }, {
+                    field: 'customer_name',
+                    title: 'Customer Name',
+                    width: 200
                 }]
             ],
             icons: [{
@@ -562,13 +671,71 @@
                 $('#item_fg_name').textbox('setValue', row.item_fg_name);
                 $('#order_estimation').numberbox('setValue', row.volume);
                 $('#model_name').textbox('setValue', row.model_name);
+                $('#customer_id').textbox('setValue', row.customer_id);
+                $('#customer_name').textbox('setValue', row.customer_name);
+                $('#price_vg').numberbox('setValue', row.price_vg);
+                $('#toonage').numberbox('setValue', row.toonage);
+                $('#cavity_standard').numberbox('setValue', row.cavity_standard);
+                $('#cycle_time').numberbox('setValue', row.cycle_time);
+                $('#cycle_time_process').numberbox('setValue', row.cycle_time_process);
+                $('#plain_rate_sec').numberbox('setValue', row.plain_rate_sec);
+                $('#labour_cost').numberbox('setValue', row.labour_cost);
+                $('#adm_foh_cost').numberbox('setValue', row.adm_foh_cost);
+                $('#ng_ratio_cost').numberbox('setValue', row.ng_ratio_cost);
+                $('#mtn_cost').numberbox('setValue', row.mtn_cost);
+                $('#total_packing_cost').numberbox('setValue', row.total_packing_cost);
+                $('#transportasion_cost_pcs').numberbox('setValue', row.transportasion_cost_pcs);
+                $('#purging_cost').numberbox('setValue', row.purging_cost);
+                $('#profit_nominal').numberbox('setValue', row.profit_nominal);
+                $('#mold_depreciation').numberbox('setValue', row.mold_depreciation);
 
                 var item_id = row.item_fg_id;
+                
+                // Reset sub_total_1
+                $('#sub_total_1').val(0); 
+
+                // Reload combobox
                 $('#p_month').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/p_month?item_id='); ?>' + item_id);
                 $('#p_year').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/p_year?item_id='); ?>' + item_id);
                 $('#revision').combobox('reload', '<?= base_url('pricing/breakdown_prices/readItemOptions/revision?item_id='); ?>' + item_id);
             }
         });
+
+        function fetchSubTotal1() {
+            var item_fg_id = $('#item_fg_id').textbox('getValue');
+            var p_month    = $('#p_month').combobox('getValue');
+            var p_year     = $('#p_year').combobox('getValue');
+            var revision   = $('#revision').combobox('getValue');
+            var customer_id= $('#customer_id').textbox('getValue');
+
+            if (item_fg_id !== '' && p_month !== '' && p_year !== '' && revision !== '') {
+                $.ajax({
+                    url: '<?= base_url('pricing/breakdown_prices/get_sub_total_1'); ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        item_fg_id: item_fg_id,
+                        customer_id: customer_id,
+                        p_month: p_month,
+                        p_year: p_year,
+                        revision: revision
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            $('#sub_total_1').numberbox('setValue', response.sub_total_1);
+                            console.log("Sub Total 1 berhasil ditarik: " + response.sub_total_1);
+                        }
+                    }
+                });
+            }
+        }
+
+        $('#p_month, #p_year, #revision').combobox({
+            onChange: function(newValue, oldValue) {
+                fetchSubTotal1();
+            }
+        });
+
        
         $('#quotation_date').datebox({
             onSelect: function(date) {

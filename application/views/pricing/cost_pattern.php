@@ -36,11 +36,11 @@
         </tr>
 
         <tr>
-            <th data-options="field:'part_name_vg',width:150">Material Name</th>
-            <th data-options="field:'part_name_mb',width:150">MB Name</th>
-            <th data-options="field:'part_name_cp',width:150">CP Name</th>
+            <th data-options="field:'part_no_vg',width:150">Material Name</th>
+            <th data-options="field:'part_no_mb',width:150">MB Name</th>
+            <th data-options="field:'part_no_cp',width:150">CP Name</th>
             <th data-options="field:'used_vg',width:100">Gross</th>
-            <th data-options="field:'nett_vg',width:80">Nett (Gr)</th>
+            <th data-options="field:'nett_vg',width:80">Nett</th>
             <th data-options="field:'uom',width:80">Uom</th>
             <th data-options="field:'used_mb',width:100">Master Batch</th>
             <th data-options="field:'used_cp',width:100">Child Part (Pcs)</th>
@@ -204,6 +204,7 @@
 
         function isSameGroup(a, b) {
             return a.item_fg_id === b.item_fg_id &&
+                a.customer_id === b.customer_id &&
                 a.p_month === b.p_month &&
                 a.p_year === b.p_year &&
                 a.revision === b.revision;
