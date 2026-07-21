@@ -789,3 +789,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-20]
 - **kurniawan**: update shipping ([0e429798](https://github.com/hilmanf11/erp_bpi/commit/0e4297980ba9e039ee2635171b51c0abcce44c2e))
+
+### [2026-07-21]
+- **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([591c5195](https://github.com/hilmanf11/erp_bpi/commit/591c5195de090a31100dde2cc9d6c5445c488dbb))
