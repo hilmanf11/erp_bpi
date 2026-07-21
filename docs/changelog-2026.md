@@ -795,3 +795,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-21]
 - **kurniawan**: Update Purchase_report.php ([049da9a7](https://github.com/hilmanf11/erp_bpi/commit/049da9a70e571c4c5f660d523aab20666d755343))
+
+### [2026-07-21]
+- **kurniawan**: Update inventory_report.php ([7be7f38b](https://github.com/hilmanf11/erp_bpi/commit/7be7f38b6eff0145fd05d9d38b5387088d5e3c99))
