@@ -643,6 +643,7 @@ class Supply_requestions extends CI_Controller
             $this->db->where('a.deleted', 0);
             $this->db->like('a.request_no', base64_decode($request_no));
             $this->db->limit(8, ($i * 8));
+            $this->db->group_by('a.item_rm_id');
             $records = $this->db->get()->result_array();
             $html .= '<table style="width:100%;">
                             <tr>

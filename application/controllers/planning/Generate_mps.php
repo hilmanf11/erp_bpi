@@ -1390,6 +1390,7 @@ class Generate_mps extends CI_Controller
                                     ' . $xbar . '
                                     <th style="text-align:center;">FC</th>
                                     <th style="text-align:center;">DELIVERY <br> RATE</th>
+                                    <th style="text-align:center;">%SAFETY <br> STOCK</th>
                                     <th style="text-align:center;">SAFETY <br> STOCK</th>
                                     <th style="text-align:center;">NEED</th>
                                     <th style="text-align:center;">PROD <br> PLAN</th>';
@@ -1414,6 +1415,7 @@ class Generate_mps extends CI_Controller
         <p style="font-size:12px; margin:0;">PERIOD ' . $this->monthName($filter_month) . ' ' . $filter_year . '</p>
         <p style="font-size:12px; margin:0;">REVISION ' . $filter_revision . '</p>
         <p style="font-size:12px; margin:0;">CUTOFF ' . @$cutoff->cutoff . '</p>
+        <p style="font-size:12px; margin:0;">GENERATE DATE ' . date('Y-m-d', strtotime($cutoff->created_date)) . '</p>
         <p style="font-size:12px; margin:0;">PRINT DATE ' . date("d M Y H:m:s") . '</p>
         <p style="font-size:12px; margin:0;">PRINT BY ' . $this->session->username . '</p>
         <br>
@@ -1494,8 +1496,9 @@ class Generate_mps extends CI_Controller
                             <td style="text-align:right;">' . $data['total_stock'] . '</td>
                             <td style="text-align:right;">' . $data['os_so'] . '</td>';
 
-                $this->db->select('a.*');
+                $this->db->select('a.*, COALESCE(j.safety_stock, 0) as safety_stock_pesen');
                 $this->db->from('generate_mps_details a');
+                $this->db->join("(SELECT item_fg_id, MAX(safety_stock) as safety_stock FROM safety_stocks GROUP BY item_fg_id) j ", 'a.item_fg_id = j.item_fg_id', 'left');
                 $this->db->where('a.p_month', $data['p_month']);
                 $this->db->where('a.p_year', $data['p_year']);
                 $this->db->where('a.revision', $data['revision']);
@@ -1525,6 +1528,7 @@ class Generate_mps extends CI_Controller
                                 <td style="text-align:right;">' . $detail2['so'] . '</td>
                                 <td style="text-align:right;">' . $detail2['forecast'] . '</td>
                                 <td style="text-align:right;">' . $detail2['delivery_rate'] . '</td>
+                                <td style="text-align:right;">' . $detail2['safety_stock_pesen'] . '</td>
                                 <td style="text-align:right;">' . $detail2['safety_stock'] . '</td>
                                 <td style="text-align:right;">' . $detail2['need'] . '</td>
                                 <td style="text-align:right;">' . $detail2['prod_plan'] . '</td>';
