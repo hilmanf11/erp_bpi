@@ -194,6 +194,24 @@
         }
     }
 
+    // function excel() {
+    //     var filter_from = $("#filter_from").datebox('getValue');
+    //     var filter_to = $("#filter_to").datebox('getValue');
+    //     var filter_item_category = $("#filter_item_category").combobox('getValue');
+    //     var filter_item_family = $("#filter_item_family").combobox('getValue');
+    //     var filter_division = $("#filter_division").combobox('getValue');
+    //     var filter_report_category = $("#filter_report_category").combobox('getValue');
+
+    //     var yearFrom = filter_from.substring(0, 4);
+    //     var yearTo = filter_to.substring(0, 4);
+    //     if (yearFrom !== yearTo) {
+    //         toastr.warning("Please select the same year for Receipt Date", "Information");
+    //     } else {
+    //         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_division=" + filter_division  + "&filter_report_category=" + filter_report_category;
+    //         window.location.assign('<?= base_url('finance/inventory_report/print/excel') ?>' + url);
+    //     }
+    // }
+
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
@@ -204,12 +222,47 @@
 
         var yearFrom = filter_from.substring(0, 4);
         var yearTo = filter_to.substring(0, 4);
+
         if (yearFrom !== yearTo) {
             toastr.warning("Please select the same year for Receipt Date", "Information");
-        } else {
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_division=" + filter_division  + "&filter_report_category=" + filter_report_category;
-            window.location.assign('<?= base_url('finance/inventory_report/print/excel') ?>' + url);
+            return;
         }
+
+        // Buat URL
+        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
+                "&filter_item_category=" + filter_item_category + 
+                "&filter_item_family=" + filter_item_family + 
+                "&filter_division=" + filter_division + 
+                "&filter_report_category=" + filter_report_category;
+
+        $('#dg').datagrid('loading');
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '<?= base_url('finance/inventory_report/print/excel') ?>' + url, true);
+        xhr.responseType = 'blob';
+
+        xhr.onload = function() {
+            $('#dg').datagrid('loaded');
+
+            if (this.status === 200) {
+                var blob = new Blob([this.response], { type: 'application/vnd.ms-excel' });
+                var link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = "Inventory_WIP_" + new Date().getTime() + ".xls";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                toastr.error("Failed to generate Excel.");
+            }
+        };
+
+        xhr.onerror = function() {
+            $('#dg').datagrid('loaded');
+            toastr.error("Server Error.");
+        };
+
+        xhr.send();
     }
 
     // $(function() {
