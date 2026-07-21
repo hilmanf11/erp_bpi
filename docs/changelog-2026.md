@@ -792,3 +792,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-21]
 - **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([591c5195](https://github.com/hilmanf11/erp_bpi/commit/591c5195de090a31100dde2cc9d6c5445c488dbb))
+
+### [2026-07-21]
+- **kurniawan**: Update Purchase_report.php ([049da9a7](https://github.com/hilmanf11/erp_bpi/commit/049da9a70e571c4c5f660d523aab20666d755343))
