@@ -109,7 +109,10 @@ class Purchase_report extends CI_Controller
                     END) AS price 
                 FROM purchase_order_receipts a
                 LEFT JOIN item_rm b ON a.item_rm_id = b.id
-                LEFT JOIN purchase_orders d ON a.po_no = d.po_no and a.item_rm_id = d.item_rm_id
+                LEFT JOIN purchase_orders d 
+                    ON a.po_no = d.po_no 
+                    AND a.item_rm_id = d.item_rm_id
+                    AND COALESCE(a.specification, '') = COALESCE(d.specification, '')
                 LEFT JOIN item_categories e ON b.item_category_id = e.id
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
                 LEFT JOIN supplier_items g ON d.item_rm_id = g.item_rm_id and d.supplier_id = g.supplier_id
@@ -284,7 +287,10 @@ class Purchase_report extends CI_Controller
                     END) AS price 
                 FROM purchase_order_receipts a
                 LEFT JOIN item_rm b ON a.item_rm_id = b.id
-                LEFT JOIN purchase_orders d ON a.po_no = d.po_no and a.item_rm_id = d.item_rm_id
+                LEFT JOIN purchase_orders d 
+                    ON a.po_no = d.po_no 
+                    AND a.item_rm_id = d.item_rm_id
+                    AND COALESCE(a.specification, '') = COALESCE(d.specification, '')
                 LEFT JOIN item_categories e ON b.item_category_id = e.id
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
                 LEFT JOIN supplier_items g ON d.item_rm_id = g.item_rm_id and d.supplier_id = g.supplier_id
