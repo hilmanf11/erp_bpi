@@ -93,6 +93,7 @@ class Menu_loadings extends CI_Controller
             c.number as machine_number, 
             c.toonage as machine_toonage, 
             d.model as mold_model, 
+            d.mold_no, 
             d.cavity_actual as mold_cavity_actual, 
             d.cavity_standard as mold_cavity_standard');
             $this->db->from('menu_loadings a');
@@ -378,7 +379,7 @@ class Menu_loadings extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard, d.mold_no');
         $this->db->from('menu_loadings a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('machines c', 'a.machine_id = c.id');
@@ -419,6 +420,7 @@ class Menu_loadings extends CI_Controller
                 <th>Machine No.</th>
                 <th>Toonage of Machine</th>
                 <th>Mold ID</th>
+                <th>Mold No</th>
                 <th>Cavity Actual</th>
                 <th>Cavity Standard</th>
                 <th>Shift</th>
@@ -440,6 +442,7 @@ class Menu_loadings extends CI_Controller
                     <td>' . $data['machine_number'] . '</td>
                     <td>' . $data['machine_toonage'] . '</td>
                     <td>' . $data['mold_id'] . '</td>
+                    <td>' . $data['mold_no'] . '</td>
                     <td>' . $data['mold_cavity_actual'] . '</td>
                     <td>' . $data['mold_cavity_standard'] . '</td>
                     <td>' . $data['shift'] . '</td>

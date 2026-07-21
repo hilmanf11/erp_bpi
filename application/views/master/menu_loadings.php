@@ -25,6 +25,7 @@
             <th rowspan="2" data-options="field:'machine_number',width:150,halign:'center'">Machine No.</th>
             <th rowspan="2" data-options="field:'machine_toonage',width:150,halign:'center'">Toonage of Machine </th>
             <th rowspan="2" data-options="field:'mold_id',width:150,halign:'center'">Mold ID</th>
+            <th rowspan="2" data-options="field:'mold_no',width:150,halign:'center'">Mold No</th>
             <th rowspan="2" data-options="field:'mold_cavity_actual',width:100,halign:'center'">Cavity Actual</th>
             <th rowspan="2" data-options="field:'mold_cavity_standard',width:120,halign:'center'">Cavity Standard</th>
             <th rowspan="2" data-options="field:'shift',width:100,halign:'center'">Shift</th>

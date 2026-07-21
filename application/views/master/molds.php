@@ -14,6 +14,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:150,align:'center'">Mold ID</th>
+            <th rowspan="2" data-options="field:'mold_no',width:150,align:'center'">Mold No</th>
             <th rowspan="2" data-options="field:'mold_name',width:150,halign:'center'">Mold Name</th>
             <th rowspan="2" data-options="field:'type',width:130,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
@@ -55,6 +56,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Mold ID</span>
                     <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Mold No</span>
+                    <input style="width:60%;" name="mold_no" id="mold_no" required="" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Mold Name</span>
