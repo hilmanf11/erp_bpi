@@ -798,3 +798,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-21]
 - **kurniawan**: Update inventory_report.php ([7be7f38b](https://github.com/hilmanf11/erp_bpi/commit/7be7f38b6eff0145fd05d9d38b5387088d5e3c99))
+
+### [2026-07-21]
+- **kurniawan**: Update Script Planning ([cd7c403b](https://github.com/hilmanf11/erp_bpi/commit/cd7c403b1ece66e514818108d1d5ae42587e3754))
