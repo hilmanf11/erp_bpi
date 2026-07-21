@@ -801,3 +801,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-21]
 - **kurniawan**: Update Script Planning ([cd7c403b](https://github.com/hilmanf11/erp_bpi/commit/cd7c403b1ece66e514818108d1d5ae42587e3754))
+
+### [2026-07-21]
+- **kurniawan**: Update Pricing ([98d9a599](https://github.com/hilmanf11/erp_bpi/commit/98d9a5998f24d33993faa684a34c66d83077b634))
