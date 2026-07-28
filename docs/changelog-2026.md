@@ -807,3 +807,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-21]
 - **kurniawan**: update master ([3eeca39a](https://github.com/hilmanf11/erp_bpi/commit/3eeca39aaec4628c90ed96a88f4a0b60ceb06fee))
+
+### [2026-07-28]
+- **kurniawan**: update Notification ([1c5daa9b](https://github.com/hilmanf11/erp_bpi/commit/1c5daa9b2d4ba3a90fa81f617d7002c78043c17e))
