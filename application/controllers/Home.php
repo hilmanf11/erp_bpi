@@ -17,6 +17,8 @@ class Home extends CI_Controller
     public function index()
     {
         if ($this->session->username != "") {
+            $this->check_memo_dates();
+
             $username = $this->session->username;
 
             $this->db->select('b.*');
@@ -48,6 +50,38 @@ class Home extends CI_Controller
             $this->load->view('home', $data);
         } else {
             redirect('login');
+        }
+    }
+
+    public function check_memo_dates()
+    {
+        // Cari data request_materials yang tanggalnya H-1 sampai Hari H
+        
+        $query = $this->db->query("
+            SELECT * FROM request_materials 
+            WHERE request_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+            AND deleted = 0 
+            AND notif_confirmed = 0
+        ")->result();
+
+        foreach ($query as $row) {
+            // Cek apakah notifikasi untuk ID ini sudah pernah dibuat sebelumnya
+            $cek_notif = $this->crud->read('notifications', [], ['table_name' => 'request_materials', 'name' => 'Reminder_Memo_' . $row->id]);
+
+            if (empty($cek_notif)) {
+                // INSERT NOTIFIKASI DENGAN TARGET DEPARTEMEN
+                $this->crud->create("notifications", [
+                    "user_id" => "SYSTEM", // Atau user pembuatnya
+                    "table_name" => "request_materials",
+                    "name" => "Reminder_Memo_" . $row->id,
+                    "description" => 'Memo ' . $row->memo_no . ' mendekati batas waktu!',
+                    "log" => json_encode($row),
+                    // INI KUNCI FLEKSIBILITASNYA:
+                    "target_department" => "SCM",
+                    "target_sub_department" => "MCL",
+                    "target_user" => NULL // Kosongkan jika untuk 1 departemen, isi jika untuk spesifik 1 orang
+                ]);
+            }
         }
     }
 

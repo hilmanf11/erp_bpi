@@ -21,9 +21,40 @@ class Notifications extends CI_Controller
         echo $send;
     }
 
+    public function confirm()
+    {
+        // Tangkap array data dan nama tabel dari frontend
+        $data_konfirmasi = $this->input->post('data');
+        $nama_tabel = $this->input->post('table'); // contoh: 'request_materials'
+
+        if (!empty($data_konfirmasi) && is_array($data_konfirmasi)) {
+            $this->db->trans_start();
+
+            foreach ($data_konfirmasi as $row) {
+                // 1. Update status di tabel asal (request_materials) menjadi 1 (Sudah confirm)
+                $this->db->update($nama_tabel, ['notif_confirmed' => 1], ['id' => $row['id_memo']]);
+                
+                // 2. Hapus notifikasi di tabel notifications agar hilang dari daftar
+                $this->db->delete('notifications', ['id' => $row['id_notif']]);
+            }
+
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === FALSE) {
+                echo json_encode(['status' => false, 'message' => 'Failed to confirm data']);
+            } else {
+                echo json_encode(['status' => true, 'message' => 'Data confirmed successfully']);
+            }
+        } else {
+            echo json_encode(['status' => false, 'message' => 'No data selected']);
+        }
+    }
+
     public function notificationCount()
     {
         $totalRows = 0;
+        
+        // --- 1. LOGIKA (Menu Based) ---
         $notificationUser = [];
         $menuUser = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "44964312f0264429978158ada88843", "v_view" => 1]);
         if(!empty($menuUser)){
@@ -42,7 +73,26 @@ class Notifications extends CI_Controller
             $notificationPo = $this->crud->reads('notifications', [], ["table_name" => "purchase_orders"], "", "", "", ["user_id", "table_name", "name"]);
         }
 
-        $totalRows = (count($notificationUser) + count($notificationPr) + count($notificationPo));
+        // --- 2. LOGIKA Targeted Based  ---
+        $my_username = $this->session->username;
+        $user_info = $this->crud->read("users", [], ["username" => $my_username]);
+        $my_dept = $user_info->department;
+        $my_sub_dept = $user_info->sub_department;
+
+        $this->db->where('table_name', 'request_materials');
+        $this->db->group_start();
+            $this->db->where('target_user', $my_username); // Jika ditargetkan ke personal
+            $this->db->or_group_start();
+                $this->db->where('target_department', $my_dept); // Jika ditargetkan ke departemen
+                $this->db->where('target_sub_department', $my_sub_dept);
+            $this->db->group_end();
+        $this->db->group_end();
+        // Hitung jumlah baris yang cocok
+        $notificationMemoCount = $this->db->get('notifications')->num_rows();
+
+        // --- 3. TOTAL COUNT ---
+        $totalRows = (count($notificationUser) + count($notificationPr) + count($notificationPo) + $notificationMemoCount);
+        
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -50,45 +100,83 @@ class Notifications extends CI_Controller
         }
     }
 
+    // public function notificationList()
+    // {
+    //     //Users
+    //     $menuUser = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "44964312f0264429978158ada88843", "v_view" => 1]);
+    //     if(!empty($menuUser)){
+    //         $notificationUser = $this->crud->reads('notifications', [], ["table_name" => "users"], "", "", "", ["user_id", "table_name", "name"]);
+
+    //         foreach ($notificationUser as $user) {
+    //             $this->notificationMessage($user->user_id, $user->table_name, $user->description, $user->name);
+    //         }
+    //     }
+
+    //     $menuPr = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20231222000002", "v_view" => 1]);
+    //     if(!empty($menuPr)){
+    //         $notificationPr = $this->crud->reads('notifications', [], ["table_name" => "purchase_requests"], "", "", "", ["user_id", "table_name", "name"]);
+
+    //         foreach ($notificationPr as $pr) {
+    //             $this->notificationMessage($pr->user_id, $pr->table_name, $pr->description, $pr->name);
+    //         }
+    //     }
+
+    //     $menuPo = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20240103000001", "v_view" => 1]);
+    //     if(!empty($menuPo)){
+    //         $notificationPo = $this->crud->reads('notifications', [], ["table_name" => "purchase_orders"], "", "", "", ["user_id", "table_name", "name"]);
+
+    //         foreach ($notificationPo as $po) {
+    //             $this->notificationMessage($po->user_id, $po->table_name, $po->description, $po->name);
+    //         }
+    //     }
+    // }
+
     public function notificationList()
     {
-        //Users
-        $menuUser = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "44964312f0264429978158ada88843", "v_view" => 1]);
-        if(!empty($menuUser)){
-            $notificationUser = $this->crud->reads('notifications', [], ["table_name" => "users"], "", "", "", ["user_id", "table_name", "name"]);
+        $my_username = $this->session->username;
+        $user_info = $this->crud->read("users", [], ["username" => $my_username]);
+        $my_dept = $user_info->department;
+        $my_sub_dept = $user_info->sub_department;
+        
+        $this->db->group_start();
+            $this->db->where('target_user', $my_username);
+            $this->db->or_group_start();
+                $this->db->where('target_department', $my_dept);
+                $this->db->where('target_sub_department', $my_sub_dept);
+            $this->db->group_end();
+        $this->db->group_end();
+        
+        $this->db->order_by('created_date', 'DESC');
+        $this->db->limit(20);
+        $my_notifications = $this->db->get('notifications')->result();
 
-            foreach ($notificationUser as $user) {
-                $this->notificationMessage($user->user_id, $user->table_name, $user->description, $user->name);
+        if (!empty($my_notifications)) {
+            foreach ($my_notifications as $notif) {
+                $this->notificationMessage($notif->user_id, $notif->table_name, $notif->description, $notif->name);
             }
-        }
-
-        $menuPr = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20231222000002", "v_view" => 1]);
-        if(!empty($menuPr)){
-            $notificationPr = $this->crud->reads('notifications', [], ["table_name" => "purchase_requests"], "", "", "", ["user_id", "table_name", "name"]);
-
-            foreach ($notificationPr as $pr) {
-                $this->notificationMessage($pr->user_id, $pr->table_name, $pr->description, $pr->name);
-            }
-        }
-
-        $menuPo = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20240103000001", "v_view" => 1]);
-        if(!empty($menuPo)){
-            $notificationPo = $this->crud->reads('notifications', [], ["table_name" => "purchase_orders"], "", "", "", ["user_id", "table_name", "name"]);
-
-            foreach ($notificationPo as $po) {
-                $this->notificationMessage($po->user_id, $po->table_name, $po->description, $po->name);
-            }
+        } else {
+            echo '<li class="list-isi"><center><small>No New Notifications</small></center></li>';
         }
     }
 
     public function notificationMessage($user_id, $table, $description, $name)
     {
-        $user = $this->crud->read('users', [], ["username" => $user_id]);
-
-        if (empty($user->avatar)) {
-            $avatar = "assets/image/users/default.png";
+        if ($user_id === "SYSTEM") {
+            
+            $display_name = "Sistem Auto-Reminder"; // Nama pengirim untuk notifikasi otomatis
+           
+            $avatar = "assets/image/users/default.png"; 
+            
         } else {
-            $avatar = $user->avatar;
+            $user = $this->crud->read('users', [], ["username" => $user_id]);
+            
+            if (!empty($user)) {
+                $display_name = $user->name;
+                $avatar = empty($user->avatar) ? "assets/image/users/default.png" : $user->avatar;
+            } else {
+                $display_name = "Unknown User";
+                $avatar = "assets/image/users/default.png";
+            }
         }
 
         $link = "notificationDetail('$user_id', '$table', '$name')";
@@ -103,8 +191,9 @@ class Notifications extends CI_Controller
                                     </div>
                                 </td>
                                 <td style="padding-left: 10px;">
-                                    <b>' . $user->name . '</b><br>
-                                    <small>'.$description.'</small>
+                                    <!-- Menggunakan variabel $display_name -->
+                                    <b>' . $display_name . '</b><br>
+                                    <small>' . $description . '</small>
                                 </td>
                             </tr>
                         </table>
@@ -151,6 +240,20 @@ class Notifications extends CI_Controller
         }
     }
 
+    public function request_materials($user, $name)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "request_materials";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notification/request_materials');
+        }
+    }
+
     public function notificationData($table = "", $user = "", $name = "")
     {
         $user = base64_decode($user);
@@ -194,13 +297,22 @@ class Notifications extends CI_Controller
                 $supplier = $this->crud->read("suppliers", [], ["id" => $log['supplier_id']]);
                 $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
                 $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier->name) + array("item_rm_number" => $item_rm->number));
-            }elseif($table == "purchase_requests"){
+                
+            } elseif($table == "purchase_requests"){
                 $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
                 $hasil[] = ($id_notification + $log + array("item_rm_number" => $item_rm->number));
-            }elseif($table == "users"){
+                
+            } elseif($table == "users"){
                 $divisions = $this->crud->read("divisions", [], ["number" => $log['division']]);
                 $hasil[] = ($id_notification + $log + array("division" => $divisions->number));
-            }else{
+                
+            } elseif($table == "request_materials"){
+                $supplier = $this->crud->read("suppliers", [], ["id" => $log['supplier_id']]);
+                $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
+                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier->name) + array("item_number" => $item_rm->number)+ array("item_name" => $item_rm->name));
+                // $hasil[] = ($id_notification + $log);
+                
+            } else {
                 $hasil[] = ($id_notification + $log);
             }
         }
