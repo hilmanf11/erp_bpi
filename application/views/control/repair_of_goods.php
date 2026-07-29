@@ -56,8 +56,20 @@
                     </select>
                 </div>
             </div>
+            <div style="float: left; width: 50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status FC</span>
+                    <select style="width:60%;" id="filter_status_fc" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="0">OPEN</option>
+                        <option value="1">CLOSE</option>
+                        <option value="2">COMPLETE</option>
+                    </select>
+                </div>
+            </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="close_fc()"><i class="fa fa-times"></i> Complete/Open</a>
     </div>
 </div>
 
@@ -377,12 +389,14 @@
         var filter_document_no = $("#filter_document_no").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_fc = $("#filter_status_fc").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_document_no=" + window.btoa(filter_document_no) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_status=" + window.btoa(filter_status);
+            "&filter_status=" + window.btoa(filter_status) + 
+            "&filter_status_fc=" + window.btoa(filter_status_fc);
 
         $('#dg').datagrid({
             url: '<?= base_url('control/repair_of_goods/datatables') ?>' + url
@@ -404,12 +418,14 @@
         var filter_document_no = $("#filter_document_no").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_fc = $("#filter_status_fc").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_document_no=" + window.btoa(filter_document_no) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_status=" + window.btoa(filter_status);
+            "&filter_status=" + window.btoa(filter_status)+ 
+            "&filter_status_fc=" + window.btoa(filter_status_fc);
 
         window.location.assign('<?= base_url('control/repair_of_goods/print/excel') ?>' + url);
     }
@@ -628,16 +644,20 @@
     function cellStyler(value, row, index) {
         if (value == 0) {
             return 'background: #53D636; color:white;';
-        } else {
+        } else if (value == 1) {
             return 'background: #FF5F5F; color:white;';
+        } else {
+            return 'background: #0a40f1; color:white;';
         }
     }
     //FORMATTER STATUS
     function cellFormatter(value) {
         if (value == 0) {
             return 'OPEN';
-        } else {
+        } else if (value == 1){
             return 'CLOSE';
+        } else{
+            return 'COMPLETE';
         }
     };
 
@@ -676,6 +696,61 @@
 
     function print_rod(document_no) {
         window.open("<?= base_url('control/repair_of_goods/print_rod/') ?>" + window.btoa(document_no), "_blank", "width=1200,height=600");
+    }
+
+    function close_fc() {
+        var rows = $('#dg').datagrid('getSelections');
+        if (rows.length > 0) {
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var actionText = row.status_fc == "0" ? "Close" : "Open";
+                var reasonLabel = row.status_fc == "0" ? "Closing Reason" : "Opening Reason";
+                var ajaxUrl = row.status_fc == "0" ? "<?= base_url('control/repair_of_goods/closeFc') ?>" : "<?= base_url('control/repair_of_goods/openFc') ?>";
+
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "You want to " + actionText + " this data?",
+                    icon: "warning",
+                    input: "text",
+                    inputLabel: reasonLabel,
+                    inputPlaceholder: "Type here...",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes",
+                    preConfirm: (inputValue) => {
+                        if (!inputValue) {
+                            Swal.showValidationMessage("Please enter a " + reasonLabel);
+                        }
+                        return inputValue;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            method: 'post',
+                            url: ajaxUrl,
+                            data: {
+                                id: row.id,
+                                remark: result.value  // Simpan reason ke remark
+                            },
+                            success: function(response) {
+                                var result = eval('(' + response + ')');
+                                toastr.success(result.message);
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                toastr.error(jqXHR.statusText);
+                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                            },
+                            complete: function() {
+                                $('#dg').datagrid('reload');
+                            }
+                        });
+                    }
+                });
+            }
+        } else {
+            toastr.error("Please select at least one row.");
+        }
     }
 
 </script>

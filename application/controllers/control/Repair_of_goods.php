@@ -97,6 +97,35 @@ class Repair_of_goods extends CI_Controller
         echo $datenow ."-".$autoID;
     }
 
+    public function closeFc()
+    {
+        $id = $this->input->post('id');
+        $remark = $this->input->post('remark');
+        $update = $this->db->update('repair_of_goods', ["status_fc" => 2, "remarks" => $remark], ["id" => $id]);// , "qty" => 0
+        // echo $update;
+
+         // Berikan respon sesuai hasil
+        if ($update) {
+            echo json_encode(["success" => true,"message" => "Repair of Good closed successfully."]);
+        } else {
+            echo json_encode(["success" => false,"message" => "Failed to close Repair of Good."]);
+        }
+    }
+
+    public function openFc()
+    {
+        // $po_no = $this->input->post('po_no');
+        $id = $this->input->post('id');
+        $remark = $this->input->post('remark');
+        $update = $this->db->update('repair_of_goods', ["status_fc" => 0, "remarks" => $remark], ["id" => $id]);// , "qty" => 0
+
+        if ($update) {
+            echo json_encode(["success" => true,"message" => "Repair of Good open successfully."]);
+        } else {
+            echo json_encode(["success" => false,"message" => "Failed to open Repair of Good."]);
+        }
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -107,6 +136,7 @@ class Repair_of_goods extends CI_Controller
             $filter_document_no = @base64_decode($get['filter_document_no']);
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
             $filter_status = @base64_decode($get['filter_status']);
+            $filter_status_fc = @base64_decode($get['filter_status_fc']);
            
 
             $page = $this->input->post('page');
@@ -132,6 +162,7 @@ class Repair_of_goods extends CI_Controller
             (CASE 
                 WHEN f.total_status_fc_open = COUNT(a.status_fc) THEN '0'
                 WHEN e.total_status_fc_close = COUNT(a.status_fc) THEN '1'
+                WHEN g.total_status_fc_complete = COUNT(a.status_fc) THEN '2'
                 WHEN f.total_status_fc_open >= 1 THEN '0'
                 WHEN e.total_status_fc_close >= 1 THEN '1'
                 ELSE '0'
@@ -141,6 +172,7 @@ class Repair_of_goods extends CI_Controller
             $this->db->join('(SELECT document_no, COUNT(status) as total_status_open FROM repair_of_goods WHERE status = 0 GROUP BY document_no) d', 'a.document_no = d.document_no', 'left');
             $this->db->join('(SELECT document_no, COUNT(status_fc) as total_status_fc_close FROM repair_of_goods WHERE status_fc = 1 GROUP BY document_no) e', 'a.document_no = e.document_no', 'left');
             $this->db->join('(SELECT document_no, COUNT(status_fc) as total_status_fc_open FROM repair_of_goods WHERE status_fc = 0 GROUP BY document_no) f', 'a.document_no = f.document_no', 'left');
+            $this->db->join('(SELECT document_no, COUNT(status_fc) as total_status_fc_complete FROM repair_of_goods WHERE status_fc = 2 GROUP BY document_no) g', 'a.document_no = g.document_no', 'left');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('trans_date >=', $filter_from);
                 $this->db->where('trans_date <=', $filter_to);
@@ -148,6 +180,7 @@ class Repair_of_goods extends CI_Controller
             $this->db->like('a.document_no', $filter_document_no);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->like('a.status', $filter_status);
+            $this->db->like('a.status_fc', $filter_status_fc);
             $this->db->group_by('a.document_no');
             $this->db->order_by('a.created_date', 'DESC');
             //Total Data
@@ -277,8 +310,8 @@ class Repair_of_goods extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        // var_dump($data);
-        // die;
+        var_dump($data);
+        die;
         $send = $this->crud->delete('repair_of_goods', $data);
         echo $send;
     }
