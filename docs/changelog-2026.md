@@ -810,3 +810,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-28]
 - **kurniawan**: update Notification ([1c5daa9b](https://github.com/hilmanf11/erp_bpi/commit/1c5daa9b2d4ba3a90fa81f617d7002c78043c17e))
+
+### [2026-07-29]
+- **kurniawan**: Update Repair of Goods ([759221d4](https://github.com/hilmanf11/erp_bpi/commit/759221d45e616332c62afec4f90fe96303165a8b))
