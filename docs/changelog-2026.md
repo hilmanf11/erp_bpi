@@ -813,3 +813,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-29]
 - **kurniawan**: Update Repair of Goods ([759221d4](https://github.com/hilmanf11/erp_bpi/commit/759221d45e616332c62afec4f90fe96303165a8b))
+
+### [2026-07-30]
+- **kurniawan**: Update Menu_loadings.php ([34d1ae8b](https://github.com/hilmanf11/erp_bpi/commit/34d1ae8bc64884ec8de63ae83b28c92da0559543))
