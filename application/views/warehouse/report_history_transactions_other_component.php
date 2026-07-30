@@ -172,7 +172,7 @@
     });
 
     $('#filter_items').combobox({
-        url: '<?= base_url('master/item_rm/reads/') ?>',
+        url: '<?= base_url('master/item_rm/reads_other_component/') ?>',
         valueField: 'id',
         textField: 'number',
         prompt: "Select Product No",

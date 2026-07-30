@@ -609,14 +609,18 @@ class Supply_materials extends CI_Controller
         //Config
         $this->db->select('*');
         $this->db->from('config');
+
         $config = $this->db->get()->row();
-        $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+        $this->db->select('a.*, c.number as item_number, c.name as item_name, b.uom, COUNT(a.status) as total_status, i.total_status_open,
+                    g.total_status_close');
         $this->db->from('supply_materials a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        // $this->db->join('uom d', 'b.uom_id = d.id');
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
+        $this->db->join('(SELECT request_no, COUNT(status) as total_status_close FROM supply_materials WHERE status = 1 GROUP BY request_no) g', 'a.request_no = g.request_no', 'left');
+                $this->db->join('(SELECT request_no, COUNT(status) as total_status_open FROM supply_materials WHERE status = 0 GROUP BY request_no) i', 'a.request_no = i.request_no', 'left');
         $this->db->where('a.deleted', 0);
-        // $this->db->like("a.period", $filter_period);
-        // $this->db->like("a.workorder", $filter_workorder);
+
+
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }
@@ -636,6 +640,7 @@ class Supply_materials extends CI_Controller
         if($filter_status != ""){
             $this->db->where('a.status', $filter_status);
         }
+        $this->db->group_by('a.request_no');
         $this->db->order_by('a.request_no', 'DESC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -672,7 +677,21 @@ class Supply_materials extends CI_Controller
                 <th>Uom</th>
             </tr>';
         $no = 1;
+       
         foreach ($records as $data) {
+
+        // <td>' . $data['period'] . '</td>
+        //                 <td>' . $data['wp'] . '</td>
+        //                 <td>' . $data['workorder'] . '</td>
+        //                 <td>' . $data['item_rm_id'] . '</td>
+        // <td>' . $data['qty_actual'] . '</td>
+        // <td>' . $data['remarks'] . '</td>
+        //                 <td>' . $data['lotnos'] . '</td>
+        //                 <td>' . $data['status'] . '</td>
+        //                 <td>' . $data['created_by'] . '</td>
+        //                 <td>' . $data['created_date'] . '</td>
+        //                 <td>' . $data['updated_by'] . '</td>
+        //                 <td>' . $data['updated_date'] . '</td>
             $html .= '<tr>
                         <td>' . $no . '</td>
                         <td>' . $data['request_no'] . '</td>
@@ -682,6 +701,7 @@ class Supply_materials extends CI_Controller
                         <td>' . $data['item_name'] . '</td>
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['uom'] . '</td>
+                        
                     </tr>';
             $no++;
         }
