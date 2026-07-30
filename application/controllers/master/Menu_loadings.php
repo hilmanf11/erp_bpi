@@ -305,6 +305,7 @@ class Menu_loadings extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
+            // 1. Pengecekan Master Data
             $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
             $molds   = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
             $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
@@ -322,29 +323,36 @@ class Menu_loadings extends CI_Controller
                 return;
             }
 
+            // 2. Cek IDENTITAS Data (Apakah kombinasi Item, Machine, dan Mold ini sudah ada?)
             $this->db->where('item_fg_id', $data['item_fg_id']);
-            $this->db->group_start();
-                $this->db->group_start();
-                    $this->db->where('machine_id', $machine->id);
-                    $this->db->where('mold_id', $data['mold_id']);
-                $this->db->group_end();
-                
-                if (!empty($data['priority'])) {
-                    $this->db->or_where('priority', $data['priority']);
-                }
-            $this->db->group_end();
-            
-            $cek_duplikat = $this->db->get('menu_loadings')->num_rows();
+            $this->db->where('machine_id', $machine->id);
+            $this->db->where('mold_id', $data['mold_id']);
+            $existing_data = $this->db->get('menu_loadings')->row();
 
-            if ($cek_duplikat > 0) {
-                echo json_encode([
-                    'theme'   => 'error',
-                    'title'   => 'Failed',
-                    'message' => 'Upload Rejected for Part ' . $data['item_fg_id'] . ' This Part has been add for that combination Machine, Mold or Priority!'
-                ]);
-                return;
+            // 3. Cek BENTROK Priority
+            // Pastikan priority yang di-upload tidak dipakai oleh mesin/mold LAIN untuk item ini
+            if (!empty($data['priority'])) {
+                $this->db->where('item_fg_id', $data['item_fg_id']);
+                $this->db->where('priority', $data['priority']);
+                
+                if ($existing_data) {
+                    // Jika update, kecualikan id data ini sendiri agar tidak dianggap bentrok dengan dirinya sendiri
+                    $this->db->where('id !=', $existing_data->id);
+                }
+                
+                $cek_priority = $this->db->get('menu_loadings')->num_rows();
+
+                if ($cek_priority > 0) {
+                    echo json_encode([
+                        'theme'   => 'error',
+                        'title'   => 'Failed',
+                        'message' => 'Upload Rejected. Priority ' . $data['priority'] . ' is already used by another Machine/Mold combination for this Item!'
+                    ]);
+                    return;
+                }
             }
 
+            // 4. Siapkan Data Final
             $dataFinal = array(
                 "item_fg_id"         => $data['item_fg_id'],
                 "mold_id"            => $data['mold_id'],
@@ -359,8 +367,16 @@ class Menu_loadings extends CI_Controller
                 "priority"           => $data['priority'],
             );
             
-            $send = $this->crud->create('menu_loadings', $dataFinal);
-            echo $send;
+            // 5. Eksekusi Update atau Insert
+            if ($existing_data) {
+                // Jika data fisik sudah ada -> Lakukan UPDATE
+                $send = $this->crud->update('menu_loadings', ['id' => $existing_data->id], $dataFinal);
+                echo $send;
+            } else {
+                // Jika data fisik belum ada -> Lakukan INSERT
+                $send = $this->crud->create('menu_loadings', $dataFinal);
+                echo $send;
+            }
 
         } else {
             show_error("Cannot Process your request");
