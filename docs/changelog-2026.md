@@ -819,3 +819,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-31]
 - **kurniawan**: Update Warehouse ([a459b3c4](https://github.com/hilmanf11/erp_bpi/commit/a459b3c495c5af8c13e0b8c4d345f68187488957))
+
+### [2026-07-31]
+- **kurniawan**: uodate planning ([321abcf9](https://github.com/hilmanf11/erp_bpi/commit/321abcf9da91cb6820133fcb4d1c5988eede7e10))
