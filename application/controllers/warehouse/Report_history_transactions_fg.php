@@ -1774,50 +1774,6 @@ class Report_history_transactions_fg extends CI_Controller
                 $balance = 0;
             
                 if ($filter_trans_type == '') {
-
-                    // Ambil seluruh data untuk rentang tanggal dalam satu query per jenis transaksi
-                    // $receipts = $this->crud->query("SELECT 
-                    // a.document_no as wo_no, 
-                    // '-' as checksheet_label, 
-                    // SUM(a.qty) as qty, 
-                    // c.name AS username, 
-                    // e.packing_date AS trans_date, 
-                    // 'WIP RECEIPT' AS receipt_type
-                    // FROM wip_receipts a
-                    // LEFT JOIN checksheets e ON a.checksheet_number = e.number
-                    // LEFT JOIN users c ON a.created_by = c.username
-                    // WHERE e.item_fg_id = '$item_fg_id'
-                    // AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND a.status != 0
-                    // GROUP BY a.document_no, a.item_fg_id");
-                    
-                    // if (empty($receipts)) {
-                    //     $receipts = $this->crud->query("SELECT 
-                    //     COALESCE(f.checksheet_label,'-') as wo_no, 
-                    //     f.checksheet_label, 
-                    //     f.qty, 
-                    //     u.name AS username, 
-                    //     f.packing_date AS trans_date, 
-                    //     'NEW BARCODE FG' AS receipt_type
-
-                    //     FROM new_barcode_fg a
-                    //     LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                    //     LEFT JOIN users u ON f.created_by = u.username
-                    //     WHERE a.item_fg_id = '$item_fg_id'
-                    //     AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
-
-                    //     if (empty($receipts)) {
-                    //         $receipts = $this->crud->query("SELECT a.*, 
-                    //             u.name as username, 
-                    //             'RECEIPT FG' AS receipt_type, 
-                    //             a.document_no as wo_no, 
-                    //             '-' as checksheet_label
-                    //             FROM wip_receipts a
-                    //             LEFT JOIN users u ON a.created_by = u.username
-                    //             WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS'
-                    //             AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
-                    //     } 
-                    // }
-
                     $receipts = $this->crud->query("SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
                         FROM scan_item_receipts_fg f
                         JOIN checksheets e ON e.number = f.checksheet_number
@@ -1870,20 +1826,6 @@ class Report_history_transactions_fg extends CI_Controller
                     
                     // Proses data berdasarkan tanggal
                     $all_data = [];
-
-                    // Gabungkan data receipts
-                    // foreach ($receipts as $receipt) {
-                    // $all_data[] = [
-                    //     'type' => $receipt->receipt_type,
-                    //     'username' => $receipt->username,
-                    //     'date' => $receipt->trans_date,
-                    //     'wo_no' => $receipt->wo_no,
-                    //     'dn_type' => '-',
-                    //     'label' => $receipt->checksheet_label,
-                    //     'qty_in' => $receipt->qty,
-                    //     'qty_out' => 0,
-                    // ];
-                    // }
 
                     foreach ($receipts as $receipt) {
                     $all_data[] = [
@@ -1972,27 +1914,63 @@ class Report_history_transactions_fg extends CI_Controller
 
                     // Generate HTML
                     
-                    $balance = $begin;
-                    foreach ($all_data as $data) {
-                    $balance += $data['qty_in'] - $data['qty_out'];
-                    $html .= '  <tr>
-                                    <td style="text-align:center">' . $nod . '</td>
-                                    <td style="mso-number-format:\@;">' . $record->number . '</td>
-                                    <td style="mso-number-format:\@;">' . $record->name . '</td>
-                                    <td>' . $record->uom . '</td>
-                                    <td>' . $data['type'] . '</td>
-                                    <td>' . $data['dn_type'] . '</td> 
-                                    <td>' . $data['username'] . '</td>
-                                    <td>' . $data['wo_no'] . '</td>
-                                    <td>' . $data['date'] . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                                </tr>';
+                   // ==========================================================
+                    // NEW LOGIC: GROUPING & SUM QTY BERDASARKAN KRITERIA USER
+                    // ==========================================================
+                    $grouped_data = [];
 
-                    $begin = $balance;
-                    $nod++;
+                    foreach ($all_data as $row) {
+                        // Membuat kunci unik dari gabungan kolom yang diminta user
+                        $key = $row['date'] . '_' . $row['type'] . '_' . $row['dn_type'] . '_' . $row['wo_no'];
+
+                        if (!isset($grouped_data[$key])) {
+                            // Jika kunci belum ada, masukkan data sebagai data baru
+                            $grouped_data[$key] = $row;
+                        } else {
+                            // Jika kunci sudah ada, cukup tambahkan (SUM) qty_in dan qty_out-nya
+                            $grouped_data[$key]['qty_in'] += $row['qty_in'];
+                            $grouped_data[$key]['qty_out'] += $row['qty_out'];
+                        }
+                    }
+
+                    // Kembalikan ke index angka berurutan agar usort berjalan normal
+                    $grouped_data = array_values($grouped_data);
+
+                    // ==========================================================
+                    
+                    // Urutkan data (yang sudah digabung) berdasarkan tanggal
+                    usort($grouped_data, function ($a, $b) {
+                        return strtotime($a['date']) - strtotime($b['date']);
+                    });
+
+                    // Generate HTML
+                    $balance = $begin;
+                    
+                    // Lakukan looping pada data yang sudah di-group, BUKAN $all_data lagi
+                    foreach ($grouped_data as $data) {
+                        $balance += $data['qty_in'] - $data['qty_out'];
+                        
+                        // Opsional: Jika user tidak ingin melihat baris yang qty in & out nya 0 setelah digabung
+                        // if ($data['qty_in'] == 0 && $data['qty_out'] == 0) continue; 
+
+                        $html .= '  <tr>
+                                        <td style="text-align:center">' . $nod . '</td>
+                                        <td style="mso-number-format:\@;">' . $record->number . '</td>
+                                        <td style="mso-number-format:\@;">' . $record->name . '</td>
+                                        <td>' . $record->uom . '</td>
+                                        <td>' . $data['type'] . '</td>
+                                        <td>' . $data['dn_type'] . '</td> 
+                                        <td>' . $data['username'] . '</td>
+                                        <td>' . $data['wo_no'] . '</td>
+                                        <td>' . $data['date'] . '</td>
+                                        <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                        <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
+                                        <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
+                                        <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                    </tr>';
+
+                        $begin = $balance;
+                        $nod++;
                     }
 
                 }

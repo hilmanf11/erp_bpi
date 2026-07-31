@@ -346,14 +346,41 @@ class Dn_crusher extends CI_Controller
         
         
         //Config Page
+        //Config Page
         $rows = 8;
-        $page = ceil(count($scan_dn_crusher_total) / $rows);
+        
+        // 1. PINDAHKAN QUERY KE ATAS (SEBELUM LOOPING)
+        // Ambil semua data sekaligus agar grouping-nya akurat
+        $this->db->select("a.*, 
+            e.number as item_number, 
+            e.name as item_name, 
+            b.uom, 
+            c.name as family_name, 
+            d.name as category_name, 
+            SUM(a.qty) as qtys");
+        $this->db->from('scan_dn_crusher a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id', 'left');
+        $this->db->join('item_categories d', 'b.item_category_id = d.id', 'left');
+        $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id', 'left');
+        $this->db->where('a.document_no', base64_decode($document_no));
+        $this->db->group_by('a.item_rm_id'); // Menjadikan data ringkas (misal sisa 2)
+        $this->db->order_by('b.number', 'asc');
+        
+        $all_records = $this->db->get()->result_array();
+
+        // 2. HITUNG HALAMAN BERDASARKAN DATA YANG SUDAH DI-GROUPING
+        $total_items = count($all_records);
+        $page = ceil($total_items / $rows);
+        if ($page == 0) $page = 1; // Pastikan minimal ada 1 halaman meski kosong
+
         //Generate QRcode
         $this->createQrcode($scan_dn_crushers->document_no, "assets/image/qrcode/");
         $this->createQrcode($user_3->name, "assets/image/qrcode/");
         $this->createQrcode($user_2->name, "assets/image/qrcode/");
         $this->createQrcode($user_1->name, "assets/image/qrcode/");
         $this->createQrcode($this->session->name, "assets/image/qrcode/");
+        
         $html = '<html>
                     <head>
                         <title>' . $scan_dn_crushers->document_no . '</title>
@@ -393,32 +420,18 @@ class Dn_crusher extends CI_Controller
                             </center>
                         </div>
                         <div class="print">';
+        
         //Loop Page
         $no = 1;
         $hal = 1;
         $subtotal = 0;
         $judul = "DELIVERY NOTE"; 
-        // $form_iso = $config_iso->form_scan_dn_crusher;
+        
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select("a.*, 
-            e.number as item_number, 
-            e.name as item_name, 
-            b.uom, 
-            c.name as family_name, 
-            d.name as category_name, 
-            SUM(a.qty) as qtys");
-            $this->db->from('scan_dn_crusher a');
-            $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
-            $this->db->join('item_familys c', 'b.item_family_id = c.id', 'left');
-            $this->db->join('item_categories d', 'b.item_category_id = d.id', 'left');
-            $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id', 'left');
-            $this->db->where('a.document_no', base64_decode($document_no));
-            $this->db->order_by('b.number', 'asc');
-            $this->db->limit(8, ($i * 8));
-            $this->db->group_by('a.item_rm_id');
-            $this->db->order_by('a.id', 'ASC');
-
-            $records = $this->db->get()->result_array();
+            
+            // 3. POTONG ARRAY UNTUK DITAMPILKAN DI HALAMAN INI SAJA
+            // Menggantikan fungsi LIMIT pada database
+            $records = array_slice($all_records, ($i * $rows), $rows);
 
             if ($scan_dn_crushers->updated_date != null) {
                 $revision_date = $scan_dn_crushers->updated_date;
@@ -429,11 +442,10 @@ class Dn_crusher extends CI_Controller
             $html .= '  <table style="width:100%;">
                             <tr>
                                 <th width="10">
-                                    <img src="' . $config->favicon . '" width="60" />
+                                    
                                 </th>
                                 <td width="250" style="padding:10px;">
-                                    <b style="font-size:14px;">' . $config->name . '</b><br>
-                                    <span style="font-size:10px;">' . $config->address . '</span><br>
+                                    
                                 </td>
                                 <th width="100" style="text-align:right;">
                                     <table style="width:100%; font-size:10px;">
@@ -492,7 +504,7 @@ class Dn_crusher extends CI_Controller
                                             <th rowspan="2" width="100" style="text-align:center;">Notes</th>
                                         </tr>
                                     </thead>';
-            $row = 0;
+            
             foreach ($records as $record) {
                 $html .= '  
                             <tr>    
@@ -505,40 +517,19 @@ class Dn_crusher extends CI_Controller
                                 <td style="text-align:right;">' . number_format($record['qtys'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['remarks'] . '</td>
                             </tr>';
-                $row++;
                 $no++;
             }
+
             if (($i + 1) == $page) {
-
-                // $this->db->select('a.remarks, b.number as item_number, b.name as item_name');
-                // $this->db->from('request_materials a');
-                // $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-                // $this->db->where('a.deleted', 0);
-                // $this->db->where('a.memo_no', base64_decode($memo_no));
-                // $this->db->order_by('b.number', 'asc');
-                // $remarks = $this->db->get()->result_array();
-
-                // $note_content = []; // Menampung remarks yang valid
-
-                // foreach ($remarks as $remark) {
-                //     if (!empty($remark['remarks'])) {
-                //         $note_content[] = $remark['item_number'] . " &nbsp; (" . $remark['remarks'] . ")";
-                //     }
-                // }
-
-                // $html .= '  <tr>
-                //             <td style="vertical-align: top; text-align:left; height:80px;" colspan="9" rowspan="8">
-                //                 <b>Note :</b> <br>' . implode('<br>', $note_content) . '
-                //             </td>
-                //         </tr>';
-                        
+                // KOSONG (Kecuali jika Anda ingin memunculkan Note yang sedang di-comment di sini)
             } else {
                 $html .= '</table>';
             }
+            
             if (($i + 1) != $page) {
                 $html .= '<div style="page-break-after:always;"></div>';
-            } else{
-                // Memindahkan informasi approval ke sini
+            } else {
+                // Memindahkan informasi approval ke sini (Muncul HANYA di halaman terakhir)
                 $html .= '<div style="width:100%; display: grid; grid-template-columns: auto auto auto;">
                 <div style="width:40%; position: absolute; right: 50px;">
                     <table id="customers" style="margin-top:20px;">
@@ -572,12 +563,12 @@ class Dn_crusher extends CI_Controller
                         </div>
                 </div>
             </div>
-
             </div>';
             }
             $hal++;
         }
-        $html .= '<script>window.print()</script>';
+        
+        $html .= '</div></body></html><script>window.print()</script>';
         die($html);
     }
 }
