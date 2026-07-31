@@ -825,3 +825,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-31]
 - **kurniawan**: Update Report_history_transactions_wip_rm.php ([b158c647](https://github.com/hilmanf11/erp_bpi/commit/b158c6473bc6207ed78315b5eaf5884da0cfaab1))
+
+### [2026-07-31]
+- **kurniawan**: Update Report_outstanding_pr.php ([90336064](https://github.com/hilmanf11/erp_bpi/commit/90336064c8fa057587abacc6dde0504e1eef4e4c))
