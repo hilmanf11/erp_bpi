@@ -1378,7 +1378,7 @@ class Generate_mps extends CI_Controller
 
             // if ($no == 1) {
                 $xbar = '<th style="text-align:center;">SO</th>';
-                $colspan = '8';
+                $colspan = '9';
             // } else {
             //     $xbar = "";
             //     $colspan = '8';

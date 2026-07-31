@@ -520,6 +520,7 @@ class Supply_materials extends CI_Controller
                                         <th style="text-align:center">Lot No RM</th>
                                         <th style="text-align:center; width=80">WHS Stock</th>
                                         <th style="text-align:center; width=80">WHS Location</th>
+                                        <th style="text-align:center">Type</th>
                                     </tr>';
             $no = 1;
             foreach ($records as $record) {
@@ -559,6 +560,7 @@ class Supply_materials extends CI_Controller
                                 <td>' . $record['lotnos'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($ending_stock), 2) . '</td>
                                 <td style="text-align:center;">' . $record['location'] . '</td>
+                                <td>' . $record['type'] . '</td>
                             </tr>';
                 $no++;
             }
@@ -670,6 +672,7 @@ class Supply_materials extends CI_Controller
                 <th>Product Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
+                <th>Type</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -682,6 +685,7 @@ class Supply_materials extends CI_Controller
                         <td>' . $data['item_name'] . '</td>
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['uom'] . '</td>
+                        <td>' . $data['type'] . '</td>
                     </tr>';
             $no++;
         }
