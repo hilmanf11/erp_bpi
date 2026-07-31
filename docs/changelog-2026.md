@@ -822,3 +822,6 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-31]
 - **kurniawan**: uodate planning ([321abcf9](https://github.com/hilmanf11/erp_bpi/commit/321abcf9da91cb6820133fcb4d1c5988eede7e10))
+
+### [2026-07-31]
+- **kurniawan**: Update Report_history_transactions_wip_rm.php ([b158c647](https://github.com/hilmanf11/erp_bpi/commit/b158c6473bc6207ed78315b5eaf5884da0cfaab1))
