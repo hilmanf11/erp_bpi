@@ -838,3 +838,8 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 - **kurniawan**: Update my_projects.php
 
 update chart dan total ([36f2528c](https://github.com/hilmanf11/erp_bpi/commit/36f2528cb836cbc5d58014d39867fced42aad2c5))
+
+### [2026-08-06]
+- **kurniawan**: Update Issued_materials.php
+
+Handle status tidak berubah di supply sheet ([65ab90a4](https://github.com/hilmanf11/erp_bpi/commit/65ab90a4dbe84ceebc0dfa7c9e654131b4e68705))
