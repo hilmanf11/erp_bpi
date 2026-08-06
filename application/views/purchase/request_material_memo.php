@@ -3,6 +3,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'memo_no',width:180,halign:'center',resizable:true">Memo No</th>
+            <th rowspan="2" data-options="field:'memo_date',width:100,halign:'center'">Memo Date</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
             <th rowspan="2" data-options="field:'approved_date',width:150,halign:'center'">Approve Date</th>
@@ -105,7 +106,7 @@
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Memo Date</span>
-                    <input style="width:60%;" name="memo_date" id="memo_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:60%;" name="memo_date" id="memo_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, onChange:changeRequestDate">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Type</span>
@@ -155,7 +156,7 @@
                     <th data-options="field:'stock_current',width:80,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Stock Current</th>
                     <th data-options="field:'max_stock',width:80,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Max Stock</th>
                     <th data-options="field:'qty',width:80,editor:{type:'numberbox', options:{precision:2}}">Qty Request</th>
-                    <th data-options="field:'request_date',width:100">Request Date</th>
+                    <th data-options="field:'request_date',width:100, editor:{type:'datebox', options:{formatter:myformatter,parser:myparser, editable:false}}">Request Date</th>
                     <th data-options="field:'status',width:80">Status</th>
                     <th data-options="field:'remarks',width:80,editor:{type:'textbox'}">Remarks</th>
                 </tr>
@@ -339,35 +340,7 @@
         }
     });
 
-    // function preview(url = "") {
-    //     var filter_from = $("#filter_from").datebox('getValue');
-    //     var filter_to = $("#filter_to").datebox('getValue');
-    //     var filter_cutoff = $("#filter_cutoff").datebox('getValue');
-    //     // var item_rm_id = $("#item_rm_id").combogrid('getText'); //untuk mengirimkan number nya
-    //     var item_rm_id = $("#item_rm_id").combogrid('getValues');
-    //     var memo_date = $("#memo_date").datebox('getValue');
-    //     var type = $("#type").combobox('getValue');
-
-    //     if (filter_from == "" || filter_to == "" || memo_date == "" || type == "") {
-    //         toastr.warning('Please Select Filters first', 'Required');
-    //     } else {
-    //         var lastIndex;
-    //         var dg = $('#dg_request').datagrid({
-    //         url: url !== "" ? url : '<?= base_url('purchase/request_material_memo/datatablesTemp') ?>?filter_from=' + filter_from + '&filter_to=' + filter_to + '&filter_cutoff=' + filter_cutoff + '&item_rm_id=' + item_rm_id,                fitColumns: true,
-    //             onClickRow: function(rowIndex) {
-    //                 if (lastIndex != rowIndex) {
-    //                     $(this).datagrid('endEdit', lastIndex);
-    //                     $(this).datagrid('beginEdit', rowIndex);
-    //                 }
-    //                 lastIndex = rowIndex;
-    //             },
-                
-    //             onBeginEdit: function(rowIndex, row) {
-    //                 var editors = $('#dg_request').datagrid('getEditors', rowIndex);
-    //             }
-    //         });
-    //     }
-    // }
+    var lastIndex;
 
     function preview(url = "") {
         var filter_from = $("#filter_from").datebox('getValue');
@@ -389,8 +362,7 @@
             var final_url = url !== "" 
                 ? url 
                 : '<?= base_url('purchase/request_material_memo/datatablesTemp') ?>?filter_from=' + filter_from + '&filter_to=' + filter_to + '&filter_cutoff=' + filter_cutoff + '&item_rm_id=' + item_rm_id;
-
-            var lastIndex;
+        
             $('#dg_request').datagrid({
                 url: final_url,
                 fitColumns: true,
@@ -404,15 +376,37 @@
                 onBeginEdit: function(index, row) {
                     var ed = $(this).datagrid('getEditor', { index: index, field: 'objective' });
                     if (ed && !$(ed.target).combobox('getValue')) {
-                        $(ed.target).combobox('setValue', 'maker'); // DOKUMENTASI : set default ke maker untuk menanggulangi user tidak input objective dan mengakibatkan data belum selsai edit 
+                        $(ed.target).combobox('setValue', 'maker'); 
                     }
                 },
                 onLoadSuccess: function(data) {
-                    // 🔹 Pastikan juga setelah load data baru, selection benar-benar kosong
                     $(this).datagrid('clearSelections');
                     $(this).datagrid('clearChecked');
+                    lastIndex = undefined; // Reset lastIndex saat data baru dimuat
                 }
             });
+        }
+    }
+
+    function changeRequestDate(newValue, oldValue) {
+        var dg = $('#dg_request');
+        var rows = dg.datagrid('getRows');
+
+        if (rows && rows.length > 0) {
+            
+            if (lastIndex !== undefined) {
+                dg.datagrid('endEdit', lastIndex);
+                lastIndex = undefined;
+            }
+
+            for (var i = 0; i < rows.length; i++) {
+                dg.datagrid('updateRow', {
+                    index: i,
+                    row: {
+                        request_date: newValue
+                    }
+                });
+            }
         }
     }
 
