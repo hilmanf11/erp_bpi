@@ -364,80 +364,397 @@ class Issued_materials extends CI_Controller
         }
     }
 
+    // public function create2()
+    // {
+    //     if ($this->input->post()) {
+    //         $post   = $this->input->post();
+    //         $request_no = $post['request_no'];// dari supply sheet
+    //         $item_rm_id_sh = $post['item_rm_id_sh'];
+
+    //         $dataFinal = array(
+    //             "request_no" => $post['request_no'],
+    //             "item_rm_id" => $post['item_rm_id'],
+    //             "qty" => $post['qty'],
+    //             "type" => $post['type'],
+    //         );
+
+    //         // var_dump($post);
+    //         // die;
+
+    //         $totalSupply = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id = '$item_rm_id_sh'");
+    //         $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']]);
+
+    //         $supply_materials = $this->crud->read("supply_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']]);
+    //         $supply_sheets = $this->crud->read("supply_sheets", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']]);
+    //         $supply_requestions = $this->crud->read("supply_requestions", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']]);
+
+    //         //crusher
+    //         $item_rm_id_crusher = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('CR-', (SELECT number FROM item_rm WHERE id = '$item_rm_id_sh'))");
+    //         $item_rm_id_cr = $item_rm_id_crusher->row() ? $item_rm_id_crusher->row()->id : null;
+    //         $qty_crusher = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_cr'");
+    //         $qty_crusherValue = isset($qty_crusher[0]) ? ($qty_crusher[0]->qty ?? 0) : 0;
+
+    //         //peletizing
+    //         $item_rm_id_peletizing = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('PL-', (SELECT number FROM item_rm WHERE id = '$item_rm_id_sh'))");
+    //         $item_rm_id_pl = $item_rm_id_peletizing->row() ? $item_rm_id_peletizing->row()->id : null;
+    //         $qty_peletizing = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_pl'");
+    //         $qty_peletizingValue = isset($qty_peletizing[0]) ? ($qty_peletizing[0]->qty ?? 0) : 0;
+
+    //         //equivalent
+    //         $item_rm_id_equivalent = $this->db->query("SELECT b.item_rm_id_equivalent as id FROM item_rm a LEFT JOIN item_equivalents b ON a.id = b.item_rm_id WHERE b.item_rm_id = '$item_rm_id_sh'");
+    //         $item_rm_id_eq = $item_rm_id_equivalent->row() ? $item_rm_id_equivalent->row()->id : null;
+    //         $qty_equivalent = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_eq'");
+    //         $qty_equivalentValue = isset($qty_equivalent[0]) ? ($qty_equivalent[0]->qty ?? 0) : 0;
+
+    //         $totalSupplyQty = (float)$totalSupply[0]->qty;
+    //         $postQty = (float)$post['qty'];
+    //         $crusherQty = (float)$qty_crusherValue;
+    //         $peletizingQty = (float)$qty_peletizingValue;
+    //         $equivalentQty = (float)$qty_equivalentValue;
+    //         $issuedQty = (float)$issued_materials->qty;
+
+    //         // var_dump("Total Supply :",$totalSupplyQty);
+    //         // var_dump("Total qty Issued :",$issuedQty);
+    //         // var_dump("Qty :",$postQty);
+    //         // var_dump("Qty Crusher : ",$crusherQty);
+    //         // var_dump("Qty Pelet : ",$peletizingQty);
+
+    //         // var_dump("TOTAL:", round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty));
+    //         // var_dump("ISSUED:", round($issuedQty));
+    //         // var_dump("sheets:", $supply_sheets);
+    //         // var_dump("materials:", $supply_materials);
+    //         // var_dump("requestions:", $supply_requestions);
+    //         // return;
+
+    //         if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty + $equivalentQty) <= round($issuedQty)) {
+    //                 $send   = $this->crud->create('issued_material_details', $dataFinal);
+    //                 if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
+    //                     if($supply_sheets){
+    //                         $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']], ["status" => 1]);
+    //                     }else if($supply_materials){
+    //                         $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']], ["status" => 1]);
+    //                     }else if($supply_requestions){
+    //                         $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']], ["status" => 1]);
+    //                     }
+    //                 }
+    //                 echo $send;
+    //         } else {
+    //             echo json_encode(array("title" => "More Then Qty", "message" => "Qty Issued <= Qty Supply", "theme" => "error"));
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+    // public function update2()
+    // {
+    //     if ($this->input->post()) {
+    //         $id   = base64_decode($this->input->get('id'));
+    //         $post = $this->input->post();
+    //         $send = $this->crud->update('issued_material_details', ["id" => $id], $post);
+    //         echo $send;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+    // public function create_label()
+    // {
+    //     if ($this->input->post()) {
+    //         $post = $this->input->post();
+    //         $request_no = $post['request_no'];// dari supply sheet
+    //         $item_rm_id = $post['item_rm_id'];//item_fg_id
+    //         $totalSupply = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id'");
+    //         $issued_material_details = $this->crud->read("issued_material_details", [], ["label_no" => $post['label_no']]);
+    //         $issued_material_details2 = $this->crud->read("purchase_order_labels", [], ["label_no" => $post['label_no'], "status_issued" => 1]);
+
+    //         $purchase_order_labels = $this->crud->read("purchase_order_labels", [], ["label_no" => $post['label_no'], "status" => 1]);
+    //         $new_barcode = $this->crud->read("new_barcode", [], ["label_no" => $post['label_no'], "status_issued" => 0]);
+    //         $barcode_divides = $this->crud->read("barcode_divides", [], ["label_divided" => $post['label_no'], "status" => 0]);
+    //         $bpm_labels = $this->crud->read("bpm_labels", [], ["label_no" => $post['label_no'], "status" => 1]);
+
+    //         $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+    //         $supply_materials = $this->crud->read("supply_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+    //         $supply_requestions = $this->crud->read("supply_requestions", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+    //         $supply_sheets = $this->crud->read("supply_sheets", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+
+    //         //crusher
+    //         $item_rm_id_crusher = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('CR-', (SELECT number FROM item_rm WHERE id = '$item_rm_id'))");
+    //         $item_rm_id_cr = $item_rm_id_crusher->row() ? $item_rm_id_crusher->row()->id : null;
+    //         $qty_crusher = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_cr'");
+    //         //$qty_crusherValue = isset($qty_crusher[0]) ? $qty_crusher[0]->qty : 0;
+    //         $qty_crusherValue = isset($qty_crusher[0]) ? ($qty_crusher[0]->qty ?? 0) : 0;
+
+    //         //peletizing
+    //         $item_rm_id_peletizing = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('PL-', (SELECT number FROM item_rm WHERE id = '$item_rm_id'))");
+    //         $item_rm_id_pl = $item_rm_id_peletizing->row() ? $item_rm_id_peletizing->row()->id : null;
+    //         $qty_peletizing = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_pl'");
+    //         //$qty_peletizingValue = isset($qty_peletizing[0]) ? $qty_peletizing[0]->qty : 0;
+    //         $qty_peletizingValue = isset($qty_peletizing[0]) ? ($qty_peletizing[0]->qty ?? 0) : 0;
+
+    //         $totalSupplyQty = (float)$totalSupply[0]->qty;
+    //         $postQty = (float)$post['qty'];
+    //         $crusherQty = (float)$qty_crusherValue;
+    //         $peletizingQty = (float)$qty_peletizingValue;
+    //         $issuedQty = (float)$issued_materials->qty;
+
+    //         // var_dump($totalSupplyQty);
+    //         // var_dump($postQty);
+    //         // var_dump($crusherQty);
+    //         // var_dump($peletizingQty);
+    //         // var_dump($issuedQty);
+    //         // die;
+    //         //  if (!$issued_material_details || !$issued_material_details2) {//jika tidak ada
+    //         if (!$issued_material_details) {//jika tidak ada
+    //             if ($purchase_order_labels) {
+    //                 if ($issued_materials) {
+
+    //                     $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $purchase_order_labels->receipt_id]);
+    //                     // $checkItems = $this->crud->query("SELECT a.receipt_date, b.label_no, a.receipt_id, b.receipt_id, c.label_no, d.label_no
+    //                     // FROM purchase_order_receipts a 
+    //                     // LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
+    //                     // LEFT JOIN barcode_divides c ON b.label_no = c.label_no
+    //                     // LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and b.label_no = d.label_no
+    //                     // WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null
+    //                     // -- WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date between '%2025-02-16%' and '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null
+    //                     // ORDER BY receipt_date ASC");
+
+    //                     $checkItems = $this->crud->query("SELECT a.receipt_date,a.lotno, b.label_no, a.receipt_id, b.receipt_id, c.label_no, d.label_no
+    //                     FROM purchase_order_receipts a 
+    //                     LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
+    //                     LEFT JOIN barcode_divides c ON b.label_no = c.label_no
+    //                     LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and b.label_no = d.label_no
+    //                     WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null AND b.status_issued = 0
+    //                     ORDER BY receipt_date ASC,a.lotno ASC");
+
+    //                     if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
+    //                         if (count($checkItems) <= 0) {
+    //                             $send   = $this->crud->create('issued_material_details', $post);
+    //                             $update = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status_issued" => 1]);
+    //                             // var_dump($totalSupply[0]->qty + $post['qty']);
+    //                             // var_dump($issued_materials->qty);
+
+    //                             if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
+    //                                 if($supply_sheets){
+    //                                     $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                                 }else if($supply_materials){
+    //                                     $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                                 }else if($supply_requestions){
+    //                                     $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                                 }
+    //                             }
+    //                             echo $send;
+    //                         } else {
+    //                             //echo json_encode(array("title" => "FIFO violations", "message" => "Please Scan Sequentially", "theme" => "error"));
+                                
+    //                             if (count($checkItems) > 0) {//berubah
+    //                                 // Ambil semua lotno yang masih pending untuk FIFO
+    //                                 $pendingLotnos = array_unique(array_map(function($item) {
+    //                                     return $item->lotno;
+    //                                 }, $checkItems));
+                                
+    //                                 $pendingLotnosText = implode(", ", $pendingLotnos);
+                                
+    //                                 echo json_encode([
+    //                                     "title" => "FIFO Violation",
+    //                                     "message" => "Please scan sequentially. Pending LOT No(s): " . $pendingLotnosText,
+    //                                     "theme" => "error"
+    //                                 ]);
+    //                                 return;
+    //                             }
+    //                         }
+    //                     } else {
+    //                         echo json_encode(array("title" => "More Then Qty", "message" => "Qty Issued < Qty Supply", "theme" => "error"));
+    //                     }
+    //                 } else {
+    //                     echo json_encode(array("title" => "Not Registered", "message" => "This label has not been registered in Supply Sheet", "theme" => "error"));
+    //                 }
+
+    //             } elseif ($barcode_divides) {
+    //                 if ($issued_materials) {
+
+    //                     // for FIFO
+    //                     // $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $barcode_divides->reff]);
+    //                     // $checkItems = $this->crud->query("SELECT a.receipt_date, c.label_divided, c.label_no, a.receipt_id, b.receipt_id, d.label_no
+    //                     // FROM purchase_order_receipts a
+    //                     // LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
+    //                     // LEFT JOIN barcode_divides c ON b.label_no = c.label_no and c.type = 'SUPPLY'
+    //                     // LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and (b.label_no = d.label_no or c.label_divided = d.label_no)
+    //                     // WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND c.status = 0 AND d.label_no is null
+    //                     // ORDER BY receipt_date ASC");
+
+    //                     if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
+    //                         // if (count($checkItems) <= 0) {
+    //                             $send = $this->crud->create('issued_material_details', $post);
+    //                             $update = $this->crud->update('barcode_divides', ["label_divided" => $post['label_no']], ["status" => 1]);
+
+    //                             if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
+    //                                 if($supply_sheets){
+    //                                     $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                                 }else if($supply_materials){
+    //                                     $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                                 }else if($supply_requestions){
+    //                                     $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                                 }
+    //                             }
+    //                             echo $send;
+    //                         // } else {
+    //                         //     echo json_encode(array("title" => "FIFO violations", "message" => "Please Scan Sequentially", "theme" => "error"));
+    //                         // }
+    //                     } else {
+    //                         echo json_encode(array("title" => "More Then Qty", "message" => ($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) . "<=" . $issuedQty . " Qty Issued <= Qty Supply", "theme" => "error"));
+    //                     }
+    //                 } else {
+    //                     echo json_encode(array("title" => "Not Registered", "message" => "This label has not been registered in Supply Sheet", "theme" => "error"));
+    //                 }
+    //             } else if ($new_barcode) {
+    //                 if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
+    //                     $send   = $this->crud->create('issued_material_details', $post);
+    //                     $update = $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status_issued" => 1]);
+
+    //                     if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
+    //                         if($supply_sheets){
+    //                             $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                         }else if($supply_materials){
+    //                             $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                         }else if($supply_requestions){
+    //                             $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                         }
+    //                     }
+    //                     echo $send;
+    //                 } else {
+    //                     echo json_encode(array("title" => "More Then Qty", "message" => "Qty Issued <= Qty Supply", "theme" => "error"));
+    //                 }
+    //             } else if ($bpm_labels) {
+    //                 if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
+    //                     $send   = $this->crud->create('issued_material_details', $post);
+    //                     $update = $this->crud->update('bpm_labels', ["label_no" => $post['label_no']], ["status_issued" => 1]);
+
+    //                     if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
+    //                         if($supply_sheets){
+    //                             $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                         }else if($supply_materials){
+    //                             $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                         }else if($supply_requestions){
+    //                             $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
+    //                         }
+    //                     }
+    //                     echo $send;
+    //                 } else {
+    //                     echo json_encode(array("title" => "More Then Qty", "message" => "Qty Issued <= Qty Supply", "theme" => "error"));
+    //                 }
+    //             } else {
+    //                 echo json_encode(array("title" => "Available", "message" => "This label not found", "theme" => "error"));
+    //             }
+    //         } else {
+    //             echo json_encode(array("title" => "Available", "message" => "Data label has been Scanning", "theme" => "error"));
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+    // dokumentasi : handle status not change in supply sheet    
+    private function _checkAndCloseSupplyStatus($request_no, $item_rm_id_sh, $issuedQty)
+    {
+        $rm_main  = $item_rm_id_sh;
+
+        $cr_query = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('CR-', (SELECT number FROM item_rm WHERE id = '$rm_main'))")->row();
+        $rm_cr    = $cr_query ? $cr_query->id : 'NULL';
+
+        $pl_query = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('PL-', (SELECT number FROM item_rm WHERE id = '$rm_main'))")->row();
+        $rm_pl    = $pl_query ? $pl_query->id : 'NULL';
+
+        $eq_query = $this->db->query("SELECT b.item_rm_id_equivalent as id FROM item_rm a LEFT JOIN item_equivalents b ON a.id = b.item_rm_id WHERE b.item_rm_id = '$rm_main'")->row();
+        $rm_eq    = $eq_query ? $eq_query->id : 'NULL';
+
+        $queryTotal = $this->db->query("
+            SELECT COALESCE(SUM(qty), 0) as total_qty 
+            FROM issued_material_details 
+            WHERE request_no = '$request_no' 
+              AND item_rm_id IN ('$rm_main', '$rm_cr', '$rm_pl', '$rm_eq')
+        ")->row();
+
+        $totalAccumulated = (float)($queryTotal ? $queryTotal->total_qty : 0);
+        $targetIssued     = (float)$issuedQty;
+
+        if (round($totalAccumulated, 4) >= round($targetIssued, 4)) {
+            // Update Supply Sheets
+            $supply_sheets = $this->crud->read("supply_sheets", [], ["request_no" => $request_no, "item_rm_id" => $rm_main]);
+            if ($supply_sheets) {
+                $this->crud->update('supply_sheets', ["request_no" => $request_no, "item_rm_id" => $rm_main], ["status" => 1]);
+                return true;
+            }
+
+            // Update Supply Materials
+            $supply_materials = $this->crud->read("supply_materials", [], ["request_no" => $request_no, "item_rm_id" => $rm_main]);
+            if ($supply_materials) {
+                $this->crud->update('supply_materials', ["request_no" => $request_no, "item_rm_id" => $rm_main], ["status" => 1]);
+                return true;
+            }
+
+            // Update Supply Requisitions
+            $supply_requestions = $this->crud->read("supply_requestions", [], ["request_no" => $request_no, "item_rm_id" => $rm_main]);
+            if ($supply_requestions) {
+                $this->crud->update('supply_requestions', ["request_no" => $request_no, "item_rm_id" => $rm_main], ["status" => 1]);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function create2()
     {
         if ($this->input->post()) {
-            $post   = $this->input->post();
-            $request_no = $post['request_no'];// dari supply sheet
+            $post          = $this->input->post();
+            $request_no    = $post['request_no']; // dari supply sheet
             $item_rm_id_sh = $post['item_rm_id_sh'];
 
             $dataFinal = array(
                 "request_no" => $post['request_no'],
                 "item_rm_id" => $post['item_rm_id'],
-                "qty" => $post['qty'],
-                "type" => $post['type'],
+                "qty"        => $post['qty'],
+                "type"       => $post['type'],
             );
 
-            // var_dump($post);
-            // die;
-
-            $totalSupply = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id = '$item_rm_id_sh'");
+            $totalSupply      = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id = '$item_rm_id_sh'");
             $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']]);
 
-            $supply_materials = $this->crud->read("supply_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']]);
-            $supply_sheets = $this->crud->read("supply_sheets", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']]);
-            $supply_requestions = $this->crud->read("supply_requestions", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']]);
-
-            //crusher
+            // crusher
             $item_rm_id_crusher = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('CR-', (SELECT number FROM item_rm WHERE id = '$item_rm_id_sh'))");
-            $item_rm_id_cr = $item_rm_id_crusher->row() ? $item_rm_id_crusher->row()->id : null;
-            $qty_crusher = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_cr'");
-            $qty_crusherValue = isset($qty_crusher[0]) ? ($qty_crusher[0]->qty ?? 0) : 0;
+            $item_rm_id_cr      = $item_rm_id_crusher->row() ? $item_rm_id_crusher->row()->id : null;
+            $qty_crusher        = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_cr'");
+            $qty_crusherValue   = isset($qty_crusher[0]) ? ($qty_crusher[0]->qty ?? 0) : 0;
 
-            //peletizing
+            // peletizing
             $item_rm_id_peletizing = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('PL-', (SELECT number FROM item_rm WHERE id = '$item_rm_id_sh'))");
-            $item_rm_id_pl = $item_rm_id_peletizing->row() ? $item_rm_id_peletizing->row()->id : null;
-            $qty_peletizing = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_pl'");
-            $qty_peletizingValue = isset($qty_peletizing[0]) ? ($qty_peletizing[0]->qty ?? 0) : 0;
+            $item_rm_id_pl         = $item_rm_id_peletizing->row() ? $item_rm_id_peletizing->row()->id : null;
+            $qty_peletizing        = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_pl'");
+            $qty_peletizingValue   = isset($qty_peletizing[0]) ? ($qty_peletizing[0]->qty ?? 0) : 0;
 
-            //equivalent
+            // equivalent
             $item_rm_id_equivalent = $this->db->query("SELECT b.item_rm_id_equivalent as id FROM item_rm a LEFT JOIN item_equivalents b ON a.id = b.item_rm_id WHERE b.item_rm_id = '$item_rm_id_sh'");
-            $item_rm_id_eq = $item_rm_id_equivalent->row() ? $item_rm_id_equivalent->row()->id : null;
-            $qty_equivalent = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_eq'");
-            $qty_equivalentValue = isset($qty_equivalent[0]) ? ($qty_equivalent[0]->qty ?? 0) : 0;
+            $item_rm_id_eq         = $item_rm_id_equivalent->row() ? $item_rm_id_equivalent->row()->id : null;
+            $qty_equivalent        = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_eq'");
+            $qty_equivalentValue   = isset($qty_equivalent[0]) ? ($qty_equivalent[0]->qty ?? 0) : 0;
 
             $totalSupplyQty = (float)$totalSupply[0]->qty;
-            $postQty = (float)$post['qty'];
-            $crusherQty = (float)$qty_crusherValue;
-            $peletizingQty = (float)$qty_peletizingValue;
-            $equivalentQty = (float)$qty_equivalentValue;
-            $issuedQty = (float)$issued_materials->qty;
+            $postQty        = (float)$post['qty'];
+            $crusherQty     = (float)$qty_crusherValue;
+            $peletizingQty  = (float)$qty_peletizingValue;
+            $equivalentQty  = (float)$qty_equivalentValue;
+            $issuedQty      = (float)$issued_materials->qty;
 
-            // var_dump("Total Supply :",$totalSupplyQty);
-            // var_dump("Total qty Issued :",$issuedQty);
-            // var_dump("Qty :",$postQty);
-            // var_dump("Qty Crusher : ",$crusherQty);
-            // var_dump("Qty Pelet : ",$peletizingQty);
+            $totalAccumulated = round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty + $equivalentQty, 4);
+            $targetIssued     = round($issuedQty, 4);
 
-            // var_dump("TOTAL:", round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty));
-            // var_dump("ISSUED:", round($issuedQty));
-            // var_dump("sheets:", $supply_sheets);
-            // var_dump("materials:", $supply_materials);
-            // var_dump("requestions:", $supply_requestions);
-            // return;
+            if ($totalAccumulated <= $targetIssued) {
+                $send = $this->crud->create('issued_material_details', $dataFinal);
 
-            if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty + $equivalentQty) <= round($issuedQty)) {
-                    $send   = $this->crud->create('issued_material_details', $dataFinal);
-                    if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
-                        if($supply_sheets){
-                            $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']], ["status" => 1]);
-                        }else if($supply_materials){
-                            $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']], ["status" => 1]);
-                        }else if($supply_requestions){
-                            $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id_sh']], ["status" => 1]);
-                        }
-                    }
-                    echo $send;
+                $this->_checkAndCloseSupplyStatus($request_no, $item_rm_id_sh, $issuedQty);
+
+                echo $send;
             } else {
                 echo json_encode(array("title" => "More Then Qty", "message" => "Qty Issued <= Qty Supply", "theme" => "error"));
             }
@@ -458,191 +775,85 @@ class Issued_materials extends CI_Controller
         }
     }
 
-    // public function creates()
-    // {
-    //     if ($this->input->post()) {
-    //         $post = $this->input->post();
-    //         // var_dump($post);
-    //         // Update supply_sheets
-    //         $updateSupplySheets = $this->crud->update('supply_sheets', [
-    //             "request_no" => $post['request_no'],
-    //             "workorder" => $post['workorder'],
-    //             "item_fg_id" => $post['item_fg_id'],
-    //             "item_rm_id" => $post['item_rm_id']
-    //         ], [
-    //             "qty_req" => $post['qty'],
-    //             "qty_act" => $post['qty'],
-    //             "qty_issued" => $post['qty']
-    //         ]);
-            
-    //         if (!$updateSupplySheets) {
-    //             echo json_encode(array("title" => "Error", "message" => "Update to supply_sheets failed.", "theme" => "error"));
-    //             return;
-    //         }
-    
-    //         if ($post['qty_req_crusher'] > 0) {
-    //             $primary_rm_id = $this->db->escape($post['item_rm_id']); // Prevent SQL injection
-            
-    //             $query = $this->db->query("
-    //                 SELECT id 
-    //                 FROM item_rm
-    //                 WHERE number LIKE CONCAT('CR-', (
-    //                     SELECT number 
-    //                     FROM item_rm 
-    //                     WHERE id = $primary_rm_id
-    //                 ))
-    //             ");
-    //             $cr_item = $query->row_array();
-
-    //             // var_dump($cr_item);
-                
-    //             if ($cr_item) {
-    //                 $data = [
-    //                     'item_rm_id' => $cr_item['id'],
-    //                     'qty' => $post['qty_req_crusher'],
-    //                     'type' => "CR",
-    //                     'request_no' => $post['request_no']
-    //                 ];
-    
-    //                 $issued_material_details = $this->crud->read("issued_material_details", [], [
-    //                     "request_no" => $post['request_no'],
-    //                     "type" => "CR",
-    //                     "item_rm_id" => $post['item_rm_id']
-    //                 ]);
-    
-    //                 if (!$issued_material_details) {
-    //                     $insert = $this->crud->create('issued_material_details', $data);
-    //                     if (!$insert) {
-    //                         echo json_encode(array("title" => "Error", "message" => "Failed to insert issued_material_details.", "theme" => "error"));
-    //                         return;
-    //                     }
-    //                 } else {
-    //                     $update = $this->crud->update('issued_material_details', [
-    //                         "request_no" => $post['request_no'],
-    //                         "item_rm_id" => $post['item_rm_id']
-    //                     ], $data);
-    //                     if (!$update) {
-    //                         echo json_encode(array("title" => "Error", "message" => "Failed to update issued_material_details.", "theme" => "error"));
-    //                         return;
-    //                     }
-    //                 }
-    //             } else {
-    //                 echo json_encode(array("title" => "Error", "message" => "Item RM didn't have Item Crusher", "theme" => "error"));
-    //                 return;
-    //             }
-    //         }
-    
-    //         echo json_encode(array("title" => "Success", "message" => "Data Saved Successfully", "theme" => "success"));
-    //     } else {
-    //         show_error("Cannot Process your request");
-    //     }
-    // }
-    
-
     public function create_label()
     {
         if ($this->input->post()) {
-            $post = $this->input->post();
-            $request_no = $post['request_no'];// dari supply sheet
-            $item_rm_id = $post['item_rm_id'];//item_fg_id
-            $totalSupply = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id'");
-            $issued_material_details = $this->crud->read("issued_material_details", [], ["label_no" => $post['label_no']]);
+            $post       = $this->input->post();
+            $request_no = $post['request_no']; // dari supply sheet
+            $item_rm_id = $post['item_rm_id']; // item_rm_id (atau ID Label/Material Utama)
+
+            $totalSupply              = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id'");
+            $issued_material_details  = $this->crud->read("issued_material_details", [], ["label_no" => $post['label_no']]);
             $issued_material_details2 = $this->crud->read("purchase_order_labels", [], ["label_no" => $post['label_no'], "status_issued" => 1]);
 
-            $purchase_order_labels = $this->crud->read("purchase_order_labels", [], ["label_no" => $post['label_no'], "status" => 1]);
-            $new_barcode = $this->crud->read("new_barcode", [], ["label_no" => $post['label_no'], "status_issued" => 0]);
-            $barcode_divides = $this->crud->read("barcode_divides", [], ["label_divided" => $post['label_no'], "status" => 0]);
-            $bpm_labels = $this->crud->read("bpm_labels", [], ["label_no" => $post['label_no'], "status" => 1]);
+            $purchase_order_labels    = $this->crud->read("purchase_order_labels", [], ["label_no" => $post['label_no'], "status" => 1]);
+            $new_barcode              = $this->crud->read("new_barcode", [], ["label_no" => $post['label_no'], "status_issued" => 0]);
+            $barcode_divides          = $this->crud->read("barcode_divides", [], ["label_divided" => $post['label_no'], "status" => 0]);
+            $bpm_labels               = $this->crud->read("bpm_labels", [], ["label_no" => $post['label_no'], "status" => 1]);
 
-            $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
-            $supply_materials = $this->crud->read("supply_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
-            $supply_requestions = $this->crud->read("supply_requestions", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
-            $supply_sheets = $this->crud->read("supply_sheets", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+            $issued_materials         = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
 
-            //crusher
+            // crusher
             $item_rm_id_crusher = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('CR-', (SELECT number FROM item_rm WHERE id = '$item_rm_id'))");
-            $item_rm_id_cr = $item_rm_id_crusher->row() ? $item_rm_id_crusher->row()->id : null;
-            $qty_crusher = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_cr'");
-            //$qty_crusherValue = isset($qty_crusher[0]) ? $qty_crusher[0]->qty : 0;
-            $qty_crusherValue = isset($qty_crusher[0]) ? ($qty_crusher[0]->qty ?? 0) : 0;
+            $item_rm_id_cr      = $item_rm_id_crusher->row() ? $item_rm_id_crusher->row()->id : null;
+            $qty_crusher        = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_cr'");
+            $qty_crusherValue   = isset($qty_crusher[0]) ? ($qty_crusher[0]->qty ?? 0) : 0;
 
-            //peletizing
+            // peletizing
             $item_rm_id_peletizing = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('PL-', (SELECT number FROM item_rm WHERE id = '$item_rm_id'))");
-            $item_rm_id_pl = $item_rm_id_peletizing->row() ? $item_rm_id_peletizing->row()->id : null;
-            $qty_peletizing = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_pl'");
-            //$qty_peletizingValue = isset($qty_peletizing[0]) ? $qty_peletizing[0]->qty : 0;
-            $qty_peletizingValue = isset($qty_peletizing[0]) ? ($qty_peletizing[0]->qty ?? 0) : 0;
+            $item_rm_id_pl         = $item_rm_id_peletizing->row() ? $item_rm_id_peletizing->row()->id : null;
+            $qty_peletizing        = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_pl'");
+            $qty_peletizingValue   = isset($qty_peletizing[0]) ? ($qty_peletizing[0]->qty ?? 0) : 0;
+
+            $item_rm_id_equivalent = $this->db->query("SELECT b.item_rm_id_equivalent as id FROM item_rm a LEFT JOIN item_equivalents b ON a.id = b.item_rm_id WHERE b.item_rm_id = '$item_rm_id'");
+            $item_rm_id_eq         = $item_rm_id_equivalent->row() ? $item_rm_id_equivalent->row()->id : null;
+            $qty_equivalent        = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id_eq'");
+            $qty_equivalentValue   = isset($qty_equivalent[0]) ? ($qty_equivalent[0]->qty ?? 0) : 0;
 
             $totalSupplyQty = (float)$totalSupply[0]->qty;
-            $postQty = (float)$post['qty'];
-            $crusherQty = (float)$qty_crusherValue;
-            $peletizingQty = (float)$qty_peletizingValue;
-            $issuedQty = (float)$issued_materials->qty;
+            $postQty        = (float)$post['qty'];
+            $crusherQty     = (float)$qty_crusherValue;
+            $peletizingQty  = (float)$qty_peletizingValue;
+            $equivalentQty  = (float)$qty_equivalentValue;
+            $issuedQty      = (float)($issued_materials ? $issued_materials->qty : 0);
 
-            // var_dump($totalSupplyQty);
-            // var_dump($postQty);
-            // var_dump($crusherQty);
-            // var_dump($peletizingQty);
-            // var_dump($issuedQty);
-            // die;
-            //  if (!$issued_material_details || !$issued_material_details2) {//jika tidak ada
-            if (!$issued_material_details) {//jika tidak ada
+            $totalAccumulated = round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty + $equivalentQty, 4);
+            $targetIssued     = round($issuedQty, 4);
+
+            if (!$issued_material_details) { // jika belum ada
                 if ($purchase_order_labels) {
                     if ($issued_materials) {
-
                         $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $purchase_order_labels->receipt_id]);
-                        // $checkItems = $this->crud->query("SELECT a.receipt_date, b.label_no, a.receipt_id, b.receipt_id, c.label_no, d.label_no
-                        // FROM purchase_order_receipts a 
-                        // LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
-                        // LEFT JOIN barcode_divides c ON b.label_no = c.label_no
-                        // LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and b.label_no = d.label_no
-                        // WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null
-                        // -- WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date between '%2025-02-16%' and '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null
-                        // ORDER BY receipt_date ASC");
 
-                        $checkItems = $this->crud->query("SELECT a.receipt_date,a.lotno, b.label_no, a.receipt_id, b.receipt_id, c.label_no, d.label_no
+                        $checkItems = $this->crud->query("SELECT a.receipt_date, a.lotno, b.label_no, a.receipt_id, b.receipt_id, c.label_no, d.label_no
                         FROM purchase_order_receipts a 
                         LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
                         LEFT JOIN barcode_divides c ON b.label_no = c.label_no
                         LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and b.label_no = d.label_no
                         WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null AND b.status_issued = 0
-                        ORDER BY receipt_date ASC,a.lotno ASC");
+                        ORDER BY receipt_date ASC, a.lotno ASC");
 
-                        if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
+                        if ($totalAccumulated <= $targetIssued) {
                             if (count($checkItems) <= 0) {
                                 $send   = $this->crud->create('issued_material_details', $post);
                                 $update = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status_issued" => 1]);
-                                // var_dump($totalSupply[0]->qty + $post['qty']);
-                                // var_dump($issued_materials->qty);
 
-                                if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
-                                    if($supply_sheets){
-                                        $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                                    }else if($supply_materials){
-                                        $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                                    }else if($supply_requestions){
-                                        $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                                    }
-                                }
+                                $this->_checkAndCloseSupplyStatus($request_no, $item_rm_id, $issuedQty);
+
                                 echo $send;
                             } else {
-                                //echo json_encode(array("title" => "FIFO violations", "message" => "Please Scan Sequentially", "theme" => "error"));
-                                
-                                if (count($checkItems) > 0) {//berubah
-                                    // Ambil semua lotno yang masih pending untuk FIFO
-                                    $pendingLotnos = array_unique(array_map(function($item) {
-                                        return $item->lotno;
-                                    }, $checkItems));
-                                
-                                    $pendingLotnosText = implode(", ", $pendingLotnos);
-                                
-                                    echo json_encode([
-                                        "title" => "FIFO Violation",
-                                        "message" => "Please scan sequentially. Pending LOT No(s): " . $pendingLotnosText,
-                                        "theme" => "error"
-                                    ]);
-                                    return;
-                                }
+                                $pendingLotnos = array_unique(array_map(function ($item) {
+                                    return $item->lotno;
+                                }, $checkItems));
+
+                                $pendingLotnosText = implode(", ", $pendingLotnos);
+
+                                echo json_encode([
+                                    "title"   => "FIFO Violation",
+                                    "message" => "Please scan sequentially. Pending LOT No(s): " . $pendingLotnosText,
+                                    "theme"   => "error"
+                                ]);
+                                return;
                             }
                         } else {
                             echo json_encode(array("title" => "More Then Qty", "message" => "Qty Issued < Qty Supply", "theme" => "error"));
@@ -653,77 +864,45 @@ class Issued_materials extends CI_Controller
 
                 } elseif ($barcode_divides) {
                     if ($issued_materials) {
+                        if ($totalAccumulated <= $targetIssued) {
+                            $send   = $this->crud->create('issued_material_details', $post);
+                            $update = $this->crud->update('barcode_divides', ["label_divided" => $post['label_no']], ["status" => 1]);
 
-                        // for FIFO
-                        // $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $barcode_divides->reff]);
-                        // $checkItems = $this->crud->query("SELECT a.receipt_date, c.label_divided, c.label_no, a.receipt_id, b.receipt_id, d.label_no
-                        // FROM purchase_order_receipts a
-                        // LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
-                        // LEFT JOIN barcode_divides c ON b.label_no = c.label_no and c.type = 'SUPPLY'
-                        // LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and (b.label_no = d.label_no or c.label_divided = d.label_no)
-                        // WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND c.status = 0 AND d.label_no is null
-                        // ORDER BY receipt_date ASC");
+                            $this->_checkAndCloseSupplyStatus($request_no, $item_rm_id, $issuedQty);
 
-                        if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
-                            // if (count($checkItems) <= 0) {
-                                $send = $this->crud->create('issued_material_details', $post);
-                                $update = $this->crud->update('barcode_divides', ["label_divided" => $post['label_no']], ["status" => 1]);
-
-                                if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
-                                    if($supply_sheets){
-                                        $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                                    }else if($supply_materials){
-                                        $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                                    }else if($supply_requestions){
-                                        $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                                    }
-                                }
-                                echo $send;
-                            // } else {
-                            //     echo json_encode(array("title" => "FIFO violations", "message" => "Please Scan Sequentially", "theme" => "error"));
-                            // }
+                            echo $send;
                         } else {
                             echo json_encode(array("title" => "More Then Qty", "message" => ($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) . "<=" . $issuedQty . " Qty Issued <= Qty Supply", "theme" => "error"));
                         }
                     } else {
                         echo json_encode(array("title" => "Not Registered", "message" => "This label has not been registered in Supply Sheet", "theme" => "error"));
                     }
+
                 } else if ($new_barcode) {
-                    if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
+                    if ($totalAccumulated <= $targetIssued) {
                         $send   = $this->crud->create('issued_material_details', $post);
                         $update = $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status_issued" => 1]);
 
-                        if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
-                            if($supply_sheets){
-                                $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                            }else if($supply_materials){
-                                $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                            }else if($supply_requestions){
-                                $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                            }
-                        }
+                        $this->_checkAndCloseSupplyStatus($request_no, $item_rm_id, $issuedQty);
+
                         echo $send;
                     } else {
                         echo json_encode(array("title" => "More Then Qty", "message" => "Qty Issued <= Qty Supply", "theme" => "error"));
                     }
+
                 } else if ($bpm_labels) {
-                    if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
+                    if ($totalAccumulated <= $targetIssued) {
                         $send   = $this->crud->create('issued_material_details', $post);
                         $update = $this->crud->update('bpm_labels', ["label_no" => $post['label_no']], ["status_issued" => 1]);
 
-                        if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
-                            if($supply_sheets){
-                                $update = $this->crud->update('supply_sheets', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                            }else if($supply_materials){
-                                $update = $this->crud->update('supply_materials', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                            }else if($supply_requestions){
-                                $update = $this->crud->update('supply_requestions', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], ["status" => 1]);
-                            }
-                        }
+                        // PERBAIKAN: Gunakan Helper untuk Pengecekan Status Close
+                        $this->_checkAndCloseSupplyStatus($request_no, $item_rm_id, $issuedQty);
+
                         echo $send;
                     } else {
                         echo json_encode(array("title" => "More Then Qty", "message" => "Qty Issued <= Qty Supply", "theme" => "error"));
                     }
+
                 } else {
                     echo json_encode(array("title" => "Available", "message" => "This label not found", "theme" => "error"));
                 }
