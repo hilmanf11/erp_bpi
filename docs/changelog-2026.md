@@ -828,3 +828,8 @@ add data in grid ([30184cae](https://github.com/hilmanf11/erp_bpi/commit/30184ca
 
 ### [2026-07-31]
 - **kurniawan**: Update Report_outstanding_pr.php ([90336064](https://github.com/hilmanf11/erp_bpi/commit/90336064c8fa057587abacc6dde0504e1eef4e4c))
+
+## August 2026
+
+### [2026-08-06]
+- **kurniawan**: Update request_material_memo.php ([cc7e21e0](https://github.com/hilmanf11/erp_bpi/commit/cc7e21e08c342443ae7cae9828fc72e7ef6b9d60))
