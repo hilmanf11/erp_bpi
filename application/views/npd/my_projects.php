@@ -93,12 +93,9 @@
         </div>
 
         <div style="flex: 2; display: flex; flex-direction: column; gap: 15px;">
-            <div class="easyui-panel" title="Chart By Project" style="width:100%; height: 232px; padding: 10px; display: flex; justify-content: center; align-items: center;">
+            <div id="panel_chart_project" class="easyui-panel" title="Chart By Project" style="width:100%; height: 232px; padding: 10px; display: flex; justify-content: center; align-items: center;">
                 <canvas id="chartProject" style="max-height: 100%; max-width: 100%;"></canvas>
             </div>
-            <!-- <div class="easyui-panel" title="Chart By Owner" style="width:100%; height: 232px; padding: 10px; display: flex; justify-content: center; align-items: center;">
-                <canvas id="chartOwner" style="max-height: 100%; max-width: 100%;"></canvas>
-            </div> -->
         </div>
     </div>
 </div>
@@ -579,16 +576,61 @@
             return;
         }
 
+        // Ambil nilai filter tahun yang dipilih
+        var selectedYear = $('#filter_year').combobox('getValue');
+
+        // --- 1. UPDATE JUDUL PANEL BERDASARKAN TAHUN ---
+        var titleText = (selectedYear === 'ALL' || selectedYear === '') 
+                        ? 'Chart By Project - All Years' 
+                        : 'Chart By Project - ' + selectedYear;
+        
+        $('#panel_chart_project').panel('setTitle', titleText);
+
         $.ajax({
             url: '<?= base_url("npd/my_projects/getChartProjectData") ?>',
             type: 'GET',
             dataType: 'json',
+            data: { year: selectedYear }, // Kirim tahun ke controller
             success: function(response) {
                 var ctx = document.getElementById('chartProject').getContext('2d');
                 
                 if (window.myChartProject) {
                     window.myChartProject.destroy();
                 }
+
+                // --- 2. PLUGIN CUSTOM UNTUK MENAMPILKAN ANGKA DI DONAT ---
+                const drawDataLabels = {
+                    id: 'drawDataLabels',
+                    afterDatasetsDraw(chart, args, pluginOptions) {
+                        const { ctx, data } = chart;
+                        ctx.save();
+                        
+                        chart.getDatasetMeta(0).data.forEach((datapoint, index) => {
+                            const value = data.datasets[0].data[index];
+                            
+                            // Hanya tampilkan angka jika nilainya lebih dari 0 (mencegah teks numpuk)
+                            if (value > 0) { 
+                                // Dapatkan titik tengah dari setiap potongan donat
+                                const { x, y } = datapoint.tooltipPosition();
+                                
+                                // Pengaturan Font dan Style Teks
+                                ctx.font = 'bold 12px Arial, sans-serif';
+                                ctx.fillStyle = 'white'; // Warna angka
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                
+                                // Tambahkan efek bayangan hitam agar angka tetap terbaca di warna terang
+                                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                                ctx.shadowBlur = 3;
+                                
+                                // Gambar teks angka di kanvas
+                                ctx.fillText(value, x, y);
+                            }
+                        });
+                        
+                        ctx.restore();
+                    }
+                };
 
                 window.myChartProject = new Chart(ctx, {
                     type: 'doughnut',
@@ -600,6 +642,7 @@
                             borderWidth: 1
                         }]
                     },
+                    plugins: [drawDataLabels], // DAFTARKAN PLUGIN DI SINI
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -618,7 +661,7 @@
                                 }
                             }
                         },
-                        cutout: '70%'
+                        cutout: '70%' // Mengatur ketebalan donat (semakin kecil, semakin tebal)
                     }
                 });
             }
@@ -626,10 +669,13 @@
     }
 
     function refreshSummary() {
+        var selectedYear = $('#filter_year').combobox('getValue');
+
         $.ajax({
             url: '<?= base_url("npd/my_projects/getSummaryStats") ?>',
             type: 'GET',
             dataType: 'json',
+            data: { year: selectedYear }, // Kirim tahun ke controller
             success: function(res) {
                 $('#count_total').text(res.total);
                 $('#count_complete').text(res.complete);
@@ -639,9 +685,41 @@
         });
     }
 
-    // Panggil saat page load
+    // Fungsi gabungan untuk merefresh semua data
+    function reloadAllData() {
+        var selectedStatus = $('#filter_status').combobox('getValue');
+        var selectedYear   = $('#filter_year').combobox('getValue');
+
+        // 1. Refresh Summary
+        refreshSummary();
+        
+        // 2. Refresh Chart
+        loadChartProject();
+        
+        // 3. Refresh Datagrid dengan membawa parameter filter
+        $('#dg').datagrid('load', {
+            status: selectedStatus,
+            year: selectedYear
+        });
+    }
+
+    // Trigger otomatis saat tahun atau status diubah
+    $('#filter_year, #filter_status').combobox({
+        onChange: function(newValue, oldValue) {
+            reloadAllData();
+        }
+    });
+
+    // Panggil saat page load dan berikan event onChange pada filter
     $(document).ready(function() {
         refreshSummary();
         loadChartProject();
+
+        // Trigger otomatis saat tahun diubah
+        $('#filter_year').combobox({
+            onChange: function(newValue, oldValue) {
+                reloadAllData();
+            }
+        });
     });
 </script>
