@@ -848,3 +848,6 @@ Handle status tidak berubah di supply sheet ([65ab90a4](https://github.com/hilma
 - **kurniawan**: Update Master
 
 Update Master for transaction rm required ([8c68ef4c](https://github.com/hilmanf11/erp_bpi/commit/8c68ef4c1d5cc2260b3b47453441432d15803cc3))
+
+### [2026-08-10]
+- **kurniawan**: Update Crud.php ([030e0617](https://github.com/hilmanf11/erp_bpi/commit/030e0617680e19306424ccdc31d5e56c34c57436))
