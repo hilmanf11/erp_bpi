@@ -859,3 +859,8 @@ update warehouse for transaction rm required ([415ed402](https://github.com/hilm
 
 ### [2026-08-10]
 - **kurniawan**: Update Progress_wip.php ([872389eb](https://github.com/hilmanf11/erp_bpi/commit/872389ebecae5e34136706895efdd2333ea6214f))
+
+### [2026-08-10]
+- **kurniawan**: Update Issued_materials.php
+
+update issued for transaction rm required ([edf5a33e](https://github.com/hilmanf11/erp_bpi/commit/edf5a33e67b24228b4580684ace36e4e5548e8d1))
