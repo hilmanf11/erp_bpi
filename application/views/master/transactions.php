@@ -7,6 +7,8 @@
             <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'type',width:200,halign:'center'">Transaction Type</th>
             <th rowspan="2" data-options="field:'kind',width:150,halign:'center'">Kind Of <br>Transaction</th>
+            <th rowspan="2" data-options="field:'sub_kind',width:150,halign:'center'">Sub Kind Of <br>Transaction</th>
+            <th rowspan="2" data-options="field:'kind_label',width:150,halign:'center'">Kind Of <br>Label</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -23,7 +25,7 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -40,10 +42,25 @@
                 <input style="width:60%;" name="type" id="type" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-            <span style="width:35%; display:inline-block;">Kind of Transaction</span>
+                <span style="width:35%; display:inline-block;">Kind of Transaction</span>
                 <select style="width:60%;" name="kind" id="kind" panelHeight="auto" class="easyui-combobox">
                     <option value="IN">IN</option>
                     <option value="OUT">OUT</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Sub Kind of Transaction</span>
+                <select style="width:60%;" name="sub_kind" id="sub_kind" panelHeight="auto" class="easyui-combobox">
+                    <option value="Warehouse">Warehouse</option>
+                    <option value="Supplier">Supplier</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Kind of Label</span>
+                <select style="width:60%;" name="kind_label" id="kind_label" panelHeight="auto" class="easyui-combobox">
+                    <option value="New Label">New Label</option>
+                    <option value="Select Label">Select Label</option>
+                    <option value="No Label">No Label</option>
                 </select>
             </div>
         </fieldset>

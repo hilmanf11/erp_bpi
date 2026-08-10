@@ -99,18 +99,54 @@ class Mold_items extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post();
-            $send   = $this->crud->create('mold_items', $data);
+
+            $existing = $this->crud->read('mold_items', [], [
+                "mold_id"    => $data['mold_id'],
+                "item_fg_id" => $data['item_fg_id']
+            ]);
+
+            if (!empty($existing)) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "combination Mold and Item FG already add in database",
+                    "theme"   => "error"
+                ));
+                return;
+            }
+
+            $send = $this->crud->create('mold_items', $data);
             echo $send;
         } else {
             show_error("Cannot Process your request");
         }
     }
-    //UPDATE DATA
+    // UPDATE DATA
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id = base64_decode($this->input->get('id'));
+            if (empty($id)) {
+                echo json_encode(array("title" => "Error", "message" => "ID not Found", "theme" => "error"));
+                return;
+            }
+
             $post = $this->input->post();
+
+            $existing = $this->crud->read('mold_items', [], [
+                "mold_id"    => $post['mold_id'],
+                "item_fg_id" => $post['item_fg_id'],
+                "id !="      => $id
+            ]);
+
+            if (!empty($existing)) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Kombinasi Mold dan Item FG ini sudah ada di database",
+                    "theme"   => "error"
+                ));
+                return;
+            }
+
             $send = $this->crud->update('mold_items', ["id" => $id], $post);
             echo $send;
         } else {
@@ -176,7 +212,7 @@ class Mold_items extends CI_Controller
         @readfile($file);
     }
     //UPLOAD CREATE DATA
-        public function uploadcreate()
+    public function uploadcreate()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
@@ -204,14 +240,29 @@ class Mold_items extends CI_Controller
                 } elseif ($molds->mold_type == "SINGLE" && $data['item_fg_id_mold'] != "") {
                     echo json_encode(array("title" => "Alert", "message" => "Please Dont Input Molds type Product ID Because " . $data['mold_id'] . " Mold Type is SINGLE", "theme" => "error"));
                 } else {
+                    
+                    $existing = $this->crud->read('mold_items', [], [
+                        "mold_id"    => $data['mold_id'],
+                        "item_fg_id" => $data['item_fg_id']
+                    ]);
+
+                    if (!empty($existing)) {
+                        echo json_encode(array(
+                            "title"   => "Duplicated",
+                            "message" => "combination Mold and Item FG already add in database",
+                            "theme"   => "error"
+                        ));
+                        return;
+                    }
+
                     $send = $this->crud->create('mold_items', $dataFinal);
                     echo $send;
                 }
             }
+        } else {
+            show_error("Cannot Process your request");
         }
     }
-
-
     
     //PRINT & EXCEL DATA
     public function print($option = "")

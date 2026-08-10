@@ -171,6 +171,8 @@ class Transactions extends CI_Controller
                 <th>Code</th>
                 <th>Transaction Type</th>
                 <th>Kind of Transaction</th>
+                <th>Sub Kind of Transaction</th>
+                <th>Kind of label</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -179,7 +181,9 @@ class Transactions extends CI_Controller
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['type'] . '</td>
-                    <td>' . $data['kind'] . '</td>';
+                    <td>' . $data['kind'] . '</td>
+                    <td>' . $data['sub_kind'] . '</td>
+                    <td>' . $data['kind_label'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

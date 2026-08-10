@@ -87,35 +87,73 @@ class Item_boxs extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post();
+            $existing = $this->crud->read('item_boxs', [], [
+                "name"         => $data['name'],
+                "item_kind_id" => $data['item_kind_id'],
+                "code"         => $data['code']
+            ]);
 
-            $item_boxs = $this->crud->read('item_boxs', [], ["name" => $data['name'], "size" => $data['size'], "color" => $data['color'], "material" => $data['material']]);
-
-            if (!empty($item_boxs->name)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " is Duplicate Data", "theme" => "error"));
-            } else {
-                $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_boxs/', ["id" => $data['id']], "item_boxs", "attachment");
-                $postFinal = array_merge($data, ["attachment" => $attachment]);
-                $send   = $this->crud->create('item_boxs', $postFinal);
-                echo $send;
+            if (!empty($existing)) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Data '" . $data['name'] . "' has been add",
+                    "theme"   => "error"
+                ));
+                return; 
             }
-        } else {
-            show_error("Cannot Process your request");
-        }
-    }
-    //UPDATE DATA
-    public function update()
-    {
-        if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
-            $post = $this->input->post();
-            $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_boxs/', ["id" => $id], "item_boxs", "attachment");
-            $postFinal = array_merge($post, ["attachment" => $attachment]);
-            $send = $this->crud->update('item_boxs', ["id" => $id], $postFinal);
+            $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_boxs/', null, "item_boxs", "attachment");
+            $postFinal = array_merge($data, ["attachment" => $attachment]);
+            $send      = $this->crud->create('item_boxs', $postFinal);
+
             echo $send;
         } else {
             show_error("Cannot Process your request");
         }
     }
+
+    // UPDATE DATA
+    public function update()
+    {
+        if ($this->input->post()) {
+            $id = base64_decode($this->input->get('id'));
+            if (empty($id)) {
+                echo json_encode(array("title" => "Error", "message" => "ID tidak ditemukan", "theme" => "error"));
+                return;
+            }
+
+            $post = $this->input->post();
+
+            $existing = $this->crud->read('item_boxs', [], [
+                "name"         => $post['name'],
+                "item_kind_id" => $post['item_kind_id'],
+                "code"         => $post['code'],
+                "id !="        => $id 
+            ]);
+
+            if (!empty($existing)) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Data '" . $post['name'] . "' has been add",
+                    "theme"   => "error"
+                ));
+                return; 
+            }
+
+            $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_boxs/', ["id" => $id], "item_boxs", "attachment");
+            
+            if (!empty($attachment)) {
+                $post['attachment'] = $attachment;
+            } else {
+                unset($post['attachment']); // Jangan timpa null jika tidak ada file baru
+            }
+
+            $send = $this->crud->update('item_boxs', ["id" => $id], $post);
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+    
     //DELETE DATA
     public function delete()
     {
