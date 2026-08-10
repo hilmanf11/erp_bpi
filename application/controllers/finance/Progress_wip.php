@@ -647,16 +647,29 @@ class Progress_wip extends CI_Controller
         <br>
             <table id="customers" border="1" style="font-size: 11px;">
                 <tr>
-                    <th rowspan="2" width="20">No</th>
-                    <th rowspan="2" colspan="3">Product No</th>
-                    <th rowspan="2" colspan="2">Product Name</th>
-                    <th rowspan="2" colspan="2">Total WO Qty</th>
-                    <th rowspan="2">Begin Balance</th>
+                    <th rowspan="3" width="20">No</th>
+                    <th rowspan="3" colspan="3">Product No</th>
+                    <th rowspan="3" colspan="2">Product Name</th>
+                    <th rowspan="3" colspan="2">Total WO Qty</th>
+                    <th rowspan="3">Begin Balance</th>
+                    
+                    <th colspan="2">IN</th>
+                    
+                    <th rowspan="3">NG Process</th>
+                    <th rowspan="3">Total Production</th>
+                    
+                    <th colspan="2">IN</th>
+                    
+                    <th colspan="7">OUT</th>
+                    
+                    <th rowspan="3">Ending Balance</th>
+                </tr>
+                <tr>
                     <th colspan="2">Output Production</th>
-                    <th rowspan="2">NG Process</th>
-                    <th rowspan="2">Total Production</th>
+                    
                     <th rowspan="2">SubCont Jasa</th>
                     <th rowspan="2">ADJ IN</th>
+                    
                     <th rowspan="2">NG ASSY</th>
                     <th rowspan="2">NG WIP</th>
                     <th rowspan="2">OUTPUT ASSY</th>
@@ -664,7 +677,6 @@ class Progress_wip extends CI_Controller
                     <th rowspan="2">RFG Repacking</th>
                     <th rowspan="2">RFG SubCont Jasa</th>
                     <th rowspan="2">ADJ OUT</th>
-                    <th rowspan="2">Ending Balance</th>
                 </tr>
                 <tr>
                     <th>Qty FG</th>
