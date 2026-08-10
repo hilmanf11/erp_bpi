@@ -856,3 +856,6 @@ Update Master for transaction rm required ([8c68ef4c](https://github.com/hilmanf
 - **kurniawan**: Update Warehouse
 
 update warehouse for transaction rm required ([415ed402](https://github.com/hilmanf11/erp_bpi/commit/415ed40269a15264629099025d9de0da6e546d58))
+
+### [2026-08-10]
+- **kurniawan**: Update Progress_wip.php ([872389eb](https://github.com/hilmanf11/erp_bpi/commit/872389ebecae5e34136706895efdd2333ea6214f))
