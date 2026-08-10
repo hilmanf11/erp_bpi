@@ -851,3 +851,8 @@ Update Master for transaction rm required ([8c68ef4c](https://github.com/hilmanf
 
 ### [2026-08-10]
 - **kurniawan**: Update Crud.php ([030e0617](https://github.com/hilmanf11/erp_bpi/commit/030e0617680e19306424ccdc31d5e56c34c57436))
+
+### [2026-08-10]
+- **kurniawan**: Update Warehouse
+
+update warehouse for transaction rm required ([415ed402](https://github.com/hilmanf11/erp_bpi/commit/415ed40269a15264629099025d9de0da6e546d58))
