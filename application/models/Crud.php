@@ -201,6 +201,36 @@ class Crud extends CI_Model
         }
     }
 
+    function createNotApproval($table, $values)
+    {
+        if ($this->session->username != "") {
+            $id = $this->autoid($table);
+
+            if (@$values['id'] != "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            if ($this->db->insert($table, $data)) {
+                $this->logs("Create", json_encode($data), $table);
+                // $this->approvals($table, $id);
+                return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
+            } else {
+                return log_message('error', 'There is an error in your system or data');
+            }
+        } else {
+            return log_message('error', 'Your Session has been Expired');
+        }
+    }
+
     function update($table, $where, $values)
     {
         if ($this->session->username != "") {
