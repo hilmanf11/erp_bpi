@@ -163,6 +163,7 @@ class Issued_materials extends CI_Controller
                 $totalRows = $this->db->count_all_results('', false);
                 //Get Data Array
                 $records = $this->db->get()->result_array();
+
                 if ($totalRows <= 0) {
                     $this->db->select("a.*, '-' as workorder, a.qty as qty_req, b.number as item_number, b.id as item_rm_id, b.number as item_rm_no, b.name as item_rm_name, b.uom");
                     $this->db->from('supply_requestions a');
@@ -172,6 +173,17 @@ class Issued_materials extends CI_Controller
                     $totalRows = $this->db->count_all_results('', false);
                     //Get Data Array
                     $records = $this->db->get()->result_array();
+
+                    if ($totalRows <= 0) {
+                        $this->db->select("a.*, '-' as workorder, a.qty as qty_req, b.number as item_number, b.id as item_rm_id, b.number as item_rm_no, b.name as item_rm_name, b.uom");                
+                        $this->db->from('transaction_rm a');
+                        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+                        $this->db->where('a.request_no', $request_no);
+                        $this->db->where('a.transaction_type', 'RETURN NG TO SUPPLIER');
+                        $totalRows = $this->db->count_all_results('', false);
+                        //Get Data Array
+                        $records = $this->db->get()->result_array();
+                    }
                 }
             }
             //Mapping Data
@@ -825,13 +837,18 @@ class Issued_materials extends CI_Controller
                     if ($issued_materials) {
                         $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $purchase_order_labels->receipt_id]);
 
-                        $checkItems = $this->crud->query("SELECT a.receipt_date, a.lotno, b.label_no, a.receipt_id, b.receipt_id, c.label_no, d.label_no
-                        FROM purchase_order_receipts a 
-                        LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
-                        LEFT JOIN barcode_divides c ON b.label_no = c.label_no
-                        LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and b.label_no = d.label_no
-                        WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null AND b.status_issued = 0
-                        ORDER BY receipt_date ASC, a.lotno ASC");
+                        $is_tsn = (strpos($request_no, 'TSN') !== false);
+                        $checkItems = []; 
+                        
+                        if (!$is_tsn) {
+                            $checkItems = $this->crud->query("SELECT a.receipt_date, a.lotno, b.label_no, a.receipt_id, b.receipt_id, c.label_no, d.label_no
+                                FROM purchase_order_receipts a 
+                                LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
+                                LEFT JOIN barcode_divides c ON b.label_no = c.label_no
+                                LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and b.label_no = d.label_no
+                                WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null AND b.status_issued = 0
+                                ORDER BY receipt_date ASC, a.lotno ASC");
+                        }
 
                         if ($totalAccumulated <= $targetIssued) {
                             if (count($checkItems) <= 0) {
