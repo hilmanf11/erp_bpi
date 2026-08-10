@@ -3,10 +3,13 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'request_no',halign:'center',width:190">Transaction No</th>
-            <!-- <th rowspan="2" data-options="field:'status',width:120,align:'center',formatter:statusformat,styler:statusStyle">Status</th> -->
+            <th rowspan="2" data-options="field:'request_id',width:150,halign:'center'">Transaction Id</th>
+            <th rowspan="2" data-options="field:'status',width:120,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'">Transaction Date</th>
+            <th rowspan="2" data-options="field:'request_no_return',width:120,halign:'center'">Transaction No <br> Return</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'">Requester</th>
-            <th rowspan="2" data-options="field:'transaction_type',width:80,halign:'center',align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'transaction_type',width:200,halign:'center',align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'transaction_kind',width:200,halign:'center',align:'center'">Kind</th>
             <!-- <th rowspan="2" data-options="field:'period',width:100,halign:'center'">Period</th>
             <th rowspan="2" data-options="field:'workorder',width:120,halign:'center'">Workorder</th> -->
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
@@ -14,6 +17,9 @@
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'specification',width:100,align:'center'">Specification</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty</th>
+            <th rowspan="2" data-options="field:'qty_mpq',width:80,halign:'center',align:'right'">Mpq</th>
+            <th rowspan="2" data-options="field:'qty_label',width:80,halign:'center',align:'right'">Qty label</th>
+            <th rowspan="2" data-options="field:'state',width:80,align:'center',formatter:BtnPrintLabel">Label</th>
             <th rowspan="2" data-options="field:'remarks',width:100,align:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -84,13 +90,13 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1000px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 100%; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Request Date</span>
+                    <span style="width:35%; display:inline-block;">Transaction Date</span>
                     <input style="width:60%;" name="request_date" id="request_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
@@ -98,8 +104,24 @@
                     <input style="width:60%;" id="cutoff" class="easyui-datebox" value="<?= date("Y-m-d") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Request No</span>
-                    <input style="width:60%;" name="request_no" id="request_no" readonly class="easyui-textbox">
+                    <span style="width:35%; display:inline-block;">Transaction Type</span>
+                    <input style="width:60%;" name="transaction_id" id="transaction_id" class="easyui-combobox" data-options="onChange: checkTransactionType">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Transaction Kind</span>
+                    <input style="width:60%;" name="transaction_kind" id="transaction_kind" class="easyui-textbox" readonly="" prompt="auto">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Sub Kind</span>
+                    <input style="width:60%;" name="transaction_sub_kind" id="transaction_sub_kind" class="easyui-textbox" readonly="" data-options="onChange: checkSubKind" prompt="auto">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Kind Label</span>
+                    <input style="width:60%;" name="transaction_kind_label" id="transaction_kind_label" class="easyui-textbox" readonly="" prompt="auto">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Transaction ID</span>
+                    <input style="width:60%;" name="transaction_type" id="transaction_type" class="easyui-textbox">
                 </div>
             </div>
             <div style="width: 50%; float: left;">
@@ -108,20 +130,41 @@
                     <input style="width:60%;" name="request_name" id="request_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Transaction Type</span>
-                    <input style="width:60%;" name="transaction_id" id="transaction_id" class="easyui-combobox">
+                    <span style="width:35%; display:inline-block;">Supplier</span>
+                    <input style="width:60%;" name="supplier_id" id="supplier_id" class="easyui-combogrid" data-options="onChange: filterSupplierData">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Transaction No</span>
+                    <input style="width:60%;" name="request_no" id="request_no" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Transaction No Return</span>
+                    <input style="width:60%;" name="request_no_return" id="request_no_return" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">POR No</span>
+                    <input style="width:60%;" name="purchase_order_receipt" id="purchase_order_receipt" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remarks</span>
                     <input style="width:60%;" name="remarks" id="remarks" class="easyui-textbox">
                 </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Transaction ID</span>
-                    <input style="width:60%;" name="transaction_type" id="transaction_type" class="easyui-textbox">
+            </div>
+        </fieldset>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Division/Category</b></legend>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" name="division" id="division" class="easyui-combobox">
                 </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Transaction ID</span>
-                    <input style="width:60%;" name="transaction_kind" id="transaction_kind" class="easyui-textbox">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" name="item_category_id" id="item_category_id" class="easyui-combobox">
                 </div>
             </div>
         </fieldset>
@@ -198,6 +241,10 @@
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Part No',
+                            onBeforeLoad: function(param) {
+                                param.division = $('#division').combobox('getValue');
+                                param.item_category_id = $('#item_category_id').combobox('getValue');
+                            },
                             columns: [
                                 [{
                                     field: 'number',
@@ -254,7 +301,6 @@
                                     var combo = $(edSpec.target);
                                     combo.combobox('clear');
 
-                                    // Ganti jadi ajax POST
                                     $.ajax({
                                         type: "POST",
                                         url: "<?= base_url('warehouse/transaction_rm/readSpec') ?>",
@@ -309,6 +355,35 @@
                         }
                     }
                 }, {
+                    field: 'po_no',
+                    width: 100,
+                    hidden: true,
+                    title: "PO No",
+                    editor: { type: 'textbox' }
+               }, {
+                    field: 'max_qty',
+                    width: 100, 
+                    halign: 'center',
+                    align: 'right', 
+                    title: "Outstanding", 
+                    editor: { 
+                        type: 'numberbox', 
+                        options: { 
+                            precision: 4,
+                            readonly: true 
+                        } 
+                    }
+                }, {
+                    field: 'mpq',
+                    width: 80,
+                    halign: 'center',
+                    align: 'right',
+                    title: "MPQ",
+                    editor: {
+                        type: 'numberbox',
+                        options: { readonly: true, precision: 2 }
+                    }
+                }, {
                     field: 'qty',
                     width: 80,
                     halign: 'center',
@@ -317,33 +392,64 @@
                         type: 'numberbox',
                         options: {
                             required: true,
-                            precision: 4
+                            precision: 4,
+                            onChange: function(newValue, oldValue) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                if (!row) return;
+                                
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var edQty = dg.datagrid('getEditor', { index: rowIndex, field: 'qty' });
+                                var edLabel = dg.datagrid('getEditor', { index: rowIndex, field: 'qty_label' });
+                                
+                                var maxQty = parseFloat(row.max_qty) || 0;
+                                var mpq = parseFloat(row.mpq) || 0;
+                                var currentQty = parseFloat(newValue) || 0;
+                                
+                                var transText = $('#transaction_id').combobox('getText').toUpperCase();
+
+                                if (edQty && edLabel) {
+                                    
+                                    var isRestrictedTrans = (transText === 'RETURN NG TO SUPPLIER' || transText === 'REPLACEMENT NG FROM SUPPLIER');
+
+                                    if (isRestrictedTrans && currentQty > maxQty) {
+                                        toastr.warning("Qty cannot exceed the limit (" + maxQty + ")", "Warning");
+                                        $(edQty.target).numberbox('setValue', maxQty); 
+                                        currentQty = maxQty; 
+                                    }
+                                    
+                                    if (transText === 'RETURN NG TO SUPPLIER') {
+                                        $(edLabel.target).numberbox('setValue', 0);
+                                    } else {
+                                        if (mpq > 0 && currentQty > 0) {
+                                            var labels = Math.ceil(currentQty / mpq);
+                                            $(edLabel.target).numberbox('setValue', labels);
+                                        } else {
+                                            $(edLabel.target).numberbox('setValue', 0);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                }, 
-                // {
-                //     field: 'stock',
-                //     width: 100,
-                //     halign: 'center',
-                //     title: "Warehouse",
-                //     editor: {
-                //         type: 'numberbox',
-                //         options: {
-                //             readonly: true,
-                //             precision: 2
-                //         }
-                //     }
-                // }, 
-                {
+                }, {
+                    field: 'qty_label',
+                    width: 80,
+                    halign: 'center',
+                    align: 'center',
+                    title: "Total Label",
+                    editor: {
+                        type: 'numberbox',
+                        options: { required: true, readonly: true } 
+                    }
+                }, {
                     field: 'uom',
                     width: 80,
                     align: 'center',
                     title: "Uom",
                     editor: {
                         type: 'textbox',
-                        options: {
-                            readonly: true
-                        }
+                        options: { readonly: true }
                     }
                 }]
             ],
@@ -392,7 +498,6 @@
         }
     }
 
-
     //Update Data
     function update() {
         var row = $('#dg').treegrid('getSelected');
@@ -439,26 +544,36 @@
         if (rows.length > 0) {
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
                 if (r) {
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
+                    for (let i = 0; i < rows.length; i++) {
+                        let row = rows[i];
+                        
+                        if (row.status == 1) {
+                            toastr.warning("Transaction " + row.request_no + " is already closed and cannot be deleted.", "Warning");
+                            continue; 
+                        }
+
                         $.ajax({
                             method: 'post',
                             url: '<?= base_url('warehouse/transaction_rm/delete') ?>',
                             data: {
-                                id: row.id,
-                                request_no: row.request_no,
-                                item_rm_id: row.item_rm_id
+                                id: row.id
                             },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
+                            success: function(response) {
+                                try {
+                                    var result = JSON.parse(response.trim());
+                                    
+                                    if (result.theme == "success") {
+                                        toastr.success(result.message, result.title || "Success");
+                                    } else {
+                                        toastr.error(result.message, result.title || "Error");
+                                    }
+                                } catch (e) {
+                                    console.error("Error parsing response:", e);
+                                }
                                 $('#dg').treegrid('reload');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
-                            },
-                            complete: function(data) {
-                                $('#dg').treegrid('reload');
+                                toastr.error(jqXHR.statusText, "System Error");
                             }
                         });
                     }
@@ -541,66 +656,202 @@
         });
 
         //Save Data
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var request_no = $("#request_no").textbox('getValue');
+        //             var request_date = $("#request_date").datebox('getValue');
+        //             var request_name = $("#request_name").textbox('getValue');
+        //             var transaction_type = $("#transaction_type").textbox('getValue');
+        //             var transaction_kind = $("#transaction_kind").textbox('getValue');
+        //             var transaction_id = $("#transaction_id").combobox('getValue');
+        //             var remarks = $("#remarks").textbox('getValue');
+        //             // var item_fg_id = $("#item_fg_id").textbox('getValue');
+        //             // var item_fg_number = $("#item_fg_number").textbox('getValue');
+        //             // var workorder = $("#workorder").textbox('getValue');
+        //             // var period = $("#period").combobox('getValue');
+        //             // var wp = $("#wp").combogrid('getValue');
+
+        //             // if (period == "" || item_fg_id == "" || totalrows <= 0) {
+        //             if (totalrows <= 0) {
+        //                 toastr.error("please complete your input data");
+        //             } else {
+
+        //                 $("#dg2").datagrid('acceptChanges');
+        //                 var rows = $('#dg2').datagrid('getRows');
+        //                 var totalrows = rows.length;
+        //                 endEditing();
+
+        //                 for (let i = 0; i < totalrows; i++) {
+        //                     if (rows[i].item_rm_id) {
+        //                         $.ajax({
+        //                             type: "post",
+        //                             url: '<?= base_url('warehouse/transaction_rm/create') ?>',
+        //                             data: {
+        //                                 // item_fg_id: item_fg_id,
+        //                                 // item_fg_number: item_fg_number,
+        //                                 request_date: request_date,
+        //                                 request_no: request_no,
+        //                                 request_name: request_name,
+        //                                 transaction_type: transaction_type,
+        //                                 transaction_id: transaction_id,
+        //                                 transaction_kind: transaction_kind,
+        //                                 remarks: remarks,
+        //                                 // period: period,
+        //                                 // wp: wp,
+        //                                 // workorder: workorder,
+        //                                 item_rm_id: rows[i].item_rm_id,
+        //                                 specification: rows[i].specification,
+        //                                 qty: rows[i].qty
+        //                             },
+        //                             dataType: "json",
+        //                             success: function(result) {
+        //                                 if (result.theme == "error") {
+        //                                     toastr.warning(result.message, "Error");
+        //                                 }
+        //                             }
+        //                         });
+        //                     }
+        //                 }
+
+        //                 // Validate Auto Posting Journal Inventory
+        //                 exec_autoposting(transaction_type, request_no);
+
+        //                 Swal.fire({
+        //                     title: "Data Saved Successfully",
+        //                     icon: "success",
+        //                     confirmButtonText: 'Ok',
+        //                     allowOutsideClick: false,
+        //                 }).then((result) => {
+        //                     if (result.isConfirmed) {
+        //                         window.location.reload();
+        //                     }
+        //                 });
+        //                 $('#dg').treegrid('reload');
+        //                 $('#dlg_insert').dialog('close');
+        //             }
+        //         }
+        //     }]
+        // });
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    // Ambil semua data form
                     var request_no = $("#request_no").textbox('getValue');
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
-                    var transaction_type = $("#transaction_type").textbox('getValue');
-                    var transaction_kind = $("#transaction_kind").textbox('getValue');
                     var transaction_id = $("#transaction_id").combobox('getValue');
+                    var transaction_type = $("#transaction_id").combobox('getText').toUpperCase(); // Ambil teks (RETURN/REPLACEMENT)
+                    var transaction_kind = $("#transaction_kind").textbox('getValue');
+                    var transaction_sub_kind = $("#transaction_sub_kind").textbox('getValue');
+                    var transaction_kind_label = $("#transaction_kind_label").textbox('getValue');
+                    var cutoff = $("#cutoff").datebox('getValue');
+                    var supplier_id = $('#supplier_id').combogrid('getValue');
+                    var request_no_return = $('#request_no_return').combobox('getValue');
+                    var purchase_order_receipt = $('#purchase_order_receipt').combobox('getValue');
+                    var division = $('#division').combobox('getValue');
+                    var item_category_id = $('#item_category_id').combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
-                    // var item_fg_id = $("#item_fg_id").textbox('getValue');
-                    // var item_fg_number = $("#item_fg_number").textbox('getValue');
-                    // var workorder = $("#workorder").textbox('getValue');
-                    // var period = $("#period").combobox('getValue');
-                    // var wp = $("#wp").combogrid('getValue');
+                    
+                    var fileAttachment = $('#attachment').filebox('files')[0];
 
-                    // if (period == "" || item_fg_id == "" || totalrows <= 0) {
+                    $("#dg2").datagrid('acceptChanges');
+                    var rows = $('#dg2').datagrid('getRows');
+                    var totalrows = rows.length;
+                    endEditing();
+
                     if (totalrows <= 0) {
-                        toastr.error("please complete your input data");
-                    } else {
+                        toastr.error("Please complete your input data", "Error");
+                        return;
+                    }
 
-                        $("#dg2").datagrid('acceptChanges');
-                        var rows = $('#dg2').datagrid('getRows');
-                        var totalrows = rows.length;
-                        endEditing();
+                    var hasProcessedData = false;
 
-                        for (let i = 0; i < totalrows; i++) {
-                            if (rows[i].item_rm_id) {
-                                $.ajax({
-                                    type: "post",
-                                    url: '<?= base_url('warehouse/transaction_rm/create') ?>',
-                                    data: {
-                                        // item_fg_id: item_fg_id,
-                                        // item_fg_number: item_fg_number,
-                                        request_date: request_date,
-                                        request_no: request_no,
-                                        request_name: request_name,
-                                        transaction_type: transaction_type,
-                                        transaction_id: transaction_id,
-                                        transaction_kind: transaction_kind,
-                                        remarks: remarks,
-                                        // period: period,
-                                        // wp: wp,
-                                        // workorder: workorder,
-                                        item_rm_id: rows[i].item_rm_id,
-                                        specification: rows[i].specification,
-                                        qty: rows[i].qty
-                                    },
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "error") {
-                                            toastr.warning(result.message, "Error");
-                                        }
-                                    }
-                                });
+                    // Looping baris tabel
+                    for (let i = 0; i < totalrows; i++) {
+                        
+                        // FILTER: HANYA PROSES JIKA QTY LEBIH DARI 0
+                        if (rows[i].item_rm_id && parseFloat(rows[i].qty) > 0) {
+                            hasProcessedData = true;
+
+                            var formData = new FormData();
+                            formData.append('request_date', request_date);
+                            formData.append('request_no', request_no);
+                            formData.append('request_name', request_name);
+                            formData.append('transaction_id', transaction_id);
+                            formData.append('transaction_type', transaction_type);
+                            formData.append('transaction_kind', transaction_kind);
+                            formData.append('transaction_sub_kind', transaction_sub_kind);
+                            formData.append('transaction_kind_label', transaction_kind_label);
+                            formData.append('supplier_id', supplier_id);
+                            formData.append('request_no_return', request_no_return);
+                            formData.append('purchase_order_receipt', purchase_order_receipt);
+                            formData.append('division', division);
+                            formData.append('item_category_id', item_category_id);
+                            formData.append('remarks', remarks);
+
+                            // Data dari Datagrid dg2
+                            formData.append('item_rm_id', rows[i].item_rm_id);
+                            formData.append('specification', rows[i].specification);
+                            formData.append('po_no', rows[i].po_no || '');
+                            formData.append('lotno', rows[i].lotno || '');
+                            formData.append('qty_mpq', rows[i].mpq || 0);
+                            formData.append('max_qty', rows[i].max_qty || 0);
+                            formData.append('qty_label', rows[i].qty_label || 0);
+                            formData.append('qty', rows[i].qty);
+
+                            // Append file jika user memilih file
+                            if (fileAttachment) {
+                                formData.append('attachment', fileAttachment);
                             }
-                        }
 
+                            // Eksekusi AJAX (Satu per satu)
+                            $.ajax({
+                                type: "POST",
+                                url: '<?= base_url('warehouse/transaction_rm/create') ?>',
+                                data: formData,
+                                processData: false, // Wajib false untuk FormData
+                                contentType: false, // Wajib false untuk FormData
+                                dataType: "json",
+                                success: function(result) {
+                                    if (result && result.theme == "error") {
+                                        toastr.warning(result.message, "Error");
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    if (!hasProcessedData) {
+                        toastr.warning("No items to process. Ensure Qty > 0.", "Warning");
+                        return;
+                    }
+
+                    if (transaction_type === 'REPLACEMENT NG FROM SUPPLIER') {
+                        Swal.fire({
+                            title: "Data Saved Successfully",
+                            text: "Do you want to print the barcode?",
+                            icon: "success",
+                            showDenyButton: true,
+                            confirmButtonText: "Yes, Print",
+                            denyButtonText: "No, Close",
+                            allowOutsideClick: false,
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                var encodedRequestNo = window.btoa(request_no);
+                                var url = '<?= base_url('warehouse/transaction_rm/print_label/') ?>' + encodedRequestNo;
+                                window.open(url, '_blank');
+                                window.location.reload();
+                            } else {
+                                window.location.reload();
+                            }
+                        });
+                    } else {
                         Swal.fire({
                             title: "Data Saved Successfully",
                             icon: "success",
@@ -611,9 +862,10 @@
                                 window.location.reload();
                             }
                         });
-                        $('#dg').treegrid('reload');
-                        $('#dlg_insert').dialog('close');
                     }
+
+                    $('#dg').treegrid('reload');
+                    $('#dlg_insert').dialog('close');
                 }
             }]
         });
@@ -750,6 +1002,13 @@
         });
     });
 
+    $("#filter_transaction_type").combobox({
+        url: '<?= base_url('warehouse/transaction_rm/readType/') ?>',
+        valueField: 'type',
+        textField: 'type',
+        prompt: "Choose Type",
+    });
+
     $("#transaction_id").combobox({
         url: '<?= base_url('warehouse/transaction_rm/readType/') ?>',
         valueField: 'id',
@@ -758,14 +1017,137 @@
         onSelect: function(record){
             $("#transaction_type").textbox('setValue', record.type);
             $("#transaction_kind").textbox('setValue', record.kind);
+            $("#transaction_sub_kind").textbox('setValue', record.sub_kind);
+            $("#transaction_kind_label").textbox('setValue', record.kind_label);
         }
     });
 
-    $("#filter_transaction_type").combobox({
-        url: '<?= base_url('warehouse/transaction_rm/readType/') ?>',
-        valueField: 'type',
-        textField: 'type',
-        prompt: "Choose Type",
+    $('#supplier_id').combogrid({
+        url: '<?= base_url('master/suppliers/reads'); ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Supplier",
+        columns: [
+            [{
+                field: 'name',
+                title: 'Supplier Name',
+                width: 200
+            }, {
+                field: 'type',
+                title: 'Type',
+                width: 100
+            }, {
+                field: 'currency',
+                title: 'Currency',
+                width: 100
+            }, ]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+    });
+
+    $("#purchase_order_receipt").combobox({
+        valueField: 'receipt_no',
+        textField: 'receipt_no',
+        prompt: "Choose Purchase Order Receipt",
+        onSelect: function(record) {
+            var transText = $('#transaction_id').combobox('getText').toUpperCase();
+            
+            // JIKA RETURN: Tarik data baris tabel dari tabel POR
+            if (transText === 'RETURN NG TO SUPPLIER') {
+                $('#dg2').datagrid('loadData', {"total":0,"rows":[]});
+                
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('warehouse/transaction_rm/readPorItems') ?>", 
+                    data: { 
+                        receipt_no: record.receipt_no,
+                        trans_type: transText 
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        $('#dg2').datagrid('loadData', response);
+                    }
+                });
+            }
+        },
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+                
+                var transText = $('#transaction_id').combobox('getText').toUpperCase();
+                if (transText === 'RETURN NG TO SUPPLIER') {
+                    $('#dg2').datagrid('loadData', {"total":0,"rows":[]}); 
+                }
+            }
+        }],
+    });
+
+    $("#request_no_return").combobox({
+        valueField: 'request_no',
+        textField: 'request_no',
+        prompt: "Choose Return Transaction",
+        onSelect: function(record) {
+            if(record.purchase_order_receipt) {
+                $('#purchase_order_receipt').combobox('loadData', [{receipt_no: record.purchase_order_receipt}]);
+                $('#purchase_order_receipt').combobox('setValue', record.purchase_order_receipt);
+            }
+            
+            var transText = $('#transaction_id').combobox('getText').toUpperCase();
+            
+            // JIKA REPLACEMENT: Tarik data baris tabel menggunakan nomor retur
+            if (transText === 'REPLACEMENT NG FROM SUPPLIER') {
+                $('#dg2').datagrid('loadData', {"total":0,"rows":[]});
+                
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('warehouse/transaction_rm/readPorItems') ?>", 
+                    data: { 
+                        request_no_return: record.request_no,
+                        trans_type: transText
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        $('#dg2').datagrid('loadData', response);
+                    }
+                });
+            }
+        },
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) { 
+                $(e.data.target).combobox('clear').combobox('textbox').focus(); 
+                $('#purchase_order_receipt').combobox('clear');
+                
+                var transText = $('#transaction_id').combobox('getText').toUpperCase();
+                if (transText === 'REPLACEMENT NG FROM SUPPLIER') {
+                    $('#dg2').datagrid('loadData', {"total":0,"rows":[]}); 
+                }
+            }
+        }],
+    });
+
+    $('#division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'number',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Division',
+    }); 
+
+    $('#item_category_id').combobox({
+        url:'<?= base_url('master/item_rm/readsnotfg'); ?>',
+        valueField:'id',
+        textField:'name',
+        prompt: 'Choose Category',
     });
 
     //Format Datepicker
@@ -822,8 +1204,38 @@
     }
 
     function BtnPrintLabel(val, row) {
-        return '<a style="text-decoration: none; font-weight:bold;" target="_blank" href="<?= base_url('warehouse/transaction_rm/print_label/') ?>' + window.btoa(row.id) + '"><i class="fa fa-print"></i> Print</a>';
+        var transType = (row.transaction_kind_label || row.transaction_type || "").toUpperCase();
+        
+        if (val != "closed" && transType === 'REPLACEMENT NG FROM SUPPLIER') {
+            return '<a class="btn btn-primary w-100" style="pointer-events: visible; opacity:1;" onclick="printConfirmation(\'' + row.request_id + '\')"><i class="fa fa-print"></i> Print</a>';
+        } else {
+            return ''; 
+        }
     }
+
+    function printConfirmation(request_id) {
+        swal.fire({
+            title: 'Confirmation',
+            text: 'Are you sure want print this Label',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'YES',
+            cancelButtonText: 'CANCEL'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.open('<?= base_url('warehouse/transaction_rm/print_label_grid/') ?>' + window.btoa(request_id), '_blank');
+            } else {
+                window.location.reload();
+            }
+        });
+    }
+
+    function cellbutton(value) {
+        if (value != null) {
+            return '<a target="_blank" href="' + value + '" class="btn btn-primary btn-sm" style="pointer-events: auto; opacity:1; width:100%;"><i class="fa fa-eye"></i> View</a>';
+            // alert(value);
+        }
+    };
 
     //Format Datepicker
     function myformatter(date) {
@@ -860,5 +1272,72 @@
         } else {
             return 'background-color:#C8FFCC;';
         }
+    }
+
+    function checkSubKind(newValue, oldValue) {
+        if (newValue && newValue.toLowerCase() === 'supplier') {
+            $('#supplier_id').combogrid('enable');
+        } else {
+            $('#supplier_id').combogrid('clear');
+            $('#supplier_id').combogrid('disable');
+        }
+    }
+
+    function checkTransactionType(newValue, oldValue) {
+        var transText = $('#transaction_id').combobox('getText').toUpperCase();
+        
+        $('#purchase_order_receipt').combobox('clear').combobox('disable');
+        $('#request_no_return').combobox('clear').combobox('disable');
+        
+        if (transText === 'RETURN NG TO SUPPLIER') {
+            $('#purchase_order_receipt').combobox('enable');
+        } 
+        else if (transText === 'REPLACEMENT NG FROM SUPPLIER') {
+            $('#request_no_return').combobox('enable');
+            $('#purchase_order_receipt').combobox('readonly', true);
+        }
+    }
+
+    function filterSupplierData(newValue, oldValue) {
+        $('#purchase_order_receipt').combobox('clear');
+        $('#request_no_return').combobox('clear');
+        
+        if (newValue) {
+            var url_por = '<?= base_url('warehouse/transaction_rm/readReceipts') ?>?supplier_id=' + newValue;
+            $('#purchase_order_receipt').combobox('reload', url_por);
+            
+            var url_return = '<?= base_url('warehouse/transaction_rm/readReturnTransactions') ?>?supplier_id=' + newValue;
+            $('#request_no_return').combobox('reload', url_return);
+        } else {
+            $('#purchase_order_receipt').combobox('loadData', []);
+            $('#request_no_return').combobox('loadData', []);
+        }
+    }
+
+    /** --- Auto Posting Journal Inventory --- */
+
+    // Helper untuk eksekusi Auto Posting Journal Inventory
+    function exec_autoposting(transaction_type, document_no) {
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/execute_auto_journal/') ?>",
+            data: { 
+                modul: transaction_type,
+                document_no: document_no,
+            },
+            dataType: "json",
+            success: function(response) {
+                Swal.close();
+                if (response.status === true) { 
+                    toastr.success(response.message || "Success", "Auto Posting Journal Success");
+                } else {
+                    toastr.info(response.message, "Failed to Auto Posting Journal");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
     }
 </script>
