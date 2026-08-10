@@ -843,3 +843,8 @@ update chart dan total ([36f2528c](https://github.com/hilmanf11/erp_bpi/commit/3
 - **kurniawan**: Update Issued_materials.php
 
 Handle status tidak berubah di supply sheet ([65ab90a4](https://github.com/hilmanf11/erp_bpi/commit/65ab90a4dbe84ceebc0dfa7c9e654131b4e68705))
+
+### [2026-08-10]
+- **kurniawan**: Update Master
+
+Update Master for transaction rm required ([8c68ef4c](https://github.com/hilmanf11/erp_bpi/commit/8c68ef4c1d5cc2260b3b47453441432d15803cc3))
