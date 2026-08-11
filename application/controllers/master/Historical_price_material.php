@@ -221,7 +221,7 @@ class Historical_price_material extends CI_Controller
             $history_map[$key][] = $h;
         }
 
-        $html = '<html><head><title>Print Data</title></head>
+        $html = '<html><head><title>Print Data</title>
             <style>
                 body {font-family: Arial, Helvetica, sans-serif;}
                 #customers {border-collapse: collapse;width: 100%;font-size: 11px;}
@@ -229,11 +229,36 @@ class Historical_price_material extends CI_Controller
                 #customers tr:nth-child(even){background-color: #f2f2f2;}
                 #customers tr:hover {background-color: #ddd;}
                 #customers th {padding-top: 5px;padding-bottom: 5px;text-align: center;color: black; background-color: #f2f2f2;}
+                
+                @media screen {
+                    html, body {
+                        height: 100%;
+                        margin: 0;
+                        padding: 0;
+                        overflow: hidden;
+                    }
+                    .print-container {
+                        width: 100%;
+                        height: 100%;
+                        overflow: auto;
+                        box-sizing: border-box;
+                        padding: 10px;
+                    }
+                }
+
                 @media print {
+                    html, body, .print-container {
+                        height: auto !important;
+                        overflow: visible !important;
+                    }
                     #customers thead { display: table-header-group; }
                     #customers tbody tr { page-break-inside: avoid; }
                 }
-            </style><body>
+            </style></head>
+            <body>
+            
+            <div class="print-container">
+            
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -268,7 +293,6 @@ class Historical_price_material extends CI_Controller
             </center>
             <br><br>
             
-            <div style="width: 100%; overflow-x: auto;"> 
             <table id="customers" border="1" style="white-space: nowrap;"> 
              <thead>
                 <tr>
@@ -342,7 +366,7 @@ class Historical_price_material extends CI_Controller
         }
 
         $html .= '</tbody></table>
-            </div>
+            </div> 
             </body></html>';
         echo $html;
     }

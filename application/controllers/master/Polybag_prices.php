@@ -275,7 +275,6 @@ class Polybag_prices extends CI_Controller
         $this->db->join('divisions b', 'a.division_id = b.id','left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
-        $this->db->order_by('a.toonage', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#polybag_prices {border-collapse: collapse;width: 100%;font-size: 12px;}#polybag_prices td, #polybag_prices th {border: 1px solid #ddd;padding: 2px;}#polybag_prices tr:nth-child(even){background-color: #f2f2f2;}#polybag_prices tr:hover {background-color: #ddd;}#polybag_prices th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
