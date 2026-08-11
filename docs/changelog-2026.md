@@ -876,3 +876,8 @@ update issued for transaction rm required ([edf5a33e](https://github.com/hilmanf
 
 ### [2026-08-11]
 - **kurniawan**: Update script Warehouse ([4dc3c391](https://github.com/hilmanf11/erp_bpi/commit/4dc3c3910d102e4b0fd70a1d06cfbfbef4a3f4fb))
+
+### [2026-08-11]
+- **kurniawan**: Update sales
+
+change name export excel ([9bc80c3a](https://github.com/hilmanf11/erp_bpi/commit/9bc80c3a078568640311f7c610105ede949c4ede))
