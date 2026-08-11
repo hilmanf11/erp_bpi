@@ -864,3 +864,6 @@ update warehouse for transaction rm required ([415ed402](https://github.com/hilm
 - **kurniawan**: Update Issued_materials.php
 
 update issued for transaction rm required ([edf5a33e](https://github.com/hilmanf11/erp_bpi/commit/edf5a33e67b24228b4580684ace36e4e5548e8d1))
+
+### [2026-08-11]
+- **kurniawan**: Update item rm ([f50f7e9a](https://github.com/hilmanf11/erp_bpi/commit/f50f7e9a52461dae677801feae4a063bd7272e13))
