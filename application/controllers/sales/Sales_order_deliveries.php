@@ -285,7 +285,7 @@ class Sales_order_deliveries extends CI_Controller
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('failed/delivery_schedules.txt', 'a');
+            $textFailed = fopen('failed/delivery_schedules_fg.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -293,7 +293,7 @@ class Sales_order_deliveries extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "failed/delivery_schedules.txt";
+        $file = "failed/delivery_schedules_fg.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -358,7 +358,7 @@ class Sales_order_deliveries extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
+            header("Content-Disposition: attachment; filename=delivery_schedules_fg_$format.xls");
         }
 
         $get = $this->input->get();

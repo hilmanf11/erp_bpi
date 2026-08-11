@@ -309,7 +309,7 @@ class Sales_order_delivery_rm extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=sales_order_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=delivery_schedules_rm_$format.xls");
         }
 
         $get = $this->input->get();
