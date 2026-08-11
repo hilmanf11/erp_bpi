@@ -59,7 +59,7 @@ class Wip_adjustment_fg extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $records = $this->crud->query("SELECT id, number, name, uom 
         FROM item_fg 
-        WHERE `number` like '%$post%' or `name` like '$post'
+        WHERE (`number` like '%$post%' or `name` like '$post') and `status` = '0' 
         ORDER BY `number` ASC");
         echo json_encode($records);
     }
