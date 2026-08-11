@@ -282,6 +282,8 @@ class Wip_receipts extends CI_Controller
                 "item_number" => $record['item_number'],
                 "item_name" => $record['item_name'],
                 "lot_no" => $record['lot_no'],
+                "status_subcont" => $record['status_subcont'],
+                "subcont_type" => $record['subcont_type'],
             );
 
             $id++;
@@ -305,7 +307,14 @@ class Wip_receipts extends CI_Controller
             $filter_division = $this->input->get('filter_division');
             $filter_shift = $this->input->get('filter_shift');
             $filter_status = $this->input->get('filter_status');
+            $filter_status_subcont = $this->input->get('filter_status_subcont');
+            $filter_subcont_type = $this->input->get('filter_subcont_type');
             $filter_checksheet_number = $this->input->get('filter_checksheet_number');
+
+            if (empty($filter_from) || empty($filter_to)) {
+                $filter_from = date('Y-m-01');
+                $filter_to   = date('Y-m-t');
+            }
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -338,6 +347,14 @@ class Wip_receipts extends CI_Controller
 
             if ($filter_division != "") {
                 $this->db->where('a.division', $filter_division);
+            }
+
+            if ($filter_status_subcont != "") {
+                $this->db->where('a.status_subcont', $filter_status_subcont);
+            }
+
+            if ($filter_subcont_type != "") {
+                $this->db->where('a.subcont_type', $filter_subcont_type);
             }
 
             // $this->db->like('a.checksheet_number', $filter_checksheet);
@@ -465,92 +482,115 @@ class Wip_receipts extends CI_Controller
 
     public function print($option = "")
     {
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 300);
+
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=wip_receipts_$format.xls");
         }
 
-        $filter_from = $this->input->get('filter_from');
-        $filter_to = $this->input->get('filter_to');
-        $filter_checksheet = $this->input->get('filter_checksheet');
-        $filter_item_fg_id = $this->input->get('filter_item_fg_id');
-        $filter_document_no = $this->input->get('filter_document_no');
-        $filter_division = $this->input->get('filter_division');
-        $filter_shift = $this->input->get('filter_shift');
-        $filter_status = $this->input->get('filter_status');
+        $filter_from              = $this->input->get('filter_from');
+        $filter_to                = $this->input->get('filter_to');
+        $filter_checksheet        = $this->input->get('filter_checksheet');
+        $filter_item_fg_id        = $this->input->get('filter_item_fg_id');
+        $filter_document_no       = $this->input->get('filter_document_no');
+        $filter_division          = $this->input->get('filter_division');
+        $filter_shift             = $this->input->get('filter_shift');
+        $filter_status            = $this->input->get('filter_status');
+        $filter_status_subcont    = $this->input->get('filter_status_subcont');
+        $filter_subcont_type      = $this->input->get('filter_subcont_type');
         $filter_checksheet_number = $this->input->get('filter_checksheet_number');
-        //Config
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
 
+        if (empty($filter_from) || empty($filter_to)) {
+            $filter_from = date('Y-m-01');
+            $filter_to   = date('Y-m-t');
+        }
+
+        // Config
+        $config     = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
 
-        $wip_receipts = $this->crud->read('wip_receipts', ["checksheet_number" => $filter_checksheet_number, "document_no" => $filter_document_no,], []);
+        $doc_no        = '-';
+        $prod_date     = '-';
+        $shift_val     = '-';
+        $qrcode_html   = '';
+        $is_specific_doc = false; 
 
-        $this->db->select('a.*, b.wo_no, d.number as product_no, d.name as product_name, d.uom, c.lot_no');
+        if (!empty($filter_document_no) || !empty($filter_checksheet_number)) {
+            $this->db->select('*');
+            $this->db->from('wip_receipts');
+            $this->db->where('deleted', 0);
+            
+            if (!empty($filter_document_no)) {
+                $this->db->where('document_no', $filter_document_no);
+            }
+            if (!empty($filter_checksheet_number)) {
+                $this->db->where('checksheet_number', $filter_checksheet_number);
+            }
+            
+            $this->db->order_by('trans_date', 'DESC');
+            $wip_receipts = $this->db->get()->row();
+
+            if ($wip_receipts) {
+                $is_specific_doc = true; 
+                $doc_no          = $wip_receipts->document_no;
+                $prod_date       = $wip_receipts->prod_date;
+                $shift_val       = $wip_receipts->shift;
+
+                if (!empty($doc_no)) {
+                    $this->createQrcode($doc_no, "assets/image/qrcode/", $doc_no);
+                    $qrcode_url  = base_url('assets/image/qrcode/' . $doc_no . '.png');
+                    $qrcode_html = '<img src="' . $qrcode_url . '" width="80"/>';
+                }
+            }
+        }
+
+        $this->db->select('a.*, b.wo_no, d.number as product_no, d.name as product_name, d.uom');
         $this->db->from('wip_receipts a');
-        $this->db->join('checksheets b', 'a.checksheet_number = b.number');
-        $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
-        $this->db->join('item_fg d', 'a.item_fg_id = d.id');
-        // $this->db->join('uom e', 'd.uom_id = e.id');
+        $this->db->join('checksheets b', 'a.checksheet_number = b.number', 'left');
+        $this->db->join('item_fg d', 'a.item_fg_id = d.id', 'left');
         $this->db->where('a.deleted', 0);
-        if ($filter_from != "" or $filter_to != "") {
+
+        if ($filter_from != "" || $filter_to != "") {
             $this->db->where('a.trans_date >=', $filter_from);
             $this->db->where('a.trans_date <=', $filter_to);
         }
         if ($filter_division != "") {
             $this->db->where('a.division', $filter_division);
         }
+        if ($filter_status_subcont != "") {
+            $this->db->where('a.status_subcont', $filter_status_subcont);
+        }
+        if ($filter_subcont_type != "") {
+            $this->db->where('a.subcont_type', $filter_subcont_type);
+        }
+
         $this->db->like('a.checksheet_number', $filter_checksheet);
         $this->db->like('a.document_no', $filter_document_no);
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
         $this->db->like('a.shift', $filter_shift);
         $this->db->like('a.status', $filter_status);
         $this->db->like('a.checksheet_number', $filter_checksheet_number);
+        $this->db->group_by('a.id'); 
+
         $this->db->order_by('a.trans_date', 'DESC');
         $this->db->order_by('a.checksheet_number', 'DESC');
         $records = $this->db->get()->result_array();
 
-        $qrcodes = $wip_receipts->document_no;
-        $this->createQrcode($qrcodes, "assets/image/qrcode/", $wip_receipts->document_no);
         $html = '<html>
             <head>
                 <title>Print Data</title>
                 <style>
-                    body {
-                        font-family: Arial, Helvetica, sans-serif;
-                    }
-                    #customers {
-                        border-collapse: collapse;
-                        width: 100%;
-                        font-size: 12px;
-                    }
-                    #customers td, #customers th {
-                        border: 1px solid #ddd;
-                        padding: 2px;
-                    }
-                    #customers tr:nth-child(even) {
-                        background-color: #f2f2f2;
-                    }
-                    #customers tr:hover {
-                        background-color: #ddd;
-                    }
-                    #customers th {
-                        padding-top: 2px;
-                        padding-bottom: 2px;
-                        text-align: center;
-                        color: black;
-                    }
-                    .header-table {
-                        width: 100%;
-                        font-size: 12px;
-                        margin-bottom: 20px;
-                    }
-                    .header-table td {
-                        vertical-align: top;
-                    }
+                    body { font-family: Arial, Helvetica, sans-serif; }
+                    #customers { border-collapse: collapse; width: 100%; font-size: 12px; }
+                    #customers td, #customers th { border: 1px solid #ddd; padding: 4px; }
+                    #customers tr:nth-child(even) { background-color: #f2f2f2; }
+                    #customers tr:hover { background-color: #ddd; }
+                    #customers th { padding-top: 4px; padding-bottom: 4px; text-align: center; color: black; }
+                    .header-table { width: 100%; font-size: 12px; margin-bottom: 20px; }
+                    .header-table td { vertical-align: top; }
                 </style>
             </head>
             <body>
@@ -558,30 +598,24 @@ class Wip_receipts extends CI_Controller
                     <table class="header-table">
                         <tr>
                             <td width="10%">
-                                <img src="' . $config->favicon . '" width="60">
+                                <img src="' . ($config ? $config->favicon : '') . '" width="60">
                             </td>
                             <td width="70%">
-                                <b style="font-size: 14px;">' . $config->name . '</b><br>
-                                <span style="font-size: 10px;">' . $config->description . '</span><br>
+                                <b style="font-size: 14px;">' . ($config ? $config->name : '') . '</b><br>
+                                <span style="font-size: 10px;">' . ($config ? $config->description : '') . '</span><br>
                                 <span style="font-size: 10px;">Jl. Jababeka XIV, Blok U No.12B</span><br>
                                 <span style="font-size: 10px;">Cikarang Industrial Estate, Bekasi 17530, Indonesia</span>
                             </td>
                             <td width="20%" style="text-align: right;">
                                 <table style="width: 100%; font-size: 10px;">
                                     <tr>
-                                        <td>Form No</td>
-                                        <td>:</td>
-                                        <td>' . $config_iso->doc_wip_receipt . '</td>
+                                        <td>Form No</td><td>:</td><td>' . ($config_iso ? $config_iso->doc_wip_receipt : '-') . '</td>
                                     </tr>
                                     <tr>
-                                        <td>Print Date</td>
-                                        <td>:</td>
-                                        <td>' . date("d M Y H:i:s") . '</td>
+                                        <td>Print Date</td><td>:</td><td>' . date("d M Y H:i:s") . '</td>
                                     </tr>
                                     <tr>
-                                        <td>Print By</td>
-                                        <td>:</td>
-                                        <td>' . $this->session->username . '</td>
+                                        <td>Print By</td><td>:</td><td>' . $this->session->username . '</td>
                                     </tr>
                                 </table>
                             </td>
@@ -596,93 +630,80 @@ class Wip_receipts extends CI_Controller
                                         <tr>
                                             <td style="width: 150px;">Document No</td>
                                             <td style="width: 10px;">:</td>
-                                            <td>' . $wip_receipts->document_no . '</td>
+                                            <td><b>' . $doc_no . '</b></td>
                                         </tr>
                                         <tr>
-                                            <td>Production Date</td>
-                                            <td>:</td>
-                                            <td>' . $wip_receipts->prod_date . '</td>
+                                            <td>Production Date</td><td>:</td><td>' . $prod_date . '</td>
                                         </tr>
                                         <tr>
-                                            <td>Process Name</td>
-                                            <td>:</td>
-                                            <td>INJECTION</td>
+                                            <td>Process Name</td><td>:</td><td>INJECTION</td>
                                         </tr>
                                         <tr>
-                                            <td>Shift</td>
-                                            <td>:</td>
-                                            <td>' . $wip_receipts->shift . '</td>
+                                            <td>Shift</td><td>:</td><td>' . $shift_val . '</td>
                                         </tr>
                                     </table>
                                 </td>
                                 <td style="width: 100px; text-align: center;">
-                                    <img src="' . base_url('assets/image/qrcode/' . $wip_receipts->document_no . '.png') . '" width="80"/>
+                                    ' . $qrcode_html . '
                                 </td>
                             </tr>
                         </table>
-
                     </div>
                 </center>
                 
                 <table id="customers">
                     <tr>
-                        <th width="20">No</th>
+                        <th width="20">No</th>' . 
+                        ($is_specific_doc ? '' : '<th>Document No</th>') . '
                         <th>Product No</th>
                         <th>Product Name</th>
                         <th>Lot No</th>
                         <th>Qty</th>
                         <th>Unit</th>
+                        <th>Status Subcont</th>
+                        <th>Subcont Type</th>
                         <th>Remarks</th>
                     </tr>';
 
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
-                            <td style="text-align:center">' . $no . '</td>
-                            <td>' . $data['product_no'] . '</td>
-                            <td>' . $data['product_name'] . '</td>
-                            <td>' . $data['lot_no'] . '</td>
-                            <td style="text-align:right">' . number_format($data['qty']) . '</td>
-                            <td>' . $data['uom'] . '</td>
-                            <td>' . $data['remarks'] . '</td>
-                        </tr>';
+                        <td style="text-align:center">' . $no . '</td>' . 
+                        ($is_specific_doc ? '' : '<td>' . $data['document_no'] . '</td>') . '
+                        <td>' . $data['product_no'] . '</td>
+                        <td>' . $data['product_name'] . '</td>
+                        <td>' . $data['lot_no'] . '</td>
+                        <td style="text-align:right">' . number_format($data['qty']) . '</td>
+                        <td style="text-align:center">' . $data['uom'] . '</td>
+                        <td style="text-align:center">' . $data['status_subcont'] . '</td>
+                        <td style="text-align:center">' . $data['subcont_type'] . '</td>
+                        <td>' . $data['remarks'] . '</td>
+                    </tr>';
             $no++;
         }
 
         $html .= '</table>
-            <br><br>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; border: 1px solid #ddd;">
-                <tr>
-                    <td style="width: 25%; border: 1px solid #ddd; padding: 20px;">
-                        <b>Approved By</b>
-                    </td>
-                    <td style="width: 25%; border: 1px solid #ddd; padding: 20px;">
-                        <b>Accepted By</b>
-                    </td>
-                    <td style="width: 25%; border: 1px solid #ddd; padding: 20px;">
-                        <b>Approved By</b>
-                    </td>
-                    <td style="width: 25%; border: 1px solid #ddd; padding: 20px;">
-                        <b>Submitted By</b>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="height: 60px; border: 1px solid #ddd;"></td>
-                    <td style="height: 60px; border: 1px solid #ddd;"></td>
-                    <td style="height: 60px; border: 1px solid #ddd;"></td>
-                    <td style="height: 60px; border: 1px solid #ddd;"></td>
-                </tr>
-            </table>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; margin-top: 10px;">
-                <tr>
-                    <td style="width: 100%; border: 1px solid #ddd; padding: 5px;">
-                        <b>Note:</b>
-                    </td>
-                </tr>
-            </table>
-        </body></html>';
-
-        $html .= '</table></body></html>';
+                <br><br>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; border: 1px solid #ddd;">
+                    <tr>
+                        <td style="width: 25%; border: 1px solid #ddd; padding: 15px;"><b>Approved By</b></td>
+                        <td style="width: 25%; border: 1px solid #ddd; padding: 15px;"><b>Accepted By</b></td>
+                        <td style="width: 25%; border: 1px solid #ddd; padding: 15px;"><b>Approved By</b></td>
+                        <td style="width: 25%; border: 1px solid #ddd; padding: 15px;"><b>Submitted By</b></td>
+                    </tr>
+                    <tr>
+                        <td style="height: 60px; border: 1px solid #ddd;"></td>
+                        <td style="height: 60px; border: 1px solid #ddd;"></td>
+                        <td style="height: 60px; border: 1px solid #ddd;"></td>
+                        <td style="height: 60px; border: 1px solid #ddd;"></td>
+                    </tr>
+                </table>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; margin-top: 10px;">
+                    <tr>
+                        <td style="width: 100%; border: 1px solid #ddd; padding: 5px;"><b>Note:</b></td>
+                    </tr>
+                </table>
+            </body></html>';
 
         echo $html;
     }

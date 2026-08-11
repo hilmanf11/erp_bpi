@@ -1639,6 +1639,7 @@ class Purchase_orders extends CI_Controller
     }
     public function print($option = "")
     {
+        ini_set('memory_limit', '512M');
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");

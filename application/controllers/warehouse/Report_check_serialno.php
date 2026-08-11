@@ -44,6 +44,8 @@ class Report_check_serialno extends CI_Controller
     }
     public function print($option = "")
     {
+        ini_set('memory_limit', '512M');
+        
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
@@ -63,22 +65,45 @@ class Report_check_serialno extends CI_Controller
         IF(d.label_no IS NOT NULL, 1, 0) as issued_label,  c.qty');
         $this->db->from('purchase_order_receipts a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        $this->db->join('purchase_order_labels c', 'a.receipt_id = c.receipt_id');
+        $this->db->join('purchase_order_labels c', 'a.receipt_id = c.receipt_id','left');
         $this->db->join('issued_material_details d', 'c.label_no = d.label_no','left');
+        
         $this->db->where('a.deleted', 0);
-        $this->db->where("a.receipt_date between '$filter_from' and '$filter_to'");
-        $this->db->like('a.receipt_id', $filter_serial_no);
-        $this->db->like('a.supplier_id', $filter_supplier);
-        $this->db->like('a.receipt_no', $filter_receipt);
-        $this->db->like('a.item_rm_id', $filter_product_no);
-        if ($filter_status != "-") {
-            $this->db->like('c.status', $filter_status);
+        
+        if (!empty($filter_from) && !empty($filter_to)) {
+            $this->db->where("a.receipt_date between '$filter_from' and '$filter_to'");
         }
+
+        if (!empty($filter_serial_no)) {
+            $this->db->like('c.label_no', $filter_serial_no);
+        }
+        
+        if (!empty($filter_supplier)) {
+            $this->db->where('a.supplier_id', $filter_supplier);
+        }
+        
+        if (!empty($filter_receipt)) {
+            $this->db->like('a.receipt_no', $filter_receipt);
+        }
+        
+        if (!empty($filter_product_no)) {
+            $this->db->where('a.item_rm_id', $filter_product_no); // Ubah ke where jika berupa ID spesifik
+        }
+        
+        if ($filter_status != "-" && $filter_status != "") {
+            $this->db->where('c.status', $filter_status); 
+        }
+
         $this->db->order_by('a.receipt_no', 'ASC');
         $this->db->order_by('c.label_no', 'ASC');
         $records = $this->db->get()->result_array();
         
-        $supplier = $this->crud->read("suppliers", [], ["id" => @$records[0]['supplier_id']]);
+        // Proteksi saat menarik nama supplier agar tidak error saat data kosong
+        $supplier_name = "";
+        if (!empty($records) && !empty($records[0]['supplier_id'])) {
+            $supplier = $this->crud->read("suppliers", [], ["id" => $records[0]['supplier_id']]);
+            $supplier_name = $supplier ? $supplier->name : "";
+        }
         
         //Config
         $this->db->select('*');
