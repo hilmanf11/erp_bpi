@@ -870,3 +870,6 @@ update issued for transaction rm required ([edf5a33e](https://github.com/hilmanf
 
 ### [2026-08-11]
 - **kurniawan**: Update Master ([1fd70da7](https://github.com/hilmanf11/erp_bpi/commit/1fd70da7c57f77a9f80f92e519438cf780229b21))
+
+### [2026-08-11]
+- **kurniawan**: Update Wip_adjustment_fg.php ([b0496aca](https://github.com/hilmanf11/erp_bpi/commit/b0496acaec016850f62a2ad1c09e753514d75772))
