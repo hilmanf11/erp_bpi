@@ -873,3 +873,6 @@ update issued for transaction rm required ([edf5a33e](https://github.com/hilmanf
 
 ### [2026-08-11]
 - **kurniawan**: Update Wip_adjustment_fg.php ([b0496aca](https://github.com/hilmanf11/erp_bpi/commit/b0496acaec016850f62a2ad1c09e753514d75772))
+
+### [2026-08-11]
+- **kurniawan**: Update script Warehouse ([4dc3c391](https://github.com/hilmanf11/erp_bpi/commit/4dc3c3910d102e4b0fd70a1d06cfbfbef4a3f4fb))
