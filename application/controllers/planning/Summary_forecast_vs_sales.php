@@ -33,7 +33,7 @@ class Summary_forecast_vs_sales extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
+            header("Content-Disposition: attachment; filename=summary_forecast_vs_sales_$format.xls");
         }
         $filter_month = $this->input->get('filter_month');
         $filter_year   = $this->input->get('filter_year');

@@ -106,11 +106,19 @@
                     </select>
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Subcont TYpe</span>
+                    <span style="width:35%; display:inline-block;">Subcont Type</span>
                     <select style="width:60%;" id="filter_subcont_type" class="easyui-combobox" panelHeight="auto">
                         <option value="">Select All</option>
                         <option value="Jasa">Jasa</option>
                         <option value="Finished Good">Finished Good</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Label</span>
+                    <select style="width:60%;" id="filter_status_label" class="easyui-combobox" data-options="editable:false">
+                        <option value="">Select All</option>
+                        <option value="OPEN">OPEN</option>
+                        <option value="CLOSED">CLOSED</option>
                     </select>
                 </div>
                 <div class="fitem">
@@ -723,6 +731,7 @@
         var filter_status = $("#filter_status").combobox('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
+        var filter_status_label = $("#filter_status_label").combobox('getValue');
         var filter_checksheet_type = $("#filter_checksheet_type").combobox('getValue');
 
         var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
@@ -730,7 +739,7 @@
         "&filter_shift=" + filter_shift + "&filter_item_fg_id=" + filter_item_fg_id + 
         "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
         "&filter_division=" + filter_division + "&filter_status=" + filter_status + 
-        "&filter_checksheet_type=" + filter_checksheet_type;
+        "&filter_status_label=" + filter_status_label + "&filter_checksheet_type=" + filter_checksheet_type;
 
         $('#dg').datagrid({
             url: '<?= base_url('planning/checksheets/datatables') ?>' + url,
@@ -760,14 +769,15 @@
         var filter_status = $("#filter_status").combobox('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
+        var filter_status_label = $("#filter_status_label").combobox('getValue');
         var filter_checksheet_type = $("#filter_checksheet_type").combobox('getValue');
 
         var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_wo_no=" + filter_wo_no + "&filter_checksheet=" + filter_checksheet + 
-        "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
         "&filter_shift=" + filter_shift + "&filter_item_fg_id=" + filter_item_fg_id + 
-        "&filter_division=" + filter_division + "&filter_status=" + filter_status +
-        "&filter_checksheet_type=" + filter_checksheet_type;
+        "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
+        "&filter_division=" + filter_division + "&filter_status=" + filter_status + 
+        "&filter_status_label=" + filter_status_label + "&filter_checksheet_type=" + filter_checksheet_type;
         
         window.location.assign('<?= base_url('planning/checksheets/print/excel') ?>' + url);
     }
