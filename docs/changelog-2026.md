@@ -881,3 +881,6 @@ update issued for transaction rm required ([edf5a33e](https://github.com/hilmanf
 - **kurniawan**: Update sales
 
 change name export excel ([9bc80c3a](https://github.com/hilmanf11/erp_bpi/commit/9bc80c3a078568640311f7c610105ede949c4ede))
+
+### [2026-08-12]
+- **kurniawan**: Update script planning ([c22a5f32](https://github.com/hilmanf11/erp_bpi/commit/c22a5f322eb603b5475705d570b7c4cffbe8b744))
