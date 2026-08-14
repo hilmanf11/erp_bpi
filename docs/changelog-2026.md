@@ -892,3 +892,6 @@ change name export excel ([9bc80c3a](https://github.com/hilmanf11/erp_bpi/commit
 - **kurniawan**: update script master
 
 historical price material & fg ([01827ba9](https://github.com/hilmanf11/erp_bpi/commit/01827ba9e38639d9bcd64ee04abd3db99dff67d5))
+
+### [2026-08-14]
+- **kurniawan**: Update Historical_price_material.php ([4b8b55c8](https://github.com/hilmanf11/erp_bpi/commit/4b8b55c85a123faf2643158c6d73c08014638ec4))
