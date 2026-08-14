@@ -151,6 +151,7 @@ class Historical_price_material extends CI_Controller
         $filter_item_family = $this->input->get('filter_item_family');
         $filter_items = $this->input->get('filter_items');
         $filter_division = $this->input->get('filter_division');
+        $filter_supplier_id = $this->input->get('filter_supplier_id');
 
         // Config
         $this->db->select('*');
@@ -188,7 +189,7 @@ class Historical_price_material extends CI_Controller
             e.name as prodfam, 
             b.uom,
             f.name as category_name,
-            a.currency,
+            c.currency,
             c.name as supplier_name
         FROM supplier_items a
         JOIN item_rm b ON a.item_rm_id = b.id
@@ -199,6 +200,7 @@ class Historical_price_material extends CI_Controller
         AND e.number LIKE '%$filter_item_family%'
         AND b.id LIKE '%$filter_items%'
         AND b.division LIKE '%$filter_division%'
+        AND c.id LIKE '%$filter_supplier_id%'
         AND b.division NOT LIKE 'ADM'
         GROUP BY a.item_rm_id, a.supplier_id
         ORDER BY b.division ASC, f.name ASC, c.name ASC, b.name ASC, b.number";
