@@ -887,3 +887,8 @@ change name export excel ([9bc80c3a](https://github.com/hilmanf11/erp_bpi/commit
 
 ### [2026-08-12]
 - **kurniawan**: update planning ([602013b3](https://github.com/hilmanf11/erp_bpi/commit/602013b34a633f1592f68d3d86b330870720d54b))
+
+### [2026-08-14]
+- **kurniawan**: update script master
+
+historical price material & fg ([01827ba9](https://github.com/hilmanf11/erp_bpi/commit/01827ba9e38639d9bcd64ee04abd3db99dff67d5))
