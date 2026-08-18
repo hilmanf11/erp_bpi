@@ -140,6 +140,29 @@ class Purchase_order_receipts extends CI_Controller
         echo "POR-" . $datenow . "-" . $autoID;
     }
 
+    public function readMemoNo()
+    {
+        $supplier_id = $this->input->get('supplier_id');
+        $po_no = $this->input->get('po_no');
+
+        if (empty($supplier_id) || empty($po_no)) {
+            echo json_encode([]);
+            return;
+        }
+
+        // Query ke table request_materials
+        $this->db->select('memo_no');
+        $this->db->from('request_materials');
+        $this->db->where('supplier_id', $supplier_id);
+        $this->db->where('po_no', $po_no);
+        $this->db->where('status_memo', 0); 
+        
+        $this->db->group_by('memo_no');
+        $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
+    }
+
     // public function lotno($date = "")
     // {
     //     $dates = date_create(base64_decode($date));
@@ -531,29 +554,46 @@ class Purchase_order_receipts extends CI_Controller
     // public function create()
     // {
     //     if ($this->input->post()) {
-    //         $post   = $this->input->post();
-    //         $por    = $this->crud->read('purchase_order_receipts', [], ["item_rm_id" => $post['item_rm_id'],"supplier_id" => $post['supplier_id'],"bc_document" => $post['bc_document'],"bc_date" => $post['bc_date'],"qty_receipt" => $post['qty_receipt'],"po_no" => $post['po_no'],"specification" => $post['specification']]);
-            
-    //         if (!empty($por)) {
+    //         $post = $this->input->post();
+
+    //         $this->db->where('item_rm_id', $post['item_rm_id']);
+    //         $this->db->where('supplier_id', $post['supplier_id']);
+    //         $this->db->where('po_no', $post['po_no']);
+    //         $this->db->where('bc_document', $post['bc_document']);
+    //         $this->db->where('bc_date', $post['bc_date']);
+    //         $this->db->where('qty_receipt', $post['qty_receipt']);
+
+    //         // if (!empty($post['specification'])) {
+    //         //     $this->db->where('specification', $post['specification']);
+    //         // } else {
+    //         //     $this->db->group_start()
+    //         //         ->where('specification', '')
+    //         //         ->or_where('specification IS NULL', null, false)
+    //         //         ->group_end();
+    //         // }
+
+    //         $query = $this->db->get('purchase_order_receipts');
+
+    //         if ($query->num_rows() > 0) {
     //             echo json_encode([
     //                 "status"  => false,
     //                 "theme"   => "error",
-    //                 "message" => "Duplicate data found!,Please Check your Doc No and Doc Date."
+    //                 "message" => "Duplicate data found! Please check your Doc No, Date, and Specification."
     //             ]);
     //             return;
     //         }
 
-    //         if ($post['qty_os'] > $post['qty_receipt']) {
-    //             $status = 0;
-    //         } else {
-    //             $status = 1;
-    //         }
+    //         $status = ($post['qty_os'] > $post['qty_receipt']) ? 0 : 1;
 
-    //         $send   = $this->crud->create('purchase_order_receipts', array_merge($post, ["receipt_id" => $this->receipt_id($post['receipt_no'])]));
+    //         $receipt_id = $this->receipt_id($post['receipt_no']);
+
+    //         $data = array_merge($post, ['receipt_id' => $receipt_id]);
+    //         $send = $this->crud->create('purchase_order_receipts', $data);
 
     //         $this->db->where('po_no', $post['po_no']);
     //         $this->db->where('item_rm_id', $post['item_rm_id']);
-    //         $this->db->update("purchase_orders", ["status" => $status]);
+    //         $this->db->update('purchase_orders', ['status' => $status]);
+
     //         echo $send;
     //     } else {
     //         show_error("Cannot Process your request");
@@ -572,15 +612,6 @@ class Purchase_order_receipts extends CI_Controller
             $this->db->where('bc_date', $post['bc_date']);
             $this->db->where('qty_receipt', $post['qty_receipt']);
 
-            // if (!empty($post['specification'])) {
-            //     $this->db->where('specification', $post['specification']);
-            // } else {
-            //     $this->db->group_start()
-            //         ->where('specification', '')
-            //         ->or_where('specification IS NULL', null, false)
-            //         ->group_end();
-            // }
-
             $query = $this->db->get('purchase_order_receipts');
 
             if ($query->num_rows() > 0) {
@@ -593,15 +624,43 @@ class Purchase_order_receipts extends CI_Controller
             }
 
             $status = ($post['qty_os'] > $post['qty_receipt']) ? 0 : 1;
-
             $receipt_id = $this->receipt_id($post['receipt_no']);
-
             $data = array_merge($post, ['receipt_id' => $receipt_id]);
             $send = $this->crud->create('purchase_order_receipts', $data);
 
             $this->db->where('po_no', $post['po_no']);
             $this->db->where('item_rm_id', $post['item_rm_id']);
             $this->db->update('purchase_orders', ['status' => $status]);
+
+            if (!empty($post['memo_no'])) {
+                $memo_no = $post['memo_no'];
+                $po_no = $post['po_no'];
+                $item_rm_id = $post['item_rm_id'];
+
+                $this->db->select('SUM(qty) as target_qty');
+                $this->db->from('request_materials');
+                $this->db->where('memo_no', $memo_no);
+                $this->db->where('po_no', $po_no);
+                $this->db->where('item_rm_id', $item_rm_id);
+                $req_mat = $this->db->get()->row();
+                $target_qty = $req_mat ? $req_mat->target_qty : 0;
+
+                $this->db->select('SUM(qty_receipt) as total_receipt');
+                $this->db->from('purchase_order_receipts');
+                $this->db->where('memo_no', $memo_no);
+                $this->db->where('po_no', $po_no);
+                $this->db->where('item_rm_id', $item_rm_id);
+                // $this->db->where('deleted', 0); 
+                $por_data = $this->db->get()->row();
+                $total_receipt = $por_data ? $por_data->total_receipt : 0;
+
+                $status_memo = ($total_receipt >= $target_qty) ? 1 : 0;
+
+                $this->db->where('memo_no', $memo_no);
+                $this->db->where('po_no', $po_no);
+                $this->db->where('item_rm_id', $item_rm_id);
+                $this->db->update('request_materials', ['status_memo' => $status_memo]);
+            }
 
             echo $send;
         } else {

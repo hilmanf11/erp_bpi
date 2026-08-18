@@ -178,7 +178,7 @@ class Request_material_memo extends CI_Controller
                 b.name as prodfam, 
                 a.uom,
                 c.name as category_name,
-                COALESCE(o.supplier_name,'-') as supplier_name,
+                COALESCE(m.supplier_name, o.supplier_name, '-') as supplier_name,
                 COALESCE(l.need_1, 0) as plan_supply,
                 COALESCE(n.min, 0) as min,
                 COALESCE(n.max, 0) as max,
@@ -251,16 +251,26 @@ class Request_material_memo extends CI_Controller
                             WHERE a.share_order = 100 AND b.item_family_id IN('P01','P02','P06')
                         ) m ON a.id = m.item_rm_id
             LEFT JOIN (SELECT item_rm_id, min, max, leadtime FROM master_minmax WHERE status = 0 group by item_rm_id) n ON a.id = n.item_rm_id
-            LEFT JOIN (SELECT a.item_rm_id, c.name as supplier_name, SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os
-                            FROM (SELECT item_rm_id, po_no, SUM(qty) AS qty, supplier_id FROM purchase_orders WHERE STATUS = 0 AND po_date <= '$filter_cutoff' GROUP BY item_rm_id, po_no) a
-                            LEFT JOIN (
-                                    SELECT item_rm_id, po_no, SUM(qty_receipt) AS qty_receipt 
-                                    FROM purchase_order_receipts 
-                                    WHERE receipt_date <= '$filter_cutoff' 
-                                    GROUP BY item_rm_id, po_no) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no
-                            JOIN suppliers c ON a.supplier_id = c.id
-                            GROUP BY a.item_rm_id
-                        ) o ON a.id = o.item_rm_id
+            LEFT JOIN (
+                        SELECT 
+                            a.item_rm_id, 
+                            MAX(c.name) as supplier_name,
+                            SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os
+                        FROM (
+                            SELECT item_rm_id, po_no, SUM(qty) AS qty, supplier_id 
+                            FROM purchase_orders 
+                            WHERE STATUS = 0 AND po_date <= '$filter_cutoff' 
+                            GROUP BY item_rm_id, po_no, supplier_id
+                        ) a
+                        LEFT JOIN (
+                            SELECT item_rm_id, po_no, SUM(qty_receipt) AS qty_receipt 
+                            FROM purchase_order_receipts 
+                            WHERE receipt_date <= '$filter_cutoff' 
+                            GROUP BY item_rm_id, po_no
+                        ) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no
+                        JOIN suppliers c ON a.supplier_id = c.id
+                        GROUP BY a.item_rm_id
+                    ) o ON a.id = o.item_rm_id
             LEFT JOIN (SELECT item_rm_id, MAX(total_qty) as total_qty
                             FROM (
                                 SELECT 
@@ -323,16 +333,21 @@ class Request_material_memo extends CI_Controller
             if ($id === "0") {
                 //Select Query
                 $this->db->select('a.*,
+                COUNT(a.status) as total_status,
                 b.uom,
                 d.name as supplier_name,
                 k.total_approved_to_checking,
                 l.total_approved_to_approved,
-                COUNT(a.approved_to) as total_approved_to');
+                COUNT(a.approved_to) as total_approved_to,
+                n.total_status_open,
+                m.total_status_close');
                 $this->db->from('request_materials a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
                 $this->db->join('(SELECT memo_no, COUNT(approved_to) as total_approved_to_checking FROM request_materials WHERE approved_to != "" || approved_to = NULL GROUP BY memo_no) k', 'a.memo_no = k.memo_no', 'left');
                 $this->db->join('(SELECT memo_no, COUNT(approved_to) as total_approved_to_approved FROM request_materials WHERE approved_to = "" || approved_to = NULL GROUP BY memo_no) l', 'a.memo_no = l.memo_no', 'left');
+                $this->db->join('(SELECT memo_no, COUNT(status_memo) as total_status_close FROM request_materials WHERE status_memo = 1 GROUP BY memo_no) m', 'a.memo_no = m.memo_no', 'left');
+                $this->db->join('(SELECT memo_no, COUNT(status_memo) as total_status_open FROM request_materials WHERE status_memo = 0 GROUP BY memo_no) n', 'a.memo_no = n.memo_no', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from2 != "" or $filter_to2 != "") {
                     $this->db->where('a.memo_date >=', $filter_from2);
@@ -368,6 +383,18 @@ class Request_material_memo extends CI_Controller
                         $approved_to = "";
                     }
 
+                    if ($record['total_status'] == $record['total_status_open']) {
+                        $status_memo = "0";
+                    } elseif ($record['total_status'] == $record['total_status_close']) {
+                        $status_memo = "1";
+                    } elseif ($record['total_status_open'] >= 1) {
+                        $status_memo = "0";
+                    } elseif ($record['total_status_close'] >= 1) {
+                        $status_memo = "1";
+                    } else {
+                        $status_memo = "0";
+                    }
+
                     $arr[] = array(
                         "id" => $record['memo_no'],
                         "ids" => $record['id'],
@@ -379,6 +406,10 @@ class Request_material_memo extends CI_Controller
                         "status" => "",
                         "state" => "closed",
                         "approved_to" => $approved_to,
+                        "total_status" => $record['total_status'],
+                        "status_memo" => $status_memo,
+                        "total_status_open" => $record['total_status_open'],
+                        "total_status_close" => $record['total_status_close'],
                         "total_checking" => $record['total_approved_to_checking'],
                         "total_approved" => $record['total_approved_to_approved'],
                         "type" => $record['type'],

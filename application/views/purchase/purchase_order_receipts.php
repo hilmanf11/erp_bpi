@@ -165,6 +165,10 @@
                     <span style="width:35%; display:inline-block;">PO No</span>
                     <input style="width:60%;" name="po_no" id="po_no" required="" class="easyui-combogrid">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Memo No</span>
+                    <input style="width:60%;" name="memo_no" id="memo_no" class="easyui-combobox">
+                </div>
                 <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">AWB No</span>
                     <input style="width:60%;" name="awb_no" id="awb_no" class="easyui-textbox">
@@ -242,8 +246,14 @@
                 }]
             ],
             onSelect: function(val, row) {
+                $('#po_no').combogrid('clear');
+                $('#memo_no').combobox('clear');
+                $('#memo_no').combobox('loadData', []);
+
+                var supplier_id = row.id;
+
                 $('#po_no').combogrid({
-                    url: '<?= base_url('purchase/purchase_orders/readPono?supplier_id=') ?>' + row.id,
+                    url: '<?= base_url('purchase/purchase_orders/readPono?supplier_id=') ?>' + supplier_id,
                     panelWidth: 500,
                     idField: 'po_no',
                     textField: 'po_no',
@@ -261,6 +271,23 @@
                             width: 150
                         }]
                     ],
+                    onSelect: function(indexPo, rowPo) {
+                        $('#memo_no').combobox('clear'); 
+                        var po_no = encodeURIComponent(rowPo.po_no); 
+                        
+                        $('#memo_no').combobox({
+                            url: '<?= base_url('purchase/purchase_order_receipts/readMemoNo') ?>?supplier_id=' + supplier_id + '&po_no=' + po_no,
+                            valueField: 'memo_no',
+                            textField: 'memo_no',
+                            prompt: "Choose Memo No",
+                            icons: [{
+                                iconCls: 'icon-clear',
+                                handler: function(e) {
+                                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                                }
+                            }]
+                        });
+                    }
                 });
 
                 let date = $('#receipt_date').datebox('getValue');
@@ -617,7 +644,7 @@
     //     }
     // }
 
-    function print_receiving_note() {
+    function print_receiving_note_existing() {
         var receipt_no = $("#filter_receipt_no").combobox('getValue');
         if (receipt_no == "") {
             toastr.warning("Please select Receipt No!", "Information");
@@ -668,6 +695,155 @@
             });
         }
     }
+
+    // Optimasi Print Receiving Note with Auto Posting Journal
+    function print_receiving_note() {
+        const receiptNo = $("#filter_receipt_no").combobox('getValue');
+        if (receiptNo == "") {
+            toastr.warning("Please select Receipt No!", "Information");
+            return;
+        }
+
+        // --- Prepare tab kosong agar tidak diblokir Popup Blocker (Perbaikan Bug tidak bisa open new tab) ---
+        var printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Loading...</title></head><body><h3>Please wait, generating document...</h3></body></html>');
+
+        Swal.fire({
+            title: 'Validating Data...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receiptNo),
+            dataType: "json",
+            success: function (response) {
+                // Validasi Kategori RM
+                if (response.category === 'C01' && response.qty_label != response.label_no) {
+                    Swal.close();
+                    printWindow.close();
+                    toastr.error("The labels haven't been scanned yet for category RM");
+                    return;
+                }
+
+                // --- Run checkItems untuk update status ---
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receiptNo),
+                    dataType: "json",
+                    success: function (res) {
+                        processPrintAndJournal(receiptNo, printWindow, "Success");
+                    },
+                    error: function() {
+                        processPrintAndJournal(receiptNo, printWindow, "Warning: Items check failed but proceeding to print.");
+                    }
+                });
+            },
+            error: function() {
+                Swal.close();
+                printWindow.close();
+                toastr.error("Connection error while checking labels.");
+            }
+        });
+    }
+
+
+    /** --- Auto Posting Journal Inventory --- */
+
+    // Handling Print & Modal Journal
+    function processPrintAndJournal(receiptNo, printWindow, message) {
+        Swal.close();
+        
+        // Update URL open new tab 
+        printWindow.location.href = "<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receiptNo);
+
+        // Check Journal Inventory
+        const now_date = new Date().toISOString().split('T')[0];
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/datatablesCheck/') ?>",
+            data: {
+                journal_date: now_date,
+                modul: "PURCHASE ORDER RECEIPT",
+                document_no: receiptNo,
+            },
+            dataType: "json",
+            success: function(response) {
+                toastr.info(message, "Print Receiving Note", "info");
+                
+                if (response.status === true) {
+                    // BOLEH POSTING
+                    exec_autoposting(receiptNo);
+
+                    /** auto posting dengan popup konfirmasi:
+                    postingJournalValidate(receiptNo);
+                    */
+
+                } else {
+                    // SUDAH ADA / ERROR
+                    toastr.info(message, "Print Receiving Note", "info");
+                    toastr.info(response.message, "Auto Posting Journal", "info");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
+    }
+
+    function postingJournalValidate(receiptNo) {
+        // Konfirmasi Posting Jurnal
+        Swal.fire({
+            title: "Add Posting Journal?",
+            text: "Document printed. Do you want to generate the Posting Journal now?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Add to Journal!',
+            cancelButtonText: 'Later',
+            allowOutsideClick: false
+        }).then((swalRes) => {
+            if (swalRes.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing',
+                    html: 'Auto Posting Journal Inventory...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+                exec_autoposting(receiptNo);
+            }
+        });
+    }
+
+    // Helper untuk eksekusi Auto Posting Journal Inventory
+    function exec_autoposting(receipt_no) {
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/execute_auto_journal/') ?>",
+            data: { 
+                modul: "PURCHASE ORDER RECEIPT",
+                document_no: receipt_no,
+            },
+            dataType: "json",
+            success: function(response) {
+                Swal.close();
+                if (response.status === true) {
+                    toastr.success(response.message || "Success", "Auto Posting Journal Success");
+                } else {
+                    toastr.info(response.message, "Failed to Auto Posting Journal");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
+    }
+
+    /** --- END - Auto Posting Journal Inventory --- */
+
+
 
     function reload() {
         window.location.reload();
@@ -822,6 +998,7 @@
                     var bc_document = $("#bc_document").textbox('getValue');
                     var bc_date = $("#bc_date").datebox('getValue');
                     var supplier_id = $('#supplier_id').combogrid('getValue');
+                    var memo_no = $('#memo_no').combobox('getValue');
 
                     if (bc_document == "" || bc_date == "") {
                         toastr.warning("Please input Doc No and Doc Date!", "Information");
@@ -858,6 +1035,7 @@
                                                                 po_no: row.po_no,
                                                                 bc_document: bc_document,
                                                                 bc_date: bc_date,
+                                                                memo_no: memo_no,
                                                                 qty_po: row.qty_po,
                                                                 qty_os: row.qty_os,
                                                                 qty_receipt: row.qty_convertion,
