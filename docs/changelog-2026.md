@@ -895,3 +895,6 @@ historical price material & fg ([01827ba9](https://github.com/hilmanf11/erp_bpi/
 
 ### [2026-08-14]
 - **kurniawan**: Update Historical_price_material.php ([4b8b55c8](https://github.com/hilmanf11/erp_bpi/commit/4b8b55c85a123faf2643158c6d73c08014638ec4))
+
+### [2026-08-18]
+- **kurniawan**: update script Purchase ([2733d39e](https://github.com/hilmanf11/erp_bpi/commit/2733d39e5312702c4ddd8e457ac53f50c5e67ddb))
