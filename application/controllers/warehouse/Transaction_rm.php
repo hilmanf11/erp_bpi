@@ -124,10 +124,16 @@ class Transaction_rm extends CI_Controller
                         a.qty_mpq as mpq,
                         a.po_no,
                         a.lotno,
-                        0 as qty_label -- Skenario RETURN memang 0
+                        e.division,
+                        d.id as item_category_id,
+                        0 as qty_label -- Skenario RETURN 0
                       FROM purchase_order_receipts a
                       JOIN item_rm b ON a.item_rm_id = b.id
-                      WHERE a.receipt_no = '$receipt_no'";
+                      JOIN purchase_orders c ON a.po_no = c.po_no and a.item_rm_id = c.item_rm_id
+                      JOIN item_categories d ON b.item_category_id = d.id
+                      JOIN purchase_requests e ON c.request_no = e.request_no
+                      WHERE a.receipt_no = '$receipt_no'
+                      GROUP BY a.receipt_id";
         }
                   
         $records = $this->crud->query($query);
@@ -222,21 +228,27 @@ class Transaction_rm extends CI_Controller
     public function datatableUpdate($request_no){
         $request_no = base64_decode($request_no);
 
-        //Select Query
-        $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+        // Select Query
+        $this->db->select('a.*, 
+                           b.number as item_number, 
+                           b.name as item_name, 
+                           b.uom,
+                           a.qty_mpq as mpq,
+                           a.qty_label');
         $this->db->from('transaction_rm a');
-        $this->db->join('item_rm b', 'a.item_rm_id = b.id','left');
-        // $this->db->join('uom c', 'b.uom_id = c.id');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->where('a.request_no', $request_no);
 
-        //Total Data
+        // Total Data
         $totalRows = $this->db->count_all_results('', false);
-        //Get Data Array
+        
+        // Get Data Array
         $records = $this->db->get()->result_array();
         
-        //Mapping Data
+        // Mapping Data
         $result['total'] = $totalRows;
         $result = array_merge($result, ['rows' => $records]);
+        
         echo json_encode($result);
     }
 
@@ -304,14 +316,18 @@ class Transaction_rm extends CI_Controller
                         "request_name" => $record['request_name'],
                         "period" => $record['period'],
                         "item_rm_id" => $record['item_rm_id'],
-                        "item_number" => $record['item_number'],
-                        "item_fg_id" => $record['item_fg_id'],
-                        "item_name" => $record['item_name'],
                         "workorder" => $record['workorder'],
                         "transaction_type" => $record['transaction_type'],
                         "transaction_kind" => $record['transaction_kind'],
                         "transaction_id" => $record['transaction_id'],
                         "remarks" => $record['remarks'],
+
+                        "supplier_id" => $record['supplier_id'],
+                        "purchase_order_receipt" => $record['purchase_order_receipt'],
+                        "request_no_return" => $record['request_no_return'],
+                        "division" => $record['division'],
+                        "item_category_id" => $record['item_category_id'],
+
                         "state" => "closed"
                     );
                 }
