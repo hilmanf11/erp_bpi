@@ -13,6 +13,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'btn',width:100,halign:'center',align:'right',formatter:btnHistories">History</th>
             <th rowspan="2" data-options="field:'id',width:150,align:'center'">Polybag ID</th>
             <th rowspan="2" data-options="field:'size',width:100,halign:'center'">Size</th>
             <th rowspan="2" data-options="field:'weigth',width:100,halign:'center'">Weigth</th>
@@ -103,6 +104,21 @@
         <ul id="remarks">
         </ul>
     </div>
+</div>
+
+<!-- Detail Histories -->
+<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 600px; height: 300px; top: 20px;">
+    <table id="dg_history" class="easyui-datagrid" style="width:100%;">
+        <thead>
+            <tr>
+                <th data-options="field:'qty',width:100,halign:'center'">Pcs / Kg</th>
+                <th data-options="field:'price_kg',width:150,halign:'center', formatter:priceformat">Price / Kg</th>
+                <th data-options="field:'price_pcs',width:150,halign:'center', formatter:priceformat">Price / Pcs</th>
+                <th data-options="field:'created_by',width:100,halign:'center'">Created By</th>
+                <th data-options="field:'created_date',width:100,halign:'center'">Created Date</th>
+            </tr>
+        </thead>
+    </table>
 </div>
 
 <!-- PDF -->
@@ -314,81 +330,96 @@
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/polybag_prices/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/polybag_prices/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/polybag_prices/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/polybag_prices/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/polybag_prices/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/polybag_prices/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/polybag_prices/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/polybag_prices/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/polybag_prices/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/polybag_prices/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
+                    }
+                });
+            }
+        }]
+    });
+
+    function btnHistories(val, row) {
+        var history = "viewHistories('" + row.id + "','" + row.size + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    }
+
+    function viewHistories(id, size) {
+        $("#dlg_history").dialog('open');
+        $('#dg_history').datagrid({
+            url: '<?= base_url('master/polybag_prices/datatableHistories?id=') ?>' + btoa(id) + "&size=" + btoa(size),
+            pagination: false,
+            rownumbers: true,
         });
+    }
+    
 </script>
