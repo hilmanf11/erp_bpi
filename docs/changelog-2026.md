@@ -906,3 +906,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-08-24]
 - **kurniawan**: Update tmp_item_fg.xls ([00ed5264](https://github.com/hilmanf11/erp_bpi/commit/00ed526433023af0af02f11f3b1efe70f914d49a))
+
+### [2026-08-24]
+- **kurniawan**: update transaction rm ([375ee9d5](https://github.com/hilmanf11/erp_bpi/commit/375ee9d5661b4741ed3dc029f0bdd8ca2d8222c1))
