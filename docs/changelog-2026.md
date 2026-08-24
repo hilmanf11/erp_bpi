@@ -903,3 +903,6 @@ historical price material & fg ([01827ba9](https://github.com/hilmanf11/erp_bpi/
 - **kurniawan**: Update Polybag Prices
 
 add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2fc375714bcf9334b3ac734671052574615779))
+
+### [2026-08-24]
+- **kurniawan**: Update tmp_item_fg.xls ([00ed5264](https://github.com/hilmanf11/erp_bpi/commit/00ed526433023af0af02f11f3b1efe70f914d49a))
