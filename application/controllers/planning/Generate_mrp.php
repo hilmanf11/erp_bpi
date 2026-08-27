@@ -712,7 +712,8 @@ class Generate_mrp extends CI_Controller
                 } else {
                     $ito = 0; 
                 }
-
+                
+                //PLAN ORDER
                 if($balance_1 > 0){
                     $total_need = 0;
                 }else{
@@ -877,6 +878,7 @@ class Generate_mrp extends CI_Controller
 
                     if($total_need > 0 && $generate['moq'] > 0){
                         if($total_need > $generate['moq']){
+                            //FIX ORDER
                             $purchase_order = (ceil($total_need / $generate['mpq']) * $generate['mpq']);
                         }else{
                             $purchase_order = (ceil($total_need / $generate['moq']) * $generate['moq']);
@@ -1101,6 +1103,120 @@ class Generate_mrp extends CI_Controller
         }
     }
 
+    // public function createMrp()
+    // {
+    //     if ($this->input->post()) {
+    //         $post = $this->input->post('data');
+    //         $item_rm_id = $post['item_rm_id'];
+
+    //         $item_rm = $this->crud->read("item_rm", [], ["id"=>$item_rm_id]);
+    //         $part_no = @$item_rm->number;
+
+    //         //Select Query
+    //         // $this->db->select('*');
+    //         // $this->db->from('generate_mrp_finals');
+    //         // $this->db->where('p_month', $post['p_month']);
+    //         // $this->db->where('p_year', $post['p_year']);
+    //         // $this->db->where('revision', $post['revision']);
+    //         // $this->db->where('item_rm_id', $post['item_rm_id']);
+    //         // $records = $this->db->get()->result_array();
+
+    //         // $this->dummy = $this->load->database('dummy', TRUE);
+
+    //         // $period_1 = date("Ym", strtotime("-1 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         // $period_2 = date("Ym", strtotime("-2 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         // $period_3 = date("Ym", strtotime("-3 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         $period_1 = date("Y-m", strtotime("-1 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         $period_2 = date("Y-m", strtotime("-2 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         $period_3 = date("Y-m", strtotime("-3 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+
+    //         // $qissued = $this->dummy->query("SELECT b.item_id, SUM(b.qty_need) as need from wip_trx_mpp a
+    //         //     join serial_detail_kanbanrm b ON a.temp_woc_id = b.kanbanrm_woc_id
+    //         //     where a.periode IN ('$period_1','$period_2','$period_3') and b.item_id = '$part_no'
+    //         //     group by b.item_id, a.periode
+    //         //     order by b.item_id, a.periode");
+
+    //         // $maxRevQuery1 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_1'");
+    //         // $maxRev1 = $maxRevQuery1->row();
+    //         // $maxRevQuery2 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_2'");
+    //         // $maxRev2 = $maxRevQuery2->row();
+    //         // $maxRevQuery3 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_3'");
+    //         // $maxRev3 = $maxRevQuery3->row();
+    //         // $rev1 = @$maxRev1->revision;
+    //         // $rev2 = @$maxRev2->revision;
+    //         // $rev3 = @$maxRev3->revision;
+
+    //         // $qissued1 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
+    //         //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
+    //         //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
+    //         //     where a.periode = '$period_1' and b.bom_com_item = '$part_no' and a.rev = '$rev1'
+    //         //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
+    //         // $missued1 = $qissued1->result_array();
+
+    //         // $qissued2 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
+    //         //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
+    //         //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
+    //         //     where a.periode = '$period_2' and b.bom_com_item = '$part_no' and a.rev = '$rev2'
+    //         //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
+    //         // $missued2 = $qissued2->result_array();
+
+    //         // $qissued3 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
+    //         //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
+    //         //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
+    //         //     where a.periode = '$period_3' and b.bom_com_item = '$part_no' and a.rev = '$rev3'
+    //         //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
+    //         // $missued3 = $qissued3->result_array();
+
+    //         $qissued1 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_1%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+    //         $missued1 = $qissued1->result_array();
+
+    //         $qissued2 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_2%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+    //         $missued2 = $qissued2->result_array();
+
+    //         $qissued3 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_3%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+    //         $missued3 = $qissued3->result_array();
+
+    //         //Select Query
+    //         $this->db->select('*');
+    //         $this->db->from('generate_mrp_finals');
+    //         $this->db->where('p_month', $post['p_month']);
+    //         $this->db->where('p_year', $post['p_year']);
+    //         $this->db->where('revision', $post['revision']);
+    //         $this->db->where('item_rm_id', $post['item_rm_id']);
+    //         $this->db->where('supplier_id', $post['supplier_id']);
+    //         $records = $this->db->get()->result_array();
+
+    //         $postFinal = array_merge($post, array(
+    //             "issued_1" => @$missued1[0]['need'],
+    //             "issued_2" => @$missued2[0]['need'],
+    //             "issued_3" => @$missued3[0]['need'],
+    //             "issued_avg" => ((@$missued1[0]['need'] + @$missued2[0]['need'] + @$missued3[0]['need']) / 3),
+    //         ));
+
+    //         $postFinal = array_merge($post, array(
+    //             "issued_1" => 0,
+    //             "issued_2" => 0,
+    //             "issued_3" => 0,
+    //             "issued_avg" => 0,
+    //         ));
+
+    //         if (count($records) > 0) {
+    //             $send = $this->db->update('generate_mrp_finals', $postFinal, [
+    //                 "p_month" => $post['p_month'],
+    //                 "p_year" => $post['p_year'],
+    //                 "revision" => $post['revision'],
+    //                 "item_rm_id" => $post['item_rm_id'],
+    //                 "supplier_id" => $post['supplier_id'],
+    //             ]);
+
+    //             echo $send;
+    //         } else {
+    //             $send = $this->crud->createNotLog('generate_mrp_finals', $postFinal);
+    //             echo $send;
+    //         }
+    //     }
+    // }
+
     public function createMrp()
     {
         if ($this->input->post()) {
@@ -1108,62 +1224,36 @@ class Generate_mrp extends CI_Controller
             $item_rm_id = $post['item_rm_id'];
 
             $item_rm = $this->crud->read("item_rm", [], ["id"=>$item_rm_id]);
-            $part_no = @$item_rm->number;
+            $part_no = (!empty($item_rm)) ? $item_rm->number : 'Unknown RM';
 
-            //Select Query
-            // $this->db->select('*');
-            // $this->db->from('generate_mrp_finals');
-            // $this->db->where('p_month', $post['p_month']);
-            // $this->db->where('p_year', $post['p_year']);
-            // $this->db->where('revision', $post['revision']);
-            // $this->db->where('item_rm_id', $post['item_rm_id']);
-            // $records = $this->db->get()->result_array();
+            $is_warning = false;
+            $warning_msg = [];
 
-            // $this->dummy = $this->load->database('dummy', TRUE);
+            $moq = (float) $post['moq'];
+            $mpq = (float) $post['mpq'];
+            $share_order = (float) $post['share_order'];
+            $leadtime = (float) $post['leadtime'];
 
-            // $period_1 = date("Ym", strtotime("-1 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
-            // $period_2 = date("Ym", strtotime("-2 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
-            // $period_3 = date("Ym", strtotime("-3 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+            if ($moq == 0 || $mpq == 0 || $share_order == 0 || $leadtime == 0) {
+                $is_warning = true;
+                $zero_items = []; // Array sementara untuk menampung nama field yang 0
+
+                // Pengecekan (Aturan Fix Order = Plan Order)
+                if ($moq == 0) {
+                    $post['purchase_order'] = (float) $post['total_need']; 
+                    $zero_items[] = "MOQ ";
+                }
+                
+                if ($share_order == 0) $zero_items[] = "Share Order ";
+                if ($mpq == 0)         $zero_items[] = "MPQ ";
+                if ($leadtime == 0)    $zero_items[] = "Leadtime ";
+
+                $warning_msg[] = implode('or ', $zero_items) . " is 0";
+            }
+
             $period_1 = date("Y-m", strtotime("-1 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
             $period_2 = date("Y-m", strtotime("-2 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
             $period_3 = date("Y-m", strtotime("-3 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
-
-            // $qissued = $this->dummy->query("SELECT b.item_id, SUM(b.qty_need) as need from wip_trx_mpp a
-            //     join serial_detail_kanbanrm b ON a.temp_woc_id = b.kanbanrm_woc_id
-            //     where a.periode IN ('$period_1','$period_2','$period_3') and b.item_id = '$part_no'
-            //     group by b.item_id, a.periode
-            //     order by b.item_id, a.periode");
-
-            // $maxRevQuery1 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_1'");
-            // $maxRev1 = $maxRevQuery1->row();
-            // $maxRevQuery2 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_2'");
-            // $maxRev2 = $maxRevQuery2->row();
-            // $maxRevQuery3 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_3'");
-            // $maxRev3 = $maxRevQuery3->row();
-            // $rev1 = @$maxRev1->revision;
-            // $rev2 = @$maxRev2->revision;
-            // $rev3 = @$maxRev3->revision;
-
-            // $qissued1 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
-            //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
-            //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
-            //     where a.periode = '$period_1' and b.bom_com_item = '$part_no' and a.rev = '$rev1'
-            //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
-            // $missued1 = $qissued1->result_array();
-
-            // $qissued2 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
-            //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
-            //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
-            //     where a.periode = '$period_2' and b.bom_com_item = '$part_no' and a.rev = '$rev2'
-            //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
-            // $missued2 = $qissued2->result_array();
-
-            // $qissued3 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
-            //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
-            //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
-            //     where a.periode = '$period_3' and b.bom_com_item = '$part_no' and a.rev = '$rev3'
-            //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
-            // $missued3 = $qissued3->result_array();
 
             $qissued1 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_1%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
             $missued1 = $qissued1->result_array();
@@ -1174,7 +1264,6 @@ class Generate_mrp extends CI_Controller
             $qissued3 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_3%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
             $missued3 = $qissued3->result_array();
 
-            //Select Query
             $this->db->select('*');
             $this->db->from('generate_mrp_finals');
             $this->db->where('p_month', $post['p_month']);
@@ -1184,13 +1273,8 @@ class Generate_mrp extends CI_Controller
             $this->db->where('supplier_id', $post['supplier_id']);
             $records = $this->db->get()->result_array();
 
-            $postFinal = array_merge($post, array(
-                "issued_1" => @$missued1[0]['need'],
-                "issued_2" => @$missued2[0]['need'],
-                "issued_3" => @$missued3[0]['need'],
-                "issued_avg" => ((@$missued1[0]['need'] + @$missued2[0]['need'] + @$missued3[0]['need']) / 3),
-            ));
-
+            // Menggabungkan data post yang sudah diperbarui purchase_order nya dengan issued
+            // (Sesuai original script Anda, issued di set 0)
             $postFinal = array_merge($post, array(
                 "issued_1" => 0,
                 "issued_2" => 0,
@@ -1198,6 +1282,7 @@ class Generate_mrp extends CI_Controller
                 "issued_avg" => 0,
             ));
 
+            // Proses Simpan / Update ke DB
             if (count($records) > 0) {
                 $send = $this->db->update('generate_mrp_finals', $postFinal, [
                     "p_month" => $post['p_month'],
@@ -1206,11 +1291,24 @@ class Generate_mrp extends CI_Controller
                     "item_rm_id" => $post['item_rm_id'],
                     "supplier_id" => $post['supplier_id'],
                 ]);
-
-                echo $send;
             } else {
                 $send = $this->crud->createNotLog('generate_mrp_finals', $postFinal);
-                echo $send;
+            }
+
+            // Return Output JSON berdasarkan kondisi Warning
+            if ($is_warning) {
+                $msg_gabung = implode(', ', $warning_msg);
+                echo json_encode([
+                    'theme'   => 'failed', 
+                    'title'   => 'WARNING',
+                    'message' => 'Part No [' . $part_no . '] - ' . $msg_gabung
+                ]);
+            } else {
+                echo json_encode([
+                    'theme'   => 'success', 
+                    'title'   => 'SUCCESS',
+                    'message' => 'Data Part No [' . $part_no . '] Saved.'
+                ]);
             }
         }
     }

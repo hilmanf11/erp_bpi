@@ -79,6 +79,27 @@ class Generate_mpp extends CI_Controller
         echo json_encode($query->result());
     }
 
+    public function checkLoadcap()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_revision = base64_decode($this->input->get('filter_revision'));
+
+        //Select Query
+        $this->db->select('*');
+        $this->db->from('generate_loadcap');
+        $this->db->where("deleted", 0);
+        $this->db->like("p_month", $filter_month);
+        $this->db->like("p_year", $filter_year);
+        $records = $this->db->get()->result_array();
+
+        if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        } else {
+            echo json_encode(array("theme" => "error"));
+        }
+    }
+
     public function datatables()
     {
         // Filter Data 

@@ -79,6 +79,27 @@ class Generate_loadcap extends CI_Controller
         echo json_encode($query->result());
     }
 
+    public function checkProdplan()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_revision = base64_decode($this->input->get('filter_revision'));
+
+        //Select Query
+        $this->db->select('prod_plan');
+        $this->db->from('generate_mps_details');
+        $this->db->where("status", 0);
+        $this->db->like("p_month", $filter_month);
+        $this->db->like("p_year", $filter_year);
+        $records = $this->db->get()->result_array();
+
+        if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        } else {
+            echo json_encode(array("theme" => "error"));
+        }
+    }
+
     public function getData()
     {
         if ($this->input->get()) {
@@ -324,6 +345,7 @@ class Generate_loadcap extends CI_Controller
             $this->db->join($subquery_loadcap, 'a.id = f.item_fg_id', 'left', false);
             $this->db->where('a.status', 0);
             $this->db->where('a.division_id !=', 'DIV02');
+            $this->db->where('a.type !=', 'RM');
 
             if (!empty($filter_customer)) {
                 $this->db->where('b.customer_id', $filter_customer);

@@ -44,6 +44,12 @@
             <div id="showWorkingCalendar">
             </div>
         </fieldset> -->
+        <fieldset style="width: 15%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+            <legend><b>Component Check</b></legend>
+            <div style="margin:12px;">
+                <input class="easyui-checkbox" id="check_loadcap" value="on" readonly="true"> &nbsp; Loadcap
+            </div>
+        </fieldset>
         <fieldset style="width: 30%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Process Generate Data</b></legend>
             <a href="javascript:;" style="float: left; color:green;" class="easyui-linkbutton" plain="true"><i class="fa fa-check"></i> SUCCESS : <b id="p_success">0</b></a>
@@ -94,154 +100,159 @@
         var filter_cutoff = $("#filter_cutoff").datebox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+        var check_loadcap = $("#check_loadcap").checkbox('options');
 
-        $.messager.prompt('Generate Loadcap', 'Please input Password Generate', function(r) {
-            if (r == "GENERATEMPP") {
-                Swal.fire({
-                    title: 'Please Wait 5 - 10 Minutes for Generating Data',
-                    showConfirmButton: false,
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    },
-                });
+        if (check_loadcap.checked == true) {
+            $.messager.prompt('Generate Loadcap', 'Please input Password Generate', function(r) {
+                if (r == "GENERATEMPP") {
+                    Swal.fire({
+                        title: 'Please Wait 5 - 10 Minutes for Generating Data',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                    });
 
-                $.ajax({
-                    type: "get",
-                    url: "<?= base_url('planning/generate_mpp/getdata') ?>",
-                    data: "filter_month=" + window.btoa(filter_month) +
-                        "&filter_year=" + window.btoa(filter_year) +
-                        "&filter_revision=" + window.btoa(filter_revision) +
-                        "&filter_cutoff=" + window.btoa(filter_cutoff) +
-                        "&filter_customer=" + window.btoa(filter_customer) +
-                        "&filter_item_fg=" + window.btoa(filter_item_fg),
-                    dataType: "json",
-                    success: function(rows) {
-                        Swal.close();
-                        requestData(rows['total'], rows.rows);
+                    $.ajax({
+                        type: "get",
+                        url: "<?= base_url('planning/generate_mpp/getdata') ?>",
+                        data: "filter_month=" + window.btoa(filter_month) +
+                            "&filter_year=" + window.btoa(filter_year) +
+                            "&filter_revision=" + window.btoa(filter_revision) +
+                            "&filter_cutoff=" + window.btoa(filter_cutoff) +
+                            "&filter_customer=" + window.btoa(filter_customer) +
+                            "&filter_item_fg=" + window.btoa(filter_item_fg),
+                        dataType: "json",
+                        success: function(rows) {
+                            Swal.close();
+                            requestData(rows['total'], rows.rows);
 
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
+                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                if (value < 100) {
+                                    value = Math.floor((number / total) * 100);
+                                    $('#p_upload').progressbar('setValue', value);
+                                    $('#p_start').html(number);
+                                    $('#p_finish').html(total);
 
-                                $.post('<?= base_url('planning/generate_mpp/create') ?>', {
-                                    data: json[number - 1]
-                                }, function(note) {
-                                    var result = eval('(' + note + ')');
-                                    if (result.theme == "success") {
-                                        Swal.close();
-                                        $('#p_success').html(success);
-                                        var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                        requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                    } else {
-                                        $('#p_failed').html(failed);
-                                        var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                    $.post('<?= base_url('planning/generate_mpp/create') ?>', {
+                                        data: json[number - 1]
+                                    }, function(note) {
+                                        var result = eval('(' + note + ')');
+                                        if (result.theme == "success") {
+                                            Swal.close();
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
 
-                                        //Json Failed
-                                        $.ajax({
-                                            type: "POST",
-                                            async: true,
-                                            url: "<?= base_url('planning/generate_mpp/uploadcreateFailed') ?>",
-                                            data: {
-                                                data: json[number - 1],
-                                                message: result.message
-                                            },
-                                            cache: false
-                                        });
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('planning/generate_mpp/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
 
-                                        requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                    }
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
 
-                                    // if (value == 100) {
-                                    //     $.ajax({
-                                    //         type: "get",
-                                    //         url: "<?= base_url('planning/generate_mpp/rekapMachine') ?>",
-                                    //         data: "filter_month=" + window.btoa(filter_month) +
-                                    //             "&filter_year=" + window.btoa(filter_year) +
-                                    //             "&filter_revision=" + window.btoa(filter_revision),
-                                    //         beforeSend: function() {
-                                    //             Swal.fire({
-                                    //                 title: 'Summarizing Load per Machine...',
-                                    //                 text: 'Please wait while calculating load data.',
-                                    //                 allowOutsideClick: false,
-                                    //                 showConfirmButton: false,
-                                    //                 didOpen: () => Swal.showLoading()
-                                    //             });
-                                    //         },
-                                    //         success: function(res) {
-                                    //             Swal.fire({
-                                    //                 title: 'Summarizing Load per Tonnage...',
-                                    //                 text: 'Please wait...',
-                                    //                 allowOutsideClick: false,
-                                    //                 showConfirmButton: false,
-                                    //                 didOpen: () => Swal.showLoading()
-                                    //             });
+                                        // if (value == 100) {
+                                        //     $.ajax({
+                                        //         type: "get",
+                                        //         url: "<?= base_url('planning/generate_mpp/rekapMachine') ?>",
+                                        //         data: "filter_month=" + window.btoa(filter_month) +
+                                        //             "&filter_year=" + window.btoa(filter_year) +
+                                        //             "&filter_revision=" + window.btoa(filter_revision),
+                                        //         beforeSend: function() {
+                                        //             Swal.fire({
+                                        //                 title: 'Summarizing Load per Machine...',
+                                        //                 text: 'Please wait while calculating load data.',
+                                        //                 allowOutsideClick: false,
+                                        //                 showConfirmButton: false,
+                                        //                 didOpen: () => Swal.showLoading()
+                                        //             });
+                                        //         },
+                                        //         success: function(res) {
+                                        //             Swal.fire({
+                                        //                 title: 'Summarizing Load per Tonnage...',
+                                        //                 text: 'Please wait...',
+                                        //                 allowOutsideClick: false,
+                                        //                 showConfirmButton: false,
+                                        //                 didOpen: () => Swal.showLoading()
+                                        //             });
 
-                                    //             $.ajax({
-                                    //                 type: "get",
-                                    //                 url: "<?= base_url('planning/generate_mpp/rekapTonnage') ?>",
-                                    //                 data: {
-                                    //                     filter_month: window.btoa(filter_month),
-                                    //                     filter_year: window.btoa(filter_year),
-                                    //                     filter_revision: window.btoa(filter_revision)
-                                    //                 },
-                                    //                 success: function(res) {
-                                    //                     Swal.fire({
-                                    //                         title: 'Summarizing Manpower...',
-                                    //                         text: 'Please wait...',
-                                    //                         allowOutsideClick: false,
-                                    //                         showConfirmButton: false,
-                                    //                         didOpen: () => Swal.showLoading()
-                                    //                     });
+                                        //             $.ajax({
+                                        //                 type: "get",
+                                        //                 url: "<?= base_url('planning/generate_mpp/rekapTonnage') ?>",
+                                        //                 data: {
+                                        //                     filter_month: window.btoa(filter_month),
+                                        //                     filter_year: window.btoa(filter_year),
+                                        //                     filter_revision: window.btoa(filter_revision)
+                                        //                 },
+                                        //                 success: function(res) {
+                                        //                     Swal.fire({
+                                        //                         title: 'Summarizing Manpower...',
+                                        //                         text: 'Please wait...',
+                                        //                         allowOutsideClick: false,
+                                        //                         showConfirmButton: false,
+                                        //                         didOpen: () => Swal.showLoading()
+                                        //                     });
 
-                                    //                     $.ajax({
-                                    //                         type: "get",
-                                    //                         url: "<?= base_url('planning/generate_mpp/rekapManPower') ?>",
-                                    //                         data: {
-                                    //                             filter_month: window.btoa(filter_month),
-                                    //                             filter_year: window.btoa(filter_year),
-                                    //                             filter_revision: window.btoa(filter_revision)
-                                    //                         },
-                                    //                         success: function() {
-                                    //                             Swal.close();
-                                    //                             Swal.fire('Good job!', 'Machine,tonnage and manpower recaps completed!', 'success');
-                                    //                         }
-                                    //                     });
-                                    //                 }
-                                    //             });
-                                    //         }
-                                    //     });
-                                    // }
+                                        //                     $.ajax({
+                                        //                         type: "get",
+                                        //                         url: "<?= base_url('planning/generate_mpp/rekapManPower') ?>",
+                                        //                         data: {
+                                        //                             filter_month: window.btoa(filter_month),
+                                        //                             filter_year: window.btoa(filter_year),
+                                        //                             filter_revision: window.btoa(filter_revision)
+                                        //                         },
+                                        //                         success: function() {
+                                        //                             Swal.close();
+                                        //                             Swal.fire('Good job!', 'Machine,tonnage and manpower recaps completed!', 'success');
+                                        //                         }
+                                        //                     });
+                                        //                 }
+                                        //             });
+                                        //         }
+                                        //     });
+                                        // }
 
-                                    $("#p_remarks").append(title + "<br>");
-                                }).fail(function(jqXHR, textStatus) {
-                                    if (textStatus == "error") {
-                                        Swal.fire({
-                                            title: 'Connection Time Out, Check Your Connection',
-                                            showConfirmButton: false,
-                                            allowOutsideClick: false,
-                                            allowEscapeKey: false,
-                                            didOpen: () => {
-                                                Swal.showLoading();
-                                            },
-                                        });
+                                        $("#p_remarks").append(title + "<br>");
+                                    }).fail(function(jqXHR, textStatus) {
+                                        if (textStatus == "error") {
+                                            Swal.fire({
+                                                title: 'Connection Time Out, Check Your Connection',
+                                                showConfirmButton: false,
+                                                allowOutsideClick: false,
+                                                allowEscapeKey: false,
+                                                didOpen: () => {
+                                                    Swal.showLoading();
+                                                },
+                                            });
 
-                                        requestData(total, json, number, value, success + 0, failed + 0);
-                                    }
-                                });
+                                            requestData(total, json, number, value, success + 0, failed + 0);
+                                        }
+                                    });
+                                }
                             }
+                        },
+                        error: function(){
+                            Swal.fire('Failed!', 'Process Calculating Data is Failed, Please Try Again!', 'error');
                         }
-                    },
-                    error: function(){
-                        Swal.fire('Failed!', 'Process Calculating Data is Failed, Please Try Again!', 'error');
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        } else {
+            toastr.warning("Component Check Not Complete ", "Information");
+        }
     }
     
     function downloadFailed() {
@@ -654,19 +665,45 @@
         });
     }
 
-    function calendarCheck(filter_month, filter_year, filter_revision) {
+    function componentCheck(filter_month, filter_year, filter_revision) {
+        var filter_month = $("#filter_month").combobox('getValue');
+        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_revision = $("#filter_revision").combobox('getValue');
+
         $.ajax({
             type: "get",
-            url: "<?= base_url('planning/generate_mpp/checkCalendar') ?>",
+            url: "<?= base_url('planning/generate_mpp/checkLoadcap') ?>",
             data: "filter_month=" + window.btoa(filter_month) +
                 "&filter_year=" + window.btoa(filter_year) +
                 "&filter_revision=" + window.btoa(filter_revision),
-            dataType: "html",
-            success: function(html) {
-                $("#showWorkingCalendar").html(html);
+            dataType: "json",
+            success: function(ost_so) {
+                if (ost_so.theme == "success") {
+                    $('#check_loadcap').checkbox({
+                        checked: true
+                    });
+                } else {
+                    $('#check_loadcap').checkbox({
+                        checked: false
+                    });
+                }
             }
         });
     }
+
+    // function calendarCheck(filter_month, filter_year, filter_revision) {
+    //     $.ajax({
+    //         type: "get",
+    //         url: "<?= base_url('planning/generate_mpp/checkCalendar') ?>",
+    //         data: "filter_month=" + window.btoa(filter_month) +
+    //             "&filter_year=" + window.btoa(filter_year) +
+    //             "&filter_revision=" + window.btoa(filter_revision),
+    //         dataType: "html",
+    //         success: function(html) {
+    //             $("#showWorkingCalendar").html(html);
+    //         }
+    //     });
+    // }
 
     function pdf() {
         $("#printout").get(0).contentWindow.print();
@@ -728,7 +765,8 @@
             var year = $("#filter_year").combobox('getValue');
             var revision = $("#filter_revision").combobox('getValue');
 
-            calendarCheck(month, year, revision);
+            // calendarCheck(month, year, revision);
+            componentCheck(month, year, revision);
             // overList(month, year, revision);
             revisionSelected(month, year);
         }, 800); // beri jeda 0.8 detik agar combobox sudah siap
@@ -754,14 +792,14 @@
                 var year = $("#filter_year").combobox('getValue');
                 var revision = $("#filter_revision").combobox('getValue');
 
-                // if (year != "" || revision != "") {
-                //     componentCheck(month, year, revision);
-                // }
-
                 if (year != "" || revision != "") {
-                    calendarCheck(month, year, revision);
-                    // overList(month, year, revision);
+                    componentCheck(month, year, revision);
                 }
+
+                // if (year != "" || revision != "") {
+                //     calendarCheck(month, year, revision);
+                //     // overList(month, year, revision);
+                // }
 
                 revisionSelected(month, year);
             }
@@ -783,14 +821,14 @@
                 var year = $("#filter_year").combobox('getValue');
                 var revision = $("#filter_revision").combobox('getValue');
 
-                // if (month != "" || revision != "") {
-                //     componentCheck(month, year, revision);
-                // }
-
                 if (month != "" || revision != "") {
-                    calendarCheck(month, year, revision);
-                    // overList(month, year, revision);
+                    componentCheck(month, year, revision);
                 }
+
+                // if (month != "" || revision != "") {
+                //     calendarCheck(month, year, revision);
+                //     // overList(month, year, revision);
+                // }
 
                 revisionSelected(month, year);
             }
