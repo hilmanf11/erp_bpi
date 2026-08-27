@@ -912,3 +912,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-08-26]
 - **kurniawan**: Update delivery_notes.php ([60d0e445](https://github.com/hilmanf11/erp_bpi/commit/60d0e445fe76da904bceda9ce0c2ecda3b5feed0))
+
+### [2026-08-27]
+- **kurniawan**: Update report_meiruka.php ([734a7177](https://github.com/hilmanf11/erp_bpi/commit/734a71779b90016e7e0f7ec0ccb80b48581d3545))
