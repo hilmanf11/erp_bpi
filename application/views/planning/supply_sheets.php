@@ -535,6 +535,22 @@
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
         if (rows.length > 0) {
+            
+            var isRestricted = false;
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                
+                if (row.status == "1" || row.status == "2" || parseInt(row.total_status_close) > 0 || parseInt(row.total_status_complete) > 0) {
+                    isRestricted = true;
+                    break; 
+                }
+            }
+
+            if (isRestricted) {
+                toastr.error("Failed! Cannot delete because the document is already Closed/Complete or has Closed items in it.", "Error");
+                return; 
+            }
+
             Swal.fire({
                 title: 'Warning',
                 text: 'Are you sure you want to delete this data?',
@@ -568,7 +584,6 @@
                                 if (requestsCompleted === rows.length) {
                                     $('#dg').datagrid('reload'); 
                                     toastr.success("Data berhasil dihapus!");
-                                    // window.location.reload(); //
                                 }
                             }
                         });
