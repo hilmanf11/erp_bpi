@@ -918,3 +918,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-08-27]
 - **kurniawan**: Update production_schedules.php ([935717e9](https://github.com/hilmanf11/erp_bpi/commit/935717e96987934c7c20bd07c4d648840c400daf))
+
+### [2026-08-27]
+- **kurniawan**: Update supply_sheets.php ([f0632196](https://github.com/hilmanf11/erp_bpi/commit/f0632196caf52a19f040eaf8cc2823be4e6ef64a))
