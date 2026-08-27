@@ -915,3 +915,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-08-27]
 - **kurniawan**: Update report_meiruka.php ([734a7177](https://github.com/hilmanf11/erp_bpi/commit/734a71779b90016e7e0f7ec0ccb80b48581d3545))
+
+### [2026-08-27]
+- **kurniawan**: Update production_schedules.php ([935717e9](https://github.com/hilmanf11/erp_bpi/commit/935717e96987934c7c20bd07c4d648840c400daf))
