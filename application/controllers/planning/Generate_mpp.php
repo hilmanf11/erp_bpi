@@ -1044,6 +1044,7 @@ class Generate_mpp extends CI_Controller
             #customers tr:nth-child(even){background-color: #f2f2f2;}
             #customers tr:hover {background-color: #ddd;}
             #customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black; background-color: #f2f2f2;}
+            #customers tr.last-row td { border-bottom: 2px solid black !important; }
         </style><body>
             <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -1113,13 +1114,25 @@ class Generate_mpp extends CI_Controller
 
         $current_mc = ""; 
         $no = 1;
+        $mc_row_counter = 0;
 
         foreach ($records as $record) {
-            $html .= '<tr>';
+            if ($current_mc != $record->machine_number) {
+                $mc_row_counter = 1;
+            } else {
+                $mc_row_counter++;
+            }
+
+            $tr_class = "";
+            if ($mc_row_counter == $rowspan_data[$record->machine_number]) {
+                $tr_class = ' class="last-row"';
+            }
+
+            $html .= '<tr' . $tr_class . '>';
             
             if ($current_mc != $record->machine_number) {
                 $row_count = $rowspan_data[$record->machine_number];
-                $html .= '<td rowspan="' . $row_count . '" style="text-align:center; vertical-align:middle; font-weight:bold;">' . $record->machine_number . '</td>';
+                $html .= '<td rowspan="' . $row_count . '" style="text-align:center; vertical-align:middle; font-weight:bold; border-bottom: 2px solid black;">' . $record->machine_number . '</td>';
                 $current_mc = $record->machine_number; 
                 $no = 1; 
             }
