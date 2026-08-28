@@ -927,3 +927,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-08-28]
 - **kurniawan**: update Master ([92ea76c9](https://github.com/hilmanf11/erp_bpi/commit/92ea76c9fb0839e2f3bb5da192a33c2f9c8eeaa4))
+
+### [2026-08-28]
+- **kurniawan**: Update Generate_mpp.php ([17656300](https://github.com/hilmanf11/erp_bpi/commit/176563004e0edc2973191d038adfe98736ea87a8))
