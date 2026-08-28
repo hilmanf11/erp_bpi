@@ -510,7 +510,7 @@
         var filter_number = $("#filter_number").combobox('getValue');
 
         var url = "?filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_start_date=" + window.btoa(filter_end_date) +
+            "&filter_start_date=" + window.btoa(filter_start_date) +
             "&filter_end_date=" + window.btoa(filter_end_date) +
             "&filter_number=" + window.btoa(filter_number);
 
@@ -535,7 +535,7 @@
         var filter_number = $("#filter_number").combobox('getValue');
 
         var url = "?filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_start_date=" + window.btoa(filter_end_date) +
+            "&filter_start_date=" + window.btoa(filter_start_date) +
             "&filter_end_date=" + window.btoa(filter_end_date) +
             "&filter_number=" + window.btoa(filter_number);
 

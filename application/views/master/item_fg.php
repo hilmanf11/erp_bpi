@@ -158,7 +158,7 @@
                 </div>
                 <div class="fitem">
                         <span style="width:35%; display:inline-block;">NG Ratio (%)</span>
-                        <input style="width:30%;" name="ng_ration" id="ng_ration" precision="5" class="easyui-numberbox">
+                        <input style="width:30%;" name="ng_ration" id="ng_ration" precision="5" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">IS No.</span>
@@ -166,7 +166,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Weight (Gram)</span>
-                    <input style="width:30%;" name="weight" id="weight" precision="2" class="easyui-numberbox">
+                    <input style="width:30%;" name="weight" id="weight" precision="2" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Color</span>
@@ -174,7 +174,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
-                    <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
+                    <input style="width:60%;" name="leadtime" id="leadtime" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status Subcont</span>
@@ -194,11 +194,11 @@
             <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MPQ</span>
-                    <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
+                    <input style="width:60%;" name="mpq" id="mpq" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MOQ</span>
-                    <input style="width:60%;" name="moq" id="moq" class="easyui-numberbox">
+                    <input style="width:60%;" name="moq" id="moq" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">UoM</span>
@@ -206,7 +206,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Qty/Box</span>
-                    <input style="width:60%;" name="qty_box" id="qty_box" class="easyui-numberbox">
+                    <input style="width:60%;" name="qty_box" id="qty_box" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Qty/Sub Box</span>

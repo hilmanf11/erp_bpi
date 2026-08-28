@@ -225,13 +225,14 @@ class item_fg extends CI_Controller
                 'weight' => $data->val($i, 18),
                 'color' => $data->val($i, 19),
                 'leadtime' => $data->val($i, 20),
-                'mpq' => $data->val($i, 21),
-                'moq' => $data->val($i, 22),
-                'uom' => $data->val($i, 23),
-                'qty_box' => $data->val($i, 24),
-                'box_sub' => $data->val($i, 25),
-                'logo' => $data->val($i, 26),
-                'status' => $data->val($i, 27),
+                'status_subcont' => $data->val($i, 21),
+                'mpq' => $data->val($i, 22),
+                'moq' => $data->val($i, 23),
+                'uom' => $data->val($i, 24),
+                'qty_box' => $data->val($i, 25),
+                'box_sub' => $data->val($i, 26),
+                'logo' => $data->val($i, 27),
+                'status' => $data->val($i, 28),
             );
         }
         $datas['total'] = count($datas);
@@ -290,6 +291,36 @@ class item_fg extends CI_Controller
 
             if (empty($division->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Division " . $data['division_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($data['number'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Number cannot be empty", "theme" => "error"));
+            } elseif (empty($data['name'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Name cannot be empty", "theme" => "error"));
+            } elseif (empty($data['process'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Process Type cannot be empty", "theme" => "error"));
+            } elseif (empty($data['division_id'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Division cannot be empty", "theme" => "error"));
+            } elseif (empty($data['item_family_name'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Product Family cannot be empty", "theme" => "error"));
+            } elseif (empty($data['boxs'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Boxs cannot be empty", "theme" => "error"));
+            } elseif (empty($data['ng_ration'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " NG Ration cannot be empty", "theme" => "error"));
+            } elseif (empty($data['weight'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Weight cannot be empty", "theme" => "error"));
+            } elseif (empty($data['color'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Color cannot be empty", "theme" => "error"));
+            } elseif (empty($data['leadtime'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Leadtime cannot be empty", "theme" => "error"));
+            } elseif (empty($data['status_subcont'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Status Subcont cannot be empty", "theme" => "error"));
+            } elseif (empty($data['mpq'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Mpq cannot be empty", "theme" => "error"));
+            } elseif (empty($data['moq'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Moq cannot be empty", "theme" => "error"));
+            } elseif (empty($data['uom'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Uom cannot be empty", "theme" => "error"));
+            } elseif (empty($data['qty_box'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => " Qty per Box cannot be empty", "theme" => "error"));
             } elseif (!empty($item_fg->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
             } else {
@@ -315,6 +346,7 @@ class item_fg extends CI_Controller
                     "weight" => $data['weight'],
                     "color" => $data['color'],
                     "leadtime" => $data['leadtime'],
+                    "status_subcont" => $data['status_subcont'],
                     "mpq" => $data['mpq'],
                     "moq" => $data['moq'],
                     "uom" => $data['uom'],
