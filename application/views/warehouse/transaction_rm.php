@@ -260,8 +260,10 @@
                             ],
                             onSelect: function(value, rows) {
                                 var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var rowIndex = editIndex; 
+                                
+                                if (rowIndex === undefined) return;
+                                
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'item_rm_id'
@@ -443,7 +445,7 @@
                     title: "Total Label",
                     editor: {
                         type: 'numberbox',
-                        options: { required: true, readonly: true } 
+                        options: {readonly: true } 
                     }
                 }, {
                     field: 'uom',
@@ -456,12 +458,15 @@
                     }
                 }]
             ],
-            onClickRow: function(rowIndex) {
-                if (lastIndex != rowIndex) {
-                    $(this).datagrid('endEdit', lastIndex);
-                    $(this).datagrid('beginEdit', rowIndex);
+            onClickRow: function(index) {
+                if (editIndex != index) {
+                    if (endEditing()) {
+                        $(this).datagrid('selectRow', index).datagrid('beginEdit', index);
+                        editIndex = index;
+                    } else {
+                        $(this).datagrid('selectRow', editIndex); 
+                    }
                 }
-                lastIndex = rowIndex;
             },
         });
     }
