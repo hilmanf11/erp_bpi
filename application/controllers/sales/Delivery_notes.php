@@ -365,6 +365,332 @@ class Delivery_notes extends CI_Controller
         echo $divisions. "-" . $autoID . "-" . $numberCust . "-" . $datenow;
     }
 
+    public function get_detail_dn_ajax() 
+    {
+        // Tangkap parameter dari AJAX
+        $delivery_note_no = $this->input->post('delivery_note_no', TRUE);
+        
+        if (empty($delivery_note_no)) {
+            echo json_encode(['total' => 0, 'rows' => []]);
+            return;
+        }
+
+        $this->db->select('delivery_notes.id as id, delivery_note_no, delivery_order_no, item_fg_id, sales_order_no, qty, delivery_notes.status, item_fg.number as number');
+        $this->db->from('delivery_notes');
+        $this->db->where('delivery_note_no', $delivery_note_no);
+        $this->db->join('item_fg', 'item_fg.id = delivery_notes.item_fg_id', 'left');
+        
+        $query = $this->db->get();
+        $result = $query->result_array();
+        
+        $response = array(
+            'total' => count($result),
+            'rows'  => $result
+        );
+        
+        // Set header JSON dan cetak output
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function get_valid_so_baru()
+    {
+        $dn_no = $this->input->get('dn_no', TRUE);
+        $item_fg_id = $this->input->get('item_fg_id', TRUE);
+
+        if (empty($dn_no) || empty($item_fg_id)) {
+            echo json_encode([]);
+            return;
+        }
+
+        // A. Ambil data referensi dari DN saat ini
+        $dn = $this->db->get_where('delivery_notes', array(
+            'delivery_note_no' => $dn_no, 
+            'item_fg_id' => $item_fg_id
+        ))->row();
+
+        if (!$dn) {
+            echo json_encode([]);
+            return;
+        }
+
+        // B. Cari tanggal pengiriman (Schedule) dari SO lama
+        $old_sched = $this->db->get_where('sales_order_deliveries', array(
+            'sales_order_no' => $dn->sales_order_no,
+            'item_fg_id' => $item_fg_id
+        ))->row();
+
+        // Jika schedule ada, pakai tanggalnya. Jika tidak, fallback ke delivery_note_date
+        $target_date = $old_sched ? $old_sched->trans_date : $dn->delivery_note_date;
+
+        // =========================================================
+        // C. REVISI QUERY FILTER (SUDAH TERMASUK CEK DO PENGGANTI)
+        // =========================================================
+        
+        // 1. Tambahkan do_baru.delivery_order_no AS target_do pada SELECT
+        $this->db->select('so.sales_order_no, do_baru.delivery_order_no AS target_do');
+        $this->db->from('sales_orders so');
+        $this->db->join('sales_order_deliveries sod', 'so.sales_order_no = sod.sales_order_no');
+        
+        // 2. INI KUNCINYA: Wajib join ke tabel DO untuk memastikan SO ini punya DO
+        $this->db->join('delivery_orders do_baru', 'so.sales_order_no = do_baru.sales_order_no');
+
+        $this->db->where('so.customer_id', $dn->customer_id); // Param 6
+        $this->db->where('so.item_fg_id', $item_fg_id);       // Param 7
+        $this->db->where('sod.item_fg_id', $item_fg_id);      // Part No Sama di Schedule
+        $this->db->where('sod.trans_date', $target_date);     // Param 1 & 2
+        $this->db->where('so.sales_order_no !=', $dn->sales_order_no); // Jangan tampilkan SO saat ini
+        
+        // 3. Pastikan DO target memiliki part/item yang sama
+        $this->db->where('do_baru.item_fg_id', $item_fg_id);
+        
+        // Opsional Param 3 & 4
+        $this->db->where('so.outstanding >', 0); 
+        
+        // Group by agar jika 1 SO punya banyak DO target, tidak muncul duplikat data yang mengganggu
+        $this->db->group_by('so.sales_order_no');
+        $valid_sos = $this->db->get()->result_array();
+
+        // Kembalikan dalam bentuk JSON untuk EasyUI Combogrid
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($valid_sos));
+    }
+
+    public function get_labels_for_delete()
+    {
+        $delivery_order_no = $this->input->post('delivery_order_no', TRUE);
+        $item_fg_id = $this->input->post('item_fg_id', TRUE); 
+
+        if (empty($delivery_order_no) || empty($item_fg_id)) {
+            echo json_encode(['total' => 0, 'rows' => []]);
+            return;
+        }
+
+        $this->db->select('id, checksheet_label, qty');
+        $this->db->from('shipping_orders');
+        $this->db->where('delivery_order_no', $delivery_order_no);
+        $this->db->where('item_fg_id', $item_fg_id); 
+        $this->db->where('deleted', 0); 
+        $this->db->order_by('created_date', 'ASC'); 
+
+        $query = $this->db->get();
+        $result = $query->result_array();
+
+        $response = array(
+            'total' => count($result),
+            'rows'  => $result
+        );
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    public function eksekusi_ubah_so_qty()
+    {
+        // =================================================================
+        // 1. TANGKAP INPUT (Termasuk item_id yang baru ditambahkan)
+        // =================================================================
+        $id_dn = $this->input->post('id_dn', TRUE);
+        $dn_no = $this->input->post('dn_no', TRUE);
+        $item_id = $this->input->post('item_id', TRUE); // <-- Sudah ditambahkan
+        $old_so = $this->input->post('old_so', TRUE);
+        $new_so = $this->input->post('new_so', TRUE);
+        $new_do = $this->input->post('new_do', TRUE); 
+        $old_qty = (float) $this->input->post('old_qty', TRUE);
+        $new_qty = (float) $this->input->post('new_qty', TRUE);
+        
+        $labels_to_delete = json_decode($this->input->post('labels_to_delete', TRUE), TRUE);
+
+        if (empty($new_so)) {
+            $new_so = $old_so;
+        }
+
+        // =================================================================
+        // 2. VALIDASI CEK OVER-DELIVERY (Skenario Pindah SO atau Qty Naik)
+        // =================================================================
+        $so_target = $this->db->get_where('sales_orders', [
+            'sales_order_no' => $new_so, 
+            'item_fg_id' => $item_id
+        ])->row();
+            
+        if ($so_target) {
+            // Hitung total DN yang sudah ada di SO Target (Kecuali DN ini)
+            $q_sum = $this->db->query("
+                SELECT COALESCE(SUM(qty), 0) as total 
+                FROM delivery_notes 
+                WHERE sales_order_no = ? AND item_fg_id = ? AND id != ?
+            ", [$new_so, $item_id, $id_dn])->row();
+                
+            $existing_dn_qty = $q_sum ? (float)$q_sum->total : 0;
+            $projected_qty = $existing_dn_qty + $new_qty;
+                
+            // Jika melebihi kuota pesanan di Master SO, tolak!
+            if ($projected_qty > (float)$so_target->qty) {
+                echo json_encode([
+                    'status' => FALSE, 
+                    'message' => 'Gagal! Total kumulatif DN ('.$projected_qty.') akan melebihi batas pesanan di Sales Order ('.$so_target->qty.').'
+                ]);
+                return;
+            }
+        }
+
+        // =================================================================
+        // 3. MULAI DATABASE TRANSACTION (Strict Mode)
+        // =================================================================
+        $this->db->trans_start();
+
+        // Kunci baris DN
+        $q_dn = "SELECT * FROM delivery_notes WHERE id = " . $this->db->escape($id_dn) . " FOR UPDATE";
+        $dn = $this->db->query($q_dn)->row();
+
+        if (!$dn) {
+            $this->db->trans_rollback();
+            echo json_encode(['status' => FALSE, 'message' => 'Data Delivery Note tidak ditemukan.']);
+            return;
+        }
+
+        $old_do = $dn->delivery_order_no;
+
+        $do_lama_data = $this->db->get_where('delivery_orders', [
+            'delivery_order_no' => $old_do,
+            'item_fg_id' => $item_id
+        ])->row();
+        
+        // Gunakan delivery_date dari DO. Jika anomali (DO tidak ditemukan), fallback ke tanggal hari ini
+        $trans_date = $do_lama_data ? $do_lama_data->delivery_date : date('Y-m-d');
+
+        $so_baru_data = $this->db->get_where('sales_orders', ['sales_order_no' => $new_so])->row();
+        $new_customer_order_no = $so_baru_data ? $so_baru_data->customer_order_no : NULL;
+
+        // =================================================================
+        // 4. EKSEKUSI PENGHAPUSAN LABEL (JIKA QTY TURUN)
+        // =================================================================
+        if (!empty($labels_to_delete) && count($labels_to_delete) > 0) {
+            $this->db->where_in('id', $labels_to_delete);
+            $this->db->delete('shipping_orders'); // Hard delete sesuai permintaan
+        }
+
+        // =================================================================
+        // 5. UPDATE DELIVERY NOTES (DN)
+        // =================================================================
+        $update_dn = [
+            'sales_order_no' => $new_so,
+            'qty' => $new_qty
+        ];
+        if ($new_so !== $old_so && !empty($new_do)) {
+            $update_dn['delivery_order_no'] = $new_do;
+            $update_dn['customer_order_no'] = $new_customer_order_no;
+        }
+        $this->db->where('id', $id_dn);
+        $this->db->update('delivery_notes', $update_dn);
+
+        // =================================================================
+        // 6. UPDATE DO, SHIPPING, & SCHEDULE BERDASARKAN SKENARIO
+        // =================================================================
+        if ($new_so !== $old_so && !empty($old_do) && !empty($new_do)) {
+            
+            // --- SKENARIO A: PINDAH SO ---
+            
+            // DO Lama menjadi Open
+            $this->db->where('delivery_order_no', $old_do);
+            $this->db->where('item_fg_id', $item_id);
+            $this->db->update('delivery_orders', ['status' => 0, 'status_scan' => 0]);
+
+            // DO Baru menjadi Close
+            $this->db->where('delivery_order_no', $new_do);
+            $this->db->where('item_fg_id', $item_id);
+            $this->db->update('delivery_orders', ['status' => 1, 'status_scan' => 1]);
+
+            // Schedule Lama -> Open (0)
+            $this->db->where('sales_order_no', $old_so);
+            $this->db->where('item_fg_id', $item_id);
+            $this->db->where('trans_date', $trans_date);
+            $this->db->update('sales_order_deliveries', ['status' => 0]);
+
+            // Schedule Baru -> Close (1)
+            $this->db->where('sales_order_no', $new_so);
+            $this->db->where('item_fg_id', $item_id);
+            $this->db->where('trans_date', $trans_date);
+            $this->db->update('sales_order_deliveries', ['status' => 1]);
+
+            // Pindahkan label fisik ke DO/SO Baru
+            $this->db->where('delivery_order_no', $old_do);
+            $this->db->where('item_fg_id', $item_id);
+            $this->db->update('shipping_orders', [
+                'sales_order_no' => $new_so,
+                'delivery_order_no' => $new_do,
+                'customer_order_no' => $new_customer_order_no
+            ]);
+
+        } else {
+            
+            // --- SKENARIO B: SO TETAP (HANYA UBAH QTY) ---
+            
+            if ($new_qty < $old_qty) {
+                // SKENARIO QTY TURUN
+                // DO: Update qty_del sesuai input
+                $this->db->where('delivery_order_no', $old_do);
+                $this->db->where('item_fg_id', $item_id);
+                $this->db->update('delivery_orders', ['qty_del' => $new_qty]);
+
+                // Schedule: Ubah status kembali Open (0) agar bisa dibuat DN lagi
+                $this->db->where('sales_order_no', $old_so);
+                $this->db->where('item_fg_id', $item_id);
+                $this->db->where('trans_date', $trans_date);
+                $this->db->update('sales_order_deliveries', ['status' => 0]);
+
+            } elseif ($new_qty > $old_qty) {
+                // SKENARIO QTY NAIK
+                // DO: Update qty_del (Scanner akan memvalidasi sisa scan labelnya sendiri)
+                $this->db->where('delivery_order_no', $old_do);
+                $this->db->where('item_fg_id', $item_id);
+                $this->db->update('delivery_orders', ['qty_del' => $new_qty]);
+                
+                // Schedule: Tidak dirubah (Tetap 1 / Close)
+                // Shipping Orders: Tidak disentuh
+            }
+        }
+
+        // =================================================================
+        // 7. KALKULASI ULANG MASTER SO (DARI AKUMULASI DYNAMIC DN)
+        // =================================================================
+        $so_list_to_update = array_unique([$old_so, $new_so]); 
+        
+        foreach ($so_list_to_update as $so_no) {
+            $so_master = $this->db->query("SELECT qty FROM sales_orders WHERE sales_order_no = ? AND item_fg_id = ?", [$so_no, $item_id])->row();
+            
+            if ($so_master) {
+                $sum_dn = $this->db->query("SELECT COALESCE(SUM(qty), 0) as total_kirim FROM delivery_notes WHERE sales_order_no = ? AND item_fg_id = ?", [$so_no, $item_id])->row();
+                
+                $total_delivery = $sum_dn->total_kirim;
+                $outstanding = (float)$so_master->qty - (float)$total_delivery;
+                $status_so = ($outstanding <= 0) ? 1 : 0;
+
+                $this->db->where('sales_order_no', $so_no);
+                $this->db->where('item_fg_id', $item_id);
+                $this->db->update('sales_orders', [
+                    'delivery' => $total_delivery,
+                    'outstanding' => $outstanding,
+                    'status' => $status_so
+                ]);
+            }
+        }
+
+        // =================================================================
+        // 8. SELESAIKAN TRANSAKSI
+        // =================================================================
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            echo json_encode(['status' => FALSE, 'message' => 'Failed! An error occurred during database execution.']);
+        } else {
+            echo json_encode(['status' => TRUE, 'message' => 'Success! Document changes and logistics recalculations are complete.']);
+        }
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -994,6 +1320,7 @@ class Delivery_notes extends CI_Controller
         $filter_to = @base64_decode($get['filter_to']);
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_delivery_order_no = @base64_decode($get['filter_delivery_order_no']);
+        $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
         $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
         $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
         $filter_item_fg = @base64_decode($get['filter_item_fg']);
@@ -1055,6 +1382,7 @@ class Delivery_notes extends CI_Controller
 
 
         $this->db->like('a.customer_id', $filter_customer_id);
+        $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
         $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
         // $this->db->like('a.sales_order_no', $filter_sales_order_no);
         // $this->db->like('c.customer_order_no', $filter_customer_order_no);

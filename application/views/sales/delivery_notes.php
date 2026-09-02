@@ -1296,13 +1296,11 @@
 
     // Fungsi ini dipicu setiap kali angka di dalam text box "Qty Baru" berubah
     function deteksiPerubahanQty(newValue, oldValue) {
-        // Ambil batas Qty awal dari hidden input yang kita set sebelumnya
         var oldQtyLimit = parseFloat($('#form_old_qty').val());
         var newQtyVal = parseFloat(newValue);
-        
-        // Ambil nomor DO untuk menarik data label dari tabel shipping_orders
         var rowItem = $('#dg_detail_ubah_so').datagrid('getSelected');
         var deliveryOrderNo = rowItem ? rowItem.delivery_order_no : '';
+        var itemFgId = rowItem ? rowItem.item_fg_id : ''; 
 
         if (newQtyVal < oldQtyLimit) {
             // SKENARIO C: Qty Turun -> Munculkan tabel hapus label
@@ -1312,7 +1310,8 @@
             $('#dg_hapus_label').datagrid({
                 url: '<?= base_url("sales/delivery_notes/get_labels_for_delete") ?>',
                 queryParams: {
-                    delivery_order_no: deliveryOrderNo
+                    delivery_order_no: deliveryOrderNo,
+                    item_fg_id: itemFgId
                 },
                 method: 'post'
             });
@@ -1320,8 +1319,7 @@
         } else {
             // SKENARIO A & B: Qty Tetap atau Naik -> Sembunyikan tabel hapus label
             $('#container_hapus_label').hide();
-            
-            $('#dg_hapus_label').datagrid('loadData', {"total":0,"rows":[]});
+                $('#dg_hapus_label').datagrid('loadData', {"total":0,"rows":[]});
         }
     }
 
