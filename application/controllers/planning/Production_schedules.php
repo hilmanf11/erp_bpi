@@ -1391,7 +1391,7 @@ class Production_schedules extends CI_Controller
                             flex: 1; /* Mengisi sisa ruang setelah Kanban */
                             display: flex;
                             flex-direction: column;
-                            padding-right: 15px;
+                            padding-right: 25px;
                         }
                         
                         /* Bagian Kanban (Kanan dari kolom kanan) */
@@ -1445,6 +1445,7 @@ class Production_schedules extends CI_Controller
                         .full-outline-wrapper {
                             width: 90%;
                             margin: 0 auto;
+                            margin-right: 15px;
                             border: 2px solid #000; 
                             padding: 10px;           
                         }
@@ -1480,7 +1481,7 @@ class Production_schedules extends CI_Controller
                                     </tr>
                                 </table>
                                 <br><br><br><br><br><br>
-                                <div class="text-center text-bold" style="font-size: 20px; margin-bottom: 15px;">
+                                <div class="text-center text-bold" style="font-size: 25px; margin-bottom: 15px;">
                                     WORK ORDER (WO) &<br>PRODUCTION REPORT (PR)
                                 </div>
 
@@ -1506,12 +1507,12 @@ class Production_schedules extends CI_Controller
                                         <tr>
                                             <td width="25%" class="text-bold" style="font-size: 11px; padding: 3px 5px;">Part No</td>
                                             <td width="5%" style="padding: 3px 5px;">:</td>
-                                            <td width="70%" class="bg-grey text-center text-bold border-box-thick" style="padding: 5px; font-size: 14px;">'.$data['item_number'].'</td>
+                                            <td width="70%" class="bg-grey text-center text-bold border-box-thick" style="padding: 5px; font-size: 17px;">'.$data['item_number'].'</td>
                                         </tr>
                                         <tr>
                                             <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">Part Name</td>
                                             <td style="padding: 3px 5px;">:</td>
-                                            <td class="text-center text-bold border-box" style="padding: 5px;">'.$data['item_name'].'</td>
+                                            <td class="text-center text-bold border-box" style="padding: 5px; font-size: 17px;">'.$data['item_name'].'</td>
                                         </tr>
                                         <tr>
                                             <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">IS No</td>
@@ -1537,7 +1538,7 @@ class Production_schedules extends CI_Controller
                                         <td width="50%" class="text-center text-bold" style="font-size: 14px;">Qty (pcs)</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.$data['lot_no'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 17px; padding: 8px;">'.$data['lot_no'].'</td>
                                         <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.number_format($data['qty']).'</td>
                                     </tr>
                                     <tr>

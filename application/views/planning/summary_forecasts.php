@@ -22,6 +22,10 @@
                 <input style="width:15%;" id="filter_month_to" value="<?= date("m") ?>" class="easyui-combobox"> 
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Division</span>
+                <input style="width:62%;" id="filter_division" class="easyui-combobox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:62%;" id="filter_item_fg" class="easyui-combogrid">
             </div>
@@ -48,10 +52,13 @@
         var filter_month_from = $("#filter_month_from").datebox("getValue");
         var filter_month_to = $("#filter_month_to").datebox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
+        var filter_division = $("#filter_division").combobox('getValue');
+
         var url = "?filter_period_year_from=" + window.btoa(filter_period_year_from) + "&filter_period_year_to=" + window.btoa(filter_period_year_to) +
             "&filter_month_from=" + window.btoa(filter_month_from) +
             "&filter_month_to=" + window.btoa(filter_month_to) +
-            "&filter_item_fg=" + filter_item_fg;
+            "&filter_item_fg=" + filter_item_fg +
+            "&filter_division=" + filter_division;
         if (filter_period_year_from == "" && filter_month_from == "") {
             toastr.warning("Please select Periode & Product No.!");
         } else {
@@ -66,13 +73,13 @@
         var filter_month_from = $("#filter_month_from").datebox("getValue");
         var filter_month_to = $("#filter_month_to").datebox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
+        var filter_division = $("#filter_division").combobox('getValue');
+
         var url = "?filter_period_year_from=" + window.btoa(filter_period_year_from) + "&filter_period_year_to=" + window.btoa(filter_period_year_to) +
             "&filter_month_from=" + window.btoa(filter_month_from) +
             "&filter_month_to=" + window.btoa(filter_month_to) +
-            "&filter_item_fg=" + filter_item_fg;
-            "&filter_month_from=" + window.btoa(filter_month_from) +
-            "&filter_month_to=" + window.btoa(filter_month_to) +
-            "&filter_item_fg=" + filter_item_fg;
+            "&filter_item_fg=" + filter_item_fg +
+            "&filter_division=" + filter_division;
         if (filter_period_year_from == "" && filter_month_from == "" && filter_month_to == "") {
             toastr.warning("Please select Periode & Product No.!");
         } else {
@@ -147,7 +154,7 @@
         textField: 'number',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Select Product No.",
+        prompt: "Choose Product No.",
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
@@ -165,6 +172,14 @@
                 width: 200
             }]
         ],
+    });
+
+    $('#filter_division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'id',
+        textField: 'number',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Division',
     });
 
     $(function() {

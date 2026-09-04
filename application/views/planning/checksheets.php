@@ -1118,7 +1118,17 @@
         url: '<?= base_url('planning/checksheets/readChecksheet'); ?>',
         valueField: 'number',
         textField: 'number',
-        prompt: 'Choose Wo No'
+        prompt: 'Choose Checksheet',
+        mode: 'remote',
+        delay: 500,
+        panelHeight: 200,
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+                $(e.data.target).combobox('reload'); 
+            }
+        }]
     });
 
     $('#filter_item_fg_id').combogrid({

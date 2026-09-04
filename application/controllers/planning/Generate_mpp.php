@@ -989,6 +989,8 @@ class Generate_mpp extends CI_Controller
         $filter_revision = base64_decode($this->input->get('filter_revision'));
         $period = $filter_year . "-" . $filter_month;
 
+        $cutoff = $this->crud->read("generate_mpp", [], ["p_month" => $filter_month, "p_year" => $filter_year,"revision" => $filter_revision]);
+
         $query_main = "SELECT a.*, 
                     b.name, 
                     b.number,
@@ -1056,6 +1058,9 @@ class Generate_mpp extends CI_Controller
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
                             <small>'.$config->description.'</small>
+                            <p style="font-size:12px; margin:0;">Period ' . $this->monthName($filter_month) . ' ' . $filter_year . '</p>
+                            <p style="font-size:12px; margin:0;">Revision ' . $filter_revision . '</p>
+                            <p style="font-size:12px; margin:0;">Generate Date ' . date('Y-m-d', strtotime($cutoff->created_date)) . '</p>
                         </td>
                     </tr>
                 </table>
@@ -1615,7 +1620,7 @@ class Generate_mpp extends CI_Controller
                             flex: 1; /* Mengisi sisa ruang setelah Kanban */
                             display: flex;
                             flex-direction: column;
-                            padding-right: 15px;
+                            padding-right: 25px;
                         }
                         
                         /* Bagian Kanban (Kanan dari kolom kanan) */
@@ -1669,6 +1674,7 @@ class Generate_mpp extends CI_Controller
                         .full-outline-wrapper {
                             width: 90%;
                             margin: 0 auto;
+                            margin-right: 15px;
                             border: 2px solid #000; 
                             padding: 10px;           
                         }
@@ -1703,8 +1709,8 @@ class Generate_mpp extends CI_Controller
                                         </td>
                                     </tr>
                                 </table>
-
-                                <div class="text-center text-bold" style="font-size: 20px; margin-bottom: 15px;">
+                                <br><br><br><br><br><br>
+                                <div class="text-center text-bold" style="font-size: 25px; margin-bottom: 15px;">
                                     WORK ORDER (WO) &<br>PRODUCTION REPORT (PR)
                                 </div>
 
@@ -1730,12 +1736,12 @@ class Generate_mpp extends CI_Controller
                                         <tr>
                                             <td width="25%" class="text-bold" style="font-size: 11px; padding: 3px 5px;">Part No</td>
                                             <td width="5%" style="padding: 3px 5px;">:</td>
-                                            <td width="70%" class="bg-grey text-center text-bold border-box-thick" style="padding: 5px; font-size: 14px;">'.$data['item_number'].'</td>
+                                            <td width="70%" class="bg-grey text-center text-bold border-box-thick" style="padding: 5px; font-size: 17px;">'.$data['item_number'].'</td>
                                         </tr>
                                         <tr>
                                             <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">Part Name</td>
                                             <td style="padding: 3px 5px;">:</td>
-                                            <td class="text-center text-bold border-box" style="padding: 5px;">'.$data['item_name'].'</td>
+                                            <td class="text-center text-bold border-box" style="padding: 5px; font-size: 17px;">'.$data['item_name'].'</td>
                                         </tr>
                                         <tr>
                                             <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">IS No</td>
@@ -1761,7 +1767,7 @@ class Generate_mpp extends CI_Controller
                                         <td width="50%" class="text-center text-bold" style="font-size: 14px;">Qty (pcs)</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.$data['lot_no'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 17px; padding: 8px;">'.$data['lot_no'].'</td>
                                         <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.number_format($data['qty']).'</td>
                                     </tr>
                                     <tr>

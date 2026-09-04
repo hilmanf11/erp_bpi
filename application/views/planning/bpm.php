@@ -63,7 +63,9 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">BPM Date</span>
-                    <input style="width:60%;" id="filter_kanban_date" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:28%;" id="filter_kanban_date_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <span>To</span>
+                    <input style="width:28%;" id="filter_kanban_date_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
             </div>
             <div style="width: 30%; float: left;">
@@ -563,15 +565,22 @@
     }
 
     function filter() {
-        // var filter_period = $("#filter_period").combobox('getValue');
-        // var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
-        var filter_kanban_date = $("#filter_kanban_date").datebox('getValue');
+        
+        var filter_kanban_date_from = $("#filter_kanban_date_from").datebox('getValue');
+        var filter_kanban_date_to = $("#filter_kanban_date_to").datebox('getValue');
+        
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + "&filter_product_no=" + btoa(filter_product_no) + "&filter_kanban_date=" + filter_kanban_date + "&filter_status=" + filter_status;
+        url = "?&filter_request_no=" + filter_request_no + 
+              "&filter_product_family=" + filter_product_family + 
+              "&filter_product_no=" + btoa(filter_product_no) + 
+              "&filter_kanban_date_from=" + filter_kanban_date_from + 
+              "&filter_kanban_date_to=" + filter_kanban_date_to + 
+              "&filter_status=" + filter_status;
+              
         $('#dg').treegrid({
             url: '<?= base_url('planning/bpm/datatables') ?>' + url
         });
@@ -584,15 +593,22 @@
     }
 
     function excel() {
-        // var filter_period = $("#filter_period").combobox('getValue');
-        // var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
-        var filter_kanban_date = $("#filter_kanban_date").datebox('getValue');
+        
+        var filter_kanban_date_from = $("#filter_kanban_date_from").datebox('getValue');
+        var filter_kanban_date_to = $("#filter_kanban_date_to").datebox('getValue');
+        
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + "&filter_product_no=" + btoa(filter_product_no) + "&filter_kanban_date=" + filter_kanban_date + "&filter_status=" + filter_status;
+        url = "?&filter_request_no=" + filter_request_no + 
+              "&filter_product_family=" + filter_product_family + 
+              "&filter_product_no=" + btoa(filter_product_no) + 
+              "&filter_kanban_date_from=" + filter_kanban_date_from + 
+              "&filter_kanban_date_to=" + filter_kanban_date_to + 
+              "&filter_status=" + filter_status;
+              
         window.location.assign('<?= base_url('planning/bpm/print/excel') ?>' + url);
     }
 

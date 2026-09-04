@@ -457,6 +457,7 @@
             var revision = $("#filter_revision").combobox('getValue');
 
             calendarCheck(month, year, revision);
+            componentCheck(month, year, revision);
             // overList(month, year, revision);
             revisionSelected(month, year);
         }, 800); // beri jeda 0.8 detik agar combobox sudah siap
@@ -541,6 +542,7 @@
                 var revision = $("#filter_revision").combobox('getValue');
 
                 calendarCheck(month, year, revision);
+                componentCheck(month, year, revision);
                 // overList(month, year, revision);
             }
         });

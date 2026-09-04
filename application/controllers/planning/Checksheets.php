@@ -215,10 +215,22 @@ class Checksheets extends CI_Controller
 
     public function readChecksheet()
     {
-        $send = $this->crud->query("SELECT DISTINCT `number`
-        FROM checksheets
-        WHERE `deleted` = 0
-        ORDER BY `number` DESC");
+        $q = $this->input->post('q') ? $this->input->post('q') : $this->input->get('q');
+        
+        $this->db->select('number');
+        $this->db->from('checksheets');
+        $this->db->where('deleted', 0);
+        
+        if (!empty($q)) {
+            $this->db->like('number', $q);
+        }
+        
+        $this->db->group_by('number'); 
+        $this->db->order_by('number', 'DESC');
+        
+        $this->db->limit(50); 
+        
+        $send = $this->db->get()->result_array();
         echo json_encode($send);
     }
 

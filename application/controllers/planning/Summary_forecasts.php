@@ -449,6 +449,7 @@ class Summary_forecasts extends CI_Controller
         $filter_period_year_from = (int) base64_decode($this->input->get("filter_period_year_from"));
         $filter_period_year_to   = (int) base64_decode($this->input->get("filter_period_year_to"));
         $filter_item_fg       = $this->input->get("filter_item_fg");
+        $filter_division      = $this->input->get("filter_division");
 
         // Month Range (default 1-12 jika kosong)
         $filter_month_from = (int)base64_decode($this->input->get("filter_month_from"));
@@ -522,11 +523,6 @@ class Summary_forecasts extends CI_Controller
                 'month' => (int)date('n', $earliest_ts)
             ];
         }
-        for ($k = 0; $k < 3; $k++) {
-            $earliest_ts = strtotime($earliest['year'] . '-' . $earliest['month'] . '-01');
-            $earliest_ts = strtotime('-1 month', $earliest_ts);
-            $earliest = ['year' => (int)date('Y', $earliest_ts), 'month' => (int)date('n', $earliest_ts)];
-        }
         // latest we need is month_to of the same year (we assume user filters within single year)
         $lastTarget = end($targets);
         $latest = $lastTarget;
@@ -589,12 +585,12 @@ class Summary_forecasts extends CI_Controller
             $map[$iid][$cid][$py][$pm] = $r; // store the forecast row (includes month_1..month_12)
         }
 
-        // ------------------ Get list of items (same as your original item_fg query) ------------------
         // We'll reuse item_fg table - you may want to limit by filter_item_fg
         $items = $this->db->select('id, number, name')
                         ->from('item_fg')
                         ->where('deleted',0)
                         ->like('id', $filter_item_fg)
+                        ->like('division_id', $filter_division)
                         ->order_by('number','asc')
                         ->get()
                         ->result_array();
