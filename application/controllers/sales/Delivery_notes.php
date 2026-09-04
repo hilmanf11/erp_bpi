@@ -394,17 +394,83 @@ class Delivery_notes extends CI_Controller
             ->set_output(json_encode($response));
     }
 
+    // public function get_valid_so_baru()
+    // {
+    //     $dn_no = $this->input->get('dn_no', TRUE);
+    //     $item_fg_id = $this->input->get('item_fg_id', TRUE);
+
+    //     if (empty($dn_no) || empty($item_fg_id)) {
+    //         echo json_encode([]);
+    //         return;
+    //     }
+
+    //     // A. Ambil data referensi dari DN saat ini
+    //     $dn = $this->db->get_where('delivery_notes', array(
+    //         'delivery_note_no' => $dn_no, 
+    //         'item_fg_id' => $item_fg_id
+    //     ))->row();
+
+    //     if (!$dn) {
+    //         echo json_encode([]);
+    //         return;
+    //     }
+
+    //     // B. Cari tanggal pengiriman (Schedule) dari SO lama
+    //     $old_sched = $this->db->get_where('sales_order_deliveries', array(
+    //         'sales_order_no' => $dn->sales_order_no,
+    //         'item_fg_id' => $item_fg_id
+    //     ))->row();
+
+    //     // Jika schedule ada, pakai tanggalnya. Jika tidak, fallback ke delivery_note_date
+    //     $target_date = $old_sched ? $old_sched->trans_date : $dn->delivery_note_date;
+
+    //     // =========================================================
+    //     // C. REVISI QUERY FILTER (SUDAH TERMASUK CEK DO PENGGANTI)
+    //     // =========================================================
+        
+    //     // 1. Tambahkan do_baru.delivery_order_no AS target_do pada SELECT
+    //     $this->db->select('so.sales_order_no, do_baru.delivery_order_no AS target_do');
+    //     $this->db->from('sales_orders so');
+    //     $this->db->join('sales_order_deliveries sod', 'so.sales_order_no = sod.sales_order_no');
+        
+    //     // 2. INI KUNCINYA: Wajib join ke tabel DO untuk memastikan SO ini punya DO
+    //     $this->db->join('delivery_orders do_baru', 'so.sales_order_no = do_baru.sales_order_no');
+
+    //     $this->db->where('so.customer_id', $dn->customer_id);
+    //     $this->db->where('so.item_fg_id', $item_fg_id);
+    //     $this->db->where('sod.item_fg_id', $item_fg_id);
+    //     $this->db->where('sod.trans_date', $target_date);
+    //     $this->db->where('so.sales_order_no !=', $dn->sales_order_no); // Jangan tampilkan SO saat ini
+        
+    //     // 3. Pastikan DO target memiliki part/item yang sama
+    //     $this->db->where('do_baru.item_fg_id', $item_fg_id);
+        
+    //     // Opsional Param 3 & 4
+    //     $this->db->where('so.outstanding >', 0); 
+        
+    //     // Group by agar jika 1 SO punya banyak DO target, tidak muncul duplikat data yang mengganggu
+    //     $this->db->group_by('so.sales_order_no');
+    //     $valid_sos = $this->db->get()->result_array();
+
+    //     // Kembalikan dalam bentuk JSON untuk EasyUI Combogrid
+    //     $this->output
+    //         ->set_content_type('application/json')
+    //         ->set_output(json_encode($valid_sos));
+    // }
+
     public function get_valid_so_baru()
     {
         $dn_no = $this->input->get('dn_no', TRUE);
         $item_fg_id = $this->input->get('item_fg_id', TRUE);
+        
+        $debug = $this->input->get('debug', TRUE); 
 
         if (empty($dn_no) || empty($item_fg_id)) {
             echo json_encode([]);
             return;
         }
 
-        // A. Ambil data referensi dari DN saat ini
+        // Ambil data referensi dari DN saat ini
         $dn = $this->db->get_where('delivery_notes', array(
             'delivery_note_no' => $dn_no, 
             'item_fg_id' => $item_fg_id
@@ -415,44 +481,50 @@ class Delivery_notes extends CI_Controller
             return;
         }
 
-        // B. Cari tanggal pengiriman (Schedule) dari SO lama
-        $old_sched = $this->db->get_where('sales_order_deliveries', array(
-            'sales_order_no' => $dn->sales_order_no,
+        
+        $do_lama = $this->db->get_where('delivery_orders', array(
+            'delivery_order_no' => $dn->delivery_order_no,
             'item_fg_id' => $item_fg_id
         ))->row();
 
-        // Jika schedule ada, pakai tanggalnya. Jika tidak, fallback ke delivery_note_date
-        $target_date = $old_sched ? $old_sched->trans_date : $dn->delivery_note_date;
+        $target_date = $do_lama ? $do_lama->delivery_date : $dn->delivery_note_date;
 
-        // =========================================================
-        // C. REVISI QUERY FILTER (SUDAH TERMASUK CEK DO PENGGANTI)
-        // =========================================================
-        
-        // 1. Tambahkan do_baru.delivery_order_no AS target_do pada SELECT
-        $this->db->select('so.sales_order_no, do_baru.delivery_order_no AS target_do');
+              
+        $this->db->select('so.sales_order_no, MAX(do_baru.delivery_order_no) AS target_do');
         $this->db->from('sales_orders so');
         $this->db->join('sales_order_deliveries sod', 'so.sales_order_no = sod.sales_order_no');
         
-        // 2. INI KUNCINYA: Wajib join ke tabel DO untuk memastikan SO ini punya DO
+        // memastikan SO punya DO
         $this->db->join('delivery_orders do_baru', 'so.sales_order_no = do_baru.sales_order_no');
 
-        $this->db->where('so.customer_id', $dn->customer_id); // Param 6
-        $this->db->where('so.item_fg_id', $item_fg_id);       // Param 7
-        $this->db->where('sod.item_fg_id', $item_fg_id);      // Part No Sama di Schedule
-        $this->db->where('sod.trans_date', $target_date);     // Param 1 & 2
-        $this->db->where('so.sales_order_no !=', $dn->sales_order_no); // Jangan tampilkan SO saat ini
+        $this->db->where('so.customer_id', $dn->customer_id);
+        $this->db->where('so.item_fg_id', $item_fg_id);
+        $this->db->where('sod.item_fg_id', $item_fg_id);
+        $this->db->where('sod.trans_date', $target_date); 
+        $this->db->where('so.sales_order_no !=', $dn->sales_order_no); 
         
-        // 3. Pastikan DO target memiliki part/item yang sama
         $this->db->where('do_baru.item_fg_id', $item_fg_id);
-        
-        // Opsional Param 3 & 4
+        $this->db->where('do_baru.delivery_date', $target_date);
         $this->db->where('so.outstanding >', 0); 
         
-        // Group by agar jika 1 SO punya banyak DO target, tidak muncul duplikat data yang mengganggu
         $this->db->group_by('so.sales_order_no');
+
+        // =========================================================
+        // ALAT BANTU DEBUGGING
+        // =========================================================
+        if ($debug == '1') {
+            echo "<b>1. Parameter Input:</b><br>";
+            echo "Item ID: " . $item_fg_id . "<br>";
+            echo "Customer ID: " . $dn->customer_id . "<br>";
+            echo "Target Date (Trans Date): " . $target_date . "<br><br>";
+            
+            echo "<b>2. Raw SQL Query yang dibentuk CI3:</b><br>";
+            echo $this->db->get_compiled_select(); 
+            die();
+        }
+
         $valid_sos = $this->db->get()->result_array();
 
-        // Kembalikan dalam bentuk JSON untuk EasyUI Combogrid
         $this->output
             ->set_content_type('application/json')
             ->set_output(json_encode($valid_sos));
