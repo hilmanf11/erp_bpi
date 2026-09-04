@@ -950,3 +950,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-09-04]
 - **kurniawan**: Update Report_outstanding_po.php ([09650115](https://github.com/hilmanf11/erp_bpi/commit/09650115cf8bde1f5fef3ac4231affa269c1d231))
+
+### [2026-09-04]
+- **kurniawan**: Update Delivery_notes.php ([1207b58a](https://github.com/hilmanf11/erp_bpi/commit/1207b58ab203ca478da9e6541c09c4353a03cd02))
