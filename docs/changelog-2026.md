@@ -938,3 +938,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-09-02]
 - **kurniawan**: update DN ([2362cd8a](https://github.com/hilmanf11/erp_bpi/commit/2362cd8abcc409457e680e7c2f08c458ccc643e9))
+
+### [2026-09-04]
+- **kurniawan**: update Approval dan notification ([f19c1183](https://github.com/hilmanf11/erp_bpi/commit/f19c1183d1a11e8fa96f3824189ed10fb3e2d7e5))
