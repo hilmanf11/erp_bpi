@@ -294,23 +294,37 @@ class Notifications extends CI_Controller
             $log = json_decode($record['log'], true);
 
             if($table == "purchase_orders"){
-                $supplier = $this->crud->read("suppliers", [], ["id" => $log['supplier_id']]);
-                $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
-                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier->name) + array("item_rm_number" => $item_rm->number));
+                $supplier = $this->crud->read("suppliers", [], ["id" => @$log['supplier_id']]);
+                $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+                $supplier_name = ($supplier) ? $supplier->name : "-";
+                $item_rm_number = ($item_rm) ? $item_rm->number : "-";
+
+                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier_name) + array("item_rm_number" => $item_rm_number));
                 
             } elseif($table == "purchase_requests"){
-                $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
-                $hasil[] = ($id_notification + $log + array("item_rm_number" => $item_rm->number));
+                $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+                $item_rm_number = ($item_rm) ? $item_rm->number : "-";
+
+                $hasil[] = ($id_notification + $log + array("item_rm_number" => $item_rm_number));
                 
             } elseif($table == "users"){
-                $divisions = $this->crud->read("divisions", [], ["number" => $log['division']]);
-                $hasil[] = ($id_notification + $log + array("division" => $divisions->number));
+                $divisions = $this->crud->read("divisions", [], ["number" => @$log['division']]);
+                
+                $division_number = ($divisions) ? $divisions->number : "-";
+
+                $hasil[] = ($id_notification + $log + array("division" => $division_number));
                 
             } elseif($table == "request_materials"){
-                $supplier = $this->crud->read("suppliers", [], ["id" => $log['supplier_id']]);
-                $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
-                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier->name) + array("item_number" => $item_rm->number)+ array("item_name" => $item_rm->name));
-                // $hasil[] = ($id_notification + $log);
+                $supplier = $this->crud->read("suppliers", [], ["id" => @$log['supplier_id']]);
+                $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+                $supplier_name = ($supplier) ? $supplier->name : "-";
+                $item_number = ($item_rm) ? $item_rm->number : "-";
+                $item_name = ($item_rm) ? $item_rm->name : "-";
+
+                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier_name) + array("item_number" => $item_number) + array("item_name" => $item_name));
                 
             } else {
                 $hasil[] = ($id_notification + $log);

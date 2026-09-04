@@ -155,8 +155,21 @@ class Approvals extends CI_Controller
         $sales_invoices = $this->crud->reads('sales_invoices', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $standard_price_rm = $this->crud->reads('standard_price_rm', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $standard_exchange_rates = $this->crud->reads('standard_exchange_rates', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $request_material_memos = $this->crud->reads('request_materials', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $scan_rm_transfers = $this->crud->reads('scan_rm_transfer', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $scan_dn_crushers = $this->crud->reads('scan_dn_crusher', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $dn_scraps = $this->crud->reads('dn_scrap', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $dn_boxs = $this->crud->reads('dn_boxs', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $cost_patterns = $this->crud->reads('cost_patterns', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $breakdown_prices = $this->crud->reads('breakdown_prices', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $setting_parameters = $this->crud->reads('setting_parameters', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $generate_mrps = $this->crud->reads('generate_mrp_finals', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $quotations = $this->crud->reads('quotations', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $supply_requestions = $this->crud->reads('supply_requestions', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($purchase_orders) + count($purchase_requests) + count($delivery_notes) + count($sales_invoices) + count($standard_price_rm) + count($standard_exchange_rates)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $totalRows = (count($users) + count($purchase_orders) + count($purchase_requests) + count($delivery_notes) + count($sales_invoices) + count($standard_price_rm) + count($standard_exchange_rates) + 
+        count($request_material_memos) + count($scan_rm_transfers) + count($scan_dn_crushers) + count($dn_scraps) + count($dn_boxs) + count($cost_patterns) + count($breakdown_prices) + count($setting_parameters) + 
+        count($generate_mrps) + count($quotations) + count($supply_requestions)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -172,6 +185,17 @@ class Approvals extends CI_Controller
         $purchase_requests = $this->crud->reads('purchase_requests', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $delivery_notes = $this->crud->reads('delivery_notes', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $sales_invoices = $this->crud->reads('sales_invoices', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $request_material_memos = $this->crud->reads('request_materials', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $scan_rm_transfers = $this->crud->reads('scan_rm_transfer', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $scan_dn_crushers = $this->crud->reads('scan_dn_crusher', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $dn_scraps = $this->crud->reads('dn_scrap', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $dn_boxs = $this->crud->reads('dn_boxs', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $cost_patterns = $this->crud->reads('cost_patterns', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $breakdown_prices = $this->crud->reads('breakdown_prices', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $setting_parameters = $this->crud->reads('setting_parameters', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $generate_mrps = $this->crud->reads('generate_mrp_finals', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $quotations = $this->crud->reads('quotations', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $supply_requestions = $this->crud->reads('supply_requestions', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, "users");
@@ -191,6 +215,50 @@ class Approvals extends CI_Controller
 
         foreach ($sales_invoices as $si) {
             $this->approvalMessage($si->approved_by, $si->approved_to, "sales_invoices");
+        }
+
+        foreach ($request_material_memos as $rmm) {
+            $this->approvalMessage($rmm->approved_by, $rmm->approved_to, "request_materials");
+        }
+
+        foreach ($scan_rm_transfers as $srt) {
+            $this->approvalMessage($srt->approved_by, $srt->approved_to, "scan_rm_transfer");
+        }
+
+        foreach ($scan_dn_crushers as $sdc) {
+            $this->approvalMessage($sdc->approved_by, $sdc->approved_to, "scan_dn_crusher");
+        }
+
+        foreach ($dn_scraps as $ds) {
+            $this->approvalMessage($ds->approved_by, $ds->approved_to, "dn_scrap");
+        }
+
+        foreach ($dn_boxs as $dbx) {
+            $this->approvalMessage($dbx->approved_by, $dbx->approved_to, "dn_boxs");
+        }
+
+        foreach ($cost_patterns as $cp) {
+            $this->approvalMessage($cp->approved_by, $cp->approved_to, "cost_patterns");
+        }
+
+        foreach ($breakdown_prices as $bp) {
+            $this->approvalMessage($bp->approved_by, $bp->approved_to, "breakdown_prices");
+        }
+
+        foreach ($setting_parameters as $sp) {
+            $this->approvalMessage($sp->approved_by, $sp->approved_to, "setting_parameters");
+        }
+
+        foreach ($generate_mrps as $gm) {
+            $this->approvalMessage($gm->approved_by, $gm->approved_to, "generate_mrp_finals");
+        }
+
+        foreach ($quotations as $qt) {
+            $this->approvalMessage($qt->approved_by, $qt->approved_to, "quotations");
+        }
+
+        foreach ($supply_requestions as $sr) {
+            $this->approvalMessage($sr->approved_by, $sr->approved_to, "supply_requestions");
         }
     }
 
@@ -316,6 +384,149 @@ class Approvals extends CI_Controller
         }
     }
 
+    public function request_materials($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "request_materials";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/request_materials');
+        }
+    }
+
+    public function scan_rm_transfer($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "scan_rm_transfer";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/scan_rm_transfer');
+        }
+    }
+
+    public function scan_dn_crusher($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "scan_dn_crusher";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/scan_dn_crusher');
+        }
+    }
+
+    public function dn_scrap($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "dn_scrap";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/dn_scrap');
+        }
+    }
+
+    public function dn_boxs($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "dn_boxs";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/dn_boxs');
+        }
+    }
+
+    public function cost_patterns($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "cost_patterns";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/cost_patterns');
+        }
+    }
+
+    public function breakdown_prices($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "breakdown_prices";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/breakdown_prices');
+        }
+    }
+
+    public function setting_parameters($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "setting_parameters";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/setting_parameters');
+        }
+    }
+
+    public function generate_mrp_finals($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "generate_mrp_finals";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/generate_mrp_finals');
+        }
+    }
+
+    public function quotations($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "quotations";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/quotations');
+        }
+    }
+
+    public function supply_requestions($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "supply_requestions";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/supply_requestions');
+        }
+    }
+
     public function approvalUsers($approved_to, $approved_by)
     {
         $approved_to = base64_decode($approved_to);
@@ -365,6 +576,7 @@ class Approvals extends CI_Controller
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);
         $this->db->order_by('a.created_date', 'DESC');
+        $this->db->order_by('d.name', 'ASC');
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));
@@ -469,6 +681,225 @@ class Approvals extends CI_Controller
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);
         $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalRequestMaterialMemos($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, b.name as item_name, b.number as item_number, c.name as supplier_name, b.uom');
+        $this->db->from('request_materials a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
+        $this->db->join('suppliers c', 'a.supplier_id = c.id','left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalScanRmTransfer($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, b.name as item_name, b.number as item_number,b.uom');
+        $this->db->from('scan_rm_transfer a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalScanDnCrusher($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, b.name as item_name, b.number as item_number,b.uom');
+        $this->db->from('scan_dn_crusher a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalDnScrap($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, b.name as item_name, b.number as item_number,b.uom');
+        $this->db->from('dn_scrap a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalDnBoxs($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, b.name as item_box_name, b.code as item_box_code, b.size as item_box_size, b.color as item_box_color, b.uom');
+        $this->db->from('dn_boxs a');
+        $this->db->join('item_boxs b', 'a.item_box_id = b.id', 'left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalCostPattern($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select("a.*, b.uom");
+        $this->db->from('cost_patterns a');
+        $this->db->join('item_fg b','b.id = a.item_fg_id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.item_fg_id', 'ASC');
+        $this->db->order_by('a.p_year', 'ASC');
+        $this->db->order_by('a.p_month', 'ASC');
+        $this->db->order_by('a.revision', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalBreakdownPrices($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select("a.*");
+        $this->db->from('breakdown_prices a');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->group_by('a.p_month');
+        $this->db->group_by('a.p_year');
+        $this->db->group_by('a.item_fg_id');
+        $this->db->group_by('a.revision');
+        $this->db->group_by('a.customer_id');
+        $this->db->group_by('a.revision_quotation_number');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalSettingParameters($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+
+        $page = $this->input->post('page');
+        $rows = $this->input->post('rows');
+        //Pagination 1-10
+        $page   = isset($page) ? intval($page) : 1;
+        $rows   = isset($rows) ? intval($rows) : 100;
+        $offset = ($page - 1) * $rows;
+        $result = array();
+        
+        $this->db->select('a.*, b.number as machine_number');
+        $this->db->from('setting_parameters a');
+        $this->db->join('machines b','a.machine_id = b.id','left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.id', 'ASC');
+        $totalRows = $this->db->count_all_results('', false);
+        //Limit 1 - 10
+        $this->db->limit($rows, $offset);
+        //Get Data Array
+        $records = $this->db->get()->result_array();
+        //Mapping Data
+        $result['total'] = $totalRows;
+        $result = array_merge($result, ['rows' => $records]);
+
+        die(json_encode($result));
+    }
+
+    public function approvalGenerateMrp($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, CONCAT(a.p_year, a.p_month) as period, b.number as item_rm_number, b.name as item_rm_name, e.id as supplier_number, e.name as supplier_name, f.leadtime as leadtime2, c.name as product_family, d.class, d.composition, d.safety');
+        $this->db->from('generate_mrp_finals a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->join('generate_mrp_abcclass d', 'a.item_rm_id = d.item_rm_id and a.p_month = d.p_month and a.p_year = d.p_year and a.revision = d.revision', 'left');
+        $this->db->join('suppliers e', 'a.supplier_id = e.id','left');
+        $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id','left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->group_by('a.item_rm_id');
+        $this->db->group_by('a.supplier_id');
+        $this->db->order_by('c.name', 'asc');
+        $this->db->order_by('d.class', 'asc');
+        $this->db->order_by('b.number', 'asc');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalQuotations($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select("a.*");
+        $this->db->from('quotations a');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.item_fg_number', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalSupplyReq($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select("a.*, 
+        e.number as item_number, 
+        e.name as item_name, 
+        b.uom,
+        f.qty_sh as qty_wo,
+        f.qty_product as qty_ng,
+        f.shift,
+        f.type");
+        $this->db->from('supply_requestions a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('supply_sheets c', 'a.workorder = c.workorder','left');
+        $this->db->join('item_fg e', 'c.item_fg_id = e.id','left');
+        $this->db->join('item_ng f', 'a.document = f.document','left');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->group_by('a.request_no');
+        $this->db->order_by('a.request_no', 'DESC');
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));
