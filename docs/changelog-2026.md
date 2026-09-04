@@ -944,3 +944,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-09-04]
 - **kurniawan**: udpate planning ([c240cb43](https://github.com/hilmanf11/erp_bpi/commit/c240cb43f9379b9c68f592b2e4d1e85546b440f4))
+
+### [2026-09-04]
+- **kurniawan**: Update Report_history_transactions.php ([ab42373b](https://github.com/hilmanf11/erp_bpi/commit/ab42373b21ddfed0af820a9462a44708a1571498))
