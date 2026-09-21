@@ -1221,7 +1221,6 @@ class Generate_mps extends CI_Controller
                 "p_year" => $post['p_year'],
                 "revision" => $post['revision'],
                 "cutoff" => $post['cutoff'],
-                // "customer_id" => $post['customer_id'],
                 "item_fg_id" => $post['item_fg_id'],
                 "wip_month" => $post['wip_month'],
                 "pp" => $post['pp'],
@@ -1235,30 +1234,62 @@ class Generate_mps extends CI_Controller
                 "balance" => $balance
             );
 
+            $theme = 'error';
+            $title = 'Failed';
+            $message = 'Terjadi kesalahan sistem.';
+
             if ($cek_data_mps > 0) {
                 $send   = $this->db->update('generate_mps', $postFinal, [
                     "p_month" => $post['p_month'],
                     "p_year" => $post['p_year'],
                     "revision" => $post['revision'],
-                    // "customer_id" => $post['customer_id'],
                     "item_fg_id" => $post['item_fg_id'],
                     "wip_month" => $post['wip_month']
                 ]);
-                
-                echo json_encode([
-                    'theme' => 'success',
-                    'title' => 'Updated',
-                    'message' => 'Update data Successfully.'
-                ]);
+                $theme = 'success';
+                $title = 'Updated';
+                $message = 'Update data Successfully.';
             } else {
                 $send = $this->crud->createNotLog('generate_mps', $postFinal);
-                
-                echo json_encode([
-                    'theme' => 'success',
-                    'title' => 'Created',
-                    'message' => 'Create data Successfully.'
-                ]);
+                $theme = 'success';
+                $title = 'Created';
+                $message = 'Create data Successfully.';
             }
+
+            $periode = $post['p_year'] . "-" . str_pad($post['p_month'], 2, '0', STR_PAD_LEFT);
+            $revisi = $post['revision'];
+            
+            $this->db->where('table_name', 'generate_mps');
+            $this->db->where('name', "MPS $periode Rev $revisi");
+            $cek_notif = $this->db->get('notifications')->row();
+            
+            if (empty($cek_notif)) {
+                $log_data = array(
+                    'periode' => $periode,
+                    'revisi'  => $revisi,
+                    'pesan'   => 'Tolong segera generate MRP untuk periode ini.'
+                );
+            
+                $data_notif = array(
+                    'table_name'            => 'generate_mps',
+                    'user_id'               => 'SYSTEM',
+                    'name'                  => "MPS $periode Rev $revisi",
+                    'description'           => "MPS Periode $periode (Rev $revisi) sudah di-generate. Silakan lanjut generate MRP.",
+                    'log'                   => json_encode($log_data),
+                    'target_department'     => 'SCM', 
+                    'target_sub_department' => 'MCL', 
+                    'target_user'           => NULL, 
+                    'created_date'          => date('Y-m-d H:i:s')
+                );
+            
+                $this->crud->create('notifications', $data_notif);
+            }
+
+            echo json_encode([
+                'theme' => $theme,
+                'title' => $title,
+                'message' => $message
+            ]);
         }
     }
 
