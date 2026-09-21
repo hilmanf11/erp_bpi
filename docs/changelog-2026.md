@@ -956,3 +956,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-09-04]
 - **kurniawan**: Update Ar_receipts.php ([d3dfd94b](https://github.com/hilmanf11/erp_bpi/commit/d3dfd94b57094717b430d92028640c31c0aabbeb))
+
+### [2026-09-21]
+- **kurniawan**: Notification MPS ([2b7151a6](https://github.com/hilmanf11/erp_bpi/commit/2b7151a69a028cdbb18263f33483a7d8db825a3d))
