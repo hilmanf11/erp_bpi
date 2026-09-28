@@ -959,3 +959,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-09-21]
 - **kurniawan**: Notification MPS ([2b7151a6](https://github.com/hilmanf11/erp_bpi/commit/2b7151a69a028cdbb18263f33483a7d8db825a3d))
+
+### [2026-09-28]
+- **kurniawan**: update MOM 74.MOM_24SEP26_REVIEW ERP BPI ([2d9798ff](https://github.com/hilmanf11/erp_bpi/commit/2d9798ff7a13c9b1f00a455d72e371be44c2c40d))
