@@ -53,7 +53,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -83,7 +83,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Productivity Factor %</span>
-                <input style="width:60%;" name="productcivity" id="productcivity" class="easyui-numberbox">
+                <input style="width:60%;" name="productcivity" id="productcivity" required="" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time</span>
@@ -91,11 +91,11 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time Process</span>
-                <input style="width:60%;" name="cycle_time_process" id="cycle_time_process" precision="2" class="easyui-numberbox">
+                <input style="width:60%;" name="cycle_time_process" id="cycle_time_process" required="" precision="2" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Man Power</span>
-                <input style="width:30%;" name="manpower" id="manpower" class="easyui-numberbox">
+                <input style="width:30%;" name="manpower" id="manpower" required="" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Runner/Shoot (gram)</span>
@@ -103,7 +103,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Priority</span>
-                <input style="width:30%;" name="priority" id="priority" class="easyui-numberbox">
+                <input style="width:30%;" name="priority" id="priority" required="" class="easyui-numberbox">
             </div>
         </fieldset>
     </form>

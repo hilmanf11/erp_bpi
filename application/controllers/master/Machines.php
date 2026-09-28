@@ -189,6 +189,13 @@ class Machines extends CI_Controller
 
             //Cek Process Number          //table       //field        //field excel
             $machines = $this->crud->read('machines', [], ["number" => $data['number']]);
+            $toonage = $data['toonage'];
+
+
+            if (empty($toonage)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Toonage is required", "theme" => "error"));
+                return;
+            }
 
             //AUTOID
             $month = date('my');

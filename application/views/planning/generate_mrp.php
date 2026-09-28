@@ -28,6 +28,7 @@
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="formula()"><i class="fa fa-list"></i> Formula</a>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="listfailed()"><i class="fa fa-times"></i> List Failed</a>
                 </div>
             </fieldset>
 
@@ -78,11 +79,11 @@
                 <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
 
                 <!-- Tombol Download-->
-                <div class="fitem" style="text-align:left; margin-top: 10px; margin-bottom: 5px;">
+                <!-- <div class="fitem" style="text-align:left; margin-top: 10px; margin-bottom: 5px;">
                     <a href="javascript:;" class="easyui-linkbutton" onclick="downloadFailedMrp()">
                         <i class="fa fa-download"></i> List Failed MRP
                     </a>
-                </div>
+                </div> -->
             </fieldset>
 
         </div>
@@ -102,7 +103,7 @@
     <table id="dg_exception" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
         <thead>
             <tr>
-                <th data-options="field:'item_rm_number',width:250,halign:'center'">Part No</th>
+                <th data-options="field:'item_rm_number',width:250,align:'center'">Part No</th>
                 <th data-options="field:'item_rm_name',width:250,halign:'center'">Part Name</th>
                 <th data-options="field:'mpq',width:80,align:'center', styler:numberStyle">MPQ</th>
                 <th data-options="field:'moq',width:80,align:'center', styler:numberStyle">MOQ</th>
@@ -117,6 +118,31 @@
 <div id="p" class="easyui-panel" title="Print Preview" style="height: 50%;" >
     <iframe id="printout" src="" style="width: 100%; height: 99%; border: 0; "></iframe>
 </div>
+
+<!-- Dialog List Failed MRP -->
+<div id="dlg_failed" class="easyui-dialog" style="width:80%; height:500px; padding:10px" closed="true" modal="true" toolbar="#tb_failed">
+    <table id="dg_failed" class="easyui-datagrid" style="width:100%; height:100%"
+           rownumbers="true" singleSelect="true" fitColumns="false">
+        <thead>
+            <tr>
+                <th field="product_no" width="150" halign="center">PART NO</th>
+                <th field="product_name" width="250" halign="center">PART NAME</th>
+                <th field="moq" width="100" halign="center" align="right" styler="failedCellStyler">MOQ</th>
+                <th field="mpq" width="100" halign="center" align="right" styler="failedCellStyler">MPQ</th>
+                <th field="leadtime" width="100" halign="center" align="right" styler="failedCellStyler">LEAD TIME</th>
+                <th field="share_order" width="120" halign="center" align="right" styler="failedCellStyler">SHARED ORDER</th>
+                <th field="purchase_order" width="120" halign="center" align="right" formatter="formatInteger">FIX ORDER</th>                
+                <th field="status" width="100" halign="center" align="center">STATUS</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<!-- Toolbar Export Excel untuk Datagrid Failed -->
+<div id="tb_failed">
+    <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" onclick="exportFailedExcel()"><i class="fa fa-file"></i> Export Excel</a>
+</div>
+
 <script>
     function formula(){
         Swal.fire({
@@ -189,122 +215,129 @@
             },
         });
 
-        $.ajax({
-            type: "get",
-            url: "<?= base_url('planning/generate_mrp/getDataMrp') ?>",
-            data: "filter_month=" + window.btoa(filter_month) +
-                "&filter_year=" + window.btoa(filter_year) +
-                "&filter_revision=" + window.btoa(filter_revision) +
-                "&filter_product_family=" + window.btoa(filter_product_family) +
-                "&filter_part_no=" + window.btoa(filter_part_no) +
-                "&filter_cutoff=" + window.btoa(filter_cutoff),
-            dataType: "json",
-            success: function(rows4) {
-                Swal.close();
-                
-                $('#p_success4').html("0");
-                $('#p_failed4').html("0");
-                $('#remarks4').empty();
+        $.post("<?= base_url('planning/generate_mrp/uploadclearFailed') ?>", {
+            p_month: filter_month,
+            p_year: filter_year,
+            revision: filter_revision,
+            cutoff: filter_cutoff
+        }, function() {
+            $.ajax({
+                type: "get",
+                url: "<?= base_url('planning/generate_mrp/getDataMrp') ?>",
+                data: "filter_month=" + window.btoa(filter_month) +
+                    "&filter_year=" + window.btoa(filter_year) +
+                    "&filter_revision=" + window.btoa(filter_revision) +
+                    "&filter_product_family=" + window.btoa(filter_product_family) +
+                    "&filter_part_no=" + window.btoa(filter_part_no) +
+                    "&filter_cutoff=" + window.btoa(filter_cutoff),
+                dataType: "json",
+                success: function(rows4) {
+                    Swal.close();
+                    
+                    $('#p_success4').html("0");
+                    $('#p_failed4').html("0");
+                    $('#remarks4').empty();
 
-                requestData4(rows4['total'], rows4);
-                
-                function requestData4(total4, json4, number4 = 1, value4 = 0, success4 = 1, failed4 = 1) {
-                    if (value4 < 100) {
-                        value4 = Math.floor((number4 / total4) * 100);
-                        $('#p_upload4').progressbar('setValue', value4);
-                        $('#p_start4').html(number4);
-                        $('#p_finish4').html(total4);
+                    requestData4(rows4['total'], rows4);
+                    
+                    function requestData4(total4, json4, number4 = 1, value4 = 0, success4 = 1, failed4 = 1) {
+                        if (value4 < 100) {
+                            value4 = Math.floor((number4 / total4) * 100);
+                            $('#p_upload4').progressbar('setValue', value4);
+                            $('#p_start4').html(number4);
+                            $('#p_finish4').html(total4);
 
-                        $.post('<?= base_url('planning/generate_mrp/createMrp') ?>', {
-                            data: json4[number4 - 1]
-                        }, function(note) {
-                            var result = eval('(' + note + ')');
-                            var title = "";
+                            $.post('<?= base_url('planning/generate_mrp/createMrp') ?>', {
+                                data: json4[number4 - 1]
+                            }, function(note) {
+                                var result = eval('(' + note + ')');
+                                var title = "";
 
-                            if (result.theme == "success") {
-                                $('#p_success4').html(success4);
-                                title = "<b style='color: green;'>" + result.title + " | " + result.message + "</b>";
-                                
-                                $("#remarks4").append("<li>" + title + "</li>");
+                                if (result.theme == "success") {
+                                    $('#p_success4').html(success4);
+                                    title = "<b style='color: green;'>" + result.title + " | " + result.message + "</b>";
+                                    
+                                    $("#remarks4").append("<li>" + title + "</li>");
 
-                                requestData4(total4, json4, number4 + 1, value4, success4 + 1, failed4 + 0);
-                            } else {
-                                $('#p_failed4').html(failed4);
-                                title = "<span class='log-failed' style='color: red;'>" + result.title + " | " + result.message + "</span>";
-                                
-                                $("#remarks4").append("<li>" + title + "</li>");
+                                    requestData4(total4, json4, number4 + 1, value4, success4 + 1, failed4 + 0);
+                                } else {
+                                    $('#p_failed4').html(failed4);
+                                    title = "<span class='log-failed' style='color: red;'>" + result.title + " | " + result.message + "</span>";
+                                    
+                                    $("#remarks4").append("<li>" + title + "</li>");
 
-                                requestData4(total4, json4, number4 + 1, value4, success4 + 0, failed4 + 1);
-                            }
-                        }).fail(function(jqXHR, textStatus) {
-                            if (textStatus == "error") {
-                                toastr.error("Connection time out for Part MRP");
-                                requestData4(total4, json4, number4 + 1, value4, success4 + 0, failed4 + 1);
-                            }
-                        });
-                    } else {
-                        Swal.fire({
-                            title: 'Please Wait for Generating ABC Class',
-                            showConfirmButton: false,
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            },
-                        });
+                                    requestData4(total4, json4, number4 + 1, value4, success4 + 0, failed4 + 1);
+                                }
+                            }).fail(function(jqXHR, textStatus) {
+                                if (textStatus == "error") {
+                                    toastr.error("Connection time out for Part MRP");
+                                    requestData4(total4, json4, number4 + 1, value4, success4 + 0, failed4 + 1);
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Please Wait for Generating ABC Class',
+                                showConfirmButton: false,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                },
+                            });
 
-                        var fullUrl = "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>?" +
-                            "filter_month=" + window.btoa(filter_month) + "&filter_year=" + window.btoa(filter_year) +
-                            "&filter_revision=" + window.btoa(filter_revision) + "&filter_product_family=" + window.btoa(filter_product_family) +
-                            "&filter_part_no=" + window.btoa(filter_part_no) + "&filter_cutoff=" + window.btoa(filter_cutoff);
-                        // console.log("Accessing URL:", fullUrl);
-                        $.ajax({
-                            type: "get",
-                            url: "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>",
-                            data: "filter_month=" + window.btoa(filter_month) +
-                                "&filter_year=" + window.btoa(filter_year) +
-                                "&filter_revision=" + window.btoa(filter_revision) +
-                                "&filter_product_family=" + window.btoa(filter_product_family) +
-                                "&filter_part_no=" + window.btoa(filter_part_no) +
-                                "&filter_cutoff=" + window.btoa(filter_cutoff),
-                            dataType: "json",
-                            success: function(rows2) {
-                                Swal.close();
+                            var fullUrl = "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>?" +
+                                "filter_month=" + window.btoa(filter_month) + "&filter_year=" + window.btoa(filter_year) +
+                                "&filter_revision=" + window.btoa(filter_revision) + "&filter_product_family=" + window.btoa(filter_product_family) +
+                                "&filter_part_no=" + window.btoa(filter_part_no) + "&filter_cutoff=" + window.btoa(filter_cutoff);
+                            // console.log("Accessing URL:", fullUrl);
+                            $.ajax({
+                                type: "get",
+                                url: "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>",
+                                data: "filter_month=" + window.btoa(filter_month) +
+                                    "&filter_year=" + window.btoa(filter_year) +
+                                    "&filter_revision=" + window.btoa(filter_revision) +
+                                    "&filter_product_family=" + window.btoa(filter_product_family) +
+                                    "&filter_part_no=" + window.btoa(filter_part_no) +
+                                    "&filter_cutoff=" + window.btoa(filter_cutoff),
+                                dataType: "json",
+                                success: function(rows2) {
+                                    Swal.close();
 
-                                requestData2(rows2['total'], rows2);
-                                function requestData2(total2, json2, number2 = 1, value2 = 0, success2 = 1, failed2 = 1) {
-                                    if (value2 < 100) {
-                                        value2 = Math.floor((number2 / total2) * 100);
-                                        $('#p_upload2').progressbar('setValue', value2);
-                                        $('#p_start2').html(number2);
-                                        $('#p_finish2').html(total2);
+                                    requestData2(rows2['total'], rows2);
+                                    function requestData2(total2, json2, number2 = 1, value2 = 0, success2 = 1, failed2 = 1) {
+                                        if (value2 < 100) {
+                                            value2 = Math.floor((number2 / total2) * 100);
+                                            $('#p_upload2').progressbar('setValue', value2);
+                                            $('#p_start2').html(number2);
+                                            $('#p_finish2').html(total2);
 
-                                        $.post('<?= base_url('planning/generate_mrp/createAbc') ?>', {
-                                            data: json2[number2 - 1]
-                                        }, function(note) {
-                                            var result = eval('(' + note + ')');
-                                            if (result.theme == "success") {
-                                                requestData2(total2, json2, number2 + 1, value2, success2 + 1, failed2 + 0);
-                                            } else {
-                                                requestData2(total2, json2, number2 + 1, value2, success2 + 0, failed2 + 1);
-                                            }
+                                            $.post('<?= base_url('planning/generate_mrp/createAbc') ?>', {
+                                                data: json2[number2 - 1]
+                                            }, function(note) {
+                                                var result = eval('(' + note + ')');
+                                                if (result.theme == "success") {
+                                                    requestData2(total2, json2, number2 + 1, value2, success2 + 1, failed2 + 0);
+                                                } else {
+                                                    requestData2(total2, json2, number2 + 1, value2, success2 + 0, failed2 + 1);
+                                                }
 
-                                            if (value2 == 100) {
-                                                Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
-                                            }
-                                        }).fail(function(jqXHR, textStatus) {
-                                            if (textStatus == "error") {
-                                                toastr.error("Connection time out");
-                                                requestData2(total2, json2, number2 + 1, value2, success2 + 0, failed2 + 1);
-                                            }
-                                        });
+                                                if (value2 == 100) {
+                                                    Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
+                                                }
+                                            }).fail(function(jqXHR, textStatus) {
+                                                if (textStatus == "error") {
+                                                    toastr.error("Connection time out");
+                                                    requestData2(total2, json2, number2 + 1, value2, success2 + 0, failed2 + 1);
+                                                }
+                                            });
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 }
-            }
+            });
         });
     }
 
@@ -385,59 +418,65 @@
                                             Swal.showLoading();
                                         },
                                     });
-
                                     
-                                    $.ajax({
-                                        type: "get",
-                                        url: "<?= base_url('planning/generate_mrp/getDataMps') ?>",
-                                        data: "filter_month=" + window.btoa(filter_month) +
-                                            "&filter_year=" + window.btoa(filter_year) +
-                                            "&filter_revision=" + window.btoa(filter_revision) +
-                                            "&filter_product_family=" + window.btoa(filter_product_family) +
-                                            "&filter_part_no=" + window.btoa(filter_part_no),
-                                        dataType: "json",
-                                        success: function(rows) {
-                                            Swal.close();
+                                    $.post("<?= base_url('planning/generate_mrp/uploadclearFailed') ?>", {
+                                        p_month: filter_month,
+                                        p_year: filter_year,
+                                        revision: filter_revision,
+                                        cutoff: filter_cutoff
+                                    }, function() {
+                                        $.ajax({
+                                            type: "get",
+                                            url: "<?= base_url('planning/generate_mrp/getDataMps') ?>",
+                                            data: "filter_month=" + window.btoa(filter_month) +
+                                                "&filter_year=" + window.btoa(filter_year) +
+                                                "&filter_revision=" + window.btoa(filter_revision) +
+                                                "&filter_product_family=" + window.btoa(filter_product_family) +
+                                                "&filter_part_no=" + window.btoa(filter_part_no),
+                                            dataType: "json",
+                                            success: function(rows) {
+                                                Swal.close();
 
-                                            if(rows['total'] > 0){
-                                                requestData(rows['total'], rows);//jika data dari ajax ada maka kirim ke requestData
+                                                if(rows['total'] > 0){
+                                                    requestData(rows['total'], rows);//jika data dari ajax ada maka kirim ke requestData
 
-                                                function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                                    if (value < 100) {
-                                                        value = Math.floor((number / total) * 100);
-                                                        //set nilai progress bar
-                                                        $('#p_upload').progressbar('setValue', value);
-                                                        $('#p_start').html(number);
-                                                        $('#p_finish').html(total);
-                                                        $('#txt_assy_no').html(json[number - 1].product_no);
+                                                    function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                                        if (value < 100) {
+                                                            value = Math.floor((number / total) * 100);
+                                                            //set nilai progress bar
+                                                            $('#p_upload').progressbar('setValue', value);
+                                                            $('#p_start').html(number);
+                                                            $('#p_finish').html(total);
+                                                            $('#txt_assy_no').html(json[number - 1].product_no);
 
-                                                        $.post('<?= base_url('planning/generate_mrp/create') ?>', {
-                                                            data: json[number - 1]
-                                                        }, function(note) {
-                                                            var result = eval('(' + note + ')');
+                                                            $.post('<?= base_url('planning/generate_mrp/create') ?>', {
+                                                                data: json[number - 1]
+                                                            }, function(note) {
+                                                                var result = eval('(' + note + ')');
 
-                                                            if (result.theme == "success") {
-                                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                                            } else {
-                                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                                            }
-                                                        }).fail(function(jqXHR, textStatus) {
-                                                            if (textStatus == "error") {
-                                                                toastr.error("Connection time out");
+                                                                if (result.theme == "success") {
+                                                                    requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                                                } else {
+                                                                    requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                                                }
+                                                            }).fail(function(jqXHR, textStatus) {
+                                                                if (textStatus == "error") {
+                                                                    toastr.error("Connection time out");
 
-                                                                requestData(total, json, number, value, success + 0, failed + 1);
-                                                            }
-                                                        });
-                                                    } else {
-                                                        generateDataMrp(filter_month, filter_year, filter_revision, filter_product_family, filter_part_no, filter_cutoff);
+                                                                    requestData(total, json, number, value, success + 0, failed + 1);
+                                                                }
+                                                            });
+                                                        } else {
+                                                            generateDataMrp(filter_month, filter_year, filter_revision, filter_product_family, filter_part_no, filter_cutoff);
+                                                        }
                                                     }
+                                                }else{
+                                                    toastr.warning("Data MPS Not Found");
                                                 }
-                                            }else{
-                                                toastr.warning("Data MPS Not Found");
                                             }
-                                        }
+                                        });
                                     });
-                                    
+
                                 }else{
                                     generateDataMrp(filter_month, filter_year, filter_revision, filter_product_family, filter_part_no, filter_cutoff);
                                 }
@@ -836,5 +875,66 @@
         } else {
             return 'background-color:#C8FFCC;';
         }
+    }
+
+    function formatInteger(value, row, index) {
+        if (value != null && value !== '') {
+            return Math.round(value); 
+        }
+        return value;
+    }
+
+    function failedCellStyler(value, row, index) {
+        if (value == 0 || value == null || value === "" || value === "0") {
+            return 'background-color:#ffe4e1; font-weight:bold;'; 
+        }
+    }
+    
+
+    function listfailed() {
+        var filter_month = $("#filter_month").combobox('getValue');
+        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
+        
+        if(filter_month == "" || filter_year == "" || filter_revision == "" || filter_cutoff == "") {
+            toastr.warning("Please select Period and Revision first to view failed list.");
+            return;
+        }
+
+        $('#dlg_failed').dialog('open').dialog('setTitle', 'List Failed MRP (' + filter_month + '/' + filter_year + ' Rev ' + filter_revision + ' | Cutoff: ' + filter_cutoff + ')');
+        $('#dg_failed').datagrid('options').url = '<?= base_url("planning/generate_mrp/readFailedLogs") ?>';
+        
+        $('#dg_failed').datagrid('load', {
+            p_month: filter_month,
+            p_year: filter_year,
+            revision: filter_revision,
+            cutoff: filter_cutoff
+        });
+
+        if (!$('#dg_failed').data('isFilterEnabled')) {
+            $('#dg_failed').datagrid('enableFilter');
+            $('#dg_failed').data('isFilterEnabled', true); // Pasang bendera penanda bahwa filter sudah aktif
+        }
+    }
+
+    function exportFailedExcel() {
+        var filter_month = $("#filter_month").combobox('getValue');
+        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
+        
+        if(filter_month == "" || filter_year == "" || filter_revision == "" || filter_cutoff == "") {
+            toastr.warning("Please select Period and Revision first to export data.");
+            return;
+        }
+
+        var url = '<?= base_url("planning/generate_mrp/exportFailedExcel") ?>' + 
+                '?p_month=' + filter_month + 
+                '&p_year=' + filter_year + 
+                '&revision=' + filter_revision +
+                '&cutoff=' + filter_cutoff;
+                
+        window.open(url, '_blank');
     }
 </script>

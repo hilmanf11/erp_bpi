@@ -195,6 +195,12 @@ class Molds extends CI_Controller
             // $molds = $this->crud->read('molds', [], ["number" => $data['number']]);
             // $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
             $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
+            $cavity_standard = $data['cavity_standard'];
+
+            if (empty($cavity_standard)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Cavity Standard is required", "theme" => "error"));
+                return;
+            }
 
             //AUTOID
             $month = date('my');

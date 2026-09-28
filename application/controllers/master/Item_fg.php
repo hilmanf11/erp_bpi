@@ -226,13 +226,15 @@ class item_fg extends CI_Controller
                 'color' => $data->val($i, 19),
                 'leadtime' => $data->val($i, 20),
                 'status_subcont' => $data->val($i, 21),
-                'mpq' => $data->val($i, 22),
-                'moq' => $data->val($i, 23),
-                'uom' => $data->val($i, 24),
-                'qty_box' => $data->val($i, 25),
-                'box_sub' => $data->val($i, 26),
-                'logo' => $data->val($i, 27),
-                'status' => $data->val($i, 28),
+                'subcont_type' => $data->val($i, 22),
+                'default_packing' => $data->val($i, 23),
+                'mpq' => $data->val($i, 24),
+                'moq' => $data->val($i, 25),
+                'uom' => $data->val($i, 26),
+                'qty_box' => $data->val($i, 27),
+                'box_sub' => $data->val($i, 28),
+                'logo' => $data->val($i, 29),
+                'status' => $data->val($i, 30),
             );
         }
         $datas['total'] = count($datas);
@@ -313,14 +315,16 @@ class item_fg extends CI_Controller
                 echo json_encode(array("title" => "Mandatory", "message" => " Leadtime cannot be empty", "theme" => "error"));
             } elseif (empty($data['status_subcont'])) {
                 echo json_encode(array("title" => "Mandatory", "message" => " Status Subcont cannot be empty", "theme" => "error"));
-            } elseif (empty($data['mpq'])) {
-                echo json_encode(array("title" => "Mandatory", "message" => " Mpq cannot be empty", "theme" => "error"));
+            } elseif (empty($data['default_packing']) || !in_array($data['default_packing'], ['MPQ', 'BOX'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => "Default Packing must be selected as MPQ or BOX", "theme" => "error"));
+            } elseif ($data['default_packing'] === 'MPQ' && empty($data['mpq'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => "Mpq cannot be empty", "theme" => "error"));
+            } elseif ($data['default_packing'] === 'BOX' && empty($data['qty_box'])) {
+                echo json_encode(array("title" => "Mandatory", "message" => "Qty per Box cannot be empty", "theme" => "error"));
             } elseif (empty($data['moq'])) {
-                echo json_encode(array("title" => "Mandatory", "message" => " Moq cannot be empty", "theme" => "error"));
+                echo json_encode(array("title" => "Mandatory", "message" => "Moq cannot be empty", "theme" => "error"));
             } elseif (empty($data['uom'])) {
-                echo json_encode(array("title" => "Mandatory", "message" => " Uom cannot be empty", "theme" => "error"));
-            } elseif (empty($data['qty_box'])) {
-                echo json_encode(array("title" => "Mandatory", "message" => " Qty per Box cannot be empty", "theme" => "error"));
+                echo json_encode(array("title" => "Mandatory", "message" => "Uom cannot be empty", "theme" => "error"));
             } elseif (!empty($item_fg->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
             } else {
@@ -347,6 +351,8 @@ class item_fg extends CI_Controller
                     "color" => $data['color'],
                     "leadtime" => $data['leadtime'],
                     "status_subcont" => $data['status_subcont'],
+                    "subcont_type" => $data['subcont_type'],
+                    "default_packing" => $data['default_packing'],
                     "mpq" => $data['mpq'],
                     "moq" => $data['moq'],
                     "uom" => $data['uom'],

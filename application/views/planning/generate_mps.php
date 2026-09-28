@@ -31,6 +31,7 @@
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="formula()"><i class="fa fa-list"></i> Formula</a>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="listfailed()"><i class="fa fa-times"></i> List Failed</a>
                 <!-- <a href="javascript:;" class="easyui-linkbutton c1" id="push_data" onclick="push_data()"><i class="fa fa-database"></i> Push Data</a> -->
             </div>
         </fieldset>
@@ -71,11 +72,11 @@
                 <ul id="remarks">
                 </ul>
             </div>
-            <div class="fitem" style="text-align:left;">
+            <!-- <div class="fitem" style="text-align:left;">
                 <a href="javascript:;" class="easyui-linkbutton" onclick="downloadFailed()">
                     <i class="fa fa-download"></i> List Failed
                 </a>
-            </div>
+            </div> -->
         </fieldset>
     </div>
     <?= $button ?>
@@ -84,6 +85,42 @@
 
 <div id="p" class="easyui-panel" title="Print Preview" style="width:100%;">
     <iframe id="printout" src="" style="width: 100%; height: 550px; border: 0;"></iframe>
+</div>
+
+<!-- Dialog List Failed -->
+<div id="dlg_failed" class="easyui-dialog" style="width:95%; height:500px; padding:10px" closed="true" modal="true" toolbar="#tb_failed">
+    <table id="dg_failed" class="easyui-datagrid" style="width:100%; height:100%"
+           rownumbers="true" singleSelect="true" fitColumns="false">
+        <thead>
+            <tr>
+                <th field="product_no" width="120" rowspan="2">Product No</th>
+                <th field="product_customer" width="200" rowspan="2">Product Customer</th>
+                <th colspan="2">MASTER MACHINE</th>
+                <th colspan="1">MASTER MOLD</th>
+                <th colspan="4">MENU LOADING</th>
+                <th colspan="3">ITEM FG</th>
+                <th field="so_qty" width="80" rowspan="2">SO</th>
+                <th field="forecast_qty" width="80" rowspan="2">Forecast</th>
+                <th field="status" width="100" rowspan="2">Status</th>
+            </tr>
+            <tr>
+                <th field="machine_number" width="100">MACHINE NO.</th>
+                <th field="toonage" width="130">TOONAGE MACHINE</th>
+                <th field="cavity_standard" width="130" styler="failedCellStyler">CAVITY STANDARD</th>
+                <th field="productivity" width="150" styler="failedCellStyler">PRODUCTIVITY FACTOR</th>
+                <th field="cycle_time" width="150" styler="failedCellStyler">CYCLE TIME (SECOND)</th>
+                <th field="manpower" width="80" styler="failedCellStyler">MANPOWER</th>
+                <th field="priority" width="80">PRIORITY</th>
+                <th field="default_packing" width="80" styler="failedCellStyler">DEFAULT</th>
+                <th field="mpq" width="80" styler="failedCellStyler">MPQ</th>
+                <th field="qty_box" width="80" styler="failedCellStyler">Qty/Box</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<div id="tb_failed">
+    <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" onclick="exportFailedExcel()"><i class="fa fa-file"></i> Export Excel</a>
 </div>
 
 <script>
@@ -149,15 +186,6 @@
         if (check_forecast.checked == true && check_fg.checked == true && check_wip.checked == true && check_ost_so.checked == true && check_ost_mpp.checked == true == check_so.checked == true) {
             $.messager.prompt('Generate MPS', 'Please input Password Generate', function(r) {
                 if (r == "GENERATEMPS") {
-                    // Swal.fire({
-                    //     title: 'Please Wait for Push Data',
-                    //     showConfirmButton: false,
-                    //     allowOutsideClick: false,
-                    //     allowEscapeKey: false,
-                    //     didOpen: () => {
-                    //         Swal.showLoading();
-                    //     },
-                    // });
                     Swal.fire({
                         title: 'Please Wait 5 - 10 Minutes for Generating Data',
                         showConfirmButton: false,
@@ -168,78 +196,85 @@
                         },
                     });
 
-                    $.ajax({
-                        type: "get",
-                        url: "<?= base_url('planning/generate_mps/getdata') ?>",
-                        data: "filter_month=" + window.btoa(filter_month) +
-                            "&filter_year=" + window.btoa(filter_year) +
-                            "&filter_revision=" + window.btoa(filter_revision) +
-                            "&filter_cutoff=" + window.btoa(filter_cutoff) +
-                            "&filter_customer=" + window.btoa(filter_customer) +
-                            "&filter_item_fg=" + window.btoa(filter_item_fg),
-                        dataType: "json",
-                        success: function(rows) {
-                            Swal.close();
-                            requestData(rows['total'], rows);
+                    $.post("<?= base_url('planning/generate_mps/uploadclearFailed') ?>", {
+                        p_month: filter_month,
+                        p_year: filter_year,
+                        revision: filter_revision,
+                        cutoff: filter_cutoff
+                    }, function() {
+                        $.ajax({
+                            type: "get",
+                            url: "<?= base_url('planning/generate_mps/getdata') ?>",
+                            data: "filter_month=" + window.btoa(filter_month) +
+                                "&filter_year=" + window.btoa(filter_year) +
+                                "&filter_revision=" + window.btoa(filter_revision) +
+                                "&filter_cutoff=" + window.btoa(filter_cutoff) +
+                                "&filter_customer=" + window.btoa(filter_customer) +
+                                "&filter_item_fg=" + window.btoa(filter_item_fg),
+                            dataType: "json",
+                            success: function(rows) {
+                                Swal.close();
+                                requestData(rows['total'], rows);
 
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
+                                function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                    if (value < 100) {
+                                        value = Math.floor((number / total) * 100);
+                                        $('#p_upload').progressbar('setValue', value);
+                                        $('#p_start').html(number);
+                                        $('#p_finish').html(total);
 
-                                    $.post('<?= base_url('planning/generate_mps/create') ?>', {
-                                        data: json[number - 1]
-                                        }, function(note) {
-                                            var result = eval('(' + note + ')');
-                                            var title = "";
+                                        $.post('<?= base_url('planning/generate_mps/create') ?>', {
+                                            data: json[number - 1]
+                                            }, function(note) {
+                                                var result = eval('(' + note + ')');
+                                                var title = "";
 
-                                            if (result.theme == "success") {
-                                                Swal.close();
-                                                $('#p_success').html(success);
-                                                title = "<b style='color: green;'>" + result.title + " | " + result.message + "</b>";
-                                                
-                                                $("#remarks").append("<li>" + title + "</li>");
-                                                $('#p_remarks').scrollTop($('#p_remarks')[0].scrollHeight);
+                                                if (result.theme == "success") {
+                                                    Swal.close();
+                                                    $('#p_success').html(success);
+                                                    title = "<b style='color: green;'>" + result.title + " | " + result.message + "</b>";
+                                                    
+                                                    $("#remarks").append("<li>" + title + "</li>");
+                                                    $('#p_remarks').scrollTop($('#p_remarks')[0].scrollHeight);
 
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                                
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                title = "<span class='log-failed' style='color: red;'>" + result.title + " | " + result.message + "</span>";
-                                                
-                                                $("#remarks").append("<li>" + title + "</li>");
-                                                $('#p_remarks').scrollTop($('#p_remarks')[0].scrollHeight);
+                                                    requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                                    
+                                                } else {
+                                                    $('#p_failed').html(failed);
+                                                    title = "<span class='log-failed' style='color: red;'>" + result.title + " | " + result.message + "</span>";
+                                                    
+                                                    $("#remarks").append("<li>" + title + "</li>");
+                                                    $('#p_remarks').scrollTop($('#p_remarks')[0].scrollHeight);
 
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                                    requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                                }
+
+                                                if (value >= 100) {
+                                                    Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
+                                                }
+
+                                            }).fail(function(jqXHR, textStatus) {
+                                            if (textStatus == "error") {
+                                                Swal.fire({
+                                                    title: 'Connection Time Out, Check Your Connection',
+                                                    showConfirmButton: false,
+                                                    allowOutsideClick: false,
+                                                    allowEscapeKey: false,
+                                                    didOpen: () => {
+                                                        Swal.showLoading();
+                                                    },
+                                                });
+
+                                                requestData(total, json, number, value, success + 0, failed + 0);
                                             }
-
-                                            if (value >= 100) {
-                                                Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
-                                            }
-
-                                        }).fail(function(jqXHR, textStatus) {
-                                        if (textStatus == "error") {
-                                            Swal.fire({
-                                                title: 'Connection Time Out, Check Your Connection',
-                                                showConfirmButton: false,
-                                                allowOutsideClick: false,
-                                                allowEscapeKey: false,
-                                                didOpen: () => {
-                                                    Swal.showLoading();
-                                                },
-                                            });
-
-                                            requestData(total, json, number, value, success + 0, failed + 0);
-                                        }
-                                    });
+                                        });
+                                    }
                                 }
+                            },
+                            error: function(){
+                                Swal.fire('Failed!', 'Process Calculating Data is Failed, Please Try Again!', 'error');
                             }
-                        },
-                        error: function(){
-                            Swal.fire('Failed!', 'Process Calculating Data is Failed, Please Try Again!', 'error');
-                        }
+                        });
                     });
                 }
             });
@@ -817,5 +852,58 @@
                 toastr.error('Error fetching data');
             }
         });
+    }
+
+    function failedCellStyler(value, row, index) {
+        if (value == 0 || value == null || value === "" || value === "0") {
+            return 'background-color:#ffe4e1; font-weight:bold;'; 
+        }
+    }
+
+    function listfailed() {
+        var filter_month = $("#filter_month").combobox('getValue');
+        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
+        
+        if(filter_month == "" || filter_year == "" || filter_revision == "" || filter_cutoff == "") {
+            toastr.warning("Please select Period and Revision first to view failed list.");
+            return;
+        }
+
+        $('#dlg_failed').dialog('open').dialog('setTitle', 'List Failed MPS (' + filter_month + '/' + filter_year + ' Rev ' + filter_revision + ' | Cutoff: ' + filter_cutoff + ')');
+        $('#dg_failed').datagrid('options').url = '<?= base_url("planning/generate_mps/readFailedLogs") ?>';
+        
+        $('#dg_failed').datagrid('load', {
+            p_month: filter_month,
+            p_year: filter_year,
+            revision: filter_revision,
+            cutoff: filter_cutoff
+        });
+
+        if (!$('#dg_failed').data('isFilterEnabled')) {
+            $('#dg_failed').datagrid('enableFilter');
+            $('#dg_failed').data('isFilterEnabled', true); // Pasang bendera penanda bahwa filter sudah aktif
+        }
+    }
+
+    function exportFailedExcel() {
+        var filter_month = $("#filter_month").combobox('getValue');
+        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
+        
+        if(filter_month == "" || filter_year == "" || filter_revision == "" || filter_cutoff == "") {
+            toastr.warning("Please select Period and Revision first to export data.");
+            return;
+        }
+
+        var url = '<?= base_url("planning/generate_mps/exportFailedExcel") ?>' + 
+                '?p_month=' + filter_month + 
+                '&p_year=' + filter_year + 
+                '&revision=' + filter_revision +
+                '&cutoff=' + filter_cutoff;
+                
+        window.open(url, '_blank');
     }
 </script>
