@@ -27,11 +27,11 @@
             <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
                 <legend><b></b></legend>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <span style="width:35%; display:inline-block;">Part Family</span>
                     <input style="width:60%;" id="filter_item_family" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <span style="width:35%; display:inline-block;">Part No</span>
                     <input style="width:60%;" id="filter_items" class="easyui-combobox">
                 </div>
                 <!-- <div class="fitem">
@@ -174,7 +174,7 @@
                             url: '<?= base_url('master/item_rm/read/') ?>' + row.id,
                             valueField: 'id',
                             textField: 'number',
-                            prompt: "Select Product No",
+                            prompt: "Select Part No",
                             icons: [{
                                 iconCls: 'icon-clear',
                                 handler: function(e) {
@@ -204,7 +204,7 @@
                 url: '<?= base_url('master/item_rm/read/') ?>' + row.id,
                 valueField: 'id',
                 textField: 'number',
-                prompt: "Select Product No",
+                prompt: "Select Part No",
                 icons: [{
                     iconCls: 'icon-clear',
                     handler: function(e) {
@@ -219,7 +219,7 @@
         url: '<?= base_url('master/item_rm/reads/') ?>',
         valueField: 'id',
         textField: 'number',
-        prompt: "Select Product No",
+        prompt: "Select Part No",
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {

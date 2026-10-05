@@ -36,6 +36,23 @@ class Polybag_prices extends CI_Controller
         echo json_encode($send);
     }
 
+    public function datatableHistories()
+    {
+        if ($this->input->get()) {
+            $id = base64_decode($this->input->get('id'));
+            $size = base64_decode($this->input->get('size'));
+
+            $this->db->select('*');
+            $this->db->from('polybag_price_histories');
+            $this->db->where('polybag_id', $id);
+            $this->db->where('size', $size);
+            $this->db->order_by('created_date', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -121,7 +138,6 @@ class Polybag_prices extends CI_Controller
         return true; // valid
     }
 
-
     //CREATE DATA
     public function create()
     {
@@ -129,6 +145,16 @@ class Polybag_prices extends CI_Controller
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
                 $send   = $this->crud->create('polybag_prices', $post);
+
+                $history_data = $post;
+                $history_data['polybag_id'] = $post['id']; 
+
+                if (isset($history_data['id'])) {
+                    unset($history_data['id']);
+                }
+
+                $this->crud->create('polybag_price_histories', $history_data);
+
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -137,6 +163,7 @@ class Polybag_prices extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
     //UPDATE DATA
     public function update()
     {
@@ -144,18 +171,35 @@ class Polybag_prices extends CI_Controller
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('polybag_prices', ["id" => $id], $post);
+
+            $history_data = $post;
+            $history_data['polybag_id'] = $id;
+
+            if (isset($history_data['id'])) {
+                unset($history_data['id']);
+            }
+
+            $this->crud->create('polybag_price_histories', $history_data);
+
             echo $send;
         } else {
             show_error("Cannot Process your request");
         }
     }
+
     //DELETE DATA
     public function delete()
     {
         $data = $this->input->post();
+        
+        if (isset($data['id'])) {
+            $this->crud->delete('polybag_price_histories', ['polybag_id' => $data['id']]);
+        }
         $send = $this->crud->delete('polybag_prices', $data);
+        
         echo $send;
     }
+    
     //UPLOAD DATA
     public function upload()
     {
@@ -275,7 +319,6 @@ class Polybag_prices extends CI_Controller
         $this->db->join('divisions b', 'a.division_id = b.id','left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
-        $this->db->order_by('a.toonage', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#polybag_prices {border-collapse: collapse;width: 100%;font-size: 12px;}#polybag_prices td, #polybag_prices th {border: 1px solid #ddd;padding: 2px;}#polybag_prices tr:nth-child(even){background-color: #f2f2f2;}#polybag_prices tr:hover {background-color: #ddd;}#polybag_prices th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>

@@ -140,7 +140,8 @@ class Bpm extends CI_Controller
             $filter_request_no = $this->input->get('filter_request_no');
             $filter_product_family = $this->input->get('filter_product_family');
             $filter_product_no = base64_decode($this->input->get('filter_product_no'));
-            $filter_kanban_date = $this->input->get('filter_kanban_date');
+            $filter_kanban_date_from = $this->input->get('filter_kanban_date_from');
+            $filter_kanban_date_to   = $this->input->get('filter_kanban_date_to');
             $filter_status = $this->input->get('filter_status');
 
             $page = $this->input->post('page');
@@ -171,8 +172,12 @@ class Bpm extends CI_Controller
                 if($filter_product_no != ""){
                     $this->db->where('a.item_rm_id', $filter_product_no);
                 }
-                if($filter_kanban_date != ""){
-                    $this->db->where('a.request_date', $filter_kanban_date);
+                if (!empty($filter_kanban_date_from) && !empty($filter_kanban_date_to)) {
+                    $this->db->where("a.request_date BETWEEN '$filter_kanban_date_from' AND '$filter_kanban_date_to'");
+                } elseif (!empty($filter_kanban_date_from)) {
+                    $this->db->where('a.request_date >=', $filter_kanban_date_from);
+                } elseif (!empty($filter_kanban_date_to)) {
+                    $this->db->where('a.request_date <=', $filter_kanban_date_to);
                 }
                 if($filter_status != ""){
                     $this->db->where('a.status', $filter_status);
@@ -228,8 +233,12 @@ class Bpm extends CI_Controller
                 if($filter_product_no != ""){
                     $this->db->where('a.item_rm_id', $filter_product_no);
                 }
-                if($filter_kanban_date != ""){
-                    $this->db->where('a.request_date', $filter_kanban_date);
+                if (!empty($filter_kanban_date_from) && !empty($filter_kanban_date_to)) {
+                    $this->db->where("a.request_date BETWEEN '$filter_kanban_date_from' AND '$filter_kanban_date_to'");
+                } elseif (!empty($filter_kanban_date_from)) {
+                    $this->db->where('a.request_date >=', $filter_kanban_date_from);
+                } elseif (!empty($filter_kanban_date_to)) {
+                    $this->db->where('a.request_date <=', $filter_kanban_date_to);
                 }
                 if($filter_status != ""){
                     $this->db->where('a.status', $filter_status);
@@ -683,7 +692,8 @@ class Bpm extends CI_Controller
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_product_family = $this->input->get('filter_product_family');
         $filter_product_no = base64_decode($this->input->get('filter_product_no'));
-        $filter_kanban_date = $this->input->get('filter_kanban_date');
+        $filter_kanban_date_from = $this->input->get('filter_kanban_date_from');
+        $filter_kanban_date_to   = $this->input->get('filter_kanban_date_to');
         $filter_status = $this->input->get('filter_status');
 
         //Config
@@ -706,8 +716,12 @@ class Bpm extends CI_Controller
         if($filter_product_no != ""){
             $this->db->where('a.item_rm_id', $filter_product_no);
         }
-        if($filter_kanban_date != ""){
-            $this->db->where('a.request_date', $filter_kanban_date);
+        if (!empty($filter_kanban_date_from) && !empty($filter_kanban_date_to)) {
+            $this->db->where("a.request_date BETWEEN '$filter_kanban_date_from' AND '$filter_kanban_date_to'");
+        } elseif (!empty($filter_kanban_date_from)) {
+            $this->db->where('a.request_date >=', $filter_kanban_date_from);
+        } elseif (!empty($filter_kanban_date_to)) {
+            $this->db->where('a.request_date <=', $filter_kanban_date_to);
         }
         if($filter_status != ""){
             $this->db->where('a.status', $filter_status);

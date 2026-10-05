@@ -158,7 +158,7 @@
                 </div>
                 <div class="fitem">
                         <span style="width:35%; display:inline-block;">NG Ratio (%)</span>
-                        <input style="width:30%;" name="ng_ration" id="ng_ration" precision="5" class="easyui-numberbox">
+                        <input style="width:30%;" name="ng_ration" id="ng_ration" precision="5" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">IS No.</span>
@@ -166,7 +166,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Weight (Gram)</span>
-                    <input style="width:30%;" name="weight" id="weight" precision="2" class="easyui-numberbox">
+                    <input style="width:30%;" name="weight" id="weight" precision="2" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Color</span>
@@ -174,7 +174,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
-                    <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
+                    <input style="width:60%;" name="leadtime" id="leadtime" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status Subcont</span>
@@ -193,12 +193,16 @@
             </div>
             <div style="float:left; width:33%;">
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Default Packing</span>
+                    <input style="width:60%;" name="default_packing" id="default_packing" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">MPQ</span>
                     <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MOQ</span>
-                    <input style="width:60%;" name="moq" id="moq" class="easyui-numberbox">
+                    <input style="width:60%;" name="moq" id="moq" required="" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">UoM</span>
@@ -211,13 +215,6 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Qty/Sub Box</span>
                     <input style="width:60%;" name="box_sub" id="box_sub" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Default Packing</span>
-                    <select style="width:60%;" name="default_packing" id="default_packing" panelHeight="auto" class="easyui-combobox">
-                        <option value="MPQ">MPQ</option>
-                        <option value="BOX">BOX</option>
-                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
@@ -295,7 +292,6 @@
         $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
         $('#type').combobox('setValue', 'FG');
-        $('#default_packing').combobox('setValue', 'MPQ');
     }
 
     //EDIT DATA
@@ -481,6 +477,29 @@
         textField:'name',
         prompt: 'Choose Product Family',
     });
+
+    $('#default_packing').combobox({
+        data: [
+            {value: 'MPQ', text: 'MPQ'},
+            {value: 'BOX', text: 'BOX'}
+        ],
+        valueField: 'value',
+        textField: 'text',
+        prompt: 'Choose Default Packing',
+        onChange: function(newValue, oldValue) {
+            if (newValue === 'MPQ') {
+                $('#mpq').numberbox({required: true});
+                $('#qty_box').numberbox({required: false});
+            } else if (newValue === 'BOX') {
+                $('#mpq').numberbox({required: false});
+                $('#qty_box').numberbox({required: true});
+            } else {
+                $('#mpq').numberbox({required: false});
+                $('#qty_box').numberbox({required: false});
+            }
+        }
+    });
+    
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
         if (value == 0) {

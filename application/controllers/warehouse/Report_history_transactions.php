@@ -443,8 +443,8 @@ class Report_history_transactions extends CI_Controller
 
             $html .= '<tbody><tr>
                             <td style="text-align:center">' . $no . '</td>
-                            <td colspan="3">' . $record->number . '</td>
-                            <td colspan="2">' . $record->name . '</td>
+                            <td colspan="3" style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
+                            <td colspan="2" style="mso-number-format:\@;">' . $record->name . '</td>
                             <td>' . $record->uom . '</td>
                             <td>' . $record->division . '</td>
                             <td>' . $record->category_name . '</td>
@@ -1740,8 +1740,8 @@ class Report_history_transactions extends CI_Controller
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
-                            <td>' . $record->number . '</td>
-                            <td>' . $record->name . '</td>
+                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
+                            <td style="mso-number-format:\@;">' . $record->name . '</td>
                             <td>' . $record->uom . '</td>
                             <td>' . $record->division . '</td>
                             <td>' . $record->category_name . '</td>
@@ -2177,7 +2177,7 @@ class Report_history_transactions extends CI_Controller
                             $balance = ($begin + ($receipt->qty_receipt - $end_qty));
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $receipt->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2205,7 +2205,7 @@ class Report_history_transactions extends CI_Controller
                             $balance = ($begin - $issued->qty);
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $issued->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2231,7 +2231,7 @@ class Report_history_transactions extends CI_Controller
                             $balance = ($begin + $return->qty);
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>-</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2259,7 +2259,7 @@ class Report_history_transactions extends CI_Controller
                             $balance = ($begin + $os_rm->qty);
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>-</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2287,7 +2287,7 @@ class Report_history_transactions extends CI_Controller
                             $balance = ($begin + $bpm_scan->qty);
                             $html .= '  <tr>
                                              <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>-</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2315,7 +2315,7 @@ class Report_history_transactions extends CI_Controller
                         
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2367,7 +2367,7 @@ class Report_history_transactions extends CI_Controller
                             $balance = ($begin + ($receipt->qty_receipt - $end_qty));
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $receipt->specification . '</td>                                            
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2412,7 +2412,7 @@ class Report_history_transactions extends CI_Controller
                         
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2464,7 +2464,7 @@ class Report_history_transactions extends CI_Controller
                         
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2516,7 +2516,7 @@ class Report_history_transactions extends CI_Controller
                         
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2568,7 +2568,7 @@ class Report_history_transactions extends CI_Controller
                         
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $transaction->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
@@ -2620,7 +2620,7 @@ class Report_history_transactions extends CI_Controller
                         
                                         $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>
                                             <td>' . $record->sub_prodfam . '</td>
@@ -2719,7 +2719,7 @@ class Report_history_transactions extends CI_Controller
                             $balance = ($begin - $issued->qty);
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
-                                            <td>' . $record->number . '</td>
+                                            <td style="mso-number-format:\@;">' . str_replace("Ø", "&Oslash;", $record->number) . '</td>
                                             <td>' . $issued->specification . '</td>
                                             <td>' . $record->category_name . '</td>
                                             <td>' . $record->prodfam . '</td>

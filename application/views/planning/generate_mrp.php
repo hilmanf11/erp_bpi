@@ -1,37 +1,38 @@
 <div class="easyui-accordion" style="width:100%;">
     <div title="Hide Menu" data-options="selected:true" style="padding:10px; background:#F4F4F4;">
-        <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
-            <div style="width: 30%; float: left;">
-                <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-                    <legend><b>Form Filter Data</b></legend>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Period</span>
-                        <input style="width:30%;" name="filter_month" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Month'">
-                        <input style="width:30%;" name="filter_year" id="filter_year" value="<?= date("Y") ?>" class="easyui-combobox" data-options="prompt:'Year'">
-                    </div>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Revision</span>
-                        <input style="width:60%;" name="filter_revision" id="filter_revision" class="easyui-combobox" data-options="prompt:'Revision'" panelHeight="auto">
-                    </div>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Cut Off</span>
-                        <input style="width:60%;" id="filter_cutoff" class="easyui-datebox" value="<?= date("Y-m-25") ?>" required data-options="formatter:myformatter,parser:myparser, editable:false">
-                    </div>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Product Family</span>
-                        <input style="width:60%;" id="filter_product_family" class="easyui-combobox">
-                    </div>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Part No</span>
-                        <input style="width:60%;" id="filter_part_no" class="easyui-combogrid">
-                    </div>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;"></span>
-                        <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                    </div>
-                </fieldset>
-            </div>
-            <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <div style="width: 100%; display: flex; gap: 10px; align-items: stretch; margin-bottom: 10px;">
+            <fieldset style="flex: 3; border:2px solid #d0d0d0; border-radius:4px; margin: 0; box-sizing: border-box;">
+                <legend><b>Form Filter Data</b></legend>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Period</span>
+                    <input style="width:30%;" name="filter_month" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Month'">
+                    <input style="width:30%;" name="filter_year" id="filter_year" value="<?= date("Y") ?>" class="easyui-combobox" data-options="prompt:'Year'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Revision</span>
+                    <input style="width:60%;" name="filter_revision" id="filter_revision" class="easyui-combobox" data-options="prompt:'Revision'" panelHeight="auto">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Cut Off</span>
+                    <input style="width:60%;" id="filter_cutoff" class="easyui-datebox" value="<?= date("Y-m-25") ?>" required data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" id="filter_product_family" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part No</span>
+                    <input style="width:60%;" id="filter_part_no" class="easyui-combogrid">
+                </div>
+                <div class="fitem" style="margin-top: 10px;">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="formula()"><i class="fa fa-list"></i> Formula</a>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="listfailed()"><i class="fa fa-times"></i> List Failed</a>
+                </div>
+            </fieldset>
+
+            <fieldset style="flex: 4; border:2px solid #d0d0d0; border-radius:4px; margin: 0; box-sizing: border-box;">
                 <legend><b>MRP Component Parameter</b></legend>
                 <table style="width: 100%;">
                     <tr>
@@ -52,7 +53,8 @@
                     </tr>
                 </table>
             </fieldset>
-            <fieldset style="width: 29%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+
+            <fieldset style="flex: 3.5; border:2px solid #d0d0d0; border-radius:4px; margin: 0; box-sizing: border-box;">
                 <legend><b>Generating Process</b></legend>
 
                 <b>Breakdown MPS & BOM | Part No : <span id="txt_assy_no"></span></b>
@@ -60,17 +62,35 @@
                 <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
 
                 <b>Generate MRP</b>
-                <div id="p_upload4" class="easyui-progressbar" style="width:100%;"></div>
+                <br>
+                <a href="javascript:;" style="float: left; color:green;" class="easyui-linkbutton" plain="true"><i class="fa fa-check"></i> SUCCESS : <b id="p_success4">0</b></a>
+                <a href="javascript:;" style="float: right; color:red;" class="easyui-linkbutton" plain="true" onclick="downloadFailedMrp()"><i class="fa fa-times"></i> FAILED/WARNING : <b id="p_failed4">0</b></a>
+                
+                <div style="clear:both;"></div>
+                <div id="p_upload4" class="easyui-progressbar" style="width:100%; margin-top: 5px;"></div>
                 <center><b id="p_start4">0</b> Of <b id="p_finish4">0</b></center>
+                
+                <div style="display: none;">
+                    <ul id="remarks4"></ul>
+                </div>
 
                 <b>Generate ABC Class</b>
                 <div id="p_upload2" class="easyui-progressbar" style="width:100%;"></div>
                 <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
+
+                <!-- Tombol Download-->
+                <!-- <div class="fitem" style="text-align:left; margin-top: 10px; margin-bottom: 5px;">
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="downloadFailedMrp()">
+                        <i class="fa fa-download"></i> List Failed MRP
+                    </a>
+                </div> -->
             </fieldset>
+
         </div>
-        <?= $button ?>
-        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="formula()"><i class="fa fa-info"></i> Help</a>
-        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="exceptions()"><i class="fa fa-file"></i> Exception Report</a>
+        <div>
+            <?= $button ?>
+        </div>
+        
     </div>
 </div>
 
@@ -83,7 +103,7 @@
     <table id="dg_exception" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
         <thead>
             <tr>
-                <th data-options="field:'item_rm_number',width:250,halign:'center'">Part No</th>
+                <th data-options="field:'item_rm_number',width:250,align:'center'">Part No</th>
                 <th data-options="field:'item_rm_name',width:250,halign:'center'">Part Name</th>
                 <th data-options="field:'mpq',width:80,align:'center', styler:numberStyle">MPQ</th>
                 <th data-options="field:'moq',width:80,align:'center', styler:numberStyle">MOQ</th>
@@ -98,32 +118,59 @@
 <div id="p" class="easyui-panel" title="Print Preview" style="height: 50%;" >
     <iframe id="printout" src="" style="width: 100%; height: 99%; border: 0; "></iframe>
 </div>
+
+<!-- Dialog List Failed MRP -->
+<div id="dlg_failed" class="easyui-dialog" style="width:80%; height:500px; padding:10px" closed="true" modal="true" toolbar="#tb_failed">
+    <table id="dg_failed" class="easyui-datagrid" style="width:100%; height:100%"
+           rownumbers="true" singleSelect="true" fitColumns="false">
+        <thead>
+            <tr>
+                <th field="product_no" width="150" halign="center">PART NO</th>
+                <th field="product_name" width="250" halign="center">PART NAME</th>
+                <th field="moq" width="100" halign="center" align="right" styler="failedCellStyler">MOQ</th>
+                <th field="mpq" width="100" halign="center" align="right" styler="failedCellStyler">MPQ</th>
+                <th field="leadtime" width="100" halign="center" align="right" styler="failedCellStyler">LEAD TIME</th>
+                <th field="share_order" width="120" halign="center" align="right" styler="failedCellStyler">SHARED ORDER</th>
+                <th field="purchase_order" width="120" halign="center" align="right" formatter="formatInteger">FIX ORDER</th>                
+                <th field="status" width="100" halign="center" align="center">STATUS</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<!-- Toolbar Export Excel untuk Datagrid Failed -->
+<div id="tb_failed">
+    <a href="javascript:void(0)" class="easyui-linkbutton" plain="true" onclick="exportFailedExcel()"><i class="fa fa-file"></i> Export Excel</a>
+</div>
+
 <script>
     function formula(){
         Swal.fire({
             width: 800,
             html: `<div style="text-align:left;">
-                        <center><b style="font-size:16px !important;">MRP COMPONENT PARAMETER</b><hr></center>
-                        <ul>
-                            <li><b>Breakdown LTTP & BOM</b> is taken from (Generate LTTP x Bom)</li>
-                            <li><b>WHS</b> is taken from Ending Stock in Store of Cut off</li>
-                            <li><b>WIP</b> is taken from Generate MPP - Issued If result Minus</li>
-                            <li><b>OS SUPPLIER</b> is taken from Purchase Order - Gate Entry of Cut Off</li>
-                            <li><b>TOTAL STOCK</b> is taken from (WHS + WIP + OS SUPPLIER)</li>
-                            <li><b>OS SUPPLY</b> Generate MPP - Issued If result Plus</li>
-                        </ul>
-                        <center><b style="font-size:16px !important;">FORMULA</b><hr></center>
+                        <center><b style="font-size:16px !important;">MRP FORMULA</b><hr></center>
                         <ul>
                             <li><b>NEED M1 to M6</b> is taken from Generate LTTP (Prodplan) * BOM (Qpa) according to every month</li>
-                            <li><b>BAL M1</b> is taken from (TOTAL STOCK - OS WO + NEED M1)</li>
+                            <li><b>BAL M1</b> is taken from (TOTAL STOCK + QTY WIP + OS PO - OS WO - QTY SUPPLY - NEED M1)</li>
                             <li><b>BAL M2</b> is taken from (BAL M1 - NEED M2)</li>
                             <li><b>BAL M3</b> is taken from (BAL M2 - NEED M3)</li>
                             <li><b>BAL M4</b> is taken from (BAL M3 - NEED M4)</li>
                             <li><b>BAL M5</b> is taken from (BAL M4 - NEED M5)</li>
                             <li><b>BAL M6</b> is taken from (BAL M5 - NEED M6)</li>
-                            <li><b>SAFETY STOCK</b> is taken from (Supplier Items (safety stock) * TOTAL NEED)</li>
-                            <li><b>TOTAL NEED</b> Calculate Leadtime if Supplier (type) = "LOCAL" then Current Month from BAL else Next Month from BAL + SAFETY STOCK</li>
-                            <li><b>MRP RESULT</b> is taken from Round Up from TOTAL NEED</li>
+
+                            <li><b>QTY WIP & QTY SUPPLY</b> are calculated from the remaining material balance on the production floor. The base formula is: <br>
+                            <i><b>Balance</b> = (Total Issued via Supply Sheet + Total Issued via Non Supply Sheet) - (Total Need by BOM - Issued for Crusher/Other)</i></li>
+                            <li><b>QTY WIP</b>: If Balance > 0, there is leftover material on the floor. The value becomes QTY WIP and QTY Supply = 0.</li>
+                            <li><b>QTY SUPPLY</b>: If Balance < 0, the floor is short on material. QTY WIP is set to 0 and the negative balance is converted to a positive figure for QTY Supply (Material to be issued).</li>
+
+                            <li><b>AVG USAGE</b> is taken from (USED 2 + USED 3 + NEED 1) / 3</li>
+                            <li><b>ITO</b> if AVG USAGE > 0 it taken from (TOTAL STOCK / AVG USAGE) then if AVG USAGE < 0 value is 0</li>
+                            <li><b>PLAN ORDER</b> if BAL M1 > 0 it value is 0, then if BAL M1 < 0 the negative value is converted to a positive figure for it</li>
+                            <li><b>SHARE ORDER VALUE</b> is taken from Supplier Items</li>
+                            <li><b>SHARE ORDER QTY</b> is taken from (PLAN ORDER * (SHARE ORDER VALUE / 100)</li>
+                            <li><b>SAFETY STOCK VALUE</b> is taken from Safety Stock RM</li>
+                            <li><b>SAFETY STOCK</b> is taken from (SHARE ORDER QTY * (SAFETY STOCK VALUE / 100)</li>
+                            <li><b>FIX ORDER</b> if PLAN ORDER > 0 and MOQ > 0: when PLAN ORDER > MOQ, it is calculated by rounding up PLAN ORDER to the nearest multiple of MPQ. Otherwise, it is rounded up to the nearest multiple of MOQ. If conditions are not met, the value is 0</li>
                         </ul>
                     </div>`,
         });
@@ -168,106 +215,159 @@
             },
         });
 
-        $.ajax({
-            type: "get",
-            url: "<?= base_url('planning/generate_mrp/getDataMrp') ?>",
-            data: "filter_month=" + window.btoa(filter_month) +
-                "&filter_year=" + window.btoa(filter_year) +
-                "&filter_revision=" + window.btoa(filter_revision) +
-                "&filter_product_family=" + window.btoa(filter_product_family) +
-                "&filter_part_no=" + window.btoa(filter_part_no) +
-                "&filter_cutoff=" + window.btoa(filter_cutoff),
-            dataType: "json",
-            success: function(rows4) {
-                Swal.close();
+        $.post("<?= base_url('planning/generate_mrp/uploadclearFailed') ?>", {
+            p_month: filter_month,
+            p_year: filter_year,
+            revision: filter_revision,
+            cutoff: filter_cutoff
+        }, function() {
+            $.ajax({
+                type: "get",
+                url: "<?= base_url('planning/generate_mrp/getDataMrp') ?>",
+                data: "filter_month=" + window.btoa(filter_month) +
+                    "&filter_year=" + window.btoa(filter_year) +
+                    "&filter_revision=" + window.btoa(filter_revision) +
+                    "&filter_product_family=" + window.btoa(filter_product_family) +
+                    "&filter_part_no=" + window.btoa(filter_part_no) +
+                    "&filter_cutoff=" + window.btoa(filter_cutoff),
+                dataType: "json",
+                success: function(rows4) {
+                    Swal.close();
+                    
+                    $('#p_success4').html("0");
+                    $('#p_failed4').html("0");
+                    $('#remarks4').empty();
 
-                requestData4(rows4['total'], rows4);
-                function requestData4(total4, json4, number4 = 1, value4 = 0, success4 = 1, failed4 = 1) {
-                    if (value4 < 100) {
-                        value4 = Math.floor((number4 / total4) * 100);
-                        $('#p_upload4').progressbar('setValue', value4);
-                        $('#p_start4').html(number4);
-                        $('#p_finish4').html(total4);
+                    requestData4(rows4['total'], rows4);
+                    
+                    function requestData4(total4, json4, number4 = 1, value4 = 0, success4 = 1, failed4 = 1) {
+                        if (value4 < 100) {
+                            value4 = Math.floor((number4 / total4) * 100);
+                            $('#p_upload4').progressbar('setValue', value4);
+                            $('#p_start4').html(number4);
+                            $('#p_finish4').html(total4);
 
-                        $.post('<?= base_url('planning/generate_mrp/createMrp') ?>', {
-                            data: json4[number4 - 1]
-                        }, function(note) {
-                            var result = eval('(' + note + ')');
-                            if (result.theme == "success") {
-                                requestData4(total4, json4, number4 + 1, value4, success4 + 1, failed4 + 0);
-                            } else {
-                                requestData4(total4, json4, number4 + 1, value4, success4 + 0, failed4 + 1);
-                            }
-                        }).fail(function(jqXHR, textStatus) {
-                            if (textStatus == "error") {
-                                toastr.error("Connection time out");
-                                requestData4(total4, json4, number4 + 1, value4, success4 + 0, failed4 + 1);
-                            }
-                        });
-                    }else{
-                        Swal.fire({
-                            title: 'Please Wait for Generating ABC Class',
-                            showConfirmButton: false,
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            },
-                        });
+                            $.post('<?= base_url('planning/generate_mrp/createMrp') ?>', {
+                                data: json4[number4 - 1]
+                            }, function(note) {
+                                var result = eval('(' + note + ')');
+                                var title = "";
 
-                        var fullUrl = "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>?" +
-                            "filter_month=" + window.btoa(filter_month) + "&filter_year=" + window.btoa(filter_year) +
-                            "&filter_revision=" + window.btoa(filter_revision) + "&filter_product_family=" + window.btoa(filter_product_family) +
-                            "&filter_part_no=" + window.btoa(filter_part_no) + "&filter_cutoff=" + window.btoa(filter_cutoff);
-                        // console.log("Accessing URL:", fullUrl);
-                        $.ajax({
-                            type: "get",
-                            url: "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>",
-                            data: "filter_month=" + window.btoa(filter_month) +
-                                "&filter_year=" + window.btoa(filter_year) +
-                                "&filter_revision=" + window.btoa(filter_revision) +
-                                "&filter_product_family=" + window.btoa(filter_product_family) +
-                                "&filter_part_no=" + window.btoa(filter_part_no) +
-                                "&filter_cutoff=" + window.btoa(filter_cutoff),
-                            dataType: "json",
-                            success: function(rows2) {
-                                Swal.close();
+                                if (result.theme == "success") {
+                                    $('#p_success4').html(success4);
+                                    title = "<b style='color: green;'>" + result.title + " | " + result.message + "</b>";
+                                    
+                                    $("#remarks4").append("<li>" + title + "</li>");
 
-                                requestData2(rows2['total'], rows2);
-                                function requestData2(total2, json2, number2 = 1, value2 = 0, success2 = 1, failed2 = 1) {
-                                    if (value2 < 100) {
-                                        value2 = Math.floor((number2 / total2) * 100);
-                                        $('#p_upload2').progressbar('setValue', value2);
-                                        $('#p_start2').html(number2);
-                                        $('#p_finish2').html(total2);
+                                    requestData4(total4, json4, number4 + 1, value4, success4 + 1, failed4 + 0);
+                                } else {
+                                    $('#p_failed4').html(failed4);
+                                    title = "<span class='log-failed' style='color: red;'>" + result.title + " | " + result.message + "</span>";
+                                    
+                                    $("#remarks4").append("<li>" + title + "</li>");
 
-                                        $.post('<?= base_url('planning/generate_mrp/createAbc') ?>', {
-                                            data: json2[number2 - 1]
-                                        }, function(note) {
-                                            var result = eval('(' + note + ')');
-                                            if (result.theme == "success") {
-                                                requestData2(total2, json2, number2 + 1, value2, success2 + 1, failed2 + 0);
-                                            } else {
-                                                requestData2(total2, json2, number2 + 1, value2, success2 + 0, failed2 + 1);
-                                            }
+                                    requestData4(total4, json4, number4 + 1, value4, success4 + 0, failed4 + 1);
+                                }
+                            }).fail(function(jqXHR, textStatus) {
+                                if (textStatus == "error") {
+                                    toastr.error("Connection time out for Part MRP");
+                                    requestData4(total4, json4, number4 + 1, value4, success4 + 0, failed4 + 1);
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Please Wait for Generating ABC Class',
+                                showConfirmButton: false,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                },
+                            });
 
-                                            if (value2 == 100) {
-                                                Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
-                                            }
-                                        }).fail(function(jqXHR, textStatus) {
-                                            if (textStatus == "error") {
-                                                toastr.error("Connection time out");
-                                                requestData2(total2, json2, number2 + 1, value2, success2 + 0, failed2 + 1);
-                                            }
-                                        });
+                            var fullUrl = "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>?" +
+                                "filter_month=" + window.btoa(filter_month) + "&filter_year=" + window.btoa(filter_year) +
+                                "&filter_revision=" + window.btoa(filter_revision) + "&filter_product_family=" + window.btoa(filter_product_family) +
+                                "&filter_part_no=" + window.btoa(filter_part_no) + "&filter_cutoff=" + window.btoa(filter_cutoff);
+                            // console.log("Accessing URL:", fullUrl);
+                            $.ajax({
+                                type: "get",
+                                url: "<?= base_url('planning/generate_mrp/getDataMrpFinals') ?>",
+                                data: "filter_month=" + window.btoa(filter_month) +
+                                    "&filter_year=" + window.btoa(filter_year) +
+                                    "&filter_revision=" + window.btoa(filter_revision) +
+                                    "&filter_product_family=" + window.btoa(filter_product_family) +
+                                    "&filter_part_no=" + window.btoa(filter_part_no) +
+                                    "&filter_cutoff=" + window.btoa(filter_cutoff),
+                                dataType: "json",
+                                success: function(rows2) {
+                                    Swal.close();
+
+                                    requestData2(rows2['total'], rows2);
+                                    function requestData2(total2, json2, number2 = 1, value2 = 0, success2 = 1, failed2 = 1) {
+                                        if (value2 < 100) {
+                                            value2 = Math.floor((number2 / total2) * 100);
+                                            $('#p_upload2').progressbar('setValue', value2);
+                                            $('#p_start2').html(number2);
+                                            $('#p_finish2').html(total2);
+
+                                            $.post('<?= base_url('planning/generate_mrp/createAbc') ?>', {
+                                                data: json2[number2 - 1]
+                                            }, function(note) {
+                                                var result = eval('(' + note + ')');
+                                                if (result.theme == "success") {
+                                                    requestData2(total2, json2, number2 + 1, value2, success2 + 1, failed2 + 0);
+                                                } else {
+                                                    requestData2(total2, json2, number2 + 1, value2, success2 + 0, failed2 + 1);
+                                                }
+
+                                                if (value2 == 100) {
+                                                    Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
+                                                }
+                                            }).fail(function(jqXHR, textStatus) {
+                                                if (textStatus == "error") {
+                                                    toastr.error("Connection time out");
+                                                    requestData2(total2, json2, number2 + 1, value2, success2 + 0, failed2 + 1);
+                                                }
+                                            });
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 }
-            }
+            });
         });
+    }
+
+    function downloadFailedMrp() {
+        var failedCount = parseInt($('#p_failed4').text());
+        
+        if (failedCount === 0 || isNaN(failedCount)) {
+            Swal.fire('Info', 'There are no failed/warning records to download.', 'info');
+            return;
+        }
+
+        var failedTexts = [];
+        $('#remarks4 .log-failed').each(function() {
+            failedTexts.push($(this).text()); 
+        });
+
+        var textContent = "==== LIST FAILED / WARNING GENERATE MRP ====\r\n\r\n";
+        textContent += failedTexts.join("\r\n");
+
+        var blob = new Blob([textContent], { type: "text/plain" });
+        var url = window.URL.createObjectURL(blob);
+        
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "generate_mrp_failed_" + new Date().getTime() + ".txt"; 
+        document.body.appendChild(a);
+        a.click();
+        
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     }
     
     //Add Data
@@ -318,59 +418,65 @@
                                             Swal.showLoading();
                                         },
                                     });
-
                                     
-                                    $.ajax({
-                                        type: "get",
-                                        url: "<?= base_url('planning/generate_mrp/getDataMps') ?>",
-                                        data: "filter_month=" + window.btoa(filter_month) +
-                                            "&filter_year=" + window.btoa(filter_year) +
-                                            "&filter_revision=" + window.btoa(filter_revision) +
-                                            "&filter_product_family=" + window.btoa(filter_product_family) +
-                                            "&filter_part_no=" + window.btoa(filter_part_no),
-                                        dataType: "json",
-                                        success: function(rows) {
-                                            Swal.close();
+                                    $.post("<?= base_url('planning/generate_mrp/uploadclearFailed') ?>", {
+                                        p_month: filter_month,
+                                        p_year: filter_year,
+                                        revision: filter_revision,
+                                        cutoff: filter_cutoff
+                                    }, function() {
+                                        $.ajax({
+                                            type: "get",
+                                            url: "<?= base_url('planning/generate_mrp/getDataMps') ?>",
+                                            data: "filter_month=" + window.btoa(filter_month) +
+                                                "&filter_year=" + window.btoa(filter_year) +
+                                                "&filter_revision=" + window.btoa(filter_revision) +
+                                                "&filter_product_family=" + window.btoa(filter_product_family) +
+                                                "&filter_part_no=" + window.btoa(filter_part_no),
+                                            dataType: "json",
+                                            success: function(rows) {
+                                                Swal.close();
 
-                                            if(rows['total'] > 0){
-                                                requestData(rows['total'], rows);//jika data dari ajax ada maka kirim ke requestData
+                                                if(rows['total'] > 0){
+                                                    requestData(rows['total'], rows);//jika data dari ajax ada maka kirim ke requestData
 
-                                                function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                                    if (value < 100) {
-                                                        value = Math.floor((number / total) * 100);
-                                                        //set nilai progress bar
-                                                        $('#p_upload').progressbar('setValue', value);
-                                                        $('#p_start').html(number);
-                                                        $('#p_finish').html(total);
-                                                        $('#txt_assy_no').html(json[number - 1].product_no);
+                                                    function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                                        if (value < 100) {
+                                                            value = Math.floor((number / total) * 100);
+                                                            //set nilai progress bar
+                                                            $('#p_upload').progressbar('setValue', value);
+                                                            $('#p_start').html(number);
+                                                            $('#p_finish').html(total);
+                                                            $('#txt_assy_no').html(json[number - 1].product_no);
 
-                                                        $.post('<?= base_url('planning/generate_mrp/create') ?>', {
-                                                            data: json[number - 1]
-                                                        }, function(note) {
-                                                            var result = eval('(' + note + ')');
+                                                            $.post('<?= base_url('planning/generate_mrp/create') ?>', {
+                                                                data: json[number - 1]
+                                                            }, function(note) {
+                                                                var result = eval('(' + note + ')');
 
-                                                            if (result.theme == "success") {
-                                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                                            } else {
-                                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                                            }
-                                                        }).fail(function(jqXHR, textStatus) {
-                                                            if (textStatus == "error") {
-                                                                toastr.error("Connection time out");
+                                                                if (result.theme == "success") {
+                                                                    requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                                                } else {
+                                                                    requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                                                }
+                                                            }).fail(function(jqXHR, textStatus) {
+                                                                if (textStatus == "error") {
+                                                                    toastr.error("Connection time out");
 
-                                                                requestData(total, json, number, value, success + 0, failed + 1);
-                                                            }
-                                                        });
-                                                    } else {
-                                                        generateDataMrp(filter_month, filter_year, filter_revision, filter_product_family, filter_part_no, filter_cutoff);
+                                                                    requestData(total, json, number, value, success + 0, failed + 1);
+                                                                }
+                                                            });
+                                                        } else {
+                                                            generateDataMrp(filter_month, filter_year, filter_revision, filter_product_family, filter_part_no, filter_cutoff);
+                                                        }
                                                     }
+                                                }else{
+                                                    toastr.warning("Data MPS Not Found");
                                                 }
-                                            }else{
-                                                toastr.warning("Data MPS Not Found");
                                             }
-                                        }
+                                        });
                                     });
-                                    
+
                                 }else{
                                     generateDataMrp(filter_month, filter_year, filter_revision, filter_product_family, filter_part_no, filter_cutoff);
                                 }
@@ -769,5 +875,66 @@
         } else {
             return 'background-color:#C8FFCC;';
         }
+    }
+
+    function formatInteger(value, row, index) {
+        if (value != null && value !== '') {
+            return Math.round(value); 
+        }
+        return value;
+    }
+
+    function failedCellStyler(value, row, index) {
+        if (value == 0 || value == null || value === "" || value === "0") {
+            return 'background-color:#ffe4e1; font-weight:bold;'; 
+        }
+    }
+    
+
+    function listfailed() {
+        var filter_month = $("#filter_month").combobox('getValue');
+        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
+        
+        if(filter_month == "" || filter_year == "" || filter_revision == "" || filter_cutoff == "") {
+            toastr.warning("Please select Period and Revision first to view failed list.");
+            return;
+        }
+
+        $('#dlg_failed').dialog('open').dialog('setTitle', 'List Failed MRP (' + filter_month + '/' + filter_year + ' Rev ' + filter_revision + ' | Cutoff: ' + filter_cutoff + ')');
+        $('#dg_failed').datagrid('options').url = '<?= base_url("planning/generate_mrp/readFailedLogs") ?>';
+        
+        $('#dg_failed').datagrid('load', {
+            p_month: filter_month,
+            p_year: filter_year,
+            revision: filter_revision,
+            cutoff: filter_cutoff
+        });
+
+        if (!$('#dg_failed').data('isFilterEnabled')) {
+            $('#dg_failed').datagrid('enableFilter');
+            $('#dg_failed').data('isFilterEnabled', true); // Pasang bendera penanda bahwa filter sudah aktif
+        }
+    }
+
+    function exportFailedExcel() {
+        var filter_month = $("#filter_month").combobox('getValue');
+        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
+        
+        if(filter_month == "" || filter_year == "" || filter_revision == "" || filter_cutoff == "") {
+            toastr.warning("Please select Period and Revision first to export data.");
+            return;
+        }
+
+        var url = '<?= base_url("planning/generate_mrp/exportFailedExcel") ?>' + 
+                '?p_month=' + filter_month + 
+                '&p_year=' + filter_year + 
+                '&revision=' + filter_revision +
+                '&cutoff=' + filter_cutoff;
+                
+        window.open(url, '_blank');
     }
 </script>

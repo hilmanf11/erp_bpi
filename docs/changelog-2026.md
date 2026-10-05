@@ -864,3 +864,101 @@ update warehouse for transaction rm required ([415ed402](https://github.com/hilm
 - **kurniawan**: Update Issued_materials.php
 
 update issued for transaction rm required ([edf5a33e](https://github.com/hilmanf11/erp_bpi/commit/edf5a33e67b24228b4580684ace36e4e5548e8d1))
+
+### [2026-08-11]
+- **kurniawan**: Update item rm ([f50f7e9a](https://github.com/hilmanf11/erp_bpi/commit/f50f7e9a52461dae677801feae4a063bd7272e13))
+
+### [2026-08-11]
+- **kurniawan**: Update Master ([1fd70da7](https://github.com/hilmanf11/erp_bpi/commit/1fd70da7c57f77a9f80f92e519438cf780229b21))
+
+### [2026-08-11]
+- **kurniawan**: Update Wip_adjustment_fg.php ([b0496aca](https://github.com/hilmanf11/erp_bpi/commit/b0496acaec016850f62a2ad1c09e753514d75772))
+
+### [2026-08-11]
+- **kurniawan**: Update script Warehouse ([4dc3c391](https://github.com/hilmanf11/erp_bpi/commit/4dc3c3910d102e4b0fd70a1d06cfbfbef4a3f4fb))
+
+### [2026-08-11]
+- **kurniawan**: Update sales
+
+change name export excel ([9bc80c3a](https://github.com/hilmanf11/erp_bpi/commit/9bc80c3a078568640311f7c610105ede949c4ede))
+
+### [2026-08-12]
+- **kurniawan**: Update script planning ([c22a5f32](https://github.com/hilmanf11/erp_bpi/commit/c22a5f322eb603b5475705d570b7c4cffbe8b744))
+
+### [2026-08-12]
+- **kurniawan**: update planning ([602013b3](https://github.com/hilmanf11/erp_bpi/commit/602013b34a633f1592f68d3d86b330870720d54b))
+
+### [2026-08-14]
+- **kurniawan**: update script master
+
+historical price material & fg ([01827ba9](https://github.com/hilmanf11/erp_bpi/commit/01827ba9e38639d9bcd64ee04abd3db99dff67d5))
+
+### [2026-08-14]
+- **kurniawan**: Update Historical_price_material.php ([4b8b55c8](https://github.com/hilmanf11/erp_bpi/commit/4b8b55c85a123faf2643158c6d73c08014638ec4))
+
+### [2026-08-18]
+- **kurniawan**: update script Purchase ([2733d39e](https://github.com/hilmanf11/erp_bpi/commit/2733d39e5312702c4ddd8e457ac53f50c5e67ddb))
+
+### [2026-08-24]
+- **kurniawan**: Update Polybag Prices
+
+add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2fc375714bcf9334b3ac734671052574615779))
+
+### [2026-08-24]
+- **kurniawan**: Update tmp_item_fg.xls ([00ed5264](https://github.com/hilmanf11/erp_bpi/commit/00ed526433023af0af02f11f3b1efe70f914d49a))
+
+### [2026-08-24]
+- **kurniawan**: update transaction rm ([375ee9d5](https://github.com/hilmanf11/erp_bpi/commit/375ee9d5661b4741ed3dc029f0bdd8ca2d8222c1))
+
+### [2026-08-26]
+- **kurniawan**: Update delivery_notes.php ([60d0e445](https://github.com/hilmanf11/erp_bpi/commit/60d0e445fe76da904bceda9ce0c2ecda3b5feed0))
+
+### [2026-08-27]
+- **kurniawan**: Update report_meiruka.php ([734a7177](https://github.com/hilmanf11/erp_bpi/commit/734a71779b90016e7e0f7ec0ccb80b48581d3545))
+
+### [2026-08-27]
+- **kurniawan**: Update production_schedules.php ([935717e9](https://github.com/hilmanf11/erp_bpi/commit/935717e96987934c7c20bd07c4d648840c400daf))
+
+### [2026-08-27]
+- **kurniawan**: Update supply_sheets.php ([f0632196](https://github.com/hilmanf11/erp_bpi/commit/f0632196caf52a19f040eaf8cc2823be4e6ef64a))
+
+### [2026-08-27]
+- **kurniawan**: update planning ([7dfbc83b](https://github.com/hilmanf11/erp_bpi/commit/7dfbc83bd9444b7bdfedce896733c743f59ebe8c))
+
+### [2026-08-28]
+- **kurniawan**: update Master ([92ea76c9](https://github.com/hilmanf11/erp_bpi/commit/92ea76c9fb0839e2f3bb5da192a33c2f9c8eeaa4))
+
+### [2026-08-28]
+- **kurniawan**: Update Generate_mpp.php ([17656300](https://github.com/hilmanf11/erp_bpi/commit/176563004e0edc2973191d038adfe98736ea87a8))
+
+### [2026-08-31]
+- **kurniawan**: Update transaction_rm.php ([e9de181e](https://github.com/hilmanf11/erp_bpi/commit/e9de181e098bd9dbf4e755be9804731610c0ab02))
+
+## September 2026
+
+### [2026-09-02]
+- **kurniawan**: update DN ([2362cd8a](https://github.com/hilmanf11/erp_bpi/commit/2362cd8abcc409457e680e7c2f08c458ccc643e9))
+
+### [2026-09-04]
+- **kurniawan**: update Approval dan notification ([f19c1183](https://github.com/hilmanf11/erp_bpi/commit/f19c1183d1a11e8fa96f3824189ed10fb3e2d7e5))
+
+### [2026-09-04]
+- **kurniawan**: udpate planning ([c240cb43](https://github.com/hilmanf11/erp_bpi/commit/c240cb43f9379b9c68f592b2e4d1e85546b440f4))
+
+### [2026-09-04]
+- **kurniawan**: Update Report_history_transactions.php ([ab42373b](https://github.com/hilmanf11/erp_bpi/commit/ab42373b21ddfed0af820a9462a44708a1571498))
+
+### [2026-09-04]
+- **kurniawan**: Update Report_outstanding_po.php ([09650115](https://github.com/hilmanf11/erp_bpi/commit/09650115cf8bde1f5fef3ac4231affa269c1d231))
+
+### [2026-09-04]
+- **kurniawan**: Update Delivery_notes.php ([1207b58a](https://github.com/hilmanf11/erp_bpi/commit/1207b58ab203ca478da9e6541c09c4353a03cd02))
+
+### [2026-09-04]
+- **kurniawan**: Update Ar_receipts.php ([d3dfd94b](https://github.com/hilmanf11/erp_bpi/commit/d3dfd94b57094717b430d92028640c31c0aabbeb))
+
+### [2026-09-21]
+- **kurniawan**: Notification MPS ([2b7151a6](https://github.com/hilmanf11/erp_bpi/commit/2b7151a69a028cdbb18263f33483a7d8db825a3d))
+
+### [2026-09-28]
+- **kurniawan**: update MOM 74.MOM_24SEP26_REVIEW ERP BPI ([2d9798ff](https://github.com/hilmanf11/erp_bpi/commit/2d9798ff7a13c9b1f00a455d72e371be44c2c40d))

@@ -162,7 +162,11 @@ class Supplier_items extends CI_Controller
             c.number as item_rm_number, 
             c.name as item_rm_name, 
             c.item_family_id as item_rm_family, 
-            d.name as item_family_name');
+            d.name as item_family_name,
+            a.created_by,
+            a.created_date,
+            a.updated_by,
+            a.updated_date');
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -382,7 +386,22 @@ class Supplier_items extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-            //Cek Process Number          //table       //field        //field excel
+
+            $moq         = (float)$data['moq'];
+            $mpq         = (float)$data['mpq'];
+            $leadtime    = (float)$data['leadtime'];
+            $share_order = (float)$data['share_order'];
+
+            if ($moq <= 0 || $mpq <= 0 || $leadtime <= 0 || $share_order <= 0) {
+                echo json_encode(array(
+                    "title"   => "Validation Error",
+                    "message" => "MOQ, MPQ, Leadtime, and Share Order cannot be 0 or empty!",
+                    "theme"   => "error"
+                ));
+                return;
+            }
+
+            // Cek Process Number           //table       //field        //field excel
             $supplier_items = $this->crud->read('supplier_items', [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id']]);
             $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
             $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
@@ -393,23 +412,23 @@ class Supplier_items extends CI_Controller
 
             $dataFinal = array(
                 //field
-                "supplier_id" => $data['supplier_id'],
-                "item_rm_id" => $data['item_rm_id'],
-                "maker" => $data['maker'],
+                "supplier_id"   => $data['supplier_id'],
+                "item_rm_id"    => $data['item_rm_id'],
+                "maker"         => $data['maker'],
                 "item_supplier" => $data['item_supplier'],
-                "mpq" => $data['mpq'],
-                "moq" => $data['moq'],
-                "share_order" => $data['share_order'],
-                "leadtime" => $data['leadtime'],
-                "currency" => $data['currency'],
-                "price" => $data['price'],
-                "valid_date" => $data['valid_date'],
-                "safety_stock" => $data['safety_stock'],
-                "uom_default" => $data['uom_default'],
+                "mpq"           => $data['mpq'],
+                "moq"           => $data['moq'],
+                "share_order"   => $data['share_order'],
+                "leadtime"      => $data['leadtime'],
+                "currency"      => $data['currency'],
+                "price"         => $data['price'],
+                "valid_date"    => $data['valid_date'],
+                "safety_stock"  => $data['safety_stock'],
+                "uom_default"   => $data['uom_default'],
                 "uom_inventory" => $uom,
-                "weight_kg" => $weight_kg,
-                "calculate" => $data['calculate'],
-                "remark" => $data['remark'],
+                "weight_kg"     => $weight_kg,
+                "calculate"     => $data['calculate'],
+                "remark"        => $data['remark'],
             );
 
             if (@$supplier_items->supplier_id != "") {

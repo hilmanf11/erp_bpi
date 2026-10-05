@@ -215,10 +215,22 @@ class Checksheets extends CI_Controller
 
     public function readChecksheet()
     {
-        $send = $this->crud->query("SELECT DISTINCT `number`
-        FROM checksheets
-        WHERE `deleted` = 0
-        ORDER BY `number` DESC");
+        $q = $this->input->post('q') ? $this->input->post('q') : $this->input->get('q');
+        
+        $this->db->select('number');
+        $this->db->from('checksheets');
+        $this->db->where('deleted', 0);
+        
+        if (!empty($q)) {
+            $this->db->like('number', $q);
+        }
+        
+        $this->db->group_by('number'); 
+        $this->db->order_by('number', 'DESC');
+        
+        $this->db->limit(50); 
+        
+        $send = $this->db->get()->result_array();
         echo json_encode($send);
     }
 
@@ -345,83 +357,94 @@ class Checksheets extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filter_from = $this->input->get('filter_from');
-            $filter_to = $this->input->get('filter_to');
-            $filter_wo_no = $this->input->get('filter_wo_no');
-            $filter_checksheet = $this->input->get('filter_checksheet');
-            $filter_shift = $this->input->get('filter_shift');
-            $filter_item_fg_id = $this->input->get('filter_item_fg_id');
-            $filter_division = $this->input->get('filter_division');
-            $filter_status = $this->input->get('filter_status');
-            $filter_status_subcont = $this->input->get('filter_status_subcont');
-            $filter_subcont_type = $this->input->get('filter_subcont_type');
-            $filter_checksheet_type = $this->input->get('filter_checksheet_type');
+            $filter_from            = $this->input->get("filter_from");
+            $filter_to              = $this->input->get("filter_to");
+            $filter_wo_no           = $this->input->get("filter_wo_no");
+            $filter_checksheet      = $this->input->get("filter_checksheet");
+            $filter_shift           = $this->input->get("filter_shift");
+            $filter_item_fg_id      = $this->input->get("filter_item_fg_id");
+            $filter_division        = $this->input->get("filter_division");
+            $filter_status          = $this->input->get("filter_status");
+            $filter_status_subcont  = $this->input->get("filter_status_subcont");
+            $filter_subcont_type    = $this->input->get("filter_subcont_type");
+            $filter_checksheet_type = $this->input->get("filter_checksheet_type");
 
-            $page = $this->input->post('page');
-            $rows = $this->input->post('rows');
-            $sort = $this->input->post('sort') ?? 'a.created_date';
-            $order = $this->input->post('order') ?? 'desc';
+            $filter_status_label    = $this->input->get("filter_status_label")
+                ?: $this->input->post("filter_status_label");
 
-            //Pagination 1-10
+            $page  = $this->input->post("page");
+            $rows  = $this->input->post("rows");
+            $sort  = $this->input->post("sort") ?? "a.created_date";
+            $order = $this->input->post("order") ?? "desc";
+
+            // Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
-            $result = array();
-            //Select Query
+            $result = [];
+
+            // Select Query
             $this->db->select('a.*, c.number as product_no, c.name as product_name, c.id as product_id, c.uom, d.document_no,
-            COALESCE(COUNT(e.status),0) as total_scan');
-            $this->db->from('checksheets a');
-            $this->db->join('production_schedules b', 'a.wo_no = b.wo_no','left');
-            $this->db->join('item_fg c', 'a.item_fg_id = c.id','left');
-            $this->db->join('wip_receipts d', 'a.number = d.checksheet_number','left');
-            $this->db->join('scan_item_receipts_fg e', 'a.number = e.checksheet_number','left');
-            $this->db->where('a.deleted', 0);
+                COALESCE(COUNT(e.status),0) as total_scan');
+            $this->db->from("checksheets a");
+            $this->db->join("production_schedules b","a.wo_no = b.wo_no","left");
+            $this->db->join("item_fg c", "a.item_fg_id = c.id", "left");
+            $this->db->join("wip_receipts d","a.number = d.checksheet_number","left");
+            $this->db->join("scan_item_receipts_fg e","a.number = e.checksheet_number","left");
+            $this->db->where("a.deleted", 0);
+
             if ($filter_from != "" or $filter_to != "") {
-                $this->db->where('a.trans_date >=', $filter_from);
-                $this->db->where('a.trans_date <=', $filter_to);
+                $this->db->where("a.trans_date >=", $filter_from);
+                $this->db->where("a.trans_date <=", $filter_to);
             }
             if ($filter_division != "") {
-                $this->db->where('a.division', $filter_division);
+                $this->db->where("a.division", $filter_division);
             }
             if ($filter_status != "") {
-                $this->db->where('a.status', $filter_status);
+                $this->db->where("a.status", $filter_status);
             }
             if ($filter_wo_no != "") {
-                $this->db->where('a.wo_no', $filter_wo_no);
+                $this->db->where("a.wo_no", $filter_wo_no);
             }
             if ($filter_checksheet != "") {
-                $this->db->where('a.number', $filter_checksheet);
+                $this->db->where("a.number", $filter_checksheet);
             }
             if ($filter_shift != "") {
-                $this->db->where('a.shift', $filter_shift);
+                $this->db->where("a.shift", $filter_shift);
             }
             if ($filter_item_fg_id != "") {
-                $this->db->where('a.item_fg_id', $filter_item_fg_id);
+                $this->db->where("a.item_fg_id", $filter_item_fg_id);
             }
-
             if ($filter_status_subcont != "") {
-                $this->db->where('a.status_subcont', $filter_status_subcont);
+                $this->db->where("a.status_subcont",$filter_status_subcont);
             }
-
             if ($filter_subcont_type != "") {
-                $this->db->where('a.subcont_type', $filter_subcont_type);
+                $this->db->where("a.subcont_type", $filter_subcont_type);
+            }
+            if ($filter_checksheet_type != "") {
+                $this->db->where("a.checksheet_type",$filter_checksheet_type);
             }
 
-            if ($filter_checksheet_type != "") {
-                $this->db->where('a.checksheet_type', $filter_checksheet_type);
+            $this->db->group_by("a.number");
+
+            if ($filter_status_label == "CLOSED") {
+                $this->db->having("COUNT(e.status) >=", "a.label", false);
+            } elseif ($filter_status_label == "OPEN") {
+                $this->db->having("COUNT(e.status) <", "a.label", false);
             }
-            
-            $this->db->group_by('a.number');
+
             $this->db->order_by($sort, $order);
-            //Total Data
-            $totalRows = $this->db->count_all_results('', false);
-            //Limit 1 - 10
+
+            // Total Data
+            $totalRows = $this->db->count_all_results("", false);
+            // Limit 1 - 10
             $this->db->limit($rows, $offset);
-            //Get Data Array
+            // Get Data Array
             $records = $this->db->get()->result_array();
-            //Mapping Data
-            $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
+
+            // Mapping Data
+            $result["total"] = $totalRows;
+            $result          = array_merge($result, ["rows" => $records]);
             echo json_encode($result);
         }
     }

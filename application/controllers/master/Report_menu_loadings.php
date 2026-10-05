@@ -132,7 +132,7 @@ class Report_menu_loadings extends CI_Controller
                 Print By ' . $this->session->username . '  
             </div>
             <br><br><br>
-            <h3 style="margin:0;">MASTER DATA ENGINEERING (FG)</h3>
+            <h3 style="margin:0;">REPORT MENU LOADING</h3>
         </center>
         <br>
             <table id="customers" border="1" style="font-size: 11px;">

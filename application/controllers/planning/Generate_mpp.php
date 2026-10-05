@@ -79,6 +79,27 @@ class Generate_mpp extends CI_Controller
         echo json_encode($query->result());
     }
 
+    public function checkLoadcap()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_revision = base64_decode($this->input->get('filter_revision'));
+
+        //Select Query
+        $this->db->select('*');
+        $this->db->from('generate_loadcap');
+        $this->db->where("deleted", 0);
+        $this->db->like("p_month", $filter_month);
+        $this->db->like("p_year", $filter_year);
+        $records = $this->db->get()->result_array();
+
+        if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        } else {
+            echo json_encode(array("theme" => "error"));
+        }
+    }
+
     public function datatables()
     {
         // Filter Data 
@@ -968,6 +989,8 @@ class Generate_mpp extends CI_Controller
         $filter_revision = base64_decode($this->input->get('filter_revision'));
         $period = $filter_year . "-" . $filter_month;
 
+        $cutoff = $this->crud->read("generate_mpp", [], ["p_month" => $filter_month, "p_year" => $filter_year,"revision" => $filter_revision]);
+
         $query_main = "SELECT a.*, 
                     b.name, 
                     b.number,
@@ -1023,6 +1046,7 @@ class Generate_mpp extends CI_Controller
             #customers tr:nth-child(even){background-color: #f2f2f2;}
             #customers tr:hover {background-color: #ddd;}
             #customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black; background-color: #f2f2f2;}
+            #customers tr.last-row td { border-bottom: 2px solid black !important; }
         </style><body>
             <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -1034,6 +1058,9 @@ class Generate_mpp extends CI_Controller
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
                             <small>'.$config->description.'</small>
+                            <p style="font-size:12px; margin:0;">Period ' . $this->monthName($filter_month) . ' ' . $filter_year . '</p>
+                            <p style="font-size:12px; margin:0;">Revision ' . $filter_revision . '</p>
+                            <p style="font-size:12px; margin:0;">Generate Date ' . date('Y-m-d', strtotime($cutoff->created_date)) . '</p>
                         </td>
                     </tr>
                 </table>
@@ -1092,13 +1119,25 @@ class Generate_mpp extends CI_Controller
 
         $current_mc = ""; 
         $no = 1;
+        $mc_row_counter = 0;
 
         foreach ($records as $record) {
-            $html .= '<tr>';
+            if ($current_mc != $record->machine_number) {
+                $mc_row_counter = 1;
+            } else {
+                $mc_row_counter++;
+            }
+
+            $tr_class = "";
+            if ($mc_row_counter == $rowspan_data[$record->machine_number]) {
+                $tr_class = ' class="last-row"';
+            }
+
+            $html .= '<tr' . $tr_class . '>';
             
             if ($current_mc != $record->machine_number) {
                 $row_count = $rowspan_data[$record->machine_number];
-                $html .= '<td rowspan="' . $row_count . '" style="text-align:center; vertical-align:middle; font-weight:bold;">' . $record->machine_number . '</td>';
+                $html .= '<td rowspan="' . $row_count . '" style="text-align:center; vertical-align:middle; font-weight:bold; border-bottom: 2px solid black;">' . $record->machine_number . '</td>';
                 $current_mc = $record->machine_number; 
                 $no = 1; 
             }
@@ -1538,13 +1577,58 @@ class Generate_mpp extends CI_Controller
                     <title>'.$data['item_number'].'</title>
                     <link href="https://fonts.googleapis.com/css?family=Libre+Barcode+39" rel="stylesheet">
                     <style>
-                        /* Optimasi Kertas untuk Print */
+                        /* Set semua elemen agar padding tidak menambah lebar */
+                        * { box-sizing: border-box; }
+
+                        /* Optimasi Kertas untuk Print A3 Landscape */
                         @media print {
-                            @page { size: A4 portrait; margin: 5mm; }
+                            @page { 
+                                size: A3 landscape; 
+                                margin: 10mm; /* Margin standar tepi kertas */
+                            }
                             body { -webkit-print-color-adjust: exact !important; margin: 0; padding: 0; }
                         }
-                        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000; }
                         
+                        body { 
+                            font-family: Arial, Helvetica, sans-serif; 
+                            font-size: 11px; 
+                            color: #000; 
+                        }
+                        
+                        /* ================= LAYOUT 50:50 (A3 DIBAGI 2) ================= */
+                        .a3-container {
+                            display: flex;
+                            width: 100%;
+                            min-height: 275mm; /* Memaksa tinggi container mendekati tinggi A3 */
+                        }
+                        
+                        /* Kolom Kiri: Sengaja Dikosongkan (Area Print Modul Lain) */
+                        .col-left {
+                            width: 50%;
+                            /* Tidak ada konten di sini */
+                        }
+                        
+                        /* Kolom Kanan: Area Print Modul Ini */
+                        .col-right {
+                            width: 50%;
+                            display: flex; /* Flex untuk memisahkan WO dan Kanban */
+                            padding-left: 5mm; /* Jarak aman dari lipatan tengah kertas */
+                        }
+                        
+                        /* Bagian WO/PR (Kiri dari kolom kanan) */
+                        .wo-section {
+                            flex: 1; /* Mengisi sisa ruang setelah Kanban */
+                            display: flex;
+                            flex-direction: column;
+                            padding-right: 25px;
+                        }
+                        
+                        /* Bagian Kanban (Kanan dari kolom kanan) */
+                        .kanban-section {
+                            width: 140px; /* Lebar tetap untuk kanban */
+                        }
+                        /* =============================================================== */
+
                         /* Styling Warna & Border */
                         .bg-grey { background-color: #d9d9d9 !important; }
                         .border-box { border: 1px solid #000; }
@@ -1566,15 +1650,19 @@ class Generate_mpp extends CI_Controller
                         }
                         
                         /* Tabel Standard */
-                        table { border-collapse: collapse; }
+                        table { border-collapse: collapse; width: 100%; }
                         .table-info td { padding: 3px 5px; }
-                        .table-grid td { border: 1px solid #000; padding: 4px; }
+                        .table-grid td, .table-grid th { border: 1px solid #000; padding: 4px; }
                         
                         /* Tabel Kanban Kanan */
+                        .table-kanban { 
+                            height: 100%; /* Kunci agar Kanban stretch ke bawah! */
+                            border: 2px solid #000;
+                        }
                         .table-kanban td { border: 1px solid #000; padding: 2px; font-size: 10px; }
                         .table-kanban th { border: 1px solid #000; padding: 4px; font-size: 12px; font-weight: bold; }
 
-                        /* Custom Checkbox Hitam Putih */
+                        /* Custom Checkbox */
                         .square-box { 
                             display: inline-block; 
                             width: 12px; height: 12px; 
@@ -1583,47 +1671,51 @@ class Generate_mpp extends CI_Controller
                             margin-right: 3px; 
                         }
 
-                        /* Container pembungkus utama */
                         .full-outline-wrapper {
-                            width: 80%;
+                            width: 90%;
                             margin: 0 auto;
+                            margin-right: 15px;
                             border: 2px solid #000; 
-                            padding: 15px;           
-                            border-collapse: collapse;
+                            padding: 10px;           
                         }
                     </style>
                 </head>
                 <body onload="window.print()">
                     
-                    <table width="100%" style="border: none;">
-                        <tr>
-                            <td style="width: 75%; vertical-align: top; padding-right: 15px;">
-                                
-                                <table width="100%" style="border: none; margin-bottom: 15px;">
+                    <div class="a3-container">
+                        
+                        <!-- ================= AREA KIRI (KOSONG) ================= -->
+                        <div class="col-left">
+                            <!-- Ruang ini dibiarkan kosong untuk print dari aplikasi/modul lain -->
+                        </div>
+                        
+                        <!-- ================= AREA KANAN (DATA) ================= -->
+                        <div class="col-right">
+                            
+                            <!-- DATA WO / PR REPORT -->
+                            <div class="wo-section">
+                                <table style="border: none; margin-bottom: 15px;">
                                     <tr>
-                                        <td width="1%" style="vertical-align: middle; padding-right: 8px;">
-                                            <img src="' . $config->favicon . '" alt="Logo Perusahaan" style="height: 35px;">
+                                        <td width="5%" style="vertical-align: middle; padding-right: 8px;">
+                                            <img src="' . $config->favicon . '" alt="Logo" style="height: 35px;">
                                         </td>
-                                        
-                                        <td width="49%" style="font-size: 14px; text-align: left; vertical-align: middle;">
+                                        <td width="45%" style="font-size: 14px; text-align: left; vertical-align: middle;">
                                             <b>' . $config->name . '</b><br>
                                             <small style="font-size: 10px; color: #555;">' . $config->description . '</small>
                                         </td>
-                                        
                                         <td width="50%" class="text-right" style="vertical-align: top;">
                                             <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">'.$data['item_number'].'</div>
-                                            <div style="font-size: 9px; margin-right: 35px;">FM-PPC-021-Rev-06</div>
+                                            <div style="font-size: 9px;">FM-PPC-021-Rev-06</div>
                                         </td>
                                     </tr>
                                 </table>
-
-                                <div class="text-center text-bold" style="font-size: 22px; margin-bottom: 15px; letter-spacing: 0.5px;">
+                                <br><br><br><br><br><br>
+                                <div class="text-center text-bold" style="font-size: 25px; margin-bottom: 15px;">
                                     WORK ORDER (WO) &<br>PRODUCTION REPORT (PR)
                                 </div>
 
-                                <div class="full-outline-wrapper">
-
-                                    <table width="100%" class="table-info" style="margin-bottom: 5px;">
+                                <div class="full-outline-wrapper" style="margin-bottom: 15px;">
+                                    <table class="table-info" style="margin-bottom: 5px;">
                                         <tr>
                                             <td width="25%" class="text-bold" style="font-size: 11px;">Issued Date</td>
                                             <td width="5%">:</td>
@@ -1640,16 +1732,16 @@ class Generate_mpp extends CI_Controller
                                         </tr>
                                     </table>
 
-                                    <table width="100%" style="margin-bottom: 10px;">
+                                    <table>
                                         <tr>
                                             <td width="25%" class="text-bold" style="font-size: 11px; padding: 3px 5px;">Part No</td>
                                             <td width="5%" style="padding: 3px 5px;">:</td>
-                                            <td width="70%" class="bg-grey text-center text-bold border-box-thick" style="padding: 5px; font-size: 14px;">'.$data['item_number'].'</td>
+                                            <td width="70%" class="bg-grey text-center text-bold border-box-thick" style="padding: 5px; font-size: 17px;">'.$data['item_number'].'</td>
                                         </tr>
                                         <tr>
                                             <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">Part Name</td>
                                             <td style="padding: 3px 5px;">:</td>
-                                            <td class="text-center text-bold border-box" style="padding: 5px; font-size: 12px;">'.$data['item_name'].'</td>
+                                            <td class="text-center text-bold border-box" style="padding: 5px; font-size: 17px;">'.$data['item_name'].'</td>
                                         </tr>
                                         <tr>
                                             <td class="text-bold" style="font-size: 11px; padding: 3px 5px;">IS No</td>
@@ -1667,40 +1759,27 @@ class Generate_mpp extends CI_Controller
                                             <td class="text-center border-box" style="padding: 5px;">'.$data['machine_number'].'</td>
                                         </tr>
                                     </table>
-
                                 </div> 
 
-                                <table width="50%" align="center" class="table-grid border-box-thick" style="margin-bottom: 10px;">
+                                <table width="60%" align="center" class="table-grid border-box-thick" style="margin-bottom: 15px; width: 60%;">
                                     <tr>
-                                        <br>
-                                        <td width="50%" class="text-center text-bold" style="font-size: 16px;">LOT No</td>
-                                        <td width="50%" class="text-center text-bold" style="font-size: 16px;">Qty (pcs)</td>
+                                        <td width="50%" class="text-center text-bold" style="font-size: 14px;">LOT No</td>
+                                        <td width="50%" class="text-center text-bold" style="font-size: 14px;">Qty (pcs)</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center text-bold" style="font-size: 18px; padding: 8px;">'.$data['lot_no'].'</td>
-                                        <td class="text-center text-bold" style="font-size: 18px; padding: 8px;">'.number_format($data['qty']).'</td>
+                                        <td class="text-center text-bold" style="font-size: 17px; padding: 8px;">'.$data['lot_no'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.number_format($data['qty']).'</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center text-bold" style="font-size: 13px;">lead time (hour)</td>
-                                        <td class="text-right text-bold" style="font-size: 15px; padding-right: 15px;">'.$lead_time.'</td>
-                                    </tr>
-                                </table>
-
-                                <table width="80%" align="center" class="table-info" style="margin-bottom: 15px;">
-                                    <tr>
-                                        <td width="25%" class="text-bold" style="font-size: 9px;">Polybag Label</td><td width="5%" style="font-size: 9px;">:</td>
-                                        <td width="70%" class="bg-grey text-center text-bold" style="font-size: 9px;">Label Manual Logo BPI</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-bold" style="font-size: 9px;">Box Label</td><td style="font-size: 9px;">:</td>
-                                        <td class="bg-grey text-center text-bold" style="font-size: 9px;">Tidak Pakai Label Manual</td>
+                                        <td class="text-center text-bold">lead time (hour)</td>
+                                        <td class="text-right text-bold" style="padding-right: 15px;">'.$lead_time.'</td>
                                     </tr>
                                 </table>
 
-                                <table width="80%" align="center" class="table-grid border-box-thick" style="margin-bottom: 10px;">
+                                <table align="center" class="table-grid border-box-thick" style="margin-bottom: 15px;">
                                     <tr>
-                                        <td colspan="3" class="text-center text-bold" style="font-size: 14px; width: 60%;">Cycle Time</td>
-                                        <td colspan="2" class="text-center text-bold" style="font-size: 14px; width: 40%;">Man Power</td>
+                                        <td colspan="3" class="text-center text-bold" style="font-size: 12px; width: 60%;">Cycle Time</td>
+                                        <td colspan="2" class="text-center text-bold" style="font-size: 12px; width: 40%;">Man Power</td>
                                     </tr>
                                     <tr>
                                         <td class="text-center" style="font-size: 9px; width: 20%;">Cavity Std</td>
@@ -1710,8 +1789,8 @@ class Generate_mpp extends CI_Controller
                                         <td class="text-center" style="font-size: 9px; width: 20%;">Person</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center text-bold" style="font-size: 14px;">'.$data['cavity_standard'].'</td>
-                                        <td class="text-center text-bold" style="font-size: 14px;">'.$data['cycle_time'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 12px;">'.$data['cavity_standard'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 12px;">'.$data['cycle_time'].'</td>
                                         <td rowspan="3" class="text-center text-bold" style="font-size: 14px;">'.$target_per_shift.'</td>
                                         <td colspan="2" class="text-center" style="font-size: 10px;">Material</td>
                                     </tr>
@@ -1723,39 +1802,41 @@ class Generate_mpp extends CI_Controller
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center text-bold" style="font-size: 14px;">'.$data['cavity_actual'].'</td>
-                                        <td class="text-center text-bold" style="font-size: 14px;">'.$data['cycle_time_process'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 12px;">'.$data['cavity_actual'].'</td>
+                                        <td class="text-center text-bold" style="font-size: 12px;">'.$data['cycle_time_process'].'</td>
                                     </tr>
                                 </table>
 
-                                <table width="80%" align="center" class="table-grid border-box-thick" style="margin-bottom: 10px;">
+                                <table align="center" class="table-grid border-box-thick" style="margin-bottom: 20px;">
                                     <tr>
-                                        <td colspan="2" class="text-bold" style="font-size: 12px; border-bottom: none; border-right: none;">Condition Check Mold:</td>
+                                        <td colspan="2" class="text-bold" style="border-bottom: none; border-right: none;">Condition Check Mold:</td>
                                         <td width="25%" class="text-center" style="font-size: 10px;">DIPERIKSA</td>
                                     </tr>
                                     <tr>
                                         <td width="35%" style="border-top: none; border-right: none; padding-left: 10px; font-size: 10px; line-height: 1.5;">
-                                            Cavity Mold &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:<br>
-                                            Cooling Mold &nbsp;&nbsp;&nbsp;:<br>
-                                            Nepple Mold &nbsp;&nbsp;&nbsp;&nbsp;:
+                                            Cavity Mold <br>
+                                            Cooling Mold <br>
+                                            Nepple Mold 
                                         </td>
                                         <td width="40%" style="border-top: none; border-left: none; font-size: 10px; line-height: 1.5;">
-                                            <span class="square-box"></span> OK &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="square-box"></span> ........<br>
-                                            <span class="square-box"></span> OK &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="square-box"></span> ........<br>
-                                            <span class="square-box"></span> OK &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="square-box"></span> ........
+                                            : <span class="square-box"></span> OK &nbsp;&nbsp; <span class="square-box"></span> ........<br>
+                                            : <span class="square-box"></span> OK &nbsp;&nbsp; <span class="square-box"></span> ........<br>
+                                            : <span class="square-box"></span> OK &nbsp;&nbsp; <span class="square-box"></span> ........
                                         </td>
-                                        <td rowspan="1"></td> </tr>
+                                        <td rowspan="1"></td> 
+                                    </tr>
                                     <tr>
                                         <td colspan="3" style="height: 40px; vertical-align: top; font-size: 10px;">Catatan :</td>
                                     </tr>
                                 </table>
 
-                                <table width="80%" align="center" style="margin-bottom: 5px;">
+                                <!-- TANDA TANGAN -->
+                                <table width="100%" align="center" style="margin-top: auto;"> 
                                     <tr>
                                         <td width="48%">
                                             <table width="100%" class="table-grid border-box-thick">
                                                 <tr><td colspan="2" class="text-center" style="font-size: 10px;">MENGETAHUI</td></tr>
-                                                <tr><td style="height: 40px; width: 50%;"></td><td style="width: 50%;"></td></tr>
+                                                <tr><td style="height: 50px; width: 50%;"></td><td style="width: 50%;"></td></tr>
                                                 <tr><td class="text-center" style="font-size: 10px;">SPV.QC</td><td class="text-center" style="font-size: 10px;">SPV.PRD</td></tr>
                                             </table>
                                         </td>
@@ -1766,16 +1847,18 @@ class Generate_mpp extends CI_Controller
                                                     <td class="text-center" style="font-size: 10px; width: 50%;">DIPERIKSA</td>
                                                     <td class="text-center" style="font-size: 10px; width: 50%;">DIBUAT</td>
                                                 </tr>
-                                                <tr><td style="height: 40px;"></td><td></td></tr>
+                                                <tr><td style="height: 50px;"></td><td></td></tr>
                                                 <tr><td class="text-center" style="font-size: 10px;">SPV.PPC</td><td class="text-center" style="font-size: 10px;">PPC</td></tr>
                                             </table>
                                         </td>
                                     </tr>
                                 </table>
-                            </td>
 
-                            <td style="width: 15%; vertical-align: top;">
-                                <table class="table-kanban" style="width: 100%; border: 2px solid #000;">
+                            </div>
+
+                            <!-- KANBAN MATERIAL (KANAN) -->
+                            <div class="kanban-section">
+                                <table class="table-kanban">
                                     <tr>
                                         <td rowspan="31" style="width: 25px; border-right: 1px solid #000; padding: 0; vertical-align: top; text-align: center;">
                                             <div class="barcode-vertical" style="margin-top: 10px;">*MAT-'.$data['wo_no'].'*</div>
@@ -1806,31 +1889,34 @@ class Generate_mpp extends CI_Controller
                                     <tr><td class="text-center" style="padding: 4px; font-size: 11px;">'.$qty.'</td></tr>
                                     
                                     <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Actual Supply</td></tr>
-                                    <tr><td style="height: 40px;"></td></tr>
+                                    
+                                    <!-- Baris ini akan merenggang (stretch) secara otomatis mengisi sisa halaman -->
+                                    <tr><td style="height: 100%;"></td></tr> 
                                     
                                     <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Supplied by,</td></tr>
                                     <tr><td style="height: 40px;"></td></tr>
 
                                     <tr><td class="text-center" style="padding: 2px; font-size: 10px;">Warehouse</td></tr>
-                                    <tr><td style="height: 40px;"></td></tr>
-
-                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Received by,</td></tr>
+                                    
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px; border-top: 2px solid #000;">Received by,</td></tr>
                                     <tr><td style="height: 40px;"></td></tr>
                                     
                                     <tr><td class="text-center" style="padding: 2px; font-size: 10px;">Production</td></tr>
-                                    <tr><td class="text-center text-bold" style="padding: 4px; font-size: 12px;">'.$data['machine_number'].'</td></tr>
+                                    <tr><td class="text-center text-bold" style="padding: 4px; font-size: 12px; border-top: 2px solid #000;">'.$data['machine_number'].'</td></tr>
                                     
                                     <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Supply to M/C</td></tr>
                                     
-                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">LOT</td></tr>
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px; border-top: 2px solid #000;">LOT</td></tr>
                                     <tr><td class="text-center text-bold" style="padding: 2px; font-size: 11px;">'.$data['lot_no'].'</td></tr>
                                     
-                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px;">Issued date</td></tr>
+                                    <tr><td class="text-center" style="font-size: 9px; padding: 2px; border-top: 2px solid #000;">Issued date</td></tr>
                                     <tr><td class="text-center text-bold" style="padding: 2px; font-size: 11px;">'.$data['trans_date'].'</td></tr>
                                 </table>
-                            </td>
-                        </tr>
-                    </table>
+                            </div>
+                            
+                        </div>
+                        
+                    </div>
 
                 </body>
                 </html>';

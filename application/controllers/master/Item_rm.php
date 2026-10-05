@@ -629,6 +629,28 @@ class Item_rm extends CI_Controller
         $this->db->join('item_familys c', 'a.item_family_id = c.id');
         $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id', 'left');
         $this->db->where('a.deleted', 0);
+
+
+        $filterRules = $this->input->get('filterRules');
+        
+        if (!empty($filterRules)) {
+            $filters = json_decode($filterRules);
+            
+            if (@count($filters) > 0) {
+                foreach ($filters as $filter) {
+                    if ($filter->field == "item_category_name") {
+                        $this->db->like("b.name", $filter->value);
+                    } elseif ($filter->field == "item_family_name") {
+                        $this->db->like("c.name", $filter->value);
+                    } elseif ($filter->field == "item_sub_family_name") {
+                        $this->db->like("d.name", $filter->value);
+                    } else {
+                        $this->db->like("a." . $filter->field, $filter->value);
+                    }
+                }
+            }
+        }
+
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
 

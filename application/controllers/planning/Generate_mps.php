@@ -79,7 +79,325 @@ class Generate_mps extends CI_Controller
         echo json_encode($query->result());
     }
 
-    public function getData()
+    // public function getData()
+    // {
+    //     if ($this->input->get()) {
+    //         file_put_contents('failed/generate_mps.txt', '');
+    //         //Filter Data
+    //         $filter_month = base64_decode($this->input->get('filter_month'));
+    //         $filter_year = base64_decode($this->input->get('filter_year'));
+    //         $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+    //         $filter_customer = base64_decode($this->input->get('filter_customer'));
+    //         $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
+    //         $filter_revision = base64_decode($this->input->get('filter_revision'));
+
+    //         $monthBack = date('F Y', strtotime('-1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
+    //         $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
+    //         $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
+    //         $period = date("Y-m-t", strtotime("-1 month", strtotime($filter_cutoff)));
+    //         $period2 = $filter_year.$filter_month;
+
+    //         $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
+    //         $monthName_1 = date("Y-m", $monthStart);
+    //         $monthName_2 = date("Y-m", strtotime("+1 month", $monthStart));
+    //         $monthName_3 = date("Y-m", strtotime("+2 month", $monthStart));
+    //         $monthName_4 = date("Y-m", strtotime("+3 month", $monthStart));
+    //         $monthName_5 = date("Y-m", strtotime("+4 month", $monthStart));
+    //         $monthName_6 = date("Y-m", strtotime("+5 month", $monthStart));
+    //         $cutoff_start = date("Y-m-d", strtotime("+1 day", strtotime($filter_cutoff)));
+    //         $cutoff_end = date("Y-m-t", strtotime($filter_cutoff));
+    //         $lastDatePrevMonth = date("Y-m-t", strtotime("-1 month", $monthStart));
+
+    //         //Configuration Planning
+    //         $this->db->select('*');
+    //         $this->db->from("config");
+    //         $config = $this->db->get()->row();
+
+    //         //
+
+    //         //Select Query a.safety_stock
+    //         $this->db->select("a.id, a.number, a.name, COALESCE(j.safety_stock,0) as safety_stock, a.number_customer,
+    //             (CASE 
+    //                 WHEN a.default_packing = 'BOX' THEN COALESCE(a.qty_box, 0) 
+    //                 ELSE COALESCE(a.mpq, 0) 
+    //             END) as mpq,
+    //             COALESCE(c.pp, 0) as injection,
+    //             COALESCE(c.p1, 0) as assembly,
+    //             COALESCE(c.p2, 0) as onhold,
+    //             COALESCE(c.p3, 0) as subcont,
+    //             COALESCE(d.qty, 0) as os_mpp,
+    //             COALESCE(e.stock_fg, 0) as stock_fg, 
+    //             COALESCE(f.os_so, 0) as os_so, 
+    //             COALESCE(g.month_1, 0) as month_1, 
+    //             COALESCE(g.month_2, 0) as month_2, 
+    //             COALESCE(g.month_3, 0) as month_3, 
+    //             COALESCE(g.month_4, 0) as month_4, 
+    //             COALESCE(g.month_5, 0) as month_5, 
+    //             COALESCE(g.month_6, 0) as month_6, 
+    //             COALESCE(g.month_7, 0) as month_7, 
+    //             COALESCE(h.cycle_time, 0) as cycle_time,
+    //             COALESCE(h.shift_hour, 0) as shift_hour,
+    //             COALESCE(h.productcivity, 0) as productivity,
+    //             COALESCE(h.cavity_standard, 0) as cavity_standard,
+    //             h.priority,
+    //             (COALESCE(i.so_month_1, 0) + COALESCE(k.qty, 0)) as qty_so, 
+    //             COALESCE(i.so_month_2, 0) as so_month_2,
+    //             COALESCE(i.so_month_3, 0) as so_month_3,
+    //             COALESCE(i.so_month_4, 0) as so_month_4,
+    //             COALESCE(i.so_month_5, 0) as so_month_5,
+    //             COALESCE(i.so_month_6, 0) as so_month_6");
+    //         $this->db->from('item_fg a');
+    //         $this->db->join('item_fg_subs b', "a.id = b.item_fg_sa_id", 'left');
+    //         $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '$filter_month' and c.p_year = '$filter_year' and c.revision = '$filter_revision'", 'left');
+    //         $this->db->join("
+    //             (
+    //                 SELECT item_fg_id,
+    //                     SUM(qty) AS qty
+    //                 FROM os_mpp
+    //                 WHERE p_month = '$filter_month'
+    //                 AND p_year = '$filter_year'
+    //                 AND revision = (
+    //                     SELECT MAX(revision)
+    //                     FROM os_mpp m2
+    //                     WHERE m2.p_month = '$filter_month'
+    //                     AND m2.p_year = '$filter_year'
+    //                 )
+    //                 GROUP BY item_fg_id
+    //             ) d",
+    //             "a.id = d.item_fg_id", "left"
+    //         );
+    //         $this->db->join("(SELECT a.id, (COALESCE(b.qty_scan, 0) + COALESCE(c.qty_nb, 0) + COALESCE(d.qty_adj_in, 0) + COALESCE(e.qty_wip, 0) - COALESCE(f.qty_adj_out, 0) - COALESCE(g.qty_dn, 0) - COALESCE(h.qty_repair, 0)) AS stock_fg
+    //             FROM item_fg a
+    //             LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_scan FROM scan_item_receipts_fg a JOIN checksheets b ON a.checksheet_number = b.number AND a.item_fg_id = b.item_fg_id WHERE b.packing_date <= '$filter_cutoff' GROUP BY a.item_fg_id) b ON a.id = b.item_fg_id
+    //             LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_nb FROM scan_item_receipts_fg WHERE `type` = 'NBFG' AND packing_date <= '$filter_cutoff' GROUP BY item_fg_id) c ON a.id = c.item_fg_id
+    //             LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_adj_in FROM transaction_fg WHERE transaction_kind = 'IN' AND request_date <= '$filter_cutoff' GROUP BY item_fg_id) d ON a.id = d.item_fg_id
+    //             LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_wip FROM wip_receipts WHERE division = 'MTS' AND trans_date <= '$filter_cutoff' GROUP BY item_fg_id) e ON a.id = e.item_fg_id
+    //             LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_adj_out FROM transaction_fg WHERE transaction_kind = 'OUT' AND request_date <= '$filter_cutoff' GROUP BY item_fg_id) f ON a.id = f.item_fg_id
+    //             LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_dn FROM delivery_notes WHERE delivery_note_date <= '$filter_cutoff' GROUP BY item_fg_id) g ON a.id = g.item_fg_id
+    //             LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_repair FROM scan_repair_of_goods a JOIN repair_of_goods b ON a.document_no = b.document_no AND a.item_fg_id = b.item_fg_id WHERE b.trans_date <= '$filter_cutoff' GROUP BY a.item_fg_id) h ON a.id = h.item_fg_id
+    //             GROUP BY a.id) e", 'e.id = COALESCE(b.item_fg_id, a.id)', 'left');
+    //         $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS os_so FROM (
+    //             SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+    //             FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+    //             JOIN item_fg b ON a.item_fg_id = b.id
+    //             LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes WHERE delivery_note_date <= '$lastDatePrevMonth' GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+    //             WHERE a.delivery_date <= '$lastDatePrevMonth'
+    //             GROUP BY a.sales_order_no, a.item_fg_id) z
+    //             GROUP BY z.id) f", 'f.id = COALESCE(b.item_fg_id, a.id)', 'left');
+
+    //         //dokumentasi : add month_7 dan cum item beda customer
+    //         $this->db->join("
+    //         (
+    //             SELECT 
+    //                 T.item_fg_id,
+    //                 SUM(CASE WHEN T.idx = 1 THEN T.final_value END) AS month_1,
+    //                 SUM(CASE WHEN T.idx = 2 THEN T.final_value END) AS month_2,
+    //                 SUM(CASE WHEN T.idx = 3 THEN T.final_value END) AS month_3,
+    //                 SUM(CASE WHEN T.idx = 4 THEN T.final_value END) AS month_4,
+    //                 SUM(CASE WHEN T.idx = 5 THEN T.final_value END) AS month_5,
+    //                 SUM(CASE WHEN T.idx = 6 THEN T.final_value END) AS month_6,
+    //                 SUM(CASE WHEN T.idx = 7 THEN T.final_value END) AS month_7
+
+    //             FROM
+    //             (
+    //                 --
+    //                 -- Buat list (item_fg_id, customer_id) dari seluruh bulan yg relevan (target +/- fallback)
+    //                 --
+    //                 SELECT 
+    //                     fc.item_fg_id,
+    //                     fc.customer_id,
+    //                     m.idx,
+    //                     (
+    //                         SELECT 
+    //                             COALESCE(
+    //                                 /* 1. ambil forecast bulan target (month_1) */
+    //                                 (SELECT f1.month_1 
+    //                                 FROM forecasts f1 
+    //                                 WHERE f1.item_fg_id = fc.item_fg_id
+    //                                 AND f1.customer_id = fc.customer_id
+    //                                 AND CONCAT(f1.p_year,'-',LPAD(f1.p_month,2,'0')) = DATE_FORMAT(m.period,'%Y-%m')
+    //                                 ORDER BY f1.revision DESC LIMIT 1),
+
+    //                                 /* 2. fallback 1 bulan sebelum → month_2 */
+    //                                 (SELECT f2.month_2 
+    //                                 FROM forecasts f2 
+    //                                 WHERE f2.item_fg_id = fc.item_fg_id
+    //                                 AND f2.customer_id = fc.customer_id
+    //                                 AND CONCAT(f2.p_year,'-',LPAD(f2.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 1 MONTH),'%Y-%m')
+    //                                 ORDER BY f2.revision DESC LIMIT 1),
+
+    //                                 /* 3. fallback 2 bulan sebelum → month_3 */
+    //                                 (SELECT f3.month_3 
+    //                                 FROM forecasts f3 
+    //                                 WHERE f3.item_fg_id = fc.item_fg_id
+    //                                 AND f3.customer_id = fc.customer_id
+    //                                 AND CONCAT(f3.p_year,'-',LPAD(f3.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 2 MONTH),'%Y-%m')
+    //                                 ORDER BY f3.revision DESC LIMIT 1),
+
+    //                                 /* 4. fallback 3 bulan sebelum → month_4 */
+    //                                 (SELECT f4.month_4 
+    //                                 FROM forecasts f4 
+    //                                 WHERE f4.item_fg_id = fc.item_fg_id
+    //                                 AND f4.customer_id = fc.customer_id
+    //                                 AND CONCAT(f4.p_year,'-',LPAD(f4.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 3 MONTH),'%Y-%m')
+    //                                 ORDER BY f4.revision DESC LIMIT 1),
+
+    //                                 0
+    //                             )
+    //                     ) AS final_value
+    //                 FROM 
+    //                     (
+    //                         SELECT DISTINCT item_fg_id, customer_id
+    //                         FROM forecasts
+    //                         WHERE deleted = 0
+    //                         AND (
+    //                             /* ambil rentang periode: filter_month -3  sampai filter_month +6 (7 bulan forward + 3 fallback back) */
+    //                             CONCAT(p_year,'-',LPAD(p_month,2,'0')) BETWEEN
+    //                                 DATE_FORMAT(DATE_SUB(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH),'%Y-%m')
+    //                             AND
+    //                                 -- Ubah INTERVAL 5 MONTH menjadi 6 MONTH agar mencakup bulan ke-7
+    //                                 DATE_FORMAT(DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 6 MONTH),'%Y-%m')
+    //                         )
+    //                     ) fc
+
+    //                 CROSS JOIN (
+    //                     /* generate 7 bulan dari filter */
+    //                     SELECT 1 AS idx, DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
+    //                     UNION ALL SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
+    //                     UNION ALL SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
+    //                     UNION ALL SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
+    //                     UNION ALL SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
+    //                     UNION ALL SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
+    //                     UNION ALL SELECT 7, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 6 MONTH) -- Tambahan bulan ke-7
+    //                 ) m
+
+    //             ) T
+
+    //             GROUP BY T.item_fg_id
+
+    //         ) g", "g.item_fg_id = COALESCE(b.item_fg_sa_id, a.id)", "left");
+
+    //         $this->db->join("(SELECT DISTINCT a.item_fg_id, a.cycle_time, a.shift_hour, a.productcivity, b.cavity_standard, a.priority FROM menu_loadings a JOIN molds b ON a.mold_id = b.id WHERE a.priority = 1 GROUP BY a.item_fg_id) h ", 'a.id = h.item_fg_id', 'left');
+            
+    //         $this->db->join("(SELECT a.id, 
+    //             COALESCE(b.qty_outstanding, 0) AS so_month_1, 
+    //             COALESCE(c.qty_outstanding, 0) AS so_month_2,
+    //             COALESCE(d.qty_outstanding, 0) AS so_month_3,
+    //             COALESCE(e.qty_outstanding, 0) AS so_month_4,
+    //             COALESCE(f.qty_outstanding, 0) AS so_month_5,
+    //             COALESCE(g.qty_outstanding, 0) AS so_month_6
+    //             FROM item_fg a
+    //             LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+    //                 FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+    //                 JOIN item_fg b ON a.item_fg_id = b.id
+    //                 LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+    //                 WHERE a.delivery_date LIKE '%$monthName_1%'
+    //                 GROUP BY b.id) b ON a.id = b.id
+    //             LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+    //                 FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+    //                 JOIN item_fg b ON a.item_fg_id = b.id
+    //                 LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+    //                 WHERE a.delivery_date LIKE '%$monthName_2%'
+    //                 GROUP BY b.id) c ON a.id = c.id
+    //             LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+    //                 FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+    //                 JOIN item_fg b ON a.item_fg_id = b.id
+    //                 LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+    //                 WHERE a.delivery_date LIKE '%$monthName_3%'
+    //                 GROUP BY b.id) d ON a.id = d.id
+    //             LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+    //                 FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+    //                 JOIN item_fg b ON a.item_fg_id = b.id
+    //                 LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+    //                 WHERE a.delivery_date LIKE '%$monthName_4%'
+    //                 GROUP BY b.id) e ON a.id = e.id
+    //             LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+    //                 FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+    //                 JOIN item_fg b ON a.item_fg_id = b.id
+    //                 LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+    //                 WHERE a.delivery_date LIKE '%$monthName_5%'
+    //                 GROUP BY b.id) f ON a.id = f.id
+    //             LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+    //                 FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+    //                 JOIN item_fg b ON a.item_fg_id = b.id
+    //                 LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+    //                 WHERE a.delivery_date LIKE '%$monthName_6%'
+    //                 GROUP BY b.id) g ON a.id = g.id
+    //             GROUP BY a.id) i", '(a.id = i.id or b.item_fg_id = i.id)', 'left');
+            
+    //         $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
+    //             SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+    //             FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+    //             JOIN item_fg b ON a.item_fg_id = b.id
+    //             LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+    //             WHERE a.delivery_date between '$cutoff_start' and '$cutoff_end'
+    //             GROUP BY a.sales_order_no, a.item_fg_id) z
+    //             GROUP BY z.id) k", '(a.id = k.id or b.item_fg_id = k.id)', 'left');
+    //         $this->db->join("(SELECT item_fg_id, safety_stock FROM safety_stocks GROUP BY item_fg_id) j ", '(a.id = j.item_fg_id or b.item_fg_id = j.item_fg_id)', 'left');
+    //         if ($filter_product_no != "") {
+    //             $this->db->where('a.id', $filter_product_no);
+    //         }
+    //         $this->db->where('a.status', 0);
+    //         $this->db->where('a.division_id', 'DIV01');
+    //         $this->db->where_in('a.type', ['FG', 'SA']);
+    //         $this->db->group_by('a.id');
+    //         $this->db->order_by('a.number', 'asc');
+    //         $records = $this->db->get()->result_array();
+
+    //         foreach ($records as $data) {
+    //             $totalStock = ($data['injection'] + $data['assembly'] + $data['onhold'] + $data['subcont'] + $data['os_mpp'] + $data['stock_fg']);
+    //             if (@$stock_fg == null) {
+    //                 $fg = "0";
+    //             } else {
+    //                 $fg = @$stock_fg;
+    //             }
+
+    //             $arr[] = array(
+    //                 "p_month" => $filter_month,
+    //                 "p_year" => $filter_year,
+    //                 "revision" => $filter_revision,
+    //                 "cutoff" => $filter_cutoff . " " . date("H:i:s"),
+    //                 "item_fg_id" => $data['id'],
+    //                 "wip_month" => strtoupper($monthBack),
+    //                 "pp" => $data['injection'],
+    //                 "p1" => $data['assembly'],
+    //                 "p2" => $data['onhold'],
+    //                 "p3" => $data['subcont'],
+    //                 "fg" => $data['stock_fg'],
+    //                 "os_mpp" => $data['os_mpp'],
+    //                 "total_stock" => "$totalStock",
+    //                 "os_so" => $data['os_so'],
+    //                 "month_1" => $data['month_1'],
+    //                 "month_2" => $data['month_2'],
+    //                 "month_3" => $data['month_3'],
+    //                 "month_4" => $data['month_4'],
+    //                 "month_5" => $data['month_5'],
+    //                 "month_6" => $data['month_6'],
+    //                 "month_7" => $data['month_7'],
+    //                 "cycle_time" => $data['cycle_time'],
+    //                 "shift_hour" => $data['shift_hour'],
+    //                 "productivity" => $data['productivity'],
+    //                 "cavity_standard" => $data['cavity_standard'],
+    //                 "priority" => $data['priority'],
+    //                 "qty_so" => $data['qty_so'],
+    //                 "so_month_2" => $data['so_month_2'],
+    //                 "so_month_3" => $data['so_month_3'],
+    //                 "so_month_4" => $data['so_month_4'],
+    //                 "so_month_5" => $data['so_month_5'],
+    //                 "so_month_6" => $data['so_month_6'],
+    //                 "safety_stock" => $data['safety_stock'],
+    //                 "mpq" => $data['mpq']
+    //             );
+    //         }
+
+    //         $arr['total'] = @count($arr);
+    //         die(json_encode($arr));
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+    public function getData()//penerapan SUM qty induk ke anak, if else(jika anak punya qty pakai itu jika tidak sum qty induk) FC ost so dan safety stock
     {
         if ($this->input->get()) {
             file_put_contents('failed/generate_mps.txt', '');
@@ -113,60 +431,10 @@ class Generate_mps extends CI_Controller
             $this->db->from("config");
             $config = $this->db->get()->row();
 
-            //
-
-            //Select Query a.safety_stock
-            $this->db->select("a.id, a.number, a.name, COALESCE(j.safety_stock,0) as safety_stock, a.number_customer,
-                (CASE 
-                    WHEN a.default_packing = 'BOX' THEN COALESCE(a.qty_box, 0) 
-                    ELSE COALESCE(a.mpq, 0) 
-                END) as mpq,
-                COALESCE(c.pp, 0) as injection,
-                COALESCE(c.p1, 0) as assembly,
-                COALESCE(c.p2, 0) as onhold,
-                COALESCE(c.p3, 0) as subcont,
-                COALESCE(d.qty, 0) as os_mpp,
-                COALESCE(e.stock_fg, 0) as stock_fg,
-                COALESCE(f.os_so, 0) as os_so,
-                COALESCE(g.month_1, 0) as month_1,
-                COALESCE(g.month_2, 0) as month_2,
-                COALESCE(g.month_3, 0) as month_3,
-                COALESCE(g.month_4, 0) as month_4,
-                COALESCE(g.month_5, 0) as month_5,
-                COALESCE(g.month_6, 0) as month_6,
-                COALESCE(g.month_7, 0) as month_7,
-                COALESCE(h.cycle_time, 0) as cycle_time,
-                COALESCE(h.shift_hour, 0) as shift_hour,
-                COALESCE(h.productcivity, 0) as productivity,
-                COALESCE(h.cavity_standard, 0) as cavity_standard,
-                h.priority,
-                (COALESCE(i.so_month_1, 0) + COALESCE(k.qty, 0)) as qty_so,
-                COALESCE(i.so_month_2, 0) as so_month_2,
-                COALESCE(i.so_month_3, 0) as so_month_3,
-                COALESCE(i.so_month_4, 0) as so_month_4,
-                COALESCE(i.so_month_5, 0) as so_month_5,
-                COALESCE(i.so_month_6, 0) as so_month_6");
-            $this->db->from('item_fg a');
-            $this->db->join('item_fg_subs b', "a.id = b.item_fg_sa_id", 'left');
-            $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '$filter_month' and c.p_year = '$filter_year' and c.revision = '$filter_revision'", 'left');
-            $this->db->join("
-                (
-                    SELECT item_fg_id,
-                        SUM(qty) AS qty
-                    FROM os_mpp
-                    WHERE p_month = '$filter_month'
-                    AND p_year = '$filter_year'
-                    AND revision = (
-                        SELECT MAX(revision)
-                        FROM os_mpp m2
-                        WHERE m2.p_month = '$filter_month'
-                        AND m2.p_year = '$filter_year'
-                    )
-                    GROUP BY item_fg_id
-                ) d",
-                "a.id = d.item_fg_id", "left"
-            );
-            $this->db->join("(SELECT a.id, (COALESCE(b.qty_scan, 0) + COALESCE(c.qty_nb, 0) + COALESCE(d.qty_adj_in, 0) + COALESCE(e.qty_wip, 0) - COALESCE(f.qty_adj_out, 0) - COALESCE(g.qty_dn, 0) - COALESCE(h.qty_repair, 0)) AS stock_fg
+            // 1. SUB-QUERY 
+            $sql_os_mpp = "(SELECT item_fg_id, SUM(qty) AS qty FROM os_mpp WHERE p_month = '$filter_month' AND p_year = '$filter_year' AND revision = (SELECT MAX(revision) FROM os_mpp m2 WHERE m2.p_month = '$filter_month' AND m2.p_year = '$filter_year') GROUP BY item_fg_id)";
+            
+            $sql_stock_fg = "(SELECT a.id, (COALESCE(b.qty_scan, 0) + COALESCE(c.qty_nb, 0) + COALESCE(d.qty_adj_in, 0) + COALESCE(e.qty_wip, 0) - COALESCE(f.qty_adj_out, 0) - COALESCE(g.qty_dn, 0) - COALESCE(h.qty_repair, 0)) AS stock_fg
                 FROM item_fg a
                 LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_scan FROM scan_item_receipts_fg a JOIN checksheets b ON a.checksheet_number = b.number AND a.item_fg_id = b.item_fg_id WHERE b.packing_date <= '$filter_cutoff' GROUP BY a.item_fg_id) b ON a.id = b.item_fg_id
                 LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_nb FROM scan_item_receipts_fg WHERE `type` = 'NBFG' AND packing_date <= '$filter_cutoff' GROUP BY item_fg_id) c ON a.id = c.item_fg_id
@@ -175,270 +443,132 @@ class Generate_mps extends CI_Controller
                 LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_adj_out FROM transaction_fg WHERE transaction_kind = 'OUT' AND request_date <= '$filter_cutoff' GROUP BY item_fg_id) f ON a.id = f.item_fg_id
                 LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_dn FROM delivery_notes WHERE delivery_note_date <= '$filter_cutoff' GROUP BY item_fg_id) g ON a.id = g.item_fg_id
                 LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_repair FROM scan_repair_of_goods a JOIN repair_of_goods b ON a.document_no = b.document_no AND a.item_fg_id = b.item_fg_id WHERE b.trans_date <= '$filter_cutoff' GROUP BY a.item_fg_id) h ON a.id = h.item_fg_id
-                GROUP BY a.id) e", '(a.id = e.id or b.item_fg_id = e.id)', 'left');
-            $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS os_so FROM (
+                GROUP BY a.id)";
+                
+            $sql_os_so = "(SELECT z.id, SUM(z.qty_outstanding) AS os_so FROM (
                 SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
                 FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
                 JOIN item_fg b ON a.item_fg_id = b.id
                 LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes WHERE delivery_note_date <= '$lastDatePrevMonth' GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
                 WHERE a.delivery_date <= '$lastDatePrevMonth'
                 GROUP BY a.sales_order_no, a.item_fg_id) z
-                GROUP BY z.id) f", '(a.id = f.id or b.item_fg_id = f.id)', 'left');
-
-            // $this->db->join("
-            // (
-            //     SELECT 
-            //         T.item_fg_id,
-
-            //         MAX(CASE WHEN T.idx = 1 THEN T.final_value END) AS month_1,
-            //         MAX(CASE WHEN T.idx = 2 THEN T.final_value END) AS month_2,
-            //         MAX(CASE WHEN T.idx = 3 THEN T.final_value END) AS month_3,
-            //         MAX(CASE WHEN T.idx = 4 THEN T.final_value END) AS month_4,
-            //         MAX(CASE WHEN T.idx = 5 THEN T.final_value END) AS month_5,
-            //         MAX(CASE WHEN T.idx = 6 THEN T.final_value END) AS month_6
-
-            //     FROM
-            //     (
-            //         --
-            //         -- Buat list (item_fg_id, customer_id) dari seluruh bulan yg relevan (target +/- fallback)
-            //         --
-            //         SELECT 
-            //             fc.item_fg_id,
-            //             fc.customer_id,
-            //             m.idx,
-            //             (
-            //                 SELECT 
-            //                     COALESCE(
-            //                         /* 1. ambil forecast bulan target (month_1) */
-            //                         (SELECT f1.month_1 
-            //                         FROM forecasts f1 
-            //                         WHERE f1.item_fg_id = fc.item_fg_id
-            //                         AND f1.customer_id = fc.customer_id
-            //                         AND CONCAT(f1.p_year,'-',LPAD(f1.p_month,2,'0')) = DATE_FORMAT(m.period,'%Y-%m')
-            //                         ORDER BY f1.revision DESC LIMIT 1),
-
-            //                         /* 2. fallback 1 bulan sebelum → month_2 */
-            //                         (SELECT f2.month_2 
-            //                         FROM forecasts f2 
-            //                         WHERE f2.item_fg_id = fc.item_fg_id
-            //                         AND f2.customer_id = fc.customer_id
-            //                         AND CONCAT(f2.p_year,'-',LPAD(f2.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 1 MONTH),'%Y-%m')
-            //                         ORDER BY f2.revision DESC LIMIT 1),
-
-            //                         /* 3. fallback 2 bulan sebelum → month_3 */
-            //                         (SELECT f3.month_3 
-            //                         FROM forecasts f3 
-            //                         WHERE f3.item_fg_id = fc.item_fg_id
-            //                         AND f3.customer_id = fc.customer_id
-            //                         AND CONCAT(f3.p_year,'-',LPAD(f3.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 2 MONTH),'%Y-%m')
-            //                         ORDER BY f3.revision DESC LIMIT 1),
-
-            //                         /* 4. fallback 3 bulan sebelum → month_4 */
-            //                         (SELECT f4.month_4 
-            //                         FROM forecasts f4 
-            //                         WHERE f4.item_fg_id = fc.item_fg_id
-            //                         AND f4.customer_id = fc.customer_id
-            //                         AND CONCAT(f4.p_year,'-',LPAD(f4.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 3 MONTH),'%Y-%m')
-            //                         ORDER BY f4.revision DESC LIMIT 1),
-
-            //                         0
-            //                     )
-            //             ) AS final_value
-            //         FROM 
-            //             (
-            //                 SELECT DISTINCT item_fg_id, customer_id
-            //                 FROM forecasts
-            //                 WHERE deleted = 0
-            //                 AND (
-            //                     /* ambil rentang periode: filter_month -3  sampai filter_month +5 (6 bulan forward + 3 fallback back) */
-            //                     CONCAT(p_year,'-',LPAD(p_month,2,'0')) BETWEEN
-            //                         DATE_FORMAT(DATE_SUB(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH),'%Y-%m')
-            //                     AND
-            //                         DATE_FORMAT(DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH),'%Y-%m')
-            //                 )
-            //             ) fc
-
-            //         CROSS JOIN (
-            //             /* generate 6 bulan dari filter */
-            //             SELECT 1 AS idx, DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
-            //             UNION ALL SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
-            //             UNION ALL SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
-            //             UNION ALL SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
-            //             UNION ALL SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
-            //             UNION ALL SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
-            //         ) m
-
-            //     ) T
-
-            //     GROUP BY T.item_fg_id
-
-            // ) g", "a.id = g.item_fg_id OR b.item_fg_id = g.item_fg_id", "left");
-
-            //dokumentasi : add month_7 dan cum item beda customer
-            $this->db->join("
-            (
-                SELECT 
-                    T.item_fg_id,
-                    SUM(CASE WHEN T.idx = 1 THEN T.final_value END) AS month_1,
-                    SUM(CASE WHEN T.idx = 2 THEN T.final_value END) AS month_2,
-                    SUM(CASE WHEN T.idx = 3 THEN T.final_value END) AS month_3,
-                    SUM(CASE WHEN T.idx = 4 THEN T.final_value END) AS month_4,
-                    SUM(CASE WHEN T.idx = 5 THEN T.final_value END) AS month_5,
-                    SUM(CASE WHEN T.idx = 6 THEN T.final_value END) AS month_6,
-                    SUM(CASE WHEN T.idx = 7 THEN T.final_value END) AS month_7
-
-                FROM
-                (
-                    --
-                    -- Buat list (item_fg_id, customer_id) dari seluruh bulan yg relevan (target +/- fallback)
-                    --
-                    SELECT 
-                        fc.item_fg_id,
-                        fc.customer_id,
-                        m.idx,
-                        (
-                            SELECT 
-                                COALESCE(
-                                    /* 1. ambil forecast bulan target (month_1) */
-                                    (SELECT f1.month_1 
-                                    FROM forecasts f1 
-                                    WHERE f1.item_fg_id = fc.item_fg_id
-                                    AND f1.customer_id = fc.customer_id
-                                    AND CONCAT(f1.p_year,'-',LPAD(f1.p_month,2,'0')) = DATE_FORMAT(m.period,'%Y-%m')
-                                    ORDER BY f1.revision DESC LIMIT 1),
-
-                                    /* 2. fallback 1 bulan sebelum → month_2 */
-                                    (SELECT f2.month_2 
-                                    FROM forecasts f2 
-                                    WHERE f2.item_fg_id = fc.item_fg_id
-                                    AND f2.customer_id = fc.customer_id
-                                    AND CONCAT(f2.p_year,'-',LPAD(f2.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 1 MONTH),'%Y-%m')
-                                    ORDER BY f2.revision DESC LIMIT 1),
-
-                                    /* 3. fallback 2 bulan sebelum → month_3 */
-                                    (SELECT f3.month_3 
-                                    FROM forecasts f3 
-                                    WHERE f3.item_fg_id = fc.item_fg_id
-                                    AND f3.customer_id = fc.customer_id
-                                    AND CONCAT(f3.p_year,'-',LPAD(f3.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 2 MONTH),'%Y-%m')
-                                    ORDER BY f3.revision DESC LIMIT 1),
-
-                                    /* 4. fallback 3 bulan sebelum → month_4 */
-                                    (SELECT f4.month_4 
-                                    FROM forecasts f4 
-                                    WHERE f4.item_fg_id = fc.item_fg_id
-                                    AND f4.customer_id = fc.customer_id
-                                    AND CONCAT(f4.p_year,'-',LPAD(f4.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 3 MONTH),'%Y-%m')
-                                    ORDER BY f4.revision DESC LIMIT 1),
-
-                                    0
-                                )
-                        ) AS final_value
-                    FROM 
-                        (
-                            SELECT DISTINCT item_fg_id, customer_id
-                            FROM forecasts
-                            WHERE deleted = 0
-                            AND (
-                                /* ambil rentang periode: filter_month -3  sampai filter_month +6 (7 bulan forward + 3 fallback back) */
-                                CONCAT(p_year,'-',LPAD(p_month,2,'0')) BETWEEN
-                                    DATE_FORMAT(DATE_SUB(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH),'%Y-%m')
-                                AND
-                                    -- Ubah INTERVAL 5 MONTH menjadi 6 MONTH agar mencakup bulan ke-7
-                                    DATE_FORMAT(DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 6 MONTH),'%Y-%m')
-                            )
-                        ) fc
-
-                    CROSS JOIN (
-                        /* generate 7 bulan dari filter */
-                        SELECT 1 AS idx, DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
-                        UNION ALL SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
-                        UNION ALL SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
-                        UNION ALL SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
-                        UNION ALL SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
-                        UNION ALL SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
-                        UNION ALL SELECT 7, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 6 MONTH) -- Tambahan bulan ke-7
-                    ) m
-
-                ) T
-
-                GROUP BY T.item_fg_id
-
-            ) g", "a.id = g.item_fg_id OR b.item_fg_id = g.item_fg_id", "left");
-
-            $this->db->join("(SELECT DISTINCT a.item_fg_id, a.cycle_time, a.shift_hour, a.productcivity, b.cavity_standard, a.priority FROM menu_loadings a JOIN molds b ON a.mold_id = b.id WHERE a.priority = 1 GROUP BY a.item_fg_id) h ", 'a.id = h.item_fg_id', 'left');
-            
-            // $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
-            //     SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
-            //     FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
-            //     JOIN item_fg b ON a.item_fg_id = b.id
-            //     LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-            //     WHERE a.delivery_date like '%$monthName3%'
-            //     GROUP BY a.sales_order_no, a.item_fg_id) z
-            //     GROUP BY z.id) i", '(a.id = i.id or b.item_fg_id = i.id)', 'left');
-
-            $this->db->join("(SELECT a.id, 
-                COALESCE(b.qty_outstanding, 0) AS so_month_1, 
-                COALESCE(c.qty_outstanding, 0) AS so_month_2,
-                COALESCE(d.qty_outstanding, 0) AS so_month_3,
-                COALESCE(e.qty_outstanding, 0) AS so_month_4,
-                COALESCE(f.qty_outstanding, 0) AS so_month_5,
-                COALESCE(g.qty_outstanding, 0) AS so_month_6
-                FROM item_fg a
-                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
-                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
-                    JOIN item_fg b ON a.item_fg_id = b.id
-                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                    WHERE a.delivery_date LIKE '%$monthName_1%'
-                    GROUP BY b.id) b ON a.id = b.id
-                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
-                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
-                    JOIN item_fg b ON a.item_fg_id = b.id
-                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                    WHERE a.delivery_date LIKE '%$monthName_2%'
-                    GROUP BY b.id) c ON a.id = c.id
-                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
-                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
-                    JOIN item_fg b ON a.item_fg_id = b.id
-                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                    WHERE a.delivery_date LIKE '%$monthName_3%'
-                    GROUP BY b.id) d ON a.id = d.id
-                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
-                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
-                    JOIN item_fg b ON a.item_fg_id = b.id
-                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                    WHERE a.delivery_date LIKE '%$monthName_4%'
-                    GROUP BY b.id) e ON a.id = e.id
-                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
-                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
-                    JOIN item_fg b ON a.item_fg_id = b.id
-                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                    WHERE a.delivery_date LIKE '%$monthName_5%'
-                    GROUP BY b.id) f ON a.id = f.id
-                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
-                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
-                    JOIN item_fg b ON a.item_fg_id = b.id
-                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                    WHERE a.delivery_date LIKE '%$monthName_6%'
-                    GROUP BY b.id) g ON a.id = g.id
-                GROUP BY a.id) i", '(a.id = i.id or b.item_fg_id = i.id)', 'left');
-            
-            $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
+                GROUP BY z.id)";
+                
+            $sql_qty_so = "(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
                 SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
                 FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
                 JOIN item_fg b ON a.item_fg_id = b.id
                 LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
                 WHERE a.delivery_date between '$cutoff_start' and '$cutoff_end'
                 GROUP BY a.sales_order_no, a.item_fg_id) z
-                GROUP BY z.id) k", '(a.id = k.id or b.item_fg_id = k.id)', 'left');
-            $this->db->join("(SELECT item_fg_id, safety_stock FROM safety_stocks GROUP BY item_fg_id) j ", '(a.id = j.item_fg_id or b.item_fg_id = j.item_fg_id)', 'left');
+                GROUP BY z.id)";
+                
+            $sql_forecast = "(SELECT T.item_fg_id, SUM(CASE WHEN T.idx = 1 THEN T.final_value END) AS month_1, SUM(CASE WHEN T.idx = 2 THEN T.final_value END) AS month_2, SUM(CASE WHEN T.idx = 3 THEN T.final_value END) AS month_3, SUM(CASE WHEN T.idx = 4 THEN T.final_value END) AS month_4, SUM(CASE WHEN T.idx = 5 THEN T.final_value END) AS month_5, SUM(CASE WHEN T.idx = 6 THEN T.final_value END) AS month_6, SUM(CASE WHEN T.idx = 7 THEN T.final_value END) AS month_7
+                FROM (SELECT fc.item_fg_id, fc.customer_id, m.idx, (SELECT COALESCE(
+                        (SELECT f1.month_1 FROM forecasts f1 WHERE f1.item_fg_id = fc.item_fg_id AND f1.customer_id = fc.customer_id AND CONCAT(f1.p_year,'-',LPAD(f1.p_month,2,'0')) = DATE_FORMAT(m.period,'%Y-%m') ORDER BY f1.revision DESC LIMIT 1),
+                        (SELECT f2.month_2 FROM forecasts f2 WHERE f2.item_fg_id = fc.item_fg_id AND f2.customer_id = fc.customer_id AND CONCAT(f2.p_year,'-',LPAD(f2.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 1 MONTH),'%Y-%m') ORDER BY f2.revision DESC LIMIT 1),
+                        (SELECT f3.month_3 FROM forecasts f3 WHERE f3.item_fg_id = fc.item_fg_id AND f3.customer_id = fc.customer_id AND CONCAT(f3.p_year,'-',LPAD(f3.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 2 MONTH),'%Y-%m') ORDER BY f3.revision DESC LIMIT 1),
+                        (SELECT f4.month_4 FROM forecasts f4 WHERE f4.item_fg_id = fc.item_fg_id AND f4.customer_id = fc.customer_id AND CONCAT(f4.p_year,'-',LPAD(f4.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 3 MONTH),'%Y-%m') ORDER BY f4.revision DESC LIMIT 1), 0)) AS final_value
+                    FROM (SELECT DISTINCT item_fg_id, customer_id FROM forecasts WHERE deleted = 0 AND CONCAT(p_year,'-',LPAD(p_month,2,'0')) BETWEEN DATE_FORMAT(DATE_SUB(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH),'%Y-%m') AND DATE_FORMAT(DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 6 MONTH),'%Y-%m')) fc
+                    CROSS JOIN (
+                        SELECT 1 AS idx, DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
+                        UNION ALL SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
+                        UNION ALL SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
+                        UNION ALL SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
+                        UNION ALL SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
+                        UNION ALL SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
+                        UNION ALL SELECT 7, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 6 MONTH)
+                    ) m ) T GROUP BY T.item_fg_id)";
+
+            $sql_so_months = "(SELECT a.id, 
+                COALESCE(b.qty_outstanding, 0) AS so_month_1, COALESCE(c.qty_outstanding, 0) AS so_month_2, COALESCE(d.qty_outstanding, 0) AS so_month_3, COALESCE(e.qty_outstanding, 0) AS so_month_4, COALESCE(f.qty_outstanding, 0) AS so_month_5, COALESCE(g.qty_outstanding, 0) AS so_month_6
+                FROM item_fg a
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a JOIN item_fg b ON a.item_fg_id = b.id LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id WHERE a.delivery_date LIKE '%$monthName_1%' GROUP BY b.id) b ON a.id = b.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a JOIN item_fg b ON a.item_fg_id = b.id LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id WHERE a.delivery_date LIKE '%$monthName_2%' GROUP BY b.id) c ON a.id = c.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a JOIN item_fg b ON a.item_fg_id = b.id LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id WHERE a.delivery_date LIKE '%$monthName_3%' GROUP BY b.id) d ON a.id = d.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a JOIN item_fg b ON a.item_fg_id = b.id LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id WHERE a.delivery_date LIKE '%$monthName_4%' GROUP BY b.id) e ON a.id = e.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a JOIN item_fg b ON a.item_fg_id = b.id LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id WHERE a.delivery_date LIKE '%$monthName_5%' GROUP BY b.id) f ON a.id = f.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a JOIN item_fg b ON a.item_fg_id = b.id LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id WHERE a.delivery_date LIKE '%$monthName_6%' GROUP BY b.id) g ON a.id = g.id
+                GROUP BY a.id)";
+
+            // 2. (SUM) SELURUH DATA DARI INDUK KE ANAK
+            $sql_parent_sums = "(
+                SELECT 
+                    subs.item_fg_sa_id AS child_id,
+                    SUM(COALESCE(e_p.stock_fg, 0)) AS p_stock_fg,
+                    SUM(COALESCE(f_p.os_so, 0)) AS p_os_so,
+                    SUM(COALESCE(k_p.qty, 0)) AS p_qty_so,
+                    SUM(COALESCE(j_p.safety_stock, 0)) AS p_safety_stock,
+                    SUM(COALESCE(i_p.so_month_1, 0)) AS p_so_month_1, SUM(COALESCE(i_p.so_month_2, 0)) AS p_so_month_2, SUM(COALESCE(i_p.so_month_3, 0)) AS p_so_month_3, SUM(COALESCE(i_p.so_month_4, 0)) AS p_so_month_4, SUM(COALESCE(i_p.so_month_5, 0)) AS p_so_month_5, SUM(COALESCE(i_p.so_month_6, 0)) AS p_so_month_6,
+                    SUM(COALESCE(g_p.month_1, 0)) AS p_month_1, SUM(COALESCE(g_p.month_2, 0)) AS p_month_2, SUM(COALESCE(g_p.month_3, 0)) AS p_month_3, SUM(COALESCE(g_p.month_4, 0)) AS p_month_4, SUM(COALESCE(g_p.month_5, 0)) AS p_month_5, SUM(COALESCE(g_p.month_6, 0)) AS p_month_6, SUM(COALESCE(g_p.month_7, 0)) AS p_month_7
+                FROM item_fg_subs subs
+                LEFT JOIN $sql_stock_fg e_p ON subs.item_fg_id = e_p.id
+                LEFT JOIN $sql_os_so f_p ON subs.item_fg_id = f_p.id
+                LEFT JOIN $sql_qty_so k_p ON subs.item_fg_id = k_p.id
+                LEFT JOIN (SELECT item_fg_id, safety_stock FROM safety_stocks GROUP BY item_fg_id) j_p ON subs.item_fg_id = j_p.item_fg_id /* <-- JOIN KE SAFETY STOCK INDUK */
+                LEFT JOIN $sql_so_months i_p ON subs.item_fg_id = i_p.id
+                LEFT JOIN $sql_forecast g_p ON subs.item_fg_id = g_p.item_fg_id
+                GROUP BY subs.item_fg_sa_id
+            )";
+
+           // 3. SELECT UTAMA PENERAPAN IF-ELSE UNTUK FC, SAFETY STOCK, DAN OS_SO
+            $this->db->select("a.id, a.number, a.name, a.number_customer,a.default_packing, a.mpq as qty_mpq, a.qty_box,
+                (CASE WHEN a.default_packing = 'BOX' THEN COALESCE(a.qty_box, 0) ELSE COALESCE(a.mpq, 0) END) as mpq,
+                COALESCE(c.pp, 0) as injection, COALESCE(c.p1, 0) as assembly, COALESCE(c.p2, 0) as onhold, COALESCE(c.p3, 0) as subcont, COALESCE(d.qty, 0) as os_mpp,
+                
+                /* Stock FG (Base Anak + Total Induk) */
+                (COALESCE(e.stock_fg, 0) + COALESCE(p_sums.p_stock_fg, 0)) as stock_fg,
+                
+                /* Safety Stock (If-Else: Jika Anak > 0 pakai Anak, jika 0 pakai SUM Induk) */
+                (CASE WHEN COALESCE(j.safety_stock, 0) > 0 THEN COALESCE(j.safety_stock, 0) ELSE COALESCE(p_sums.p_safety_stock, 0) END) as safety_stock,
+
+                /* Outstanding SO (If-Else: Jika Anak > 0 pakai Anak, jika 0 pakai SUM Induk) */
+                (CASE WHEN COALESCE(f.os_so, 0) > 0 THEN COALESCE(f.os_so, 0) ELSE COALESCE(p_sums.p_os_so, 0) END) as os_so,
+                
+                /* Forecast (If-Else: Jika Anak > 0 pakai Anak, jika 0 pakai SUM Induk) */
+                (CASE WHEN COALESCE(g.month_1, 0) > 0 THEN COALESCE(g.month_1, 0) ELSE COALESCE(p_sums.p_month_1, 0) END) as month_1,
+                (CASE WHEN COALESCE(g.month_2, 0) > 0 THEN COALESCE(g.month_2, 0) ELSE COALESCE(p_sums.p_month_2, 0) END) as month_2,
+                (CASE WHEN COALESCE(g.month_3, 0) > 0 THEN COALESCE(g.month_3, 0) ELSE COALESCE(p_sums.p_month_3, 0) END) as month_3,
+                (CASE WHEN COALESCE(g.month_4, 0) > 0 THEN COALESCE(g.month_4, 0) ELSE COALESCE(p_sums.p_month_4, 0) END) as month_4,
+                (CASE WHEN COALESCE(g.month_5, 0) > 0 THEN COALESCE(g.month_5, 0) ELSE COALESCE(p_sums.p_month_5, 0) END) as month_5,
+                (CASE WHEN COALESCE(g.month_6, 0) > 0 THEN COALESCE(g.month_6, 0) ELSE COALESCE(p_sums.p_month_6, 0) END) as month_6,
+                (CASE WHEN COALESCE(g.month_7, 0) > 0 THEN COALESCE(g.month_7, 0) ELSE COALESCE(p_sums.p_month_7, 0) END) as month_7,
+                
+                COALESCE(h.cycle_time, 0) as cycle_time, COALESCE(h.shift_hour, 0) as shift_hour, COALESCE(h.productcivity, 0) as productivity, COALESCE(h.cavity_standard, 0) as cavity_standard, h.priority, h.machine_number, h.toonage, h.manpower,
+                
+                /* SO Bulanan (If-Else / Penjumlahan) */
+                ( (COALESCE(i.so_month_1, 0) + COALESCE(p_sums.p_so_month_1, 0)) + (COALESCE(k.qty, 0) + COALESCE(p_sums.p_qty_so, 0)) ) as qty_so,
+                (COALESCE(i.so_month_2, 0) + COALESCE(p_sums.p_so_month_2, 0)) as so_month_2,
+                (COALESCE(i.so_month_3, 0) + COALESCE(p_sums.p_so_month_3, 0)) as so_month_3,
+                (COALESCE(i.so_month_4, 0) + COALESCE(p_sums.p_so_month_4, 0)) as so_month_4,
+                (COALESCE(i.so_month_5, 0) + COALESCE(p_sums.p_so_month_5, 0)) as so_month_5,
+                (COALESCE(i.so_month_6, 0) + COALESCE(p_sums.p_so_month_6, 0)) as so_month_6");
+            
+            // 4. JOIN TERAKHIR
+            $this->db->from('item_fg a');
+            $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '$filter_month' and c.p_year = '$filter_year' and c.revision = '$filter_revision'", 'left');
+            $this->db->join("$sql_os_mpp d", "a.id = d.item_fg_id", "left");
+            $this->db->join("$sql_stock_fg e", "a.id = e.id", "left");
+            $this->db->join("$sql_os_so f", "a.id = f.id", "left");
+            $this->db->join("$sql_forecast g", "a.id = g.item_fg_id", "left");
+            $this->db->join("(SELECT DISTINCT a.item_fg_id, a.cycle_time, a.shift_hour, a.productcivity, b.cavity_standard, a.priority, c.number as machine_number, c.toonage, a.manpower
+                                FROM menu_loadings a 
+                                JOIN molds b ON a.mold_id = b.id
+                                JOIN machines c ON a.machine_id = c.id
+                                WHERE a.priority = 1 GROUP BY a.item_fg_id) h", "a.id = h.item_fg_id", "left");
+            $this->db->join("$sql_so_months i", "a.id = i.id", "left");
+            $this->db->join("$sql_qty_so k", "a.id = k.id", "left");
+            $this->db->join("(SELECT item_fg_id, safety_stock FROM safety_stocks GROUP BY item_fg_id) j", "a.id = j.item_fg_id", "left");
+            
+            // JOIN KE KAMAR SUM INDUK (Penting!)
+            $this->db->join("$sql_parent_sums p_sums", "a.id = p_sums.child_id", "left");
+            
             if ($filter_product_no != "") {
                 $this->db->where('a.id', $filter_product_no);
             }
             $this->db->where('a.status', 0);
             $this->db->where('a.division_id', 'DIV01');
             $this->db->where_in('a.type', ['FG', 'SA']);
-            $this->db->group_by('a.id');
             $this->db->order_by('a.number', 'asc');
             $records = $this->db->get()->result_array();
 
@@ -477,6 +607,10 @@ class Generate_mps extends CI_Controller
                     "productivity" => $data['productivity'],
                     "cavity_standard" => $data['cavity_standard'],
                     "priority" => $data['priority'],
+                    "default_packing" => $data['default_packing'],
+                    "manpower" => $data['manpower'],
+                    "machine_number" => $data['machine_number'],
+                    "toonage" => $data['toonage'],
                     "qty_so" => $data['qty_so'],
                     "so_month_2" => $data['so_month_2'],
                     "so_month_3" => $data['so_month_3'],
@@ -484,7 +618,9 @@ class Generate_mps extends CI_Controller
                     "so_month_5" => $data['so_month_5'],
                     "so_month_6" => $data['so_month_6'],
                     "safety_stock" => $data['safety_stock'],
-                    "mpq" => $data['mpq']
+                    "mpq" => $data['mpq'],
+                    "qty_mpq" => $data['qty_mpq'],
+                    "qty_box" => $data['qty_box']
                 );
             }
 
@@ -798,28 +934,74 @@ class Generate_mps extends CI_Controller
                     }
                 }
 
-                //Dokumentasi
-                // $mpq = isset($post['mpq']) ? (float)$post['mpq'] : 0;
+                // $this->db->select('number');
+                // $this->db->where('id', $post['item_fg_id']);
+                // $cek_item = $this->db->get('item_fg')->row();
+                // $item_number = (!empty($cek_item)) ? $cek_item->number : 'Unknown Item';
 
-                // if (!empty($post['cycle_time']) && !empty($post['productivity'])) {
-                //     $cavity = $post['cavity_standard'];
-                //     $cycle_time = $post['cycle_time'];
-                //     $shift_hour = $post['shift_hour'];
-                //     $productivity = $post['productivity'];
-
-                //     $capacityPerShift = round((3600 / $cycle_time) * $cavity * $shift_hour * ($productivity/100));
-                // } else {
-                //     $this->db->select('number');
-                //     $this->db->where('id', $post['item_fg_id']);
-                //     $cek_item = $this->db->get('item_fg')->row();
-                //     $item_number = (!empty($cek_item)) ? $cek_item->number : 'Unknown Item';
-
+                // // 1A. Validasi Keberadaan Data (Jika kosong / tidak ada di Menu Loading)
+                // if (!isset($post['priority']) || $post['priority'] === "") {
                 //     echo json_encode([
-                //         'theme'   => 'failed', 
+                //         'theme'   => 'error', 
                 //         'title'   => 'FAILED',
-                //         'message' => 'Please Check Item [' . $item_number . '] in Menu Loading.'
+                //         'message' => 'Data Not Found in Menu Loading for Item [' . $item_number . ']'
                 //     ]);
-                //     exit; // Hentikan eksekusi script untuk item ini
+                //     exit;
+                // }
+
+                // if ($post['priority'] != 1) {
+                //     echo json_encode([
+                //         'theme'   => 'error', 
+                //         'title'   => 'FAILED',
+                //         'message' => 'Priority for Item [' . $item_number . '] not 1 (Current Priority: ' . $post['priority'] . ')'
+                //     ]);
+                //     exit;
+                // }
+
+                // $mpq = isset($post['mpq']) ? (float)$post['mpq'] : 0;
+                // if ($mpq <= 0) {
+                //     echo json_encode([
+                //         'theme'   => 'error', 
+                //         'title'   => 'FAILED',
+                //         'message' => 'Data MPQ for Item [' . $item_number . '] should not 0 or Null.'
+                //     ]);
+                //     exit;
+                // }
+
+                // if (empty($post['cycle_time']) || empty($post['productivity']) || empty($post['cavity_standard']) || (float)$post['cavity_standard'] <= 0) {
+                //     echo json_encode([
+                //         'theme'   => 'error', 
+                //         'title'   => 'FAILED',
+                //         'message' => 'Please Check Item [' . $item_number . '] in Menu Loading. (Cavity, Cycle Time, or Productivity should not 0)'
+                //     ]);
+                //     exit;
+                // }
+
+                // // 4. Tarik nilai dan jadikan desimal (float) terlebih dahulu
+                // $cavity = isset($post['cavity_standard']) ? (float)$post['cavity_standard'] : 0;
+                // $cycle_time = isset($post['cycle_time']) ? (float)$post['cycle_time'] : 0;
+                // $shift_hour = isset($post['shift_hour']) ? (float)$post['shift_hour'] : 0;
+                // $productivity = isset($post['productivity']) ? (float)$post['productivity'] : 0;
+
+                // // Validasi SUPER KETAT: Murni memeriksa angka, bukan sekadar "empty"
+                // if ($cycle_time <= 0 || $productivity <= 0 || $cavity <= 0) {
+                //     echo json_encode([
+                //         'theme'   => 'error', 
+                //         'title'   => 'FAILED',
+                //         'message' => 'Please Check Item [' . $item_number . '] in Menu Loading. (Cavity, Cycle Time, or Productivity should not be 0 or Null)'
+                //     ]);
+                //     exit;
+                // }
+
+                // $capacityPerShift = round((3600 / $cycle_time) * $cavity * $shift_hour * ($productivity/100));
+
+                // if ($capacityPerShift <= 0) {
+                //     echo json_encode([
+                //         'theme'   => 'error', 
+                //         'title'   => 'FAILED',
+                //         'message' => 'Capacity Per Shift for Item [' . $item_number . '] is 0. Please Check Data in Menu Loading.'
+                //     ]);
+                //     exit;
                 // }
 
                 $this->db->select('number');
@@ -829,39 +1011,31 @@ class Generate_mps extends CI_Controller
 
                 // 1A. Validasi Keberadaan Data (Jika kosong / tidak ada di Menu Loading)
                 if (!isset($post['priority']) || $post['priority'] === "") {
-                    echo json_encode([
-                        'theme'   => 'error', 
-                        'title'   => 'FAILED',
-                        'message' => 'Data Not Found in Menu Loading for Item [' . $item_number . ']'
-                    ]);
+                    $msg = 'Data Not Found in Menu Loading for Item [' . $item_number . ']';
+                    $this->saveFailedLog($post, $item_number, $msg); // <-- Simpan ke DB
+                    echo json_encode(['theme' => 'error', 'title' => 'FAILED', 'message' => $msg]);
                     exit;
                 }
 
                 if ($post['priority'] != 1) {
-                    echo json_encode([
-                        'theme'   => 'error', 
-                        'title'   => 'FAILED',
-                        'message' => 'Priority for Item [' . $item_number . '] not 1 (Current Priority: ' . $post['priority'] . ')'
-                    ]);
+                    $msg = 'Priority for Item [' . $item_number . '] not 1 (Current Priority: ' . $post['priority'] . ')';
+                    $this->saveFailedLog($post, $item_number, $msg); // <-- Simpan ke DB
+                    echo json_encode(['theme' => 'error', 'title' => 'FAILED', 'message' => $msg]);
                     exit;
                 }
 
                 $mpq = isset($post['mpq']) ? (float)$post['mpq'] : 0;
                 if ($mpq <= 0) {
-                    echo json_encode([
-                        'theme'   => 'error', 
-                        'title'   => 'FAILED',
-                        'message' => 'Data MPQ for Item [' . $item_number . '] should not 0 or Null.'
-                    ]);
+                    $msg = 'Data MPQ for Item [' . $item_number . '] should not 0 or Null.';
+                    $this->saveFailedLog($post, $item_number, $msg); // <-- Simpan ke DB
+                    echo json_encode(['theme' => 'error', 'title' => 'FAILED', 'message' => $msg]);
                     exit;
                 }
 
                 if (empty($post['cycle_time']) || empty($post['productivity']) || empty($post['cavity_standard']) || (float)$post['cavity_standard'] <= 0) {
-                    echo json_encode([
-                        'theme'   => 'error', 
-                        'title'   => 'FAILED',
-                        'message' => 'Please Check Item [' . $item_number . '] in Menu Loading. (Cavity, Cycle Time, or Productivity should not 0)'
-                    ]);
+                    $msg = 'Please Check Item [' . $item_number . '] in Menu Loading. (Cavity, Cycle Time, or Productivity should not 0)';
+                    $this->saveFailedLog($post, $item_number, $msg); // <-- Simpan ke DB
+                    echo json_encode(['theme' => 'error', 'title' => 'FAILED', 'message' => $msg]);
                     exit;
                 }
 
@@ -871,24 +1045,20 @@ class Generate_mps extends CI_Controller
                 $shift_hour = isset($post['shift_hour']) ? (float)$post['shift_hour'] : 0;
                 $productivity = isset($post['productivity']) ? (float)$post['productivity'] : 0;
 
-                // Validasi SUPER KETAT: Murni memeriksa angka, bukan sekadar "empty"
+                // Validasi SUPER KETAT
                 if ($cycle_time <= 0 || $productivity <= 0 || $cavity <= 0) {
-                    echo json_encode([
-                        'theme'   => 'error', 
-                        'title'   => 'FAILED',
-                        'message' => 'Please Check Item [' . $item_number . '] in Menu Loading. (Cavity, Cycle Time, or Productivity should not be 0 or Null)'
-                    ]);
+                    $msg = 'Please Check Item [' . $item_number . '] in Menu Loading. (Cavity, Cycle Time, or Productivity should not be 0 or Null)';
+                    $this->saveFailedLog($post, $item_number, $msg); // <-- Simpan ke DB
+                    echo json_encode(['theme' => 'error', 'title' => 'FAILED', 'message' => $msg]);
                     exit;
                 }
 
                 $capacityPerShift = round((3600 / $cycle_time) * $cavity * $shift_hour * ($productivity/100));
 
                 if ($capacityPerShift <= 0) {
-                    echo json_encode([
-                        'theme'   => 'error', 
-                        'title'   => 'FAILED',
-                        'message' => 'Capacity Per Shift for Item [' . $item_number . '] is 0. Please Check Data in Menu Loading.'
-                    ]);
+                    $msg = 'Capacity Per Shift for Item [' . $item_number . '] is 0. Please Check Data in Menu Loading.';
+                    $this->saveFailedLog($post, $item_number, $msg); // <-- Simpan ke DB
+                    echo json_encode(['theme' => 'error', 'title' => 'FAILED', 'message' => $msg]);
                     exit;
                 }
 
@@ -1095,7 +1265,6 @@ class Generate_mps extends CI_Controller
                 "p_year" => $post['p_year'],
                 "revision" => $post['revision'],
                 "cutoff" => $post['cutoff'],
-                // "customer_id" => $post['customer_id'],
                 "item_fg_id" => $post['item_fg_id'],
                 "wip_month" => $post['wip_month'],
                 "pp" => $post['pp'],
@@ -1109,36 +1278,88 @@ class Generate_mps extends CI_Controller
                 "balance" => $balance
             );
 
+            $theme = 'error';
+            $title = 'Failed';
+            $message = 'Terjadi kesalahan sistem.';
+
             if ($cek_data_mps > 0) {
                 $send   = $this->db->update('generate_mps', $postFinal, [
                     "p_month" => $post['p_month'],
                     "p_year" => $post['p_year'],
                     "revision" => $post['revision'],
-                    // "customer_id" => $post['customer_id'],
                     "item_fg_id" => $post['item_fg_id'],
                     "wip_month" => $post['wip_month']
                 ]);
-                
-                echo json_encode([
-                    'theme' => 'success',
-                    'title' => 'Updated',
-                    'message' => 'Update data Successfully.'
-                ]);
+                $theme = 'success';
+                $title = 'Updated';
+                $message = 'Update data Successfully.';
             } else {
                 $send = $this->crud->createNotLog('generate_mps', $postFinal);
-                
-                echo json_encode([
-                    'theme' => 'success',
-                    'title' => 'Created',
-                    'message' => 'Create data Successfully.'
-                ]);
+                $theme = 'success';
+                $title = 'Created';
+                $message = 'Create data Successfully.';
             }
+
+            $periode = $post['p_year'] . "-" . str_pad($post['p_month'], 2, '0', STR_PAD_LEFT);
+            $revisi = $post['revision'];
+            
+            $this->db->where('table_name', 'generate_mps');
+            $this->db->where('name', "MPS $periode Rev $revisi");
+            $cek_notif = $this->db->get('notifications')->row();
+            
+            if (empty($cek_notif)) {
+                $log_data = array(
+                    'periode' => $periode,
+                    'revisi'  => $revisi,
+                    'pesan'   => 'Tolong segera generate MRP untuk periode ini.'
+                );
+            
+                $data_notif = array(
+                    'table_name'            => 'generate_mps',
+                    'user_id'               => 'SYSTEM',
+                    'name'                  => "MPS $periode Rev $revisi",
+                    'description'           => "MPS Periode $periode (Rev $revisi) sudah di-generate. Silakan lanjut generate MRP.",
+                    'log'                   => json_encode($log_data),
+                    'target_department'     => 'SCM', 
+                    'target_sub_department' => 'MCL', 
+                    'target_user'           => NULL, 
+                    'created_date'          => date('Y-m-d H:i:s')
+                );
+            
+                $this->crud->create('notifications', $data_notif);
+            }
+
+            echo json_encode([
+                'theme' => $theme,
+                'title' => $title,
+                'message' => $message
+            ]);
         }
     }
 
+    // public function uploadclearFailed()
+    // {
+    //     @unlink('failed/generate_mps.txt');
+    // }
+
     public function uploadclearFailed()
     {
-        @unlink('failed/generate_mps.txt');
+        if ($this->input->post()) {
+            $p_month  = $this->input->post('p_month');
+            $p_year   = $this->input->post('p_year');
+            $revision = $this->input->post('revision');
+            $cutoff = $this->input->post('cutoff');
+
+            if ($p_month != '' && $p_year != '' && $revision != '' && $cutoff != '') {
+                
+                $this->db->where('p_month', $p_month);
+                $this->db->where('p_year', $p_year);
+                $this->db->where('revision', $revision);
+                $this->db->where('cutoff', $cutoff);
+                $this->db->delete('mps_failed_logs');
+                
+            }
+        }
     }
 
     public function uploadcreateFailed()
@@ -1213,29 +1434,56 @@ class Generate_mps extends CI_Controller
         return $datenow . "/LTPP/" . $autoID;
     }
 
-    public function push_data_check(){
-    	//Filter Data
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+    private function saveFailedLog($post, $item_number, $message) {
+        $data_failed = [
+            'p_month'          => $post['p_month'] ?? '',
+            'p_year'           => $post['p_year'] ?? '',
+            'revision'         => $post['revision'] ?? '',
+            'cutoff'           => $post['cutoff'] ?? '',
+            'item_fg_id'       => $post['item_fg_id'] ?? '',
+            'product_no'       => $item_number ?? '-',
+            'machine_number'   => $post['machine_number'] ?? '-',
+            'toonage'          => $post['toonage'] ?? '-',
+            'cavity_standard'  => isset($post['cavity_standard']) ? (float)$post['cavity_standard'] : 0,
+            'productivity'     => isset($post['productivity']) ? (float)$post['productivity'] : 0,
+            'cycle_time'       => isset($post['cycle_time']) ? (float)$post['cycle_time'] : 0,
+            'manpower'         => isset($post['manpower']) ? (float)$post['manpower'] : 0,
+            'priority'         => $post['priority'] ?? '-',
+            'default_packing'  => $post['default_packing'] ?? '-',
+            'mpq'              => isset($post['qty_mpq']) ? (float)$post['qty_mpq'] : 0,
+            'qty_box'          => isset($post['qty_box']) ? (float)$post['qty_box'] : 0,
+            'so_qty'           => isset($post['qty_so']) ? (float)$post['qty_so'] : 0,
+            'forecast_qty'     => isset($post['month_1']) ? (float)$post['month_1'] : 0,
+            'message'          => $message, // Menampung status/error spesifik
+            'created_at'       => date('Y-m-d H:i:s')
+        ];
 
-        //Select Line No
-        $this->db->select('*');
-        $this->db->from('generate_mps');
-        if ($filter_month != "" or $filter_year != "") {
-            $this->db->where('p_month', $filter_month);
-            $this->db->where('p_year', $filter_year);
-        }
-        $this->db->like('revision', $filter_revision);
-        $this->db->where('deleted', 0);
-        $records = $this->db->get()->result_array();
-
-        if(count($records) > 0){
-        	echo json_encode(array("title" => "Success", "message" => "Data Already", "theme" => "success"));
-        }else{
-        	echo json_encode(array("title" => "Not Ready", "message" => "Data MPS Not Found, Please Generate First", "theme" => "error"));
-        }
+        $this->db->insert('mps_failed_logs', $data_failed);
     }
+
+    // public function push_data_check(){
+    // 	//Filter Data
+    //     $filter_month = base64_decode($this->input->get('filter_month'));
+    //     $filter_year = base64_decode($this->input->get('filter_year'));
+    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
+
+    //     //Select Line No
+    //     $this->db->select('*');
+    //     $this->db->from('generate_mps');
+    //     if ($filter_month != "" or $filter_year != "") {
+    //         $this->db->where('p_month', $filter_month);
+    //         $this->db->where('p_year', $filter_year);
+    //     }
+    //     $this->db->like('revision', $filter_revision);
+    //     $this->db->where('deleted', 0);
+    //     $records = $this->db->get()->result_array();
+
+    //     if(count($records) > 0){
+    //     	echo json_encode(array("title" => "Success", "message" => "Data Already", "theme" => "success"));
+    //     }else{
+    //     	echo json_encode(array("title" => "Not Ready", "message" => "Data MPS Not Found, Please Generate First", "theme" => "error"));
+    //     }
+    // }
 
     // public function push_data_header(){
     //     $this->dummy = $this->load->database('dummy', TRUE);
@@ -1542,5 +1790,143 @@ class Generate_mps extends CI_Controller
 
         $html .= '</table></div></body></html>';
         echo $html;
+    }
+
+    public function readFailedLogs() 
+    {
+        $p_month  = $this->input->post('p_month');
+        $p_year   = $this->input->post('p_year');
+        $revision = $this->input->post('revision');
+        $cutoff   = $this->input->post('cutoff');
+
+        $filterRules = $this->input->post('filterRules');
+
+        if ($p_month != '' && $p_year != '' && $revision != '' && $cutoff != '') {
+            
+            $this->db->select("a.*, b.number_customer as product_customer, (CASE WHEN a.so_qty > 0 OR a.forecast_qty > 0 THEN 'CHECK' ELSE '' END) as status");            $this->db->from('mps_failed_logs a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+            $this->db->where('a.p_month', $p_month);
+            $this->db->where('a.p_year', $p_year);
+            $this->db->where('a.revision', $revision);
+            $this->db->where('a.cutoff', $cutoff);
+
+            if (!empty($filterRules)) {
+                $rules = json_decode($filterRules, true);
+                foreach ($rules as $rule) {
+                    $field = $rule['field'];
+                    $value = $rule['value'];
+                    
+                    if ($field == 'product_customer') {
+                        $this->db->like('b.number_customer', $value);
+                    } else {
+                        $this->db->like('a.' . $field, $value);
+                    }
+                }
+            }
+
+            $this->db->order_by('a.product_no', 'ASC');
+            $data = $this->db->get()->result_array();
+
+            echo json_encode($data);
+        } else {
+            echo json_encode([]);
+        }
+    }
+
+    public function exportFailedExcel() 
+    {
+        $p_month = $this->input->get('p_month');
+        $p_year = $this->input->get('p_year');
+        $revision = $this->input->get('revision');
+        $cutoff = $this->input->get('cutoff'); 
+
+        $this->db->select('a.*, b.number_customer as product_customer');
+        $this->db->from('mps_failed_logs a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+        $this->db->where('a.p_month', $p_month);
+        $this->db->where('a.p_year', $p_year);
+        $this->db->where('a.revision', $revision);
+        $this->db->where('a.cutoff', $cutoff);
+        $this->db->order_by('a.product_no', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        // Deklarasikan Header agar otomatis di-download sebagai Excel
+        $filename = "List_Failed_MPS_{$p_year}_{$p_month}_Rev_{$revision}_Cutoff_{$cutoff}.xls";
+        header("Content-type: application/vnd-ms-excel");
+        header("Content-Disposition: attachment; filename=$filename");
+
+        // Cetak struktur tabel HTML untuk file Excel
+        echo "<table border='1'>";
+        echo "<thead>
+                <tr>
+                    <th colspan='16' style='text-align:left; font-size:16px;'>LIST FAILED MPS | Periode: $p_month - $p_year | Rev: $revision | Cutoff: $cutoff</th>
+                </tr>
+                <tr style='background-color:#d3d3d3; text-align:center;'>
+                    <th rowspan='2'>No</th>
+                    <th rowspan='2'>Product No</th>
+                    <th rowspan='2'>Product Customer</th>
+                    <th colspan='2'>MASTER MACHINE</th>
+                    <th colspan='1'>MASTER MOLD</th>
+                    <th colspan='4'>MENU LOADING</th>
+                    <th colspan='3'>ITEM FG</th>
+                    <th rowspan='2'>SO</th>
+                    <th rowspan='2'>Forecast</th>
+                    <th rowspan='2'>Status</th>
+                </tr>
+                <tr style='background-color:#d3d3d3; text-align:center;'>
+                    <th>MACHINE NO.</th>
+                    <th>TOONAGE MACHINE</th>
+                    <th>CAVITY STANDARD</th>
+                    <th>PRODUCTIVITY FACTOR</th>
+                    <th>CYCLE TIME (SECOND)</th>
+                    <th>MAN POWER</th>
+                    <th>PRIORITY</th>
+                    <th>DEFAULT</th>
+                    <th>MPQ</th>
+                    <th>Qty / Box</th>
+                </tr>
+              </thead>";
+        echo "<tbody>";
+        
+        $no = 1;
+        foreach ($records as $row) {
+    
+            if($row['so_qty'] > 0 || $row['forecast_qty'] > 0){
+                $status =  "CHECK";
+            }else{
+                $status =  "";
+            }
+
+            // Logika warna untuk sel Excel
+            $bg_cavity = ($row['cavity_standard'] == 0 || $row['cavity_standard'] == null) ? "background-color:#ffe4e1; " : "";
+            $bg_prod   = ($row['productivity'] == 0 || $row['productivity'] == null) ? "background-color:#ffe4e1; " : "";
+            $bg_cycle  = ($row['cycle_time'] == 0 || $row['cycle_time'] == null) ? "background-color:#ffe4e1; " : "";
+            $bg_mpq    = ($row['mpq'] == 0 || $row['mpq'] == null) ? "background-color:#ffe4e1; " : "";
+            $bg_box    = ($row['qty_box'] == 0 || $row['qty_box'] == null) ? "background-color:#ffe4e1; " : "";
+            $bg_pack   = ($row['default_packing'] == '-' || $row['default_packing'] == null || $row['default_packing'] == 0) ? "background-color:#ffe4e1; " : "";
+
+            echo "<tr>";
+            echo "<td>" . $no++ . "</td>";
+            echo "<td style=\"mso-number-format:@;\">" . $row['product_no'] . "</td>";
+            echo "<td style=\"mso-number-format:@;\">" . $row['product_customer'] . "</td>";
+            echo "<td>" . $row['machine_number'] . "</td>";
+            echo "<td>" . $row['toonage'] . "</td>";
+            echo "<td style='$bg_cavity'>" . $row['cavity_standard'] . "</td>";
+            echo "<td style='$bg_prod'>" . $row['productivity'] . "</td>";
+            echo "<td style='$bg_cycle'>" . $row['cycle_time'] . "</td>";
+            echo "<td>" . $row['manpower'] . "</td>";
+            echo "<td>" . $row['priority'] . "</td>";
+            echo "<td style='$bg_pack'>" . $row['default_packing'] . "</td>";
+            echo "<td style='$bg_mpq'>" . $row['mpq'] . "</td>";
+            echo "<td style='$bg_box'>" . $row['qty_box'] . "</td>";
+            echo "<td>" . $row['so_qty'] . "</td>";
+            echo "<td>" . $row['forecast_qty'] . "</td>";
+            echo "<td>" . $status . "</td>";
+            echo "</tr>";
+        }
+        
+        echo "</tbody>";
+        echo "</table>";
+        exit;
     }
 }

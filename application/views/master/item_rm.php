@@ -203,7 +203,7 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/item_rm/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
@@ -243,7 +243,7 @@
         // });
 
         $('#item_category_id').combobox({
-            url: '<?= base_url('master/item_categories/readsnotfg'); ?>',
+            url: '<?= base_url('master/item_rm/readsnotfg'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Category',
@@ -358,11 +358,25 @@
     }
     //PRINT PDF
     function pdf() {
-        $("#printout").get(0).contentWindow.print();
+        var opts = $('#dg').datagrid('options');
+        var filterRules = opts.filterRules || [];
+        var param = encodeURIComponent(JSON.stringify(filterRules));
+        
+        var urlPrint = '<?= base_url('master/item_rm/print') ?>?filterRules=' + param;
+        $("#printout").attr('src', urlPrint).off('load').on('load', function() {
+            this.contentWindow.print();
+        });
     }
+
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/item_rm/print/excel') ?>');
+        var opts = $('#dg').datagrid('options');
+        var filterRules = opts.filterRules || [];
+        var param = encodeURIComponent(JSON.stringify(filterRules));
+        
+        var urlExcel = '<?= base_url('master/item_rm/print/excel') ?>?filterRules=' + param;
+        
+        window.location.assign(urlExcel);
     }
     //RELOAD
     function reload() {

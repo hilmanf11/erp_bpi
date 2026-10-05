@@ -90,7 +90,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Standard Cavity</span>
-                    <input style="width:60%;" name="cavity_standard" id="cavity_standard" class="easyui-numberbox">
+                    <input style="width:60%;" name="cavity_standard" id="cavity_standard" required="" class="easyui-numberbox">
                 </div>
             </div>
 

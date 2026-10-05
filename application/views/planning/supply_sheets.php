@@ -37,7 +37,7 @@
 <div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 30%; float:left;">
                 <div class="fitem" hidden>
@@ -46,7 +46,9 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
-                    <input style="width:60%;" id="filter_period" value="<?= date("Ym") ?>" class="easyui-combobox">
+                    <input style="width:25%;" id="filter_period_from" value="<?= date("Ym") ?>" class="easyui-combobox">
+                    <span>To</span>
+                    <input style="width:30%;" id="filter_period_to" value="<?= date("Ym") ?>" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Lot No</span>
@@ -356,7 +358,7 @@
                         field: 'qty_req',
                         width: 80,
                         halign: 'center',
-                        title: "Supply",
+                        title: "Qty",
                         editor: {
                             type: 'numberbox',
                             options: {
@@ -369,7 +371,7 @@
                         width: 100,
                         halign: 'center',
                         hidden: true,
-                        title: "Need",
+                        title: "Req Qty",
                         editor: {
                             type: 'numberbox',
                             options: {
@@ -381,7 +383,7 @@
                         field: 'qty_real',
                         width: 100,
                         halign: 'center',
-                        title: "Need",
+                        title: "Req Qty",
                         editor: {
                             type: 'numberbox',
                             options: {
@@ -533,6 +535,22 @@
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
         if (rows.length > 0) {
+            
+            var isRestricted = false;
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                
+                if (row.status == "1" || row.status == "2" || parseInt(row.total_status_close) > 0 || parseInt(row.total_status_complete) > 0) {
+                    isRestricted = true;
+                    break; 
+                }
+            }
+
+            if (isRestricted) {
+                toastr.error("Failed! Cannot delete because the document is already Closed/Complete or has Closed items in it.", "Error");
+                return; 
+            }
+
             Swal.fire({
                 title: 'Warning',
                 text: 'Are you sure you want to delete this data?',
@@ -566,7 +584,6 @@
                                 if (requestsCompleted === rows.length) {
                                     $('#dg').datagrid('reload'); 
                                     toastr.success("Data berhasil dihapus!");
-                                    // window.location.reload(); //
                                 }
                             }
                         });
@@ -580,7 +597,8 @@
 
     function filter() {
         var filter_supply_type = $("#filter_supply_type").combobox('getValue');
-        var filter_period = $("#filter_period").combobox('getValue');
+        var filter_period_from = $("#filter_period_from").combobox('getValue');
+        var filter_period_to = $("#filter_period_to").combobox('getValue');
         var filter_lot_no = $("#filter_lot_no").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
@@ -589,7 +607,7 @@
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_lot_no=" + filter_lot_no + "&filter_request_no=" + filter_request_no + 
+        url = "?filter_period_to=" + filter_period_to + "&filter_period_from=" + filter_period_from + "&filter_lot_no=" + filter_lot_no + "&filter_request_no=" + filter_request_no + 
          "&filter_supply_type=" + filter_supply_type + "&filter_status=" + filter_status + "&filter_wo_no=" + filter_wo_no + 
          "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
          "&filter_item_fg_id=" + filter_item_fg_id; //"&filter_operation=" + filter_operation +
@@ -861,7 +879,8 @@
 
     function excel() {
         var filter_supply_type = $("#filter_supply_type").combobox('getValue');
-        var filter_period = $("#filter_period").combobox('getValue');
+        var filter_period_from = $("#filter_period_from").combobox('getValue');
+        var filter_period_to = $("#filter_period_to").combobox('getValue');
         var filter_lot_no = $("#filter_lot_no").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
@@ -869,12 +888,11 @@
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
-        // var filter_operation = $("#filter_operation").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_lot_no=" + filter_lot_no + "&filter_request_no=" + filter_request_no + 
-        "&filter_supply_type=" + filter_supply_type + "&filter_status=" + filter_status + "&filter_wo_no=" + filter_wo_no + 
-        "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
-        "&filter_item_fg_id=" + filter_item_fg_id; //"&filter_operation=" + filter_operation +
+        url = "?filter_period_to=" + filter_period_to + "&filter_period_from=" + filter_period_from + "&filter_lot_no=" + filter_lot_no + "&filter_request_no=" + filter_request_no + 
+         "&filter_supply_type=" + filter_supply_type + "&filter_status=" + filter_status + "&filter_wo_no=" + filter_wo_no + 
+         "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
+         "&filter_item_fg_id=" + filter_item_fg_id; //"&filter_operation=" + filter_operation +
         window.location.assign('<?= base_url('planning/supply_sheets/print/excel') ?>' + url);
     }
 
@@ -1003,46 +1021,45 @@
             }],
         });
 
-        $("#filter_period").combobox({
-            url: '<?= base_url('planning/supply_sheets/bpiPeriod') ?>',
-            valueField: 'period',
-            textField: 'period',
-            prompt: "Select Period",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-            onSelect: function(rowPeriod) {
-                console.log(rowPeriod);
-                $("#filter_lot_no").combobox({
-                    url: '<?= base_url('planning/supply_sheets/bpiWp/') ?>' + rowPeriod.period,
-                    valueField: 'lot_no',
-                    textField: 'lot_no',
-                    prompt: "Select Lot No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                    onSelect: function(rowWp) {
-                        // $("#filter_request_no").combobox({
-                        //     url: '<?= base_url('planning/supply_sheets/readRequestNo/') ?>' + "&period=" + rowPeriod.period + "&wp=" + rowWp.wp,
-                        //     valueField: 'request_no',
-                        //     textField: 'request_no',
-                        //     prompt: "Select Supply No",
-                        //     icons: [{
-                        //         iconCls: 'icon-clear',
-                        //         handler: function(e) {
-                        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        //         }
-                        //     }],
-                        // });
+        $(document).ready(function() {
+            $("#filter_lot_no").combobox({
+                valueField: 'lot_no',
+                textField: 'lot_no',
+                prompt: "Select Lot No",
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combobox('clear').combobox('textbox').focus();
                     }
-                });
+                }]
+            });
+
+            function reloadLotNo() {
+                var periodFrom = $('#filter_period_from').combobox('getValue');
+                var periodTo = $('#filter_period_to').combobox('getValue');
+
+                if (periodFrom && periodTo) {
+                    var urlLot = '<?= base_url('planning/supply_sheets/bpiWp') ?>?from=' + periodFrom + '&to=' + periodTo;
+                    $('#filter_lot_no').combobox('reload', urlLot);
+                }
             }
+
+            $("#filter_period_from, #filter_period_to").combobox({
+                url: '<?= base_url('planning/supply_sheets/bpiPeriod') ?>',
+                valueField: 'period',
+                textField: 'period',
+                prompt: "Select Period",
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combobox('clear').combobox('textbox').focus();
+                    }
+                }],
+                onChange: function(newValue, oldValue) {
+                    reloadLotNo(); 
+                }
+            });
+            reloadLotNo();
         });
 
         $("#filter_request_no").combobox({
@@ -1098,51 +1115,13 @@
             }],
         });
 
-        // $("#filter_operation").combobox({
-        //     url: '<?= base_url('master/bom/readOperations') ?>',
-        //     valueField: 'operation',
-        //     textField: 'operation',
-        //     prompt: "Select Operation",
-        //     panelHeight: 'auto',
-        //     icons: [{
-        //         iconCls: 'icon-clear',
-        //         handler: function(e) {
-        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
-        //         }
-        //     }],
-        // });
-        // $("#operation").combobox({
-        //     url: '<?= base_url('master/bom/readOperations') ?>',
-        //     valueField: 'operation',
-        //     textField: 'operation',
-        //     prompt: "All Operation",
-        //     panelHeight: 'auto',
-        //     icons: [{
-        //         iconCls: 'icon-clear',
-        //         handler: function(e) {
-        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
-        //         }
-        //     }],
-        // });
+        
         $("#request_date").datebox({
             onChange: function(val) {
                 request_no(val);
             }
         });
     });
-
-    // $("#filter_lot_no").combobox({
-    //     url: '<?= base_url('planning/supply_sheets/bpiWps/') ?>',
-    //     valueField: 'lot_no',
-    //     textField: 'lot_no',
-    //     prompt: "Select Lot No",
-    //     icons: [{
-    //         iconCls: 'icon-clear',
-    //         handler: function(e) {
-    //             $(e.data.target).combobox('clear').combobox('textbox').focus();
-    //         }
-    //     }],
-    // });
 
     //Format Datepicker
     function myformatter(date) {

@@ -43,6 +43,11 @@
         var filter_year = $("#filter_year").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
 
+        if (filter_month === "" || filter_year === "") {
+            toastr.warning("The Month or Year must be filled in first.", "Warning");
+            return;
+        }
+
         url = "?filter_month=" + filter_month + "&filter_year=" + filter_year + "&filter_customer_id=" + filter_customer_id;
         
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");

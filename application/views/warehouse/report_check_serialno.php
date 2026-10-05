@@ -64,7 +64,7 @@
             "&filter_receipt=" + window.btoa(filter_receipt) +
             "&filter_product_no=" + filter_product_no +
             "&filter_status=" + filter_status;
-        if (filter_from == "" || filter_to == "" || (filter_supplier == "" && filter_serial_no == "")) {
+        if (filter_from == "" || filter_to == "") {
             toastr.warning("Please select Trans Date & Supplier!");
         } else {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");

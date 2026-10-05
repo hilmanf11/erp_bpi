@@ -122,7 +122,7 @@ class Report_history_transactions_other_component extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=report_history_transactions_other_component_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 
@@ -170,8 +170,8 @@ class Report_history_transactions_other_component extends CI_Controller
             c.name as category_name,
             ifs.name as prodfam_sub_name,
             COALESCE(j.begin_stock, 0) AS begin_stock,
-            (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_trans_other_in, 0) + COALESCE(f.qty_trans_other_adj_in, 0) + COALESCE(g.qty_in_pur, 0)) AS qty_in,
-            (COALESCE(h.qty_trans_other_out, 0) + COALESCE(i.qty_trans_other_adj_out, 0) + COALESCE(k.qty_scan_out, 0) + COALESCE(l.qty_dn_scrap, 0) + COALESCE(m.qty_issued, 0)) AS qty_out,
+            (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_trans_other_in, 0) + COALESCE(f.qty_trans_other_adj_in, 0) + COALESCE(f_a.qty_trans_other_adj_in_sto, 0) + COALESCE(g.qty_in_pur, 0)) AS qty_in,
+            (COALESCE(h.qty_trans_other_out, 0) + COALESCE(i.qty_trans_other_adj_out, 0) + COALESCE(i_a.qty_trans_other_adj_out_sto, 0) + COALESCE(k.qty_scan_out, 0) + COALESCE(l.qty_dn_scrap, 0) + COALESCE(m.qty_issued, 0)) AS qty_out,
             (COALESCE(begin_whs.begin_bpi, 0) + COALESCE(y.in_bpi,0) - COALESCE(y.out_bpi,0) + COALESCE(d_bpi.qty_scan_in_bpi, 0)) AS qty_bpi,
             (COALESCE(begin_whs.begin_plant1, 0)  + COALESCE(y.in_plant1,0) - COALESCE(y.out_plant1,0) + COALESCE(d_plant1.qty_scan_in_plant1, 0)) AS qty_plant1
         
@@ -184,6 +184,7 @@ class Report_history_transactions_other_component extends CI_Controller
         LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in_plant1 FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' AND a.plant = 'PLANT 1' GROUP BY b.item_rm_id) d_plant1 ON a.id = d_plant1.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_in FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ITEM IN' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ADJ IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in_sto FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ADJ IN STO' GROUP BY item_rm_id) f_a ON a.id = f_a.item_rm_id
         LEFT JOIN (
             SELECT 
                 item_id,
@@ -209,7 +210,7 @@ class Report_history_transactions_other_component extends CI_Controller
                 FROM input_crushing ic
                 JOIN item_rm b ON ic.item_rm_id = b.id
                 JOIN item_family_subs c ON b.item_sub_family_id = c.id
-                JOIN item_rm pur ON pur.number IN ('PUR-PC','PUR-ABS','PUR-ASA','PUR-PA6','PUR-PA66','PUR-PBT','PUR-POM','PUR-PP','PUR-PVC')
+                JOIN item_rm pur ON pur.number IN ('PUR-PC','PUR-ABS','PUR-ASA','PUR-PA6','PUR-PA66','PUR-PBT','PUR-PMMA','PUR-POM','PUR-PP','PUR-PVC')
                 WHERE (
                     (c.id = 'PS005' AND pur.number = 'PUR-PC')
                     OR (c.id = 'PS002' AND pur.number = 'PUR-ABS')
@@ -229,15 +230,17 @@ class Report_history_transactions_other_component extends CI_Controller
         ) g ON a.id = g.item_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_out FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ITEM OUT'  GROUP BY item_rm_id) h ON a.id = h.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ADJ OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out_sto FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ADJ OUT STO' GROUP BY item_rm_id) i_a ON a.id = i_a.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_out FROM scan_dn_crusher WHERE created_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_dn_scrap FROM dn_scrap WHERE transaction_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) l ON a.id = l.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and type = 'Other' GROUP BY item_rm_id) m ON a.id = m.item_rm_id
 
-        LEFT JOIN (SELECT a.id, a.number, (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_trans_other_in, 0) + COALESCE(f.qty_trans_other_adj_in, 0) + COALESCE(g.qty_in_pur, 0)) - (COALESCE(h.qty_trans_other_out, 0) + COALESCE(i.qty_trans_other_adj_out, 0) + COALESCE(k.qty_scan_out, 0) + COALESCE(l.qty_dn_scrap, 0) + COALESCE(m.qty_issued, 0)) AS begin_stock
+        LEFT JOIN (SELECT a.id, a.number, (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_trans_other_in, 0) + COALESCE(f.qty_trans_other_adj_in, 0) + COALESCE(f_a.qty_trans_other_adj_in_sto, 0) + COALESCE(g.qty_in_pur, 0)) - (COALESCE(h.qty_trans_other_out, 0) + COALESCE(i.qty_trans_other_adj_out, 0) + COALESCE(i_a.qty_trans_other_adj_out_sto, 0) + COALESCE(k.qty_scan_out, 0) + COALESCE(l.qty_dn_scrap, 0) + COALESCE(m.qty_issued, 0)) AS begin_stock
                         FROM item_rm a
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_in FROM scan_item_receipt_crusher WHERE request_date <= '$filter_from' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_in FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ITEM IN' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ADJ IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in_sto FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ADJ IN STO' GROUP BY item_rm_id) f_a ON a.id = f_a.item_rm_id
                         LEFT JOIN (
                             SELECT 
                                 item_id,
@@ -263,7 +266,7 @@ class Report_history_transactions_other_component extends CI_Controller
                                 FROM input_crushing ic
                                 JOIN item_rm b ON ic.item_rm_id = b.id
                                 JOIN item_family_subs c ON b.item_sub_family_id = c.id
-                                JOIN item_rm pur ON pur.number IN ('PUR-PC','PUR-ABS','PUR-ASA','PUR-PA6','PUR-PA66','PUR-PBT','PUR-POM','PUR-PP','PUR-PVC')
+                                JOIN item_rm pur ON pur.number IN ('PUR-PC','PUR-ABS','PUR-ASA','PUR-PA6','PUR-PA66','PUR-PBT','PUR-PMMA','PUR-POM','PUR-PP','PUR-PVC')
                                 WHERE (
                                     (c.id = 'PS005' AND pur.number = 'PUR-PC')
                                     OR (c.id = 'PS002' AND pur.number = 'PUR-ABS')
@@ -283,6 +286,7 @@ class Report_history_transactions_other_component extends CI_Controller
                         ) g ON a.id = g.item_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_out FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ITEM OUT' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ADJ OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out_sto FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ADJ OUT STO' GROUP BY item_rm_id) i_a ON a.id = i_a.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_out FROM scan_dn_crusher WHERE created_date <= '$filter_from' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_dn_scrap FROM dn_scrap WHERE transaction_date <= '$filter_from' GROUP BY item_rm_id) l ON a.id = l.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date <= '$filter_from' and type = 'Other' GROUP BY item_rm_id) m ON a.id = m.item_rm_id
@@ -541,6 +545,18 @@ class Report_history_transactions_other_component extends CI_Controller
                         AND transaction_type = 'ADJ IN' 
                         AND DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
+                         //TRANSACTION OTHER COMPONENT ADJ IN STO
+                        $trans_other_adj_in_stos = $this->crud->query("SELECT 
+                            a.request_date, 
+                            a.request_no,  
+                            a.qty,
+                            b.name as username
+                        FROM transaction_other_component a
+                        JOIN users b ON a.created_by = b.username
+                        WHERE item_rm_id = '$item_rm_id' 
+                        AND transaction_type = 'ADJ IN STO' 
+                        AND DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
                         //INPUT CRUSHING
                         $input_crushing = $this->crud->query("
                             SELECT 
@@ -602,6 +618,18 @@ class Report_history_transactions_other_component extends CI_Controller
                         JOIN users b ON a.created_by = b.username
                         WHERE item_rm_id = '$item_rm_id' 
                         AND transaction_type = 'ADJ OUT' 
+                        AND DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                        //TRANSACTION OTHER COMPONENT ADJ OUT STO
+                        $trans_other_adj_out_stos = $this->crud->query("SELECT 
+                            a.request_date, 
+                            a.request_no,  
+                            a.qty,
+                            b.name as username
+                        FROM transaction_other_component a
+                        JOIN users b ON a.created_by = b.username
+                        WHERE item_rm_id = '$item_rm_id' 
+                        AND transaction_type = 'ADJ OUT STO' 
                         AND DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
                         //SCAN DN CRUSHERS
@@ -695,6 +723,22 @@ class Report_history_transactions_other_component extends CI_Controller
                             ];
                         }
 
+                        // --- TRANS OTHER ADJ IN STO---
+                        foreach ($trans_other_adj_in_stos as $toais) {
+                            $all_data[] = [
+                                'type' => 'TRANSACTION OTHER COMPONENT',
+                                'date' => $toais->request_date,
+                                'username' => $toais->username,
+                                'qty_in' => $toais->qty,
+                                'qty_out' => 0,
+                                'doc1' => '-',
+                                'doc2' => $toais->request_no,
+                                'lotno' => '-',
+                                'doc3' => '-',
+                                'doc4' => '-'
+                            ];
+                        }
+
                         // --- INPUT CRUSHING---
                         foreach ($input_crushing as $ic) {
                             $all_data[] = [
@@ -737,6 +781,22 @@ class Report_history_transactions_other_component extends CI_Controller
                                 'qty_out' => $toao->qty,
                                 'doc1' => '-',
                                 'doc2' => $toao->request_no,
+                                'lotno' => '-',
+                                'doc3' => '-',
+                                'doc4' => '-'
+                            ];
+                        }
+
+                        // --- TRANS OTHER ADJ OUT STO ---
+                        foreach ($trans_other_adj_out_stos as $toaos) {
+                            $all_data[] = [
+                                'type' => 'TRANSACTION OTHER COMPONENT',
+                                'date' => $toaos->request_date,
+                                'username' => $toaos->username,
+                                'qty_in' => 0,
+                                'qty_out' => $totoaosao->qty,
+                                'doc1' => '-',
+                                'doc2' => $toaos->request_no,
                                 'lotno' => '-',
                                 'doc3' => '-',
                                 'doc4' => '-'
@@ -821,391 +881,391 @@ class Report_history_transactions_other_component extends CI_Controller
                         }
                     }
             
-                    if ($filter_trans_type == 'SCAN RECEIPT CRUSHER') {
-                        //RECEIPT
-                        $scan_item_crushers = $this->crud->query("SELECT
-                            a.request_date, 
-                            a.request_no,  
-                            b.qty,
-                            a.lot_no,
-                            c.name as username
-                        FROM receipt_crusher a 
-                        JOIN scan_item_receipt_crusher b ON a.request_id = b.request_id
-                        JOIN users c ON a.created_by = c.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.request_date between '$filter_from' and '$filter_to'
-                        GROUP BY b.label
-                        ORDER BY a.request_date");
+                    // if ($filter_trans_type == 'SCAN RECEIPT CRUSHER') {
+                    //     //RECEIPT
+                    //     $scan_item_crushers = $this->crud->query("SELECT
+                    //         a.request_date, 
+                    //         a.request_no,  
+                    //         b.qty,
+                    //         a.lot_no,
+                    //         c.name as username
+                    //     FROM receipt_crusher a 
+                    //     JOIN scan_item_receipt_crusher b ON a.request_id = b.request_id
+                    //     JOIN users c ON a.created_by = c.username
+                    //     WHERE a.item_rm_id = '$item_rm_id' and a.request_date between '$filter_from' and '$filter_to'
+                    //     GROUP BY b.label
+                    //     ORDER BY a.request_date");
             
-                        foreach ($scan_item_crushers as $scan_item_crusher) {
-                            $balance = ($begin + ($scan_item_crusher->qty - $end_qty));
-                            $html .= '  <tr>
-                                            <td></td>
-                                            <td style="text-align:center">' . $nod . '</td>
-                                            <td>SCAN RECEIPT CRUSHER</td>
-                                            <td>' . $scan_item_crusher->username . '</td>
-                                            <td colspan="2">' . $scan_item_crusher->request_date . '</td>
-                                            <td>-</td>
-                                            <td>' . $scan_item_crusher->request_no . '</td>
-                                            <td>' . $scan_item_crusher->lot_no . '</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($scan_item_crusher->qty, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format(0)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                        </tr>';
-                            $begin += $scan_item_crusher->qty;
-                            $nod++;
-                        }
-                    }
+                    //     foreach ($scan_item_crushers as $scan_item_crusher) {
+                    //         $balance = ($begin + ($scan_item_crusher->qty - $end_qty));
+                    //         $html .= '  <tr>
+                    //                         <td></td>
+                    //                         <td style="text-align:center">' . $nod . '</td>
+                    //                         <td>SCAN RECEIPT CRUSHER</td>
+                    //                         <td>' . $scan_item_crusher->username . '</td>
+                    //                         <td colspan="2">' . $scan_item_crusher->request_date . '</td>
+                    //                         <td>-</td>
+                    //                         <td>' . $scan_item_crusher->request_no . '</td>
+                    //                         <td>' . $scan_item_crusher->lot_no . '</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format($scan_item_crusher->qty, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format(0)  . '</td>
+                    //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                     </tr>';
+                    //         $begin += $scan_item_crusher->qty;
+                    //         $nod++;
+                    //     }
+                    // }
 
-                    if ($filter_trans_type == 'ADJ IN STO') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
-                            a.request_date,
-                            a.transaction_type,
-                            a.transaction_kind,
-                            a.request_no,
-                            a.qty,
-                            b.name as username
-                        FROM transaction_rm a
-                        JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ IN STO' and a.request_date between '$filter_from' and '$filter_to'
-                        ORDER BY a.request_date");
+                    // if ($filter_trans_type == 'ADJ IN STO') {
+                    //     //TRANSACTION
+                    //     $transactions = $this->crud->query("SELECT
+                    //         a.request_date,
+                    //         a.transaction_type,
+                    //         a.transaction_kind,
+                    //         a.request_no,
+                    //         a.qty,
+                    //         b.name as username
+                    //     FROM transaction_rm a
+                    //     JOIN users b ON a.created_by = b.username
+                    //     WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ IN STO' and a.request_date between '$filter_from' and '$filter_to'
+                    //     ORDER BY a.request_date");
             
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
+                    //     foreach ($transactions as $transaction) {
+                    //         $balance = ($transaction->transaction_kind == 'IN') 
+                    //                     ? ($begin + $transaction->qty) 
+                    //                     : ($begin - $transaction->qty);
                         
-                            $html .= '  <tr>
-                                            <td></td>
-                                            <td style="text-align:center">' . $nod . '</td>
-                                            <td>ADJ IN STO</td>
-                                            <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>' . $transaction->request_no . '</td>
-                                            <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                                        </tr>';
+                    //         $html .= '  <tr>
+                    //                         <td></td>
+                    //                         <td style="text-align:center">' . $nod . '</td>
+                    //                         <td>ADJ IN STO</td>
+                    //                         <td>' . $transaction->username . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>' . $transaction->request_no . '</td>
+                    //                         <td>-</td>
+                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                     </tr>';
                         
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
+                    //         // Update balance
+                    //         if ($transaction->transaction_kind == 'IN') {
+                    //             $begin += $transaction->qty;
+                    //         } else {
+                    //             $begin -= $transaction->qty;
+                    //         }
                             
-                            $nod++;
-                        }
-                    }
+                    //         $nod++;
+                    //     }
+                    // }
 
-                    if ($filter_trans_type == 'BPM') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
-                            a.request_date,
-                            a.transaction_type,
-                            a.transaction_kind,
-                            a.request_no,
-                            a.qty,
-                            b.name as username
-                        FROM transaction_rm a
-                        JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPM' and a.request_date between '$filter_from' and '$filter_to'
-                        ORDER BY a.request_date");
+                    // if ($filter_trans_type == 'BPM') {
+                    //     //TRANSACTION
+                    //     $transactions = $this->crud->query("SELECT
+                    //         a.request_date,
+                    //         a.transaction_type,
+                    //         a.transaction_kind,
+                    //         a.request_no,
+                    //         a.qty,
+                    //         b.name as username
+                    //     FROM transaction_rm a
+                    //     JOIN users b ON a.created_by = b.username
+                    //     WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPM' and a.request_date between '$filter_from' and '$filter_to'
+                    //     ORDER BY a.request_date");
             
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
+                    //     foreach ($transactions as $transaction) {
+                    //         $balance = ($transaction->transaction_kind == 'IN') 
+                    //                     ? ($begin + $transaction->qty) 
+                    //                     : ($begin - $transaction->qty);
                         
-                            $html .= '  <tr>
-                                            <td></td>
-                                            <td style="text-align:center">' . $nod . '</td>
-                                            <td>BPM</td>
-                                            <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>' . $transaction->request_no . '</td>
-                                            <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                                        </tr>';
+                    //         $html .= '  <tr>
+                    //                         <td></td>
+                    //                         <td style="text-align:center">' . $nod . '</td>
+                    //                         <td>BPM</td>
+                    //                         <td>' . $transaction->username . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>' . $transaction->request_no . '</td>
+                    //                         <td>-</td>
+                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                     </tr>';
                         
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
+                    //         // Update balance
+                    //         if ($transaction->transaction_kind == 'IN') {
+                    //             $begin += $transaction->qty;
+                    //         } else {
+                    //             $begin -= $transaction->qty;
+                    //         }
                             
-                            $nod++;
-                        }
+                    //         $nod++;
+                    //     }
 
-                        if(!$transactions){
-                            $transactions = $this->crud->query("SELECT * 
-                            FROM scan_item_bpm WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY request_date");
+                    //     if(!$transactions){
+                    //         $transactions = $this->crud->query("SELECT * 
+                    //         FROM scan_item_bpm WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY request_date");
 
-                            foreach ($transactions as $transaction) {
-                                $user = $this->crud->read("users", [], ["username" => $transaction->created_by]);
-                                $balance = ($begin + $transaction->qty);
-                                $html .= '  <tr>
-                                                <td></td>
-                                                <td style="text-align:center">' . $nod . '</td>
-                                                <td>BPM</td>
-                                                <td>' . $user->name . '</td>
-                                                <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
-                                                <td>-</td>
-                                                <td>-</td>
-                                                <td>' . $transaction->label . '</td>
-                                                <td>' . $transaction->request_id . '</td>
-                                                <td>' . $transaction->request_date . '</td>
-                                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                                <td style="text-align:right;">' . number_format($transaction->qty, 2)  . '</td>
-                                                <td style="text-align:right;">' . number_format(0) . '</td>
-                                                <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                            </tr>';
-                                $begin += $transaction->qty;
-                                $nod++;
-                            }
-                        }
-                    }
+                    //         foreach ($transactions as $transaction) {
+                    //             $user = $this->crud->read("users", [], ["username" => $transaction->created_by]);
+                    //             $balance = ($begin + $transaction->qty);
+                    //             $html .= '  <tr>
+                    //                             <td></td>
+                    //                             <td style="text-align:center">' . $nod . '</td>
+                    //                             <td>BPM</td>
+                    //                             <td>' . $user->name . '</td>
+                    //                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                             <td>-</td>
+                    //                             <td>-</td>
+                    //                             <td>' . $transaction->label . '</td>
+                    //                             <td>' . $transaction->request_id . '</td>
+                    //                             <td>' . $transaction->request_date . '</td>
+                    //                             <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                             <td style="text-align:right;">' . number_format($transaction->qty, 2)  . '</td>
+                    //                             <td style="text-align:right;">' . number_format(0) . '</td>
+                    //                             <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                         </tr>';
+                    //             $begin += $transaction->qty;
+                    //             $nod++;
+                    //         }
+                    //     }
+                    // }
 
-                    if ($filter_trans_type == 'ADJ OUT STO') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
-                            a.request_date,
-                            a.transaction_type,
-                            a.transaction_kind,
-                            a.request_no,
-                            a.qty,
-                            b.name as username
-                        FROM transaction_rm a
-                        JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ OUT STO' and a.request_date between '$filter_from' and '$filter_to'
-                        ORDER BY a.request_date");
+                    // if ($filter_trans_type == 'ADJ OUT STO') {
+                    //     //TRANSACTION
+                    //     $transactions = $this->crud->query("SELECT
+                    //         a.request_date,
+                    //         a.transaction_type,
+                    //         a.transaction_kind,
+                    //         a.request_no,
+                    //         a.qty,
+                    //         b.name as username
+                    //     FROM transaction_rm a
+                    //     JOIN users b ON a.created_by = b.username
+                    //     WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ OUT STO' and a.request_date between '$filter_from' and '$filter_to'
+                    //     ORDER BY a.request_date");
             
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
+                    //     foreach ($transactions as $transaction) {
+                    //         $balance = ($transaction->transaction_kind == 'IN') 
+                    //                     ? ($begin + $transaction->qty) 
+                    //                     : ($begin - $transaction->qty);
                         
-                            $html .= '  <tr>
-                                            <td></td>
-                                            <td style="text-align:center">' . $nod . '</td>
-                                            <td>ADJ OUT STO</td>
-                                            <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>' . $transaction->request_no . '</td>
-                                            <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                                        </tr>';
+                    //         $html .= '  <tr>
+                    //                         <td></td>
+                    //                         <td style="text-align:center">' . $nod . '</td>
+                    //                         <td>ADJ OUT STO</td>
+                    //                         <td>' . $transaction->username . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>' . $transaction->request_no . '</td>
+                    //                         <td>-</td>
+                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                     </tr>';
                         
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
+                    //         // Update balance
+                    //         if ($transaction->transaction_kind == 'IN') {
+                    //             $begin += $transaction->qty;
+                    //         } else {
+                    //             $begin -= $transaction->qty;
+                    //         }
                             
-                            $nod++;
-                        }
-                    }
+                    //         $nod++;
+                    //     }
+                    // }
 
-                    if ($filter_trans_type == 'BPB') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
-                            a.request_date,
-                            a.transaction_type,
-                            a.transaction_kind,
-                            a.request_no,
-                            a.qty,
-                            b.name as username
-                        FROM transaction_rm a
-                        JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPB' and a.request_date between '$filter_from' and '$filter_to'
-                        ORDER BY a.request_date");
+                    // if ($filter_trans_type == 'BPB') {
+                    //     //TRANSACTION
+                    //     $transactions = $this->crud->query("SELECT
+                    //         a.request_date,
+                    //         a.transaction_type,
+                    //         a.transaction_kind,
+                    //         a.request_no,
+                    //         a.qty,
+                    //         b.name as username
+                    //     FROM transaction_rm a
+                    //     JOIN users b ON a.created_by = b.username
+                    //     WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPB' and a.request_date between '$filter_from' and '$filter_to'
+                    //     ORDER BY a.request_date");
             
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
+                    //     foreach ($transactions as $transaction) {
+                    //         $balance = ($transaction->transaction_kind == 'IN') 
+                    //                     ? ($begin + $transaction->qty) 
+                    //                     : ($begin - $transaction->qty);
                         
-                            $html .= '  <tr>
-                                            <td></td>
-                                            <td style="text-align:center">' . $nod . '</td>
-                                            <td>BPB</td>
-                                            <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>' . $transaction->request_no . '</td>
-                                            <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                                        </tr>';
+                    //         $html .= '  <tr>
+                    //                         <td></td>
+                    //                         <td style="text-align:center">' . $nod . '</td>
+                    //                         <td>BPB</td>
+                    //                         <td>' . $transaction->username . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>' . $transaction->request_no . '</td>
+                    //                         <td>-</td>
+                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                     </tr>';
                         
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
+                    //         // Update balance
+                    //         if ($transaction->transaction_kind == 'IN') {
+                    //             $begin += $transaction->qty;
+                    //         } else {
+                    //             $begin -= $transaction->qty;
+                    //         }
                             
-                            $nod++;
-                        }
-                    }
+                    //         $nod++;
+                    //     }
+                    // }
 
-                    if ($filter_trans_type == 'KANBAN WO') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
-                            a.request_date,
-                            a.transaction_type,
-                            a.transaction_kind,
-                            a.request_no,
-                            a.qty,
-                            b.name as username
-                        FROM transaction_rm a
-                        JOIN users b ON a.created_by = b.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'KANBAN WO' and a.request_date between '$filter_from' and '$filter_to'
-                        ORDER BY a.request_date");
+                    // if ($filter_trans_type == 'KANBAN WO') {
+                    //     //TRANSACTION
+                    //     $transactions = $this->crud->query("SELECT
+                    //         a.request_date,
+                    //         a.transaction_type,
+                    //         a.transaction_kind,
+                    //         a.request_no,
+                    //         a.qty,
+                    //         b.name as username
+                    //     FROM transaction_rm a
+                    //     JOIN users b ON a.created_by = b.username
+                    //     WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'KANBAN WO' and a.request_date between '$filter_from' and '$filter_to'
+                    //     ORDER BY a.request_date");
             
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
+                    //     foreach ($transactions as $transaction) {
+                    //         $balance = ($transaction->transaction_kind == 'IN') 
+                    //                     ? ($begin + $transaction->qty) 
+                    //                     : ($begin - $transaction->qty);
                         
-                            $html .= '  <tr>
-                                            <td></td>
-                                            <td style="text-align:center">' . $nod . '</td>
-                                            <td>KANBAN WO</td>
-                                            <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>' . $transaction->request_no . '</td>
-                                            <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                                        </tr>';
+                    //         $html .= '  <tr>
+                    //                         <td></td>
+                    //                         <td style="text-align:center">' . $nod . '</td>
+                    //                         <td>KANBAN WO</td>
+                    //                         <td>' . $transaction->username . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>-</td>
+                    //                         <td>' . $transaction->request_no . '</td>
+                    //                         <td>-</td>
+                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                     </tr>';
                         
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
+                    //         // Update balance
+                    //         if ($transaction->transaction_kind == 'IN') {
+                    //             $begin += $transaction->qty;
+                    //         } else {
+                    //             $begin -= $transaction->qty;
+                    //         }
                             
-                            $nod++;
-                        }
-                    }
+                    //         $nod++;
+                    //     }
+                    // }
 
-                    if ($filter_trans_type == 'ISSUED') {
-                        //ISSUED
-                        // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY created_date");
-                       $issueds = $this->crud->query("SELECT 
-                            a.created_by, 
-                            a.qty, 
-                            a.created_date, 
-                            a.label_no, 
-                            a.request_no,
-                            c.lotno
-                        FROM issued_material_details a 
-                        JOIN purchase_order_labels b ON a.label_no = b.label_no
-                        JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
-                        WHERE a.item_rm_id = '$item_rm_id' 
-                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                    // if ($filter_trans_type == 'ISSUED') {
+                    //     //ISSUED
+                    //     // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY created_date");
+                    //    $issueds = $this->crud->query("SELECT 
+                    //         a.created_by, 
+                    //         a.qty, 
+                    //         a.created_date, 
+                    //         a.label_no, 
+                    //         a.request_no,
+                    //         c.lotno
+                    //     FROM issued_material_details a 
+                    //     JOIN purchase_order_labels b ON a.label_no = b.label_no
+                    //     JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
+                    //     WHERE a.item_rm_id = '$item_rm_id' 
+                    //     and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
                         
-                        UNION
+                    //     UNION
 
-                        SELECT 
-                            a.created_by, 
-                            a.qty, 
-                            a.created_date, 
-                            a.label_no, 
-                            a.request_no,
-                            c.lot_no as lotno
-                        FROM issued_material_details a
-                        JOIN bpm_labels b ON a.label_no = b.label_no
-                        JOIN bpm c ON b.request_id = c.request_id
-                        WHERE a.item_rm_id = '$item_rm_id' 
-                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                    //     SELECT 
+                    //         a.created_by, 
+                    //         a.qty, 
+                    //         a.created_date, 
+                    //         a.label_no, 
+                    //         a.request_no,
+                    //         c.lot_no as lotno
+                    //     FROM issued_material_details a
+                    //     JOIN bpm_labels b ON a.label_no = b.label_no
+                    //     JOIN bpm c ON b.request_id = c.request_id
+                    //     WHERE a.item_rm_id = '$item_rm_id' 
+                    //     and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
                         
-                        UNION
+                    //     UNION
                         
-                        SELECT 
-                            a.created_by, 
-                            a.qty, 
-                            a.created_date, 
-                            a.label_no, 
-                            a.request_no,
-                            COALESCE(c.lotno,'-') as lotno
-                        FROM issued_material_details a 
-                        JOIN barcode_divides b ON a.label_no = b.label_divided
-                        LEFT JOIN purchase_order_receipts c ON b.reff = c.receipt_id
-                        LEFT JOIN new_barcode d ON b.reff = d.label_no
-                        WHERE a.item_rm_id = '$item_rm_id' 
-                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                    //     SELECT 
+                    //         a.created_by, 
+                    //         a.qty, 
+                    //         a.created_date, 
+                    //         a.label_no, 
+                    //         a.request_no,
+                    //         COALESCE(c.lotno,'-') as lotno
+                    //     FROM issued_material_details a 
+                    //     JOIN barcode_divides b ON a.label_no = b.label_divided
+                    //     LEFT JOIN purchase_order_receipts c ON b.reff = c.receipt_id
+                    //     LEFT JOIN new_barcode d ON b.reff = d.label_no
+                    //     WHERE a.item_rm_id = '$item_rm_id' 
+                    //     and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
                         
-                        UNION
+                    //     UNION
 
-                        SELECT 
-                            a.created_by, 
-                            a.qty, 
-                            a.created_date, 
-                            a.label_no, 
-                            a.request_no,
-                            '-' as lotno
-                        FROM issued_material_details a 
-                        JOIN new_barcode b ON a.label_no = b.label_no
-                        WHERE a.item_rm_id = '$item_rm_id' 
-                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+                    //     SELECT 
+                    //         a.created_by, 
+                    //         a.qty, 
+                    //         a.created_date, 
+                    //         a.label_no, 
+                    //         a.request_no,
+                    //         '-' as lotno
+                    //     FROM issued_material_details a 
+                    //     JOIN new_barcode b ON a.label_no = b.label_no
+                    //     WHERE a.item_rm_id = '$item_rm_id' 
+                    //     and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
             
-                        foreach ($issueds as $issued) {
-                            $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
-                            $balance = ($begin - $issued->qty);
-                            $html .= '  <tr>
-                                            <td></td>
-                                            <td style="text-align:center">' . $nod . '</td>
-                                            <td>ISSUED</td>
-                                            <td>' . $user->name . '</td>
-                                            <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
-                                            <td>-</td>
-                                            <td>' . $issued->label_no . '</td>
-                                            <td>' . $issued->lotno . '</td>
-                                            <td>' . $issued->request_no . '</td>
-                                            <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format(0) . '</td>
-                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                        </tr>';
-                            $begin -= $issued->qty;
-                            $nod++;
-                        }
-                    }
+                    //     foreach ($issueds as $issued) {
+                    //         $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
+                    //         $balance = ($begin - $issued->qty);
+                    //         $html .= '  <tr>
+                    //                         <td></td>
+                    //                         <td style="text-align:center">' . $nod . '</td>
+                    //                         <td>ISSUED</td>
+                    //                         <td>' . $user->name . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                    //                         <td>-</td>
+                    //                         <td>' . $issued->label_no . '</td>
+                    //                         <td>' . $issued->lotno . '</td>
+                    //                         <td>' . $issued->request_no . '</td>
+                    //                         <td>-</td>
+                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format(0) . '</td>
+                    //                         <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
+                    //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                     </tr>';
+                    //         $begin -= $issued->qty;
+                    //         $nod++;
+                    //     }
+                    // }
                 //}
             }
             $no++;

@@ -310,6 +310,11 @@ class Menu_loadings extends CI_Controller
             $molds   = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
             $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
 
+            $productcivity = $data['productcivity'];
+            $cycle_time_process = $data['cycle_time_process'];
+            $manpower = $data['manpower'];
+            $priority = $data['priority'];
+
             if (empty($item_fg)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
                 return;
@@ -322,21 +327,35 @@ class Menu_loadings extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => " Machine Id. " . $data['machine_id'] . " Not Found", "theme" => "error"));
                 return;
             }
+            if (empty($productcivity)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Productivity Factor % is required", "theme" => "error"));
+                return;
+            }
+            if (empty($cycle_time_process)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Cycle Time Process is required", "theme" => "error"));
+                return;
+            }
+            if (empty($manpower)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Man Power is required", "theme" => "error"));
+                return;
+            }
+            if (empty($priority)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Priority is required", "theme" => "error"));
+                return;
+            }
 
-            // 2. Cek IDENTITAS Data (Apakah kombinasi Item, Machine, dan Mold ini sudah ada?)
+            // 2. Cek IDENTITAS Data
             $this->db->where('item_fg_id', $data['item_fg_id']);
             $this->db->where('machine_id', $machine->id);
             $this->db->where('mold_id', $data['mold_id']);
             $existing_data = $this->db->get('menu_loadings')->row();
 
             // 3. Cek BENTROK Priority
-            // Pastikan priority yang di-upload tidak dipakai oleh mesin/mold LAIN untuk item ini
             if (!empty($data['priority'])) {
                 $this->db->where('item_fg_id', $data['item_fg_id']);
                 $this->db->where('priority', $data['priority']);
                 
                 if ($existing_data) {
-                    // Jika update, kecualikan id data ini sendiri agar tidak dianggap bentrok dengan dirinya sendiri
                     $this->db->where('id !=', $existing_data->id);
                 }
                 
@@ -369,11 +388,9 @@ class Menu_loadings extends CI_Controller
             
             // 5. Eksekusi Update atau Insert
             if ($existing_data) {
-                // Jika data fisik sudah ada -> Lakukan UPDATE
                 $send = $this->crud->update('menu_loadings', ['id' => $existing_data->id], $dataFinal);
                 echo $send;
             } else {
-                // Jika data fisik belum ada -> Lakukan INSERT
                 $send = $this->crud->create('menu_loadings', $dataFinal);
                 echo $send;
             }

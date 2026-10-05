@@ -151,6 +151,7 @@ class Historical_price_material extends CI_Controller
         $filter_item_family = $this->input->get('filter_item_family');
         $filter_items = $this->input->get('filter_items');
         $filter_division = $this->input->get('filter_division');
+        $filter_supplier_id = $this->input->get('filter_supplier_id');
 
         // Config
         $this->db->select('*');
@@ -188,7 +189,7 @@ class Historical_price_material extends CI_Controller
             e.name as prodfam, 
             b.uom,
             f.name as category_name,
-            a.currency,
+            c.currency,
             c.name as supplier_name
         FROM supplier_items a
         JOIN item_rm b ON a.item_rm_id = b.id
@@ -199,6 +200,7 @@ class Historical_price_material extends CI_Controller
         AND e.number LIKE '%$filter_item_family%'
         AND b.id LIKE '%$filter_items%'
         AND b.division LIKE '%$filter_division%'
+        AND c.id LIKE '%$filter_supplier_id%'
         AND b.division NOT LIKE 'ADM'
         GROUP BY a.item_rm_id, a.supplier_id
         ORDER BY b.division ASC, f.name ASC, c.name ASC, b.name ASC, b.number";
@@ -221,7 +223,7 @@ class Historical_price_material extends CI_Controller
             $history_map[$key][] = $h;
         }
 
-        $html = '<html><head><title>Print Data</title></head>
+        $html = '<html><head><title>Print Data</title>
             <style>
                 body {font-family: Arial, Helvetica, sans-serif;}
                 #customers {border-collapse: collapse;width: 100%;font-size: 11px;}
@@ -229,11 +231,36 @@ class Historical_price_material extends CI_Controller
                 #customers tr:nth-child(even){background-color: #f2f2f2;}
                 #customers tr:hover {background-color: #ddd;}
                 #customers th {padding-top: 5px;padding-bottom: 5px;text-align: center;color: black; background-color: #f2f2f2;}
+                
+                @media screen {
+                    html, body {
+                        height: 100%;
+                        margin: 0;
+                        padding: 0;
+                        overflow: hidden;
+                    }
+                    .print-container {
+                        width: 100%;
+                        height: 100%;
+                        overflow: auto;
+                        box-sizing: border-box;
+                        padding: 10px;
+                    }
+                }
+
                 @media print {
+                    html, body, .print-container {
+                        height: auto !important;
+                        overflow: visible !important;
+                    }
                     #customers thead { display: table-header-group; }
                     #customers tbody tr { page-break-inside: avoid; }
                 }
-            </style><body>
+            </style></head>
+            <body>
+            
+            <div class="print-container">
+            
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -268,7 +295,6 @@ class Historical_price_material extends CI_Controller
             </center>
             <br><br>
             
-            <div style="width: 100%; overflow-x: auto;"> 
             <table id="customers" border="1" style="white-space: nowrap;"> 
              <thead>
                 <tr>
@@ -342,7 +368,7 @@ class Historical_price_material extends CI_Controller
         }
 
         $html .= '</tbody></table>
-            </div>
+            </div> 
             </body></html>';
         echo $html;
     }

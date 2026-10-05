@@ -24,6 +24,10 @@
         </div>
         <div style="width: 49%; float:left;">
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Supplier</span>
+                <input style="width:60%;" id="filter_supplier_id" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Family</span>
                 <input style="width:60%;" id="filter_item_family" class="easyui-combobox">
             </div>
@@ -61,7 +65,8 @@
         var filter_item_family = $("#filter_item_family").combobox('getValue');
         var filter_items = $("#filter_items").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_division=" + filter_division;
+        var filter_supplier_id = $("#filter_supplier_id").combogrid('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_division=" + filter_division + "&filter_supplier_id=" + filter_supplier_id;
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('master/historical_price_material/print') ?>' + url);
     }
@@ -73,7 +78,8 @@
         var filter_item_family = $("#filter_item_family").combobox('getValue');
         var filter_items = $("#filter_items").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items +  "&filter_division=" + filter_division;
+        var filter_supplier_id = $("#filter_supplier_id").combogrid('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_division=" + filter_division + "&filter_supplier_id=" + filter_supplier_id;
 
         // Tampilkan overlay
         $("#loadingOverlay").show();
@@ -171,7 +177,33 @@
         panelHeight: 'panelHeight',
         prompt: 'Choose Division',
     });
-        
+    
+    $('#filter_supplier_id').combogrid({
+        url: '<?= base_url('master/suppliers/reads'); ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Supplier",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Supplier Code',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Supplier Name',
+                width: 250
+            },]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+    });
 
     //Format Datepicker
     function myformatter(date) {

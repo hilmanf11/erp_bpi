@@ -23,18 +23,15 @@ class Notifications extends CI_Controller
 
     public function confirm()
     {
-        // Tangkap array data dan nama tabel dari frontend
         $data_konfirmasi = $this->input->post('data');
-        $nama_tabel = $this->input->post('table'); // contoh: 'request_materials'
+        $nama_tabel = $this->input->post('table');
 
         if (!empty($data_konfirmasi) && is_array($data_konfirmasi)) {
             $this->db->trans_start();
 
             foreach ($data_konfirmasi as $row) {
-                // 1. Update status di tabel asal (request_materials) menjadi 1 (Sudah confirm)
                 $this->db->update($nama_tabel, ['notif_confirmed' => 1], ['id' => $row['id_memo']]);
                 
-                // 2. Hapus notifikasi di tabel notifications agar hilang dari daftar
                 $this->db->delete('notifications', ['id' => $row['id_notif']]);
             }
 
@@ -50,55 +47,55 @@ class Notifications extends CI_Controller
         }
     }
 
-    public function notificationCount()
-    {
-        $totalRows = 0;
+    // public function notificationCount()
+    // {
+    //     $totalRows = 0;
         
-        // --- 1. LOGIKA (Menu Based) ---
-        $notificationUser = [];
-        $menuUser = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "44964312f0264429978158ada88843", "v_view" => 1]);
-        if(!empty($menuUser)){
-            $notificationUser = $this->crud->reads('notifications', [], ["table_name" => "users"], "", "", "", ["user_id", "table_name", "name"]);
-        }
+    //     // --- 1. LOGIKA (Menu Based) ---
+    //     $notificationUser = [];
+    //     $menuUser = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "44964312f0264429978158ada88843", "v_view" => 1]);
+    //     if(!empty($menuUser)){
+    //         $notificationUser = $this->crud->reads('notifications', [], ["table_name" => "users"], "", "", "", ["user_id", "table_name", "name"]);
+    //     }
 
-        $notificationPr = [];
-        $menuPr = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20231222000002", "v_view" => 1]);
-        if(!empty($menuPr)){
-            $notificationPr = $this->crud->reads('notifications', [], ["table_name" => "purchase_requests"], "", "", "", ["user_id", "table_name", "name"]);
-        }
+    //     $notificationPr = [];
+    //     $menuPr = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20231222000002", "v_view" => 1]);
+    //     if(!empty($menuPr)){
+    //         $notificationPr = $this->crud->reads('notifications', [], ["table_name" => "purchase_requests"], "", "", "", ["user_id", "table_name", "name"]);
+    //     }
 
-        $notificationPo = [];
-        $menuPo = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20240103000001", "v_view" => 1]);
-        if(!empty($menuPo)){
-            $notificationPo = $this->crud->reads('notifications', [], ["table_name" => "purchase_orders"], "", "", "", ["user_id", "table_name", "name"]);
-        }
+    //     $notificationPo = [];
+    //     $menuPo = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20240103000001", "v_view" => 1]);
+    //     if(!empty($menuPo)){
+    //         $notificationPo = $this->crud->reads('notifications', [], ["table_name" => "purchase_orders"], "", "", "", ["user_id", "table_name", "name"]);
+    //     }
 
-        // --- 2. LOGIKA Targeted Based  ---
-        $my_username = $this->session->username;
-        $user_info = $this->crud->read("users", [], ["username" => $my_username]);
-        $my_dept = $user_info->department;
-        $my_sub_dept = $user_info->sub_department;
+    //     // --- 2. LOGIKA Targeted Based  ---
+    //     $my_username = $this->session->username;
+    //     $user_info = $this->crud->read("users", [], ["username" => $my_username]);
+    //     $my_dept = $user_info->department;
+    //     $my_sub_dept = $user_info->sub_department;
 
-        $this->db->where('table_name', 'request_materials');
-        $this->db->group_start();
-            $this->db->where('target_user', $my_username); // Jika ditargetkan ke personal
-            $this->db->or_group_start();
-                $this->db->where('target_department', $my_dept); // Jika ditargetkan ke departemen
-                $this->db->where('target_sub_department', $my_sub_dept);
-            $this->db->group_end();
-        $this->db->group_end();
-        // Hitung jumlah baris yang cocok
-        $notificationMemoCount = $this->db->get('notifications')->num_rows();
+    //     $this->db->where('table_name', 'request_materials');
+    //     $this->db->group_start();
+    //         $this->db->where('target_user', $my_username); // Jika ditargetkan ke personal
+    //         $this->db->or_group_start();
+    //             $this->db->where('target_department', $my_dept); // Jika ditargetkan ke departemen
+    //             $this->db->where('target_sub_department', $my_sub_dept);
+    //         $this->db->group_end();
+    //     $this->db->group_end();
+    //     // Hitung jumlah baris yang cocok
+    //     $notificationMemoCount = $this->db->get('notifications')->num_rows();
 
-        // --- 3. TOTAL COUNT ---
-        $totalRows = (count($notificationUser) + count($notificationPr) + count($notificationPo) + $notificationMemoCount);
+    //     // --- 3. TOTAL COUNT ---
+    //     $totalRows = (count($notificationUser) + count($notificationPr) + count($notificationPo) + $notificationMemoCount);
         
-        if ($totalRows > 0) {
-            echo '<span class="badge">' . $totalRows . '</span>';
-        } else {
-            echo '';
-        }
-    }
+    //     if ($totalRows > 0) {
+    //         echo '<span class="badge">' . $totalRows . '</span>';
+    //     } else {
+    //         echo '';
+    //     }
+    // }
 
     // public function notificationList()
     // {
@@ -130,6 +127,59 @@ class Notifications extends CI_Controller
     //         }
     //     }
     // }
+
+    public function notificationCount()
+    {
+        $totalRows = 0;
+        
+        // --- 1. LOGIKA (Menu Based) ---
+        $notificationUser = [];
+        $menuUser = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "44964312f0264429978158ada88843", "v_view" => 1]);
+        if(!empty($menuUser)){
+            $notificationUser = $this->crud->reads('notifications', [], ["table_name" => "users"], "", "", "", ["user_id", "table_name", "name"]);
+        }
+
+        $notificationPr = [];
+        $menuPr = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20231222000002", "v_view" => 1]);
+        if(!empty($menuPr)){
+            $notificationPr = $this->crud->reads('notifications', [], ["table_name" => "purchase_requests"], "", "", "", ["user_id", "table_name", "name"]);
+        }
+
+        $notificationPo = [];
+        $menuPo = $this->crud->read("setting_users", [], ["users_id" => $this->session->username, "menus_id" => "20240103000001", "v_view" => 1]);
+        if(!empty($menuPo)){
+            $notificationPo = $this->crud->reads('notifications', [], ["table_name" => "purchase_orders"], "", "", "", ["user_id", "table_name", "name"]);
+        }
+
+        // --- 2. LOGIKA Targeted Based  ---
+        $my_username = $this->session->username;
+        $user_info = $this->crud->read("users", [], ["username" => $my_username]);
+        $my_dept = $user_info->department;
+        $my_sub_dept = $user_info->sub_department;
+
+        // PERBAIKAN: Gunakan where_in untuk memasukkan generate_mps ke dalam hitungan target
+        $this->db->where_in('table_name', ['request_materials', 'generate_mps']);
+        
+        $this->db->group_start();
+            $this->db->where('target_user', $my_username); // Jika ditargetkan ke personal
+            $this->db->or_group_start();
+                $this->db->where('target_department', $my_dept); // Jika ditargetkan ke departemen
+                $this->db->where('target_sub_department', $my_sub_dept);
+            $this->db->group_end();
+        $this->db->group_end();
+        
+        // Hitung jumlah baris yang cocok (Nama variabel diubah agar lebih umum)
+        $notificationTargetedCount = $this->db->get('notifications')->num_rows();
+
+        // --- 3. TOTAL COUNT ---
+        $totalRows = (count($notificationUser) + count($notificationPr) + count($notificationPo) + $notificationTargetedCount);
+        
+        if ($totalRows > 0) {
+            echo '<span class="badge">' . $totalRows . '</span>';
+        } else {
+            echo '';
+        }
+    }
 
     public function notificationList()
     {
@@ -254,6 +304,103 @@ class Notifications extends CI_Controller
         }
     }
 
+    public function generate_mps($user, $name)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "generate_mps";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notification/generate_mps');
+        }
+    }
+
+    // public function notificationData($table = "", $user = "", $name = "")
+    // {
+    //     $user = base64_decode($user);
+    //     $name = base64_decode($name);
+
+    //     $filters = json_decode($this->input->post('filterRules'));
+    //     $page = $this->input->post('page');
+    //     $rows = $this->input->post('rows');
+
+    //     //Pagination 1-10
+    //     $page   = isset($page) ? intval($page) : 1;
+    //     $rows   = isset($rows) ? intval($rows) : 10;
+    //     $offset = ($page - 1) * $rows;
+    //     $result = array();
+
+    //     //Select Query
+    //     $this->db->select('id, log');
+    //     $this->db->from('notifications');
+    //     $this->db->where('table_name', $table);
+    //     $this->db->where('user_id', $user);
+    //     $this->db->where('name', $name);
+    //     if (@count($filters) > 0) {
+    //         foreach ($filters as $filter) {
+    //             $this->db->like("log", $filter->value);
+    //         }
+    //     }
+    //     $this->db->order_by('created_date', 'desc');
+    //     //Total Data
+    //     $totalRows = $this->db->count_all_results('', false);
+    //     //Limit 1 - 10
+    //     //$this->db->limit($rows, $offset);
+    //     //Get Data Array
+    //     $records = $this->db->get()->result_array();
+
+    //     $hasil = array();
+    //     foreach ($records as $record) {
+    //         $id_notification = array("id_notification" => $record['id']);
+    //         $log = json_decode($record['log'], true);
+
+    //         if($table == "purchase_orders"){
+    //             $supplier = $this->crud->read("suppliers", [], ["id" => @$log['supplier_id']]);
+    //             $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+    //             $supplier_name = ($supplier) ? $supplier->name : "-";
+    //             $item_rm_number = ($item_rm) ? $item_rm->number : "-";
+
+    //             $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier_name) + array("item_rm_number" => $item_rm_number));
+                
+    //         } elseif($table == "purchase_requests"){
+    //             $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+    //             $item_rm_number = ($item_rm) ? $item_rm->number : "-";
+
+    //             $hasil[] = ($id_notification + $log + array("item_rm_number" => $item_rm_number));
+                
+    //         } elseif($table == "users"){
+    //             $divisions = $this->crud->read("divisions", [], ["number" => @$log['division']]);
+                
+    //             $division_number = ($divisions) ? $divisions->number : "-";
+
+    //             $hasil[] = ($id_notification + $log + array("division" => $division_number));
+                
+    //         } elseif($table == "request_materials"){
+    //             $supplier = $this->crud->read("suppliers", [], ["id" => @$log['supplier_id']]);
+    //             $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+    //             $supplier_name = ($supplier) ? $supplier->name : "-";
+    //             $item_number = ($item_rm) ? $item_rm->number : "-";
+    //             $item_name = ($item_rm) ? $item_rm->name : "-";
+
+    //             $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier_name) + array("item_number" => $item_number) + array("item_name" => $item_name));
+                
+    //         } else {
+    //             $hasil[] = ($id_notification + $log);
+    //         }
+    //     }
+
+    //     //Mapping Data
+    //     $result['total'] = $totalRows;
+    //     $result = array_merge($result, ['rows' => $hasil]);
+    //     echo json_encode($result);
+    // }
+
     public function notificationData($table = "", $user = "", $name = "")
     {
         $user = base64_decode($user);
@@ -283,8 +430,6 @@ class Notifications extends CI_Controller
         $this->db->order_by('created_date', 'desc');
         //Total Data
         $totalRows = $this->db->count_all_results('', false);
-        //Limit 1 - 10
-        //$this->db->limit($rows, $offset);
         //Get Data Array
         $records = $this->db->get()->result_array();
 
@@ -294,23 +439,40 @@ class Notifications extends CI_Controller
             $log = json_decode($record['log'], true);
 
             if($table == "purchase_orders"){
-                $supplier = $this->crud->read("suppliers", [], ["id" => $log['supplier_id']]);
-                $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
-                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier->name) + array("item_rm_number" => $item_rm->number));
+                $supplier = $this->crud->read("suppliers", [], ["id" => @$log['supplier_id']]);
+                $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+                $supplier_name = ($supplier) ? $supplier->name : "-";
+                $item_rm_number = ($item_rm) ? $item_rm->number : "-";
+
+                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier_name) + array("item_rm_number" => $item_rm_number));
                 
             } elseif($table == "purchase_requests"){
-                $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
-                $hasil[] = ($id_notification + $log + array("item_rm_number" => $item_rm->number));
+                $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+                $item_rm_number = ($item_rm) ? $item_rm->number : "-";
+
+                $hasil[] = ($id_notification + $log + array("item_rm_number" => $item_rm_number));
                 
             } elseif($table == "users"){
-                $divisions = $this->crud->read("divisions", [], ["number" => $log['division']]);
-                $hasil[] = ($id_notification + $log + array("division" => $divisions->number));
+                $divisions = $this->crud->read("divisions", [], ["number" => @$log['division']]);
+                
+                $division_number = ($divisions) ? $divisions->number : "-";
+
+                $hasil[] = ($id_notification + $log + array("division" => $division_number));
                 
             } elseif($table == "request_materials"){
-                $supplier = $this->crud->read("suppliers", [], ["id" => $log['supplier_id']]);
-                $item_rm = $this->crud->read("item_rm", [], ["id" => $log['item_rm_id']]);
-                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier->name) + array("item_number" => $item_rm->number)+ array("item_name" => $item_rm->name));
-                // $hasil[] = ($id_notification + $log);
+                $supplier = $this->crud->read("suppliers", [], ["id" => @$log['supplier_id']]);
+                $item_rm = $this->crud->read("item_rm", [], ["id" => @$log['item_rm_id']]);
+                
+                $supplier_name = ($supplier) ? $supplier->name : "-";
+                $item_number = ($item_rm) ? $item_rm->number : "-";
+                $item_name = ($item_rm) ? $item_rm->name : "-";
+
+                $hasil[] = ($id_notification + $log + array("supplier_name" => $supplier_name) + array("item_number" => $item_number) + array("item_name" => $item_name));
+                
+            } elseif($table == "generate_mps"){
+                $hasil[] = ($id_notification + $log);
                 
             } else {
                 $hasil[] = ($id_notification + $log);

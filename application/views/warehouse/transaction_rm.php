@@ -176,6 +176,8 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('warehouse/transaction_rm/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+    var is_updating = false;
+
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
@@ -258,8 +260,10 @@
                             ],
                             onSelect: function(value, rows) {
                                 var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var rowIndex = editIndex; 
+                                
+                                if (rowIndex === undefined) return;
+                                
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'item_rm_id'
@@ -364,6 +368,7 @@
                     field: 'max_qty',
                     width: 100, 
                     halign: 'center',
+                    hidden: true,
                     align: 'right', 
                     title: "Outstanding", 
                     editor: { 
@@ -386,7 +391,7 @@
                 }, {
                     field: 'qty',
                     width: 80,
-                    halign: 'center',
+                    halign: 'right',
                     title: "Qty",
                     editor: {
                         type: 'numberbox',
@@ -440,7 +445,7 @@
                     title: "Total Label",
                     editor: {
                         type: 'numberbox',
-                        options: { required: true, readonly: true } 
+                        options: {readonly: true } 
                     }
                 }, {
                     field: 'uom',
@@ -453,12 +458,15 @@
                     }
                 }]
             ],
-            onClickRow: function(rowIndex) {
-                if (lastIndex != rowIndex) {
-                    $(this).datagrid('endEdit', lastIndex);
-                    $(this).datagrid('beginEdit', rowIndex);
+            onClickRow: function(index) {
+                if (editIndex != index) {
+                    if (endEditing()) {
+                        $(this).datagrid('selectRow', index).datagrid('beginEdit', index);
+                        editIndex = index;
+                    } else {
+                        $(this).datagrid('selectRow', editIndex); 
+                    }
                 }
-                lastIndex = rowIndex;
             },
         });
     }
@@ -499,18 +507,63 @@
     }
 
     //Update Data
+    // function update() {
+    //     var row = $('#dg').treegrid('getSelected');
+    //     if (row) {
+    //         if(row.state == "closed"){
+    //             $('#dlg_insert').dialog('open');
+    //             $('#frm_insert').form('load', row);
+    //             $("#request_date").datebox('disable');
+    //             $("#request_no").textbox('disable');
+                
+    //             setTimeout(function() {
+    //                 $("#request_no").textbox('setValue', row.request_no);
+    //             }, 1000);
+                
+    //             $("#transaction_id").combobox({
+    //                 url: '<?= base_url('warehouse/transaction_rm/readType/') ?>',
+    //                 valueField: 'id',
+    //                 textField: 'type',
+    //                 prompt: "Choose Type",
+    //                 onLoadSuccess: function(data){
+    //                     if (data.length > 0) {
+                         
+    //                         $("#transaction_id").combobox('setValue', row.transaction_id);
+    //                     }
+    //                 },
+    //                 onSelect: function(record) {
+    //                     $("#transaction_type").textbox('setValue', record.type);
+    //                     $("#transaction_kind").textbox('setValue', record.kind);
+    //                 }
+    //             });
+
+    //             addTable('<?= base_url('warehouse/transaction_rm/datatableUpdate/') ?>' + window.btoa(row.request_no));
+    //         }else{
+    //             toastr.warning("Please Select Header of Table", "Information");
+    //         }
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
             if(row.state == "closed"){
+                is_updating = true;
                 $('#dlg_insert').dialog('open');
+                
+                if (row.purchase_order_receipt) {
+                    $('#purchase_order_receipt').combobox('loadData', [{receipt_no: row.purchase_order_receipt}]);
+                }
+                if (row.request_no_return) {
+                    $('#request_no_return').combobox('loadData', [{request_no: row.request_no_return}]);
+                }
+
                 $('#frm_insert').form('load', row);
+                
                 $("#request_date").datebox('disable');
                 $("#request_no").textbox('disable');
-                
-                setTimeout(function() {
-                    $("#request_no").textbox('setValue', row.request_no);
-                }, 1000);
                 
                 $("#transaction_id").combobox({
                     url: '<?= base_url('warehouse/transaction_rm/readType/') ?>',
@@ -519,7 +572,6 @@
                     prompt: "Choose Type",
                     onLoadSuccess: function(data){
                         if (data.length > 0) {
-                         
                             $("#transaction_id").combobox('setValue', row.transaction_id);
                         }
                     },
@@ -530,7 +582,27 @@
                 });
 
                 addTable('<?= base_url('warehouse/transaction_rm/datatableUpdate/') ?>' + window.btoa(row.request_no));
-            }else{
+
+                setTimeout(function() {
+                    $("#request_no").textbox('setValue', row.request_no);
+                    
+                    if (row.purchase_order_receipt && row.purchase_order_receipt !== "") {
+                        $('#purchase_order_receipt').combobox('setValue', row.purchase_order_receipt);
+                    }
+                    if (row.request_no_return && row.request_no_return !== "") {
+                        $('#request_no_return').combobox('setValue', row.request_no_return);
+                    }
+                    if (row.division && row.division !== "") {
+                        $('#division').combobox('setValue', row.division);
+                    }
+                    if (row.item_category_id && row.item_category_id !== "") {
+                        $('#item_category_id').combobox('setValue', row.item_category_id);
+                    }
+                    
+                    is_updating = false; 
+                }, 800);
+                
+            } else {
                 toastr.warning("Please Select Header of Table", "Information");
             }
         } else {
@@ -1057,12 +1129,17 @@
         valueField: 'receipt_no',
         textField: 'receipt_no',
         prompt: "Choose Purchase Order Receipt",
+
         onSelect: function(record) {
+            if (is_updating) return;
             var transText = $('#transaction_id').combobox('getText').toUpperCase();
             
             // JIKA RETURN: Tarik data baris tabel dari tabel POR
             if (transText === 'RETURN NG TO SUPPLIER') {
                 $('#dg2').datagrid('loadData', {"total":0,"rows":[]});
+                
+                $('#division').combobox('clear');
+                $('#item_category_id').combobox('clear');
                 
                 $.ajax({
                     type: "POST",
@@ -1074,6 +1151,17 @@
                     dataType: "json",
                     success: function(response) {
                         $('#dg2').datagrid('loadData', response);
+                        
+                        if (response && response.length > 0) {
+                            var firstRow = response[0];
+                            
+                            if (firstRow.division) {
+                                $('#division').combobox('setValue', firstRow.division);
+                            }
+                            if (firstRow.item_category_id) {
+                                $('#item_category_id').combobox('setValue', firstRow.item_category_id);
+                            }
+                        }
                     }
                 });
             }
@@ -1086,6 +1174,9 @@
                 var transText = $('#transaction_id').combobox('getText').toUpperCase();
                 if (transText === 'RETURN NG TO SUPPLIER') {
                     $('#dg2').datagrid('loadData', {"total":0,"rows":[]}); 
+                    
+                    $('#division').combobox('clear');
+                    $('#item_category_id').combobox('clear');
                 }
             }
         }],
@@ -1096,6 +1187,7 @@
         textField: 'request_no',
         prompt: "Choose Return Transaction",
         onSelect: function(record) {
+            if (is_updating) return;
             if(record.purchase_order_receipt) {
                 $('#purchase_order_receipt').combobox('loadData', [{receipt_no: record.purchase_order_receipt}]);
                 $('#purchase_order_receipt').combobox('setValue', record.purchase_order_receipt);

@@ -25,7 +25,7 @@ class Ar_receipts extends CI_Controller
         $this->load->library('Convertcurrency');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('sales_invoice', 'Sales Invoice', 'required|min_length[1]|max_length[50]');
+        $this->form_validation->set_rules('sales_invoice', 'Sales Invoice', 'required|min_length[1]|max_length[200]');
     }
     public function index()
     {
@@ -417,20 +417,27 @@ class Ar_receipts extends CI_Controller
         echo json_encode($records);
     }
 
-    // public function number($trans_date)
+    // public function number($trans_date, $bank_code = null)
     // {
-    //     $datenow    = "AR-" . date("Ymd", strtotime(base64_decode($trans_date)));
-    //     $sqlGetID   = $this->db->query("SELECT max(`receipt_no`) as kode FROM ar_receipts WHERE `receipt_no` like '%$datenow%'");
-    //     $rowID      = $sqlGetID->row();
-    //     $kode       = $rowID->kode;
-    //     if ($kode == NULL) {
-    //         $autoID = sprintf("%04s", $kode + 1);
-    //     } else {
-    //         $urutan = (int) substr($kode, -4);
-    //         $urutan++;
-    //         $autoID = sprintf("%04s", $urutan);
+    //     if (!empty($trans_date) && !empty($bank_code)) {
+    //         $decoded_date = base64_decode($trans_date);
+    //         $year = date("y", strtotime($decoded_date));
+    //         $month = date("m", strtotime($decoded_date));
+    //         // $bank_code = base64_decode($bank_code);
+    //         $datenow    = $bank_code."/".$month."-".$year."/"."M";
+    //         $sqlGetID   = $this->db->query("SELECT max(`receipt_no`) as kode FROM ar_receipts WHERE `receipt_no` like '%$datenow%'");
+    //         $rowID      = $sqlGetID->row();
+    //         $kode       = $rowID->kode;
+    //         if ($kode == NULL) {
+    //             $autoID = sprintf("%03s", $kode + 1);
+    //         } else {
+    //             $urutan = (int) substr($kode, 0, 3);
+    //             $urutan++;
+    //             $autoID = sprintf("%03s", $urutan);
+    //         }
+    //         echo $autoID."/".$datenow;
     //     }
-    //     echo $datenow . "-" . $autoID;
+    //     echo ""; // if trans_date or bank_code is not choosed
     // }
 
     public function number($trans_date, $bank_code = null)
@@ -439,21 +446,24 @@ class Ar_receipts extends CI_Controller
             $decoded_date = base64_decode($trans_date);
             $year = date("y", strtotime($decoded_date));
             $month = date("m", strtotime($decoded_date));
-            // $bank_code = base64_decode($bank_code);
+            
             $datenow    = $bank_code."/".$month."-".$year."/"."M";
-            $sqlGetID   = $this->db->query("SELECT max(`receipt_no`) as kode FROM ar_receipts WHERE `receipt_no` like '%$datenow%'");
+            
+            $sqlGetID   = $this->db->query("SELECT MAX(CAST(SUBSTRING_INDEX(receipt_no, '/', 1) AS UNSIGNED)) as max_urut FROM ar_receipts WHERE receipt_no like '%$datenow%'");
             $rowID      = $sqlGetID->row();
-            $kode       = $rowID->kode;
-            if ($kode == NULL) {
-                $autoID = sprintf("%03s", $kode + 1);
+            
+            $max_urut   = $rowID->max_urut;
+            
+            if ($max_urut == NULL) {
+                $autoID = sprintf("%03d", 1);
             } else {
-                $urutan = (int) substr($kode, 0, 3);
-                $urutan++;
-                $autoID = sprintf("%03s", $urutan);
+                $autoID = sprintf("%03d", $max_urut + 1);
             }
+            
             echo $autoID."/".$datenow;
+        } else {
+            echo ""; // if trans_date or bank_code is not choosed
         }
-        echo ""; // if trans_date or bank_code is not choosed
     }
 
     public function datatablesTemp_existing()

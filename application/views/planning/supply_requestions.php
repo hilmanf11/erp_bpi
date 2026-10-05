@@ -45,7 +45,9 @@
             <div style="float: left; width: 30%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
-                    <input style="width:60%;" id="filter_period" value="<?= date("Ym") ?>" class="easyui-combobox">
+                    <input style="width:25%;" id="filter_period_from" value="<?= date("Ym") ?>" class="easyui-combobox">
+                    <span>To</span>
+                    <input style="width:30%;" id="filter_period_to" value="<?= date("Ym") ?>" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Workorder</span>
@@ -384,12 +386,12 @@
     }
 
     function filter() {
-        var filter_period = $("#filter_period").combobox('getValue');
+        var filter_period_from = $("#filter_period_from").combobox('getValue');
         var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_status=" + filter_status;
+        url = "?filter_period_from=" + filter_period_from + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_status=" + filter_status;
 
         $('#dg').treegrid({
             url: '<?= base_url('planning/supply_requestions/datatables') ?>' + url,
@@ -418,12 +420,12 @@
     }
 
     function excel() {
-        var filter_period = $("#filter_period").combobox('getValue');
+        var filter_period_from = $("#filter_period_from").combobox('getValue');
         var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_status=" + filter_status;
+        url = "?filter_period_from=" + filter_period_from + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_status=" + filter_status;
         window.location.assign('<?= base_url('planning/supply_requestions/print/excel') ?>' + url);
     }
 
@@ -511,7 +513,68 @@
             }]
         });
 
-        $("#filter_period").combobox({
+        $("#request_date").datebox({
+            onChange: function(val) {
+                request_no(val);
+            }
+        });
+    });
+
+    $(document).ready(function() {
+
+        $("#filter_request_no").combobox({
+            valueField: 'request_no',
+            textField: 'request_no',
+            prompt: "Choose Request No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }]
+        });
+
+        $("#filter_workorder").combobox({
+            valueField: 'workorder',
+            textField: 'workorder',
+            prompt: "Choose Workorder",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+            onChange: function(newWo, oldWo) {
+                reloadRequestNo(newWo);
+            }
+        });
+
+        function reloadWorkorder() {
+            var periodFrom = $('#filter_period_from').combobox('getValue');
+            var periodTo = $('#filter_period_to').combobox('getValue');
+
+            if (periodFrom && periodTo) {
+                var urlWo = '<?= base_url('planning/supply_requestions/readWo') ?>?from=' + periodFrom + '&to=' + periodTo;
+                $('#filter_workorder').combobox('reload', urlWo);
+                
+                $('#filter_workorder').combobox('clear');
+                $('#filter_request_no').combobox('clear');
+            }
+        }
+
+        function reloadRequestNo(workorder) {
+            var periodFrom = $('#filter_period_from').combobox('getValue');
+            var periodTo = $('#filter_period_to').combobox('getValue');
+
+            if (periodFrom && periodTo && workorder) {
+                var encWo = window.btoa(workorder); // Encode Base64
+                var urlReq = '<?= base_url('planning/supply_requestions/readRequestNo') ?>?from=' + periodFrom + '&to=' + periodTo + '&wo=' + encWo;
+                $('#filter_request_no').combobox('reload', urlReq);
+                $('#filter_request_no').combobox('clear');
+            }
+        }
+
+        $("#filter_period_from, #filter_period_to").combobox({
             url: '<?= base_url('planning/supply_requestions/readPeriod') ?>',
             valueField: 'period',
             textField: 'period',
@@ -522,40 +585,13 @@
                     $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
             }],
-            onSelect: function(period) {
-                $("#filter_workorder").combobox({
-                    url: '<?= base_url('planning/supply_requestions/readWo/') ?>' + period.period,
-                    valueField: 'workorder',
-                    textField: 'workorder',
-                    prompt: "Choose Workorder",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                    onSelect: function(wo) {
-                        $("#filter_request_no").combobox({
-                            url: '<?= base_url('planning/supply_requestions/readRequestNo/') ?>' + period.period + '/' + window.btoa(wo.workorder),
-                            valueField: 'request_no',
-                            textField: 'request_no',
-                            prompt: "Choose Request No",
-                            icons: [{
-                                iconCls: 'icon-clear',
-                                handler: function(e) {
-                                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                                }
-                            }],
-                        });
-                    }
-                });
+            onChange: function(newValue, oldValue) {
+                reloadWorkorder();
             }
         });
-        $("#request_date").datebox({
-            onChange: function(val) {
-                request_no(val);
-            }
-        });
+
+        reloadWorkorder();
+
     });
 
     $('#dg2').datagrid({

@@ -29,20 +29,37 @@ class Supply_requestions extends CI_Controller
     }
     public function readPeriod()
     {
-        $records = $this->crud->query("SELECT `period` FROM supply_requestions WHERE `status` = '0' GROUP BY `period`");
+        $records = $this->crud->query("SELECT `period` FROM supply_requestions WHERE `status` = '0' GROUP BY `period` ORDER BY `period` DESC");
         echo json_encode($records);
     }
 
-    public function readWo($period)
+    public function readWo()
     {
-        $records = $this->crud->query("SELECT `workorder` FROM supply_requestions WHERE `period` = '$period' GROUP BY `workorder`");
+        $from = $this->input->get('from');
+        $to = $this->input->get('to');
+        
+        if(empty($from) || empty($to)) {
+            echo json_encode([]);
+            return;
+        }
+
+        $records = $this->crud->query("SELECT `workorder` FROM supply_requestions WHERE `period` BETWEEN '$from' AND '$to' GROUP BY `workorder`");
         echo json_encode($records);
     }
 
-    public function readRequestNo($period, $workorder)
+    public function readRequestNo()
     {
+        $from = $this->input->get('from');
+        $to = $this->input->get('to');
+        $workorder = $this->input->get('wo');
+        
+        if(empty($from) || empty($to) || empty($workorder)) {
+            echo json_encode([]);
+            return;
+        }
+
         $worko = base64_decode($workorder);
-        $records = $this->crud->query("SELECT request_no FROM supply_requestions WHERE status = '0' and `period` = '$period' and workorder = '$worko' GROUP BY `request_no`");
+        $records = $this->crud->query("SELECT request_no FROM supply_requestions WHERE `period` BETWEEN '$from' AND '$to' AND workorder = '$worko' GROUP BY `request_no`");
         echo json_encode($records);
     }
 
@@ -188,10 +205,12 @@ class Supply_requestions extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filter_period = $this->input->get('filter_period');
+            $filter_period_from = $this->input->get('filter_period_from');
+            $filter_period_to   = $this->input->get('filter_period_to');
+            
             $filter_workorder   = $this->input->get('filter_workorder');
-            $filter_request_no = $this->input->get('filter_request_no');
-            $filter_status = $this->input->get('filter_status');
+            $filter_request_no  = $this->input->get('filter_request_no');
+            $filter_status      = $this->input->get('filter_status');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -201,6 +220,7 @@ class Supply_requestions extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             $id = $_POST['id'];
+            
             if ($id === "0") {
                 //Select Query
                 $this->db->select("a.*, 
@@ -224,6 +244,7 @@ class Supply_requestions extends CI_Controller
                 k.total_approved_to_checking,
                 l.total_approved_to_approved,
                 COUNT(a.approved_to) as total_approved_to");
+                
                 $this->db->from('supply_requestions a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('supply_sheets c', 'a.workorder = c.workorder','left');
@@ -234,10 +255,17 @@ class Supply_requestions extends CI_Controller
                 $this->db->join('item_fg e', 'c.item_fg_id = e.id','left');
                 $this->db->join('item_ng f', 'a.document = f.document','left');
                 $this->db->where('a.deleted', 0);
-                // $this->db->where('a.status', 0);
-                // $this->db->like("a.status", $filter_status);
-                $this->db->like("a.period", $filter_period);
+                
+                if (!empty($filter_period_from) && !empty($filter_period_to)) {
+                    $this->db->where("a.period BETWEEN '$filter_period_from' AND '$filter_period_to'");
+                } elseif (!empty($filter_period_from)) {
+                    $this->db->where('a.period >=', $filter_period_from);
+                } elseif (!empty($filter_period_to)) {
+                    $this->db->where('a.period <=', $filter_period_to);
+                }
+
                 $this->db->like("a.workorder", $filter_workorder);
+                
                 if ($filter_request_no != "") {
                     $this->db->where('a.request_no', $filter_request_no);
                 }
@@ -245,13 +273,16 @@ class Supply_requestions extends CI_Controller
                 if ($filter_status !== "") {
                     $this->db->having('status2', $filter_status);
                 }
+                
                 $this->db->group_by('a.request_no');
                 $this->db->order_by('a.request_no', 'DESC');
+                
                 //Total Data
                 $totalRows = $this->db->count_all_results('', false);
                 //Limit 1 - 10
                 $this->db->limit($rows, $offset);
                 $records = $this->db->get()->result_array();
+                
                 $arr = [];
                 foreach ($records as $record) {
 
@@ -299,8 +330,6 @@ class Supply_requestions extends CI_Controller
                         "total_status" => $record['total_status'],
                         "total_status_open" => $record['total_status_open'],
                         "total_status_close" => $record['total_status_close'],
-                        // "qty_wo" => $record['qty_wo'],
-                        // "qty_ng" => $record['qty_ng'],
                         "shift" => $record['shift'],
                         "type" => $record['type'],
                         "state" => "closed"
@@ -310,8 +339,8 @@ class Supply_requestions extends CI_Controller
                 $result['total'] = $totalRows;
                 $result = array_merge($result, ['rows' => @$arr]);
                 echo json_encode($result);
+                
             } else {
-                //Select Query
                 $this->db->select('a.*, 
                 b.number as item_number, 
                 b.name as item_name, 
@@ -325,10 +354,10 @@ class Supply_requestions extends CI_Controller
                 $this->db->join("(SELECT item_rm_id, request_no, COALESCE(SUM(qty),0) as qty FROM issued_material_details GROUP BY item_rm_id, request_no ) c",'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id','left');
                 $this->db->join('item_ng f', 'a.document = f.document and a.item_rm_id = f.item_rm_id','left');
                 $this->db->where('a.deleted', 0);
-                // $this->db->where('a.status', 0);
                 $this->db->where('a.request_no', $id);
                 $this->db->order_by('a.request_no', 'DESC');
                 $records = $this->db->get()->result_array();
+                
                 foreach ($records as $record) {
                     $issued_qty_crusher = 0;
                     $issued_qty_peletizing = 0;
@@ -345,7 +374,6 @@ class Supply_requestions extends CI_Controller
         
                 
                     if ($new_cr) {
-                        // Mengambil data issued quantity untuk Crusher
                         $this->db->select('SUM(qty) as issued_qty_crusher');
                         $this->db->from('issued_material_details');
                         $this->db->where('item_rm_id', $new_cr['id']);
@@ -356,7 +384,6 @@ class Supply_requestions extends CI_Controller
                     }
         
                     if ($new_pl) {
-                        // Mengambil data issued quantity untuk Peletizing
                         $this->db->select('SUM(qty) as issued_qty_peletizing');
                         $this->db->from('issued_material_details');
                         $this->db->where('item_rm_id', $new_pl['id']);
@@ -366,7 +393,6 @@ class Supply_requestions extends CI_Controller
                         $issued_qty_peletizing = $issued_material ? $issued_material['issued_qty_peletizing'] : 0;
                     }
         
-                    // Menentukan status berdasarkan jumlah yang dikeluarkan dan jumlah yang diminta
                     $status = ($record['qty'] == ($record['issued'] + $issued_qty_crusher + $issued_qty_peletizing)) ? 'Close' : 'Open';
                     $issued = $record['issued'];
                     $outstanding = $record['qty'] - ($issued + $issued_qty_crusher + $issued_qty_peletizing);
@@ -400,6 +426,7 @@ class Supply_requestions extends CI_Controller
                         "approved_date" => $record['approved_date']
                     );
                 }
+                
                 $result = !empty($arr) ? $arr : [];
                 echo json_encode($result);
             }
@@ -837,15 +864,19 @@ class Supply_requestions extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=supply_requestions_$format.xls");
         }
-        $filter_period = $this->input->get('filter_period');
+        
+        $filter_period_from = $this->input->get('filter_period_from');
+        $filter_period_to   = $this->input->get('filter_period_to');
+        
         $filter_workorder   = $this->input->get('filter_workorder');
-        $filter_request_no = $this->input->get('filter_request_no');
-        $filter_status = $this->input->get('filter_status');
+        $filter_request_no  = $this->input->get('filter_request_no');
+        $filter_status      = $this->input->get('filter_status');
 
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
+        
         $this->db->select('a.workorder,
         a.document,
         a.request_no, 
@@ -859,19 +890,36 @@ class Supply_requestions extends CI_Controller
         e.name as item_fg_name,
         COALESCE(d.qty,0) as qty_actual,
         f.name as item_family');
+        
         $this->db->from('supply_requestions a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys f', 'b.item_family_id = f.id','left');
         $this->db->join('supply_sheets c', 'a.workorder = c.workorder','left');
         $this->db->join('item_fg e', 'c.item_fg_id = e.id','left');
         $this->db->join("(SELECT item_rm_id, request_no, COALESCE(SUM(qty),0) as qty FROM issued_material_details GROUP BY item_rm_id, request_no ) d",'a.request_no = d.request_no and a.item_rm_id = d.item_rm_id','left');
+        
         $this->db->where('a.deleted', 0);
-        $this->db->like("a.status", $filter_status);
-        $this->db->like("a.period", $filter_period);
-        $this->db->like("a.workorder", $filter_workorder);
+        
+        if (!empty($filter_period_from) && !empty($filter_period_to)) {
+            $this->db->where("a.period BETWEEN '$filter_period_from' AND '$filter_period_to'");
+        } elseif (!empty($filter_period_from)) {
+            $this->db->where('a.period >=', $filter_period_from);
+        } elseif (!empty($filter_period_to)) {
+            $this->db->where('a.period <=', $filter_period_to);
+        }
+
+        if ($filter_status != "") {
+            $this->db->where("a.status", $filter_status);
+        }
+        
+        if ($filter_workorder != "") {
+            $this->db->like("a.workorder", $filter_workorder);
+        }
+
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }
+        
         $this->db->group_by('a.request_no');
         $this->db->group_by('a.item_rm_id');
         $this->db->order_by('a.request_no', 'DESC');

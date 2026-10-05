@@ -370,32 +370,36 @@
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
                         if (row.status == 0) {
-                            $.ajax({
-                                method: 'post',
-                                url: '<?= base_url('planning/production_schedules/delete') ?>',
-                                data: {
-                                    id: row.id,
-                                    item_fg_id: row.item_fg_id
-                                },
-                                success: function(result) {
-                                    // Parsing JSON response
-                                    var res = typeof result === 'string' ? JSON.parse(result) : result;
-                                    
-                                    if (res.success) {
-                                        toastr.success("Data deleted successfully");
-                                    } else {
-                                        toastr.error(res.message);
+                            if (row.supply_sheet_status == 0) {
+                                $.ajax({
+                                    method: 'post',
+                                    url: '<?= base_url('planning/production_schedules/delete') ?>',
+                                    data: {
+                                        id: row.id,
+                                        item_fg_id: row.item_fg_id
+                                    },
+                                    success: function(result) {
+                                        // Parsing JSON response
+                                        var res = typeof result === 'string' ? JSON.parse(result) : result;
+                                        
+                                        if (res.success) {
+                                            toastr.success("Data deleted successfully");
+                                        } else {
+                                            toastr.error(res.message);
+                                        }
+                                    },
+                                    error: function(jqXHR, textStatus, errorThrown) {
+                                        toastr.error(jqXHR.statusText);
+                                    },
+                                    complete: function() {
+                                        $('#dg').datagrid('reload');
                                     }
-                                },
-                                error: function(jqXHR, textStatus, errorThrown) {
-                                    toastr.error(jqXHR.statusText);
-                                },
-                                complete: function() {
-                                    $('#dg').datagrid('reload');
-                                }
-                            });
+                                });
+                            } else {
+                                toastr.warning("Status Supply Sheet is Closed!", "Error");
+                            }
                         } else {
-                            toastr.warning("Production Schedule is Closed!", "Information");
+                            toastr.warning("Production Schedule is Closed!", "Error");
                         }
                     }
                 }

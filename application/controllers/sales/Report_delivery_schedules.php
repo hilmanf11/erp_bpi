@@ -65,7 +65,7 @@ class Report_delivery_schedules extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=report_outstanding_so_$format.xls");
+            header("Content-Disposition: attachment; filename=report_delivery_schedules_$format.xls");
         }
 
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));

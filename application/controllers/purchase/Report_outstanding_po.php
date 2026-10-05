@@ -187,77 +187,17 @@ class Report_outstanding_po extends CI_Controller
             $po_no = $data['po_no'];
             $item_rm_id = $data['item_rm_id'];
             $supplier = $data['supplier_id'];
-            // var_dump($data);
-            // if($filter_product_no != "" && $filter_purchase_order != ""){
-            //     $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
-            //     from purchase_orders a 
-            //     JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
-            //     FROM purchase_order_receipts 
-            //     GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
-            //     WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
-            // }elseif($filter_purchase_order != ""){
-            //     $receipt = $this->crud->query("SELECT a.po_no, b.qty_receipt 
-            //     from purchase_orders a 
-            //     JOIN (SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt 
-            //     FROM purchase_order_receipts 
-            //     GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
-            //     WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
-            // }elseif($filter_product_no != ""){
-            //     $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
-            //     from purchase_orders a 
-            //     JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
-            //     FROM purchase_order_receipts 
-            //     GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
-            //     WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
-            // }else{
-            //     $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
-            //     from purchase_orders a 
-            //     JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
-            //     FROM purchase_order_receipts 
-            //     GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
-            //     WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
-            // }
-
-            // var_dump($receipt);
-            // $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE (a.po_no = '$po_no' OR '$po_no' IS NULL OR '$po_no' = '') and (a.item_rm_id = '$item_rm_id' OR '$item_rm_id' IS NULL OR '$item_rm_id' = '') and a.status like '%$filter_status%'");
             
-            //Dokumentasi Qty Receipt beda Query
-                // $os_qty = $data['qty_po'] - @$receipt[0]->qty_receipt;
-
-                // if ($data['status'] == 2) {
-                //     $status = "<b style='color:blue;'>COMPLETE</b>";
-                //     $data['qty_po'] = 0;
-                //     $os_qty = 0;
-                // } elseif (($data['qty_po'] - @$receipt[0]->qty_receipt) > 0) {
-                //     $status = "<b style='color:green;'>OPEN</b>";
-                // } else {
-                //     $status = "<b style='color:red;'>CLOSE</b>";
-                // }
-            //
-
             $os_qty = $data['qty_po'] - @$data['qty_receipt'];
 
             if ($data['status'] == 2) {
                 $status = "<b style='color:blue;'>COMPLETE</b>";
-                $data['qty_po'] = 0;
                 $os_qty = 0;
             } elseif (($data['qty_po'] - @$data['qty_receipt']) > 0) {
                 $status = "<b style='color:green;'>OPEN</b>";
             } else {
                 $status = "<b style='color:red;'>CLOSE</b>";
             }
-
-
-            // if (($data['qty_po'] - @$receipt[0]->qty_receipt) > 0) {
-            //     $status = "<b style='color:green;'>OPEN</b>"; 
-            // }elseif ($data['status'] == 2) {
-            //     $status = "<b style='color:blue;'>COMPLETE</b>";
-            //     $data['qty_po'] = 0;
-            //     $os_qty = 0;
-            // } else {
-            //     $status = "<b style='color:red;'>CLOSE</b>";
-            // }
-
 
             $html .= '  <tr>
                 <td style="text-align:center">' . $no . '</td>

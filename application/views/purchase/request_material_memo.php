@@ -4,6 +4,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'memo_no',width:180,halign:'center',resizable:true">Memo No</th>
             <th rowspan="2" data-options="field:'memo_date',width:100,halign:'center'">Memo Date</th>
+            <th rowspan="2" data-options="field:'status_memo',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status<br>Memo</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
             <th rowspan="2" data-options="field:'approved_date',width:150,halign:'center'">Approve Date</th>
@@ -901,12 +902,12 @@
     }
 
     function statusformat(value, row) {
-        if (value != null) {
-            if (row.total_scan == row.qty_label) {
-                return "<b style='color:red;'>CLOSED</b>";
-            } else {
-                return "<b style='color:green;'>OPEN</b>";
-            }
+        if (value == 0) {
+            return "<b style='color:green;'>OPEN</b>";
+        } else if (value == 1) {
+            return "<b style='color:red;'>CLOSED</b>";
+        } else if (value == 2) {
+            return "<b style='color:white;'>COMPLETE</b>";
         }
     }
 
@@ -927,13 +928,12 @@
     }
 
     function statusStyle(value, row, index) {
-        if (value != null) {
-        console.log(row.total_scan);
-            if (row.total_scan == row.qty_label) {
-                return 'background-color:#FFC8C8;';
-            } else {
-                return 'background-color:#C8FFCC;';
-            }
+        if (value == 0) {
+            return 'background-color:#C8FFCC;';
+        } else if (value == 1) {
+            return 'background-color:#FFC8C8;';
+        } else if (value == 2) {
+            return 'background-color:#4B54E7;';
         }
     }
 
