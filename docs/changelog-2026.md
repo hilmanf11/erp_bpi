@@ -962,3 +962,8 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-09-28]
 - **kurniawan**: update MOM 74.MOM_24SEP26_REVIEW ERP BPI ([2d9798ff](https://github.com/hilmanf11/erp_bpi/commit/2d9798ff7a13c9b1f00a455d72e371be44c2c40d))
+
+## October 2026
+
+### [2026-10-05]
+- **Yudhazaldi**: Merge branch 'main' of github.com:hilmanf11/erp_bpi ([09a79988](https://github.com/hilmanf11/erp_bpi/commit/09a799886c2a6f989709fd809ecb977d4f42944f))
