@@ -967,3 +967,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-10-05]
 - **Yudhazaldi**: Merge branch 'main' of github.com:hilmanf11/erp_bpi ([09a79988](https://github.com/hilmanf11/erp_bpi/commit/09a799886c2a6f989709fd809ecb977d4f42944f))
+
+### [2026-10-05]
+- **kurniawan**: Update Report_master_data_eng.php ([41e96054](https://github.com/hilmanf11/erp_bpi/commit/41e96054be9a2597a129e3b48097348cd38f3d3f))
