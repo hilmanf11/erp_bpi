@@ -25,7 +25,7 @@ class Purchase_dashboard extends CI_Controller
         $this->load->model('crud');
 
         // Query Rates disisipkan ke private variable
-        $this->_get_rates = $this->db->get('standard_exchange_rates')->result_array();
+        $this->_get_rates = $this->db->get_where('exchange_rates', ['currency_to' => 'IDR', 'deleted' => 0])->result_array();
     }
 
     public function index()
@@ -100,8 +100,14 @@ class Purchase_dashboard extends CI_Controller
 
     public function get_dashboard_data() 
     {
-        $filter_period_type = strtolower($this->input->post('filter_period_type'));
+        $filter_period_type = strtolower($this->input->post('filter_period_type') ? $this->input->post('filter_period_type') : 'monthly');
         $filter_period_value = $this->input->post('filter_period_value');
+        if (empty($filter_period_value)) {
+            if ($filter_period_type == "daily") $filter_period_value = date('Y-m-d');
+            elseif ($filter_period_type == "weekly") $filter_period_value = date('o-\\WW');
+            elseif ($filter_period_type == "monthly") $filter_period_value = date('Y-m');
+            elseif ($filter_period_type == "yearly") $filter_period_value = date('Y');
+        }
         $filter_division    = $this->input->post('filter_division');
         $filter_supplier_id = $this->input->post('filter_supplier_id');
         
@@ -203,11 +209,14 @@ class Purchase_dashboard extends CI_Controller
             return;
         }
 
-        // Subquery Get Amount
-        $query_amount = "(CASE 
+        // Subquery Get Amount & Exchange Rate to IDR
+        $query_amount = "((CASE 
                 WHEN COALESCE(d.discount_nominal,0) > 0 THEN COALESCE(d.total,0) / NULLIF(COALESCE(d.qty,0),0) 
                 ELSE (COALESCE(d.total,0) - ((COALESCE(d.total,0) / NULLIF(COALESCE(d.total_sub,0),0)) * COALESCE(d.discount_total,0))) / NULLIF(COALESCE(d.qty,0),0)
-            END)";
+            END) * (CASE 
+                WHEN COALESCE(d.currency, f.currency, 'IDR') = 'IDR' THEN 1.0 
+                ELSE COALESCE(er.middle, 0.0) 
+            END))";
 
         // Keywords Filter
         $params = [
@@ -221,9 +230,12 @@ class Purchase_dashboard extends CI_Controller
         $sql_trend = "SELECT $group_by_sql as period_key, SUM(a.qty_receipt2 * $query_amount) AS total_amount
                     FROM purchase_order_receipts a
                     LEFT JOIN item_rm b ON a.item_rm_id = b.id
-                    LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
+                    LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id AND COALESCE(a.specification, '') = COALESCE(d.specification, '')
+                    LEFT JOIN suppliers f ON d.supplier_id = f.id
+                    LEFT JOIN exchange_rates er ON er.currency_to = 'IDR' AND er.currency_from = COALESCE(d.currency, f.currency, 'IDR') AND er.deleted = 0 AND er.start_date = DATE_FORMAT(DATE_SUB(a.receipt_date, INTERVAL 1 MONTH), '%Y-%m-01')
                     WHERE (a.supplier_id LIKE ?) AND (b.division LIKE ?) 
                     AND (a.receipt_date BETWEEN ? AND ?)
+                    AND a.deleted = 0
                     GROUP BY period_key ORDER BY period_key ASC";
         $trend_result = $this->db->query($sql_trend, $params)->result_array();
 
@@ -247,13 +259,15 @@ class Purchase_dashboard extends CI_Controller
 
         
         // QUERY TOP 10 SUPPLIER (Berdasarkan Nama Supplier)
-        $sql_supplier = "SELECT f.name as supplier_name, SUM(a.qty_receipt2 * $query_amount) AS total_amount
+        $sql_supplier = "SELECT COALESCE(f.name, 'Unknown') as supplier_name, SUM(a.qty_receipt2 * $query_amount) AS total_amount
                         FROM purchase_order_receipts a
                         LEFT JOIN item_rm b ON a.item_rm_id = b.id
-                        LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
+                        LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id AND COALESCE(a.specification, '') = COALESCE(d.specification, '')
                         LEFT JOIN suppliers f ON d.supplier_id = f.id
+                        LEFT JOIN exchange_rates er ON er.currency_to = 'IDR' AND er.currency_from = COALESCE(d.currency, f.currency, 'IDR') AND er.deleted = 0 AND er.start_date = DATE_FORMAT(DATE_SUB(a.receipt_date, INTERVAL 1 MONTH), '%Y-%m-01')
                         WHERE (a.supplier_id LIKE ?) AND (b.division LIKE ?) 
                         AND (a.receipt_date BETWEEN ? AND ?)
+                        AND a.deleted = 0
                         GROUP BY f.name 
                         ORDER BY total_amount DESC 
                         LIMIT 10";
@@ -303,8 +317,14 @@ class Purchase_dashboard extends CI_Controller
 
     public function get_plan_actual_data() 
     {
-        $filter_period_type = strtolower($this->input->post('filter_period_type'));
+        $filter_period_type = strtolower($this->input->post('filter_period_type') ? $this->input->post('filter_period_type') : 'monthly');
         $filter_period_value = $this->input->post('filter_period_value');
+        if (empty($filter_period_value)) {
+            if ($filter_period_type == "daily") $filter_period_value = date('Y-m-d');
+            elseif ($filter_period_type == "weekly") $filter_period_value = date('o-\\WW');
+            elseif ($filter_period_type == "monthly") $filter_period_value = date('Y-m');
+            elseif ($filter_period_type == "yearly") $filter_period_value = date('Y');
+        }
         $filter_division    = $this->input->post('filter_division');
         $filter_supplier_id = $this->input->post('filter_supplier_id');
         
@@ -402,23 +422,39 @@ class Purchase_dashboard extends CI_Controller
             return;
         }
 
+        $query_price_po = "(CASE 
+            WHEN COALESCE(a.discount_nominal,0) > 0 THEN COALESCE(a.total,0) / NULLIF(COALESCE(a.qty,0),0) 
+            ELSE (COALESCE(a.total,0) - ((COALESCE(a.total,0) / NULLIF(COALESCE(a.total_sub,0),0)) * COALESCE(a.discount_total,0))) / NULLIF(COALESCE(a.qty,0),0)
+        END)";
+
+        $query_price_por = "(CASE 
+            WHEN COALESCE(d.discount_nominal,0) > 0 THEN COALESCE(d.total,0) / NULLIF(COALESCE(d.qty,0),0) 
+            ELSE (COALESCE(d.total,0) - ((COALESCE(d.total,0) / NULLIF(COALESCE(d.total_sub,0),0)) * COALESCE(d.discount_total,0))) / NULLIF(COALESCE(d.qty,0),0)
+        END)";
+
         // QTY PLAN (Dari purchase_orders)
         $query_plan = "SELECT 
                             a.item_rm_id, 
                             a.po_no as no_ref,
                             a.po_date as date_ref, 
                             a.qty, 
-                            a.price,
-                            a.currency,
+                            $query_price_po AS price,
+                            COALESCE(a.currency, 'IDR') as currency,
+                            (CASE 
+                                WHEN COALESCE(a.currency, 'IDR') = 'IDR' THEN 1.0
+                                ELSE COALESCE(er.middle, 0.0)
+                            END) AS rate,
                             e.name as category_name,
                             c.name as family_name
                         FROM purchase_orders a
                         LEFT JOIN item_rm b ON a.item_rm_id = b.id
                         LEFT JOIN item_familys c ON b.item_family_id = c.id
                         LEFT JOIN item_categories e ON b.item_category_id = e.id
+                        LEFT JOIN exchange_rates er ON er.currency_to = 'IDR' AND er.currency_from = COALESCE(a.currency, 'IDR') AND er.deleted = 0 AND er.start_date = DATE_FORMAT(DATE_SUB(a.po_date, INTERVAL 1 MONTH), '%Y-%m-01')
                         WHERE a.po_date BETWEEN '$period_start_date' AND '$period_end_date'
                         AND a.supplier_id LIKE '%$filter_supplier_id%'
                         AND b.division LIKE '%$filter_division%'
+                        AND a.deleted = 0
                         ORDER BY a.po_date";
         $data_plan = $this->db->query($query_plan)->result_array();
 
@@ -429,18 +465,25 @@ class Purchase_dashboard extends CI_Controller
                             a.receipt_date as date_ref, 
                             a.qty_receipt2 as qty, 
                             d.po_no,
-                            d.price,
-                            d.currency,
+                            $query_price_por AS price,
+                            COALESCE(d.currency, f.currency, 'IDR') as currency,
+                            (CASE 
+                                WHEN COALESCE(d.currency, f.currency, 'IDR') = 'IDR' THEN 1.0
+                                ELSE COALESCE(er.middle, 0.0)
+                            END) AS rate,
                             e.name as category_name,
                             c.name as family_name
                         FROM purchase_order_receipts a
                         LEFT JOIN item_rm b ON a.item_rm_id = b.id
                         LEFT JOIN item_familys c ON b.item_family_id = c.id
-                        LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
+                        LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id AND COALESCE(a.specification, '') = COALESCE(d.specification, '')
+                        LEFT JOIN suppliers f ON d.supplier_id = f.id
+                        LEFT JOIN exchange_rates er ON er.currency_to = 'IDR' AND er.currency_from = COALESCE(d.currency, f.currency, 'IDR') AND er.deleted = 0 AND er.start_date = DATE_FORMAT(DATE_SUB(a.receipt_date, INTERVAL 1 MONTH), '%Y-%m-01')
                         LEFT JOIN item_categories e ON b.item_category_id = e.id
                         WHERE a.receipt_date BETWEEN '$period_start_date' AND '$period_end_date'
                         AND a.supplier_id LIKE '%$filter_supplier_id%'
                         AND b.division LIKE '%$filter_division%'
+                        AND a.deleted = 0
                         ORDER BY a.receipt_date";
         $data_actual = $this->db->query($query_actual)->result_array();
 
@@ -466,8 +509,8 @@ class Purchase_dashboard extends CI_Controller
 
             if (isset($mapped_plan[$key])) {
                 // HITUNG AMOUNT
-                $rate = $this->_find_rate_in_cache($row['date_ref'], $row['currency']);
-                $amount = (float)$row['qty'] * (float)$row['price'] * (float)$rate;
+                $rate = (float)($row['rate'] ?? $this->_find_rate_in_cache($row['date_ref'], $row['currency']));
+                $amount = (float)$row['qty'] * (float)$row['price'] * $rate;
                 
                 $mapped_plan[$key] += $amount;
             }
@@ -490,8 +533,8 @@ class Purchase_dashboard extends CI_Controller
 
             if (isset($mapped_actual[$key])) {
                 // HITUNG AMOUNT
-                $rate = $this->_find_rate_in_cache($row['date_ref'], $row['currency']);
-                $amount = (float)$row['qty'] * (float)$row['price'] * (float)$rate;
+                $rate = (float)($row['rate'] ?? $this->_find_rate_in_cache($row['date_ref'], $row['currency']));
+                $amount = (float)$row['qty'] * (float)$row['price'] * $rate;
                 
                 $mapped_actual[$key] += $amount;
             }
@@ -524,8 +567,14 @@ class Purchase_dashboard extends CI_Controller
 
     public function get_purchase_by_family_data() 
     {
-        $filter_period_type = strtolower($this->input->post('filter_period_type'));
+        $filter_period_type = strtolower($this->input->post('filter_period_type') ? $this->input->post('filter_period_type') : 'monthly');
         $filter_period_value = $this->input->post('filter_period_value');
+        if (empty($filter_period_value)) {
+            if ($filter_period_type == "daily") $filter_period_value = date('Y-m-d');
+            elseif ($filter_period_type == "weekly") $filter_period_value = date('o-\\WW');
+            elseif ($filter_period_type == "monthly") $filter_period_value = date('Y-m');
+            elseif ($filter_period_type == "yearly") $filter_period_value = date('Y');
+        }
         $filter_division    = $this->input->post('filter_division');
         $filter_supplier_id = $this->input->post('filter_supplier_id');
 
@@ -624,45 +673,68 @@ class Purchase_dashboard extends CI_Controller
             return;
         }
 
-        // QTY PLAN (Dari purchase_orders)
+        $query_price_po = "(CASE 
+            WHEN COALESCE(a.discount_nominal,0) > 0 THEN COALESCE(a.total,0) / NULLIF(COALESCE(a.qty,0),0) 
+            ELSE (COALESCE(a.total,0) - ((COALESCE(a.total,0) / NULLIF(COALESCE(a.total_sub,0),0)) * COALESCE(a.discount_total,0))) / NULLIF(COALESCE(a.qty,0),0)
+        END)";
+
+        $query_price_por = "(CASE 
+            WHEN COALESCE(d.discount_nominal,0) > 0 THEN COALESCE(d.total,0) / NULLIF(COALESCE(d.qty,0),0) 
+            ELSE (COALESCE(d.total,0) - ((COALESCE(d.total,0) / NULLIF(COALESCE(d.total_sub,0),0)) * COALESCE(d.discount_total,0))) / NULLIF(COALESCE(d.qty,0),0)
+        END)";
+
+        // PLAN (Dari purchase_orders)
         $query_plan = "SELECT 
                             a.item_rm_id, 
                             a.po_no as no_ref,
                             a.po_date as date_ref, 
                             a.qty, 
-                            a.price,
-                            a.currency,
+                            $query_price_po AS price,
+                            COALESCE(a.currency, 'IDR') as currency,
+                            (CASE 
+                                WHEN COALESCE(a.currency, 'IDR') = 'IDR' THEN 1.0
+                                ELSE COALESCE(er.middle, 0.0)
+                            END) AS rate,
                             e.name as category_name,
                             c.name as family_name
                         FROM purchase_orders a
                         LEFT JOIN item_rm b ON a.item_rm_id = b.id
                         LEFT JOIN item_familys c ON b.item_family_id = c.id
                         LEFT JOIN item_categories e ON b.item_category_id = e.id
+                        LEFT JOIN exchange_rates er ON er.currency_to = 'IDR' AND er.currency_from = COALESCE(a.currency, 'IDR') AND er.deleted = 0 AND er.start_date = DATE_FORMAT(DATE_SUB(a.po_date, INTERVAL 1 MONTH), '%Y-%m-01')
                         WHERE a.po_date BETWEEN '$period_start_date' AND '$period_end_date'
                         AND a.supplier_id LIKE '%$filter_supplier_id%'
                         AND b.division LIKE '%$filter_division%'
+                        AND a.deleted = 0
                         ORDER BY a.po_date";
         $data_plan = $this->db->query($query_plan)->result_array();
 
-        // QTY ACTUAL (Dari purchase_order_receipts)
+        // ACTUAL (Dari purchase_order_receipts)
         $query_actual = "SELECT 
                             a.item_rm_id,
                             a.receipt_no as no_ref,
                             a.receipt_date as date_ref, 
                             a.qty_receipt2 as qty, 
                             d.po_no,
-                            d.price,
-                            d.currency,
+                            $query_price_por AS price,
+                            COALESCE(d.currency, f.currency, 'IDR') as currency,
+                            (CASE 
+                                WHEN COALESCE(d.currency, f.currency, 'IDR') = 'IDR' THEN 1.0
+                                ELSE COALESCE(er.middle, 0.0)
+                            END) AS rate,
                             e.name as category_name,
                             c.name as family_name
                         FROM purchase_order_receipts a
                         LEFT JOIN item_rm b ON a.item_rm_id = b.id
                         LEFT JOIN item_familys c ON b.item_family_id = c.id
-                        LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
+                        LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id AND COALESCE(a.specification, '') = COALESCE(d.specification, '')
+                        LEFT JOIN suppliers f ON d.supplier_id = f.id
+                        LEFT JOIN exchange_rates er ON er.currency_to = 'IDR' AND er.currency_from = COALESCE(d.currency, f.currency, 'IDR') AND er.deleted = 0 AND er.start_date = DATE_FORMAT(DATE_SUB(a.receipt_date, INTERVAL 1 MONTH), '%Y-%m-01')
                         LEFT JOIN item_categories e ON b.item_category_id = e.id
                         WHERE a.receipt_date BETWEEN '$period_start_date' AND '$period_end_date'
                         AND a.supplier_id LIKE '%$filter_supplier_id%'
                         AND b.division LIKE '%$filter_division%'
+                        AND a.deleted = 0
                         ORDER BY a.receipt_date";
         $data_actual = $this->db->query($query_actual)->result_array();
         
@@ -691,8 +763,8 @@ class Purchase_dashboard extends CI_Controller
             $f_name = strtoupper($row['family_name'] ?? '');
             
             // Hitung Amount IDR
-            $rate = $this->_find_rate_in_cache($row['date_ref'], $row['currency']);
-            $amount = (float)$row['qty'] * (float)$row['price'] * (float)$rate;
+            $rate = (float)($row['rate'] ?? $this->_find_rate_in_cache($row['date_ref'], $row['currency']));
+            $amount = (float)$row['qty'] * (float)$row['price'] * $rate;
 
             if (isset($data_mapping['qty']['plan'][$key])) {
                 // Akumulasi Amount ke total
@@ -714,8 +786,8 @@ class Purchase_dashboard extends CI_Controller
             $f_name = strtoupper($row['family_name'] ?? '');
 
             // Hitung Amount IDR
-            $rate = $this->_find_rate_in_cache($row['date_ref'], $row['currency']);
-            $amount = (float)$row['qty'] * (float)$row['price'] * (float)$rate;
+            $rate = (float)($row['rate'] ?? $this->_find_rate_in_cache($row['date_ref'], $row['currency']));
+            $amount = (float)$row['qty'] * (float)$row['price'] * $rate;
 
             if (isset($data_mapping['qty']['actual'][$key])) {
                 // Akumulasi Amount ke total
@@ -765,12 +837,13 @@ class Purchase_dashboard extends CI_Controller
     private function _find_rate_in_cache($date, $currency) {
         if ($currency == "IDR" || empty($currency)) return 1.0;
         
+        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($date)));
         foreach ($this->_get_rates as $r) {
-            if ($r['currency_from'] == $currency && $date >= $r['start_date'] && $date <= $r['end_date']) {
+            if ($r['currency_from'] == $currency && $r['start_date'] == $monthBf) {
                 return (float)$r['middle'];
             }
         }
-        return 1.0;
+        return 0.0;
     }
 
 }

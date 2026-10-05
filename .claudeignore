@@ -1,0 +1,7 @@
+system/
+vendor/
+application/config/
+application/logs/
+application/cache/
+*.log
+*.md

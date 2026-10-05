@@ -232,7 +232,7 @@
                 <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button> -->
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_purchase_trends')"><i class="fa fa-calendar-day"></i> Daily</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_purchase_trends')"><i class="fa fa-calendar-week"></i> Weekly</button>
-                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_purchase_trends')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn active" onclick="togglePill(this, 'monthly', 'form_purchase_trends')"><i class="fa fa-calendar"></i> Monthly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_purchase_trends')"><i class="fa fa-calendar"></i> Yearly</button>
 
                 <input name="filter_supplier_id" class="filter_supplier_id easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
@@ -335,7 +335,7 @@
                 <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all', 'form_plan_vs_actual')"><i class="fa fa-list"></i> All</button> -->
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_plan_vs_actual')"><i class="fa fa-calendar-day"></i> Daily</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_plan_vs_actual')"><i class="fa fa-calendar-week"></i> Weekly</button>
-                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_plan_vs_actual')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn active" onclick="togglePill(this, 'monthly', 'form_plan_vs_actual')"><i class="fa fa-calendar"></i> Monthly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_plan_vs_actual')"><i class="fa fa-calendar"></i> Yearly</button>
 
                 <input name="filter_supplier_id" class="filter_supplier_id easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
@@ -385,7 +385,7 @@
             <div class="pill-group">
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_purchase_by_family')"><i class="fa fa-calendar-day"></i> Daily</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_purchase_by_family')"><i class="fa fa-calendar-week"></i> Weekly</button>
-                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_purchase_by_family')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn active" onclick="togglePill(this, 'monthly', 'form_purchase_by_family')"><i class="fa fa-calendar"></i> Monthly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_purchase_by_family')"><i class="fa fa-calendar"></i> Yearly</button>
 
                 <input name="filter_supplier_id" class="filter_supplier_id easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
@@ -582,7 +582,16 @@
 
 <script>
 function reload() {
+    $.messager.progress({
+        title: 'Please Wait',
+        msg: 'Refreshing dashboard data...',
+        text: 'Loading...',
+    });
+
+    // refresh halaman
+    setTimeout(function() {
     window.location.reload();
+    }, 100); 
 }
 
 function pdf() {
@@ -611,6 +620,23 @@ function myparser(s) {
         return new Date();
     }
 }
+
+function showLoader(selector) {
+    const $el = $(selector);
+    
+    $el.css('position', 'relative');
+    $el.append(`
+        <div class="custom-chart-loader" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);display:flex;justify-content:center;align-items:center;z-index:1000;flex-direction:column;">
+            <i class="fa fa-spinner fa-spin fa-2x" style="color:#2c3e50;margin-bottom:10px;"></i>
+            <span style="font-weight:bold;color:#2c3e50;">Loading Data...</span>
+        </div>
+    `);
+}
+
+function hideLoader(selector) {
+    $(selector).find('.custom-chart-loader').remove();
+}
+
 
 $(function() { 
     // show on load
@@ -1209,7 +1235,7 @@ function createFamilyApexChart(containerId, period, titleGlobal, labels, titleCh
         tooltip: {
             shared: true,
             intersect: false,
-            y: { formatter: (val) => val.toLocaleString('id-ID') + " unit" }
+            y: { formatter: (val) => "Rp " + val.toLocaleString('id-ID') }
         }
     };
 
@@ -1232,14 +1258,19 @@ function submitFilter(formId) {
 
     $form.serializeArray().forEach(item => payload[item.name] = item.value);
 
-    let periodType = $form.find('.pill-btn.active').text().trim().toLowerCase() || 'daily';
+    let periodType = $form.find('.pill-btn.active').text().trim().toLowerCase() || 'monthly';
     payload.filter_period_type = periodType;
 
     const $input = $form.find('.current-period-input');
     let periodValue = $input.length ? $input.combo('getValue') : '';
     
-    if (!periodValue && periodType === 'daily') {
-        periodValue = new Date().toISOString().split('T')[0];
+    if (!periodValue) {
+        if (periodType === 'monthly') {
+            const d = new Date();
+            periodValue = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        } else if (periodType === 'daily') {
+            periodValue = new Date().toISOString().split('T')[0];
+        }
     }
     payload.filter_period_value = periodValue;
 
