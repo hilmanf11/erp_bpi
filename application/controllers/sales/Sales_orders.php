@@ -784,7 +784,7 @@ class Sales_orders extends CI_Controller
                     ];
                 }
 
-                $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => $item_fg->id, "customer_id" => $customer_id]);
+                $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => $item_fg->id, "customer_id" => $customer_id, "customer_address_id" => $cust_address]);
                 $total = ($data->val($i, 4) * $customer_items->price);
 
                 $datas_grouped[$customer_order_no]['items'][] = [
