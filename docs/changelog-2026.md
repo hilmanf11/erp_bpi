@@ -973,3 +973,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-10-05]
 - **kurniawan**: Update Sales Invoice for Currenry Input ([2837c913](https://github.com/hilmanf11/erp_bpi/commit/2837c91329b0228a533313986b75924ffc552877))
+
+### [2026-10-05]
+- **kurniawan**: Update Report_history_transactions_other_component.php ([509059ee](https://github.com/hilmanf11/erp_bpi/commit/509059ee3857dd19fbc25bb1bb728e4f102a4f75))
