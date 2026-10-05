@@ -366,7 +366,7 @@ class Report_history_transactions_other_component extends CI_Controller
         AND b.number LIKE '%$filter_item_family%'
         AND a.id LIKE '%$filter_items%'
         AND a.division LIKE '%$filter_division%'
-        AND (a.item_category_id = 'C06' OR (a.division = 'INJ' AND a.item_category_id = 'C11' AND a.item_family_id = 'P05'))
+        AND (a.item_category_id = 'C06' OR (a.division = 'INJ' AND a.item_category_id = 'C11'))
         GROUP BY a.id
         ORDER BY c.name DESC, b.name DESC, a.number";
 
