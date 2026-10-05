@@ -976,3 +976,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-10-05]
 - **kurniawan**: Update Report_history_transactions_other_component.php ([509059ee](https://github.com/hilmanf11/erp_bpi/commit/509059ee3857dd19fbc25bb1bb728e4f102a4f75))
+
+### [2026-10-05]
+- **kurniawan**: Update feasibilitys.php ([36e870f9](https://github.com/hilmanf11/erp_bpi/commit/36e870f9305e1a4c3118358a1ddae8643b5bee1d))
