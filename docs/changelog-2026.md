@@ -979,3 +979,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-10-05]
 - **kurniawan**: Update feasibilitys.php ([36e870f9](https://github.com/hilmanf11/erp_bpi/commit/36e870f9305e1a4c3118358a1ddae8643b5bee1d))
+
+### [2026-10-05]
+- **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([b67eb384](https://github.com/hilmanf11/erp_bpi/commit/b67eb384a46800564167bca1c05bbc0286e65879))
