@@ -490,8 +490,6 @@ class Sales_invoices extends CI_Controller
             JOIN account_coa b ON a.account_number = b.account_number 
             WHERE a.account_number LIKE '%$post%' and a.journal_type_id = '$journal_type_id' ORDER BY a.flag ASC");
 
-        $arr = [];
-        if (!empty($journals)) {
         foreach ($journals as $journal) {
             $arr[] = array(
                 "account_number" => $journal->account_number,
@@ -499,10 +497,7 @@ class Sales_invoices extends CI_Controller
                 "debit" => "0.00",
                 "credit" => "0.00",
                 "flag" => $journal->flag,
-                "local_debit"  => "0.00",
-                "local_credit" => "0.00",
             );
-        }
         }
 
         echo json_encode($arr);
@@ -560,126 +555,99 @@ class Sales_invoices extends CI_Controller
         $sales_invoices_data = json_decode(file_get_contents("json/sales_invoices.json"), true);
         $arr = [];
 
-        // Jika sales_invoice_journals.json KOSONG
-        if (empty($journals) || count($journals) == 0) {
+        // Jika sales_invoice_journals.json TIDAK KOSONG
+        if (count($journals) == 0) {
             $mergedData = [];
             $flag = 1;
             
             foreach ($sales_invoices_data as $jsonData) {
                 $account_number = $jsonData["account_number"];
                 $account_name = $jsonData["account_name"];
-                $total = (float)$jsonData["total"];
-                $currency = $jsonData["currency"];
-                $trans_date = $jsonData["trans_date"];
+                $total = $jsonData["total"];
 
-                // Get Rate
-                $rate = ($currency == 'IDR') ? 1 : (float)$this->getExchangeRate($currency, $trans_date);
-
+                // Inisialisasi entri jika belum ada
                 if (!isset($mergedData[$account_number])) {
                     $mergedData[$account_number] = [
                         "account_number" => $account_number,
                         "account_name" => $account_name,
                         "debit" => 0,
                         "credit" => 0,
-                        "local_debit"  => 0,
-                        "local_credit" => 0,
                         "flag" => $flag++, 
                     ];
                 }
 
+                // Tambahkan nilai ke Debit atau Credit yang sesuai
                 if ($jsonData['account_type'] == "DEBIT") {
                     $mergedData[$account_number]["debit"] += $total;
-                    $mergedData[$account_number]["local_debit"] += ($total * $rate); // Kalkulasi Local
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $mergedData[$account_number]["credit"] += $total;
-                    $mergedData[$account_number]["local_credit"] += ($total * $rate); // Kalkulasi Local
                 }
             }
+
+            // Ubah hasil penggabungan menjadi array berindeks numerik
             $arr = array_values($mergedData);
 
         } else {
-            // --- Jika Jurnal SUDAH ADA ---
+            // --- Jika Jurnal SUDAH ADA (Membandingkan/Memperbarui) ---
+            
+            // 1. Agregasi data sales_invoices
             $aggregated_invoices = [];
             foreach ($sales_invoices_data as $jsonData) {
                 $account_number = $jsonData["account_number"];
-                $total = (float)$jsonData["total"];
-                $currency = $jsonData["currency"];
-                $trans_date = $jsonData["trans_date"];
-
-                $rate = ($currency == 'IDR') ? 1 : (float)$this->getExchangeRate($currency, $trans_date);
+                $total = $jsonData["total"];
                 
                 if (!isset($aggregated_invoices[$account_number])) {
-                    $aggregated_invoices[$account_number] = [
-                        "rate" => $rate, // add rate untuk referensi
-                        "debit" => 0, "credit" => 0, 
-                        "local_debit" => 0, "local_credit" => 0
-                    ];
+                    $aggregated_invoices[$account_number] = ["debit" => 0, "credit" => 0];
                 }
 
                 if ($jsonData['account_type'] == "DEBIT") {
                     $aggregated_invoices[$account_number]["debit"] += $total;
-                    $aggregated_invoices[$account_number]["local_debit"] += ($total * $rate);
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $aggregated_invoices[$account_number]["credit"] += $total;
-                    $aggregated_invoices[$account_number]["local_credit"] += ($total * $rate);
                 }
             }
 
+            // 2. Loop melalui jurnal yang sudah ada untuk memperbarui nilainya
             foreach ($journals as $journal) {
-                $acc_no = $journal['account_number'];
+                $account_number = $journal['account_number'];
+                $total_debit = $journal['debit'];
+                $total_credit = $journal['credit'];
                 
-                if (isset($aggregated_invoices[$acc_no])) {
-                    $data = $aggregated_invoices[$acc_no];
-                    $arr[] = [
-                        "account_number" => $acc_no,
-                        "account_name"   => $journal['account_name'],
-                        "debit"          => round($data['debit'], 4),
-                        "credit"         => round($data['credit'], 4),
-                        "local_debit"    => round($data['local_debit'], 2),
-                        "local_credit"   => round($data['local_credit'], 2),
-                        "flag"           => $journal['flag'],
-                    ];
-                    unset($aggregated_invoices[$acc_no]); 
-                } else {
-                    // Jika tidak ada di data invoice baru, tetap pakai data jurnal lama
-                    $journal['local_debit'] = isset($journal['local_debit']) ? (float)$journal['local_debit'] : 0;
-                    $journal['local_credit'] = isset($journal['local_credit']) ? (float)$journal['local_credit'] : 0;
+                // Cari total baru dari aggregated_invoices dan lakukan overwrite
+                if (isset($aggregated_invoices[$account_number])) {
+                    $total_debit = $aggregated_invoices[$account_number]['debit'];
+                    $total_credit = $aggregated_invoices[$account_number]['credit'];
                     
-                    // FIX BUG VAT: Cek apakah Original Debit OR Credit punya nilai tapi Local-nya kosong
-                    $hasOriginalValue = ($journal['debit'] > 0 || $journal['credit'] > 0);
-                    $hasNoLocalValue = ($journal['local_debit'] == 0 && $journal['local_credit'] == 0);
-
-                    if ($hasOriginalValue && $hasNoLocalValue) {
-                        // Get currency dari invoice data (fallback ke IDR)
-                        $def_currency = isset($sales_invoices_data[0]['currency']) ? $sales_invoices_data[0]['currency'] : 'IDR';
-                        $def_date = isset($sales_invoices_data[0]['trans_date']) ? $sales_invoices_data[0]['trans_date'] : date('Y-m-d');
-                        
-                        $rate = ($def_currency == 'IDR') ? 1 : (float)$this->getExchangeRate($def_currency, $def_date);
-                        
-                        // Hitung ulang Debit & Credit
-                        $journal['local_debit'] = round((float)$journal['debit'] * $rate, 2);
-                        $journal['local_credit'] = round((float)$journal['credit'] * $rate, 2);
-                    }
-                    
-                    $arr[] = $journal;
+                    // Hapus dari aggregated_invoices setelah diproses
+                    unset($aggregated_invoices[$account_number]); 
                 }
+                
+                // Tambahkan ke array hasil
+                $arr[] = [
+                    "account_number" => $account_number,
+                    "account_name" => $journal['account_name'],
+                    "debit" => round($total_debit, 4),
+                    "credit" => round($total_credit, 4),
+                    "flag" => $journal['flag'],
+                ];
             }
             
-            // Tambahkan akun BARU yang belum ada di jurnal lama
-            $flag_counter = count($arr) + 1;
-            foreach ($aggregated_invoices as $acc_no => $data) {
-                $acc_name = $this->getAccountNameFromInvoiceData($sales_invoices_data, $acc_no);
+            // 3. Tambahkan akun-akun BARU
+            $flag_counter = count($journals) + 1;
+            foreach ($aggregated_invoices as $account_number => $data) {
+                $account_name = $this->getAccountNameFromInvoiceData($sales_invoices_data, $account_number);
+
                 $arr[] = [
-                    "account_number" => $acc_no,
-                    "account_name"   => $acc_name,
-                    "debit"          => round($data['debit'], 4),
-                    "credit"         => round($data['credit'], 4),
-                    "local_debit"    => round($data['local_debit'], 2),
-                    "local_credit"   => round($data['local_credit'], 2),
-                    "flag"           => $flag_counter++,
+                    "account_number" => $account_number,
+                    "account_name" => $account_name,
+                    "debit" => round($data['debit'], 4),
+                    "credit" => round($data['credit'], 4),
+                    "flag" => $flag_counter++,
                 ];
             }
         }
+        
+        // Output akhir hanya berupa array jurnal
         echo json_encode($arr);
     }
     // match account_number between json sales_invoice and journal
@@ -691,22 +659,6 @@ class Sales_invoices extends CI_Controller
             }
         }
         return "N/A";
-    }
-    private function getExchangeRate($currency, $trans_date) 
-    {
-        $this->db->select('middle, currency_from, currency_to');
-        $this->db->from('exchange_rates');
-        $this->db->where('currency_from', $currency);
-        $this->db->where('currency_to', 'IDR');
-        $this->db->where("'$trans_date' BETWEEN start_date AND end_date", null, false);
-        $query = $this->db->get()->row();
-
-        if ($query) {
-            $rate = $query->middle;
-        } else {
-            $rate = 0;
-        }
-        return $rate;
     }
 
     public function calculateJournal_existing()
@@ -840,8 +792,7 @@ class Sales_invoices extends CI_Controller
         echo $datenow . "-" . $autoID;
     }
 
-    // Bug different price between SO and SI (Bu Nina 2026-04-06)
-    public function datatablesTemp_existing()
+    public function datatablesTemp()
     {
         // $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
         $delivery_note_no = explode(",", base64_decode($this->input->get('delivery_note_no')));
@@ -1004,94 +955,6 @@ class Sales_invoices extends CI_Controller
         die(json_encode($arr));
     }
 
-    // Optimized Query
-    public function datatablesTemp()
-    {
-        $delivery_note_no = explode(",", base64_decode($this->input->get('delivery_note_no')));
-        $division = $this->input->get('division');
-
-        $this->db->select('
-            a.delivery_note_no, 
-            a.customer_order_no,  
-            a.division,
-            a.customer_id,
-            COALESCE(NULLIF(d.sales_order_no, ""), d.sales_order_no_rm) as display_so_no,
-            a.item_fg_id, 
-            b.number as item_number, 
-            b.name as item_name, 
-            b.uom, 
-            c.currency, 
-            d.qty_del as qty,
-            
-            /* Prioritas Harga: SO Utama -> SO RM -> 0 */
-            COALESCE(g.price, g2.price, 0) as price,
-            (d.qty_del * COALESCE(g.price, g2.price, 0)) as total,
-            
-            /* Prioritas Account: Account Division -> Account Default Customer */
-            COALESCE(e.account_number, cust.account_number) as final_account_number,
-            COALESCE(e.account_name, cust.account_name) as final_account_name,
-            
-            j.id as si_id
-        ');
-
-        $this->db->from('delivery_orders d');
-        $this->db->join('item_fg b', 'd.item_fg_id = b.id');
-        $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
-        $this->db->join('customers cust', 'a.customer_id = cust.id', 'left');
-        $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_fg_id = c.item_fg_id', 'left');
-        
-        /* Join Account berdasarkan Divisi */
-        $this->db->join('customer_account_numbers e', 'a.customer_id = e.customer_id AND e.division = ' . $this->db->escape($division), 'left');
-
-        /* Join Price dari SO atau SO RM */
-        $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no AND a.item_fg_id = g.item_fg_id', 'left');
-        $this->db->join('sales_order_rm g2', 'd.sales_order_no_rm = g2.sales_order_no AND a.item_fg_id = g2.item_fg_id', 'left');
-        
-        $this->db->join('sales_invoices j', 'a.delivery_note_no = j.delivery_note_no and a.item_fg_id = j.item_fg_id', 'left');
-
-        $this->db->where_in('a.delivery_note_no', $delivery_note_no);
-        
-        /* Grouping untuk menghindari duplikasi */
-        $this->db->group_by(['a.delivery_note_no', 'a.item_fg_id', 'display_so_no', 'a.id']);
-        $this->db->order_by('a.delivery_note_no', 'asc');
-
-        $records = $this->db->get()->result_array();
-
-        $obj = [];
-        $total_sub = 0;
-
-        foreach ($records as $record) {
-            $total_sub += (float)$record['total'];
-
-            $obj[] = [
-                "id"                => $record['si_id'],
-                "delivery_note_no"  => $record['delivery_note_no'],
-                "sales_order_no"    => $record['display_so_no'],
-                "customer_order_no" => $record['customer_order_no'],
-                "item_fg_id"        => $record['item_fg_id'],
-                "item_no"           => $record['item_number'],
-                "item_name"         => $record['item_name'],
-                "uom"               => $record['uom'],
-                "currency"          => $record['currency'],
-                "qty"               => $record['qty'],
-                "price"             => $record['price'],
-                "total"             => $record['total'],
-                "account_number"    => $record['final_account_number'],
-                "account_name"      => $record['final_account_name'],
-                "account_type"      => "CREDIT",
-            ];
-        }
-
-        $arr = [
-            'rows' => $obj,
-            'total_sub' => number_format($total_sub, 2, '.', '')
-        ];
-
-        header('Content-Type: application/json');
-        echo json_encode($arr);
-        exit;
-    }
-
     public function datatables($details = "")
     {
         $filter_type  = base64_decode($this->input->get('filter_type'));
@@ -1124,7 +987,7 @@ class Sales_invoices extends CI_Controller
             $this->db->select("'view' as details");
             $this->db->from('sales_invoices a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('journal_postings c', 'a.number = c.document_no', 'left');
+            $this->db->join("(select distinct document_no, number from journal_postings WHERE modul = 'SALES INVOICING') c", 'a.number = c.document_no', 'left');
             if ($filter_type == "PID") {
                 $this->db->where("a.trans_date between '$filter_trans_date_from' and '$filter_trans_date_to'");
             } elseif ($filter_type == "PAY") {
@@ -1204,6 +1067,7 @@ class Sales_invoices extends CI_Controller
             $co_no = $sales_invoice['customer_order_no'] ?? null;
             $so_no = $sales_invoice['sales_order_no'] ?? null;
             $item_id = $sales_invoice['item_fg_id'] ?? null;
+            $item_no = $sales_invoice['item_no'] ?? null;
             
             // --- Jika DN input manual ---
             $is_manual_entry = ($dn_no === "-");            
@@ -1214,6 +1078,7 @@ class Sales_invoices extends CI_Controller
                     "sales_order_no"    => $so_no,
                     "customer_order_no" => $co_no,
                     "item_fg_id"        => $item_id,
+                    "item_no"           => $item_no,
                 ];
             } else {
                 $where_invoices = [
@@ -1221,6 +1086,7 @@ class Sales_invoices extends CI_Controller
                     "sales_order_no"    => $so_no,
                     "customer_order_no" => $co_no,
                     "item_fg_id"        => $item_id,
+                    "item_no"           => $item_no,
                 ];
             }
             
@@ -1968,8 +1834,7 @@ class Sales_invoices extends CI_Controller
                 b.address_billing, 
                 b.telp_billing,
                 b.telp,
-                COALESCE(h.currency,h2.currency) as currency,
-                COALESCE(d.currency, "") as customer_currency,
+                a.currency,
                 g.origin,
                 g.sailing,
                 g.ship_by,
@@ -2176,26 +2041,24 @@ class Sales_invoices extends CI_Controller
                 **/
 
                 // fixing nominal-nominal seharusnya output print out = data grid (Bu Nina)
-                $total_invoice  = ($record['total_invoice']);
-                $discount       = ($record['discount']) ?? 0;
-                $taxes          = ($record['taxes']);
-                $down_payment   = ($record['down_payment']);
+                $total_invoice  = $record['total_invoice'];
+                $discount       = $record['discount'] ?? 0;
+                $taxes          = $record['taxes'];
+                $down_payment   = $record['down_payment'];
+                
+                $total_sub      = $record['total_sub'];
+                $raw_vat_total  = $record['total_vat'];
+                
+                $disc_pr        = $record['disc_pr'];
+                $disc_dp        = $record['disc_dp'];
 
-                // --- SUB TOTAL = total_invoice - discount
-                $sub_total      = ($record['total_sub'] - $discount);
+                $sub_total      = $total_sub - $discount;
+                $dpp_total      = $total_sub * (11 / 12);
 
-                // --- DPP = sub_total * 11/12
-                $dpp_total      = (($record['total_sub']) * 11/12);
-
-                // --- VAT = ((sub_total - down_payment) * 11/12) * taxes
-                // $vat_total      = (($sub_total - $down_payment) * 11/12) * ($taxes/100);
-                $vat_total      = ($record['total_vat']);
-
-                $disc_pr = ($record['disc_pr']);
-                $disc_dp = ($record['disc_dp']);
-
+                // --- Pengecekan Pajak (Tax) ---
+                $tax = "";
+                $tax_total = 0;
                 $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.130.00') AND number = ?", [$record['number']])->result();
-                // var_dump($sales_invoices);
                 
                 if (!empty($sales_invoices)) {
                     foreach ($sales_invoices as $invoice) {
@@ -2211,21 +2074,34 @@ class Sales_invoices extends CI_Controller
                             $tax = "23 (2%)";
                             $tax_total = ($sub_total * (2/100));
                             break;
-                        } else{
-                            $tax = "";
-                            $tax_total = 0;
                         }
                     }
-                } else {
-                    $tax = "";
-                    $tax_total = 0;
                 }
 
-                // Tax Total = Total PPH from table sales_invoices
-                $tax_total = $record['total_pph'] ?? $tax_total;
+                $raw_tax_total   = $record['total_pph'] ?? $tax_total;
+                $raw_grand_total = (($sub_total - $down_payment) + $raw_vat_total) - $raw_tax_total;
+                $currency = strtoupper($record['currency']);
 
-                $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
-
+                if ($currency === 'IDR') {
+                    // Jika IDR: Bulatkan secara normal (< 0.5 turun, >= 0.5 naik)
+                    $total_invoice = round($total_invoice);
+                    $discount      = round($discount);
+                    $sub_total     = round($sub_total);
+                    $down_payment  = round($down_payment);
+                    $dpp_total     = round($dpp_total);
+                    $vat_total     = round($raw_vat_total);
+                    $tax_total     = round($raw_tax_total);
+                    $grand_total   = round($raw_grand_total);
+                    
+                    $format_no = 2;
+                } else {
+                    // Jika NON-IDR (USD, dll): Pertahankan nilai presisinya
+                    $vat_total   = $raw_vat_total;
+                    $tax_total   = $raw_tax_total;
+                    $grand_total = $raw_grand_total;
+                    
+                    $format_no = 2; 
+                }
 
                 // if ($record['type'] == "EXPORT") {
                 //     $content = '<td style="text-align:right">' . number_format($record['price'], 4, ",", ".") . '</td>
@@ -2233,12 +2109,6 @@ class Sales_invoices extends CI_Controller
                 // } else {
                 //     $content = "";
                 // }
-
-                if($record['currency'] == 'IDR'){
-                    $format_no = 2;
-                }else{
-                    $format_no = 4;
-                }
 
                 $html .= '<tr>';
                 $html .= '<td style="text-align:center">' . $no . '</td>';
@@ -2250,7 +2120,7 @@ class Sales_invoices extends CI_Controller
                     $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['hs_code'] . '</span></td>';
                 }
 
-                $currency_display = $record['currency'] ?? $record['customer_currency'];
+                $currency_display = $record['currency'];
 
                 $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>';
                 $html .= '<td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>';
@@ -2368,403 +2238,403 @@ class Sales_invoices extends CI_Controller
         die($html);
     }
 
-    public function print_commercial_sum2($invoice_no)//origin
-    {
-        $invoice_no = base64_decode($invoice_no);
-        $sales_invoices = $this->crud->reads('sales_invoices', [], ["number" => $invoice_no]);
-        $sales_invoice = $this->crud->read('sales_invoices', [], ["number" => $invoice_no]);
-        $delivery_note = $this->crud->read('delivery_notes', [], ["delivery_note_no" => $sales_invoice->delivery_note_no]);
+    // public function print_commercial_sum2($invoice_no)//origin
+    // {
+    //     $invoice_no = base64_decode($invoice_no);
+    //     $sales_invoices = $this->crud->reads('sales_invoices', [], ["number" => $invoice_no]);
+    //     $sales_invoice = $this->crud->read('sales_invoices', [], ["number" => $invoice_no]);
+    //     $delivery_note = $this->crud->read('delivery_notes', [], ["delivery_note_no" => $sales_invoice->delivery_note_no]);
 
-        if (@$delivery_note->address == "2") {
-            $address_no = "_2";
-        } else {
-            $address_no = "";
-        }
+    //     if (@$delivery_note->address == "2") {
+    //         $address_no = "_2";
+    //     } else {
+    //         $address_no = "";
+    //     }
 
-        $this->db->select('item_fg_id, price');
-        $this->db->from('sales_invoices');
-        $this->db->where('number', $invoice_no);
-        $this->db->group_by(['item_fg_id', 'price']);
+    //     $this->db->select('item_fg_id, price');
+    //     $this->db->from('sales_invoices');
+    //     $this->db->where('number', $invoice_no);
+    //     $this->db->group_by(['item_fg_id', 'price']);
         
 
-        $query = $this->db->get();
-        $total_rows = $query->num_rows();
+    //     $query = $this->db->get();
+    //     $total_rows = $query->num_rows();
 
-        $config = $this->db->get('config')->row();
-        $config_iso = $this->db->get('config_iso')->row();
-        //Config Page
-        $rows = 20;
-        $page = ceil($total_rows / $rows);
-        // $page = ceil(count($sales_invoices) / $rows);
-        //Generate QRcode
-        $this->createQrcode($sales_invoice->number, "assets/image/qrcode/");
-        //Header Print
-        $html = '<html><head><title>' . $sales_invoice->number . '</title><link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16"></head>';
-        $html .= '<style>body {font-family: Arial, Helvetica, sans-serif;}';
-        $html .= '#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}';
-        $html .= '@media screen {.print {display: none !important;}}@media print {.noprint {display: none !important;}}</style>';
-        $html .= '<body><div style="margin:20%;" class="noprint"><center>
-                        <h1>Press CTRL + P for Print</h1>
-                        <p>Display pages for 10 rows</p>
-                        <p>Paper Size A4, Layout Landscape</p>
-                        <p>Margin Default, Scale 98</p>
-                    </center></div><div class="print">';
+    //     $config = $this->db->get('config')->row();
+    //     $config_iso = $this->db->get('config_iso')->row();
+    //     //Config Page
+    //     $rows = 20;
+    //     $page = ceil($total_rows / $rows);
+    //     // $page = ceil(count($sales_invoices) / $rows);
+    //     //Generate QRcode
+    //     $this->createQrcode($sales_invoice->number, "assets/image/qrcode/");
+    //     //Header Print
+    //     $html = '<html><head><title>' . $sales_invoice->number . '</title><link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16"></head>';
+    //     $html .= '<style>body {font-family: Arial, Helvetica, sans-serif;}';
+    //     $html .= '#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}';
+    //     $html .= '@media screen {.print {display: none !important;}}@media print {.noprint {display: none !important;}}</style>';
+    //     $html .= '<body><div style="margin:20%;" class="noprint"><center>
+    //                     <h1>Press CTRL + P for Print</h1>
+    //                     <p>Display pages for 10 rows</p>
+    //                     <p>Paper Size A4, Layout Landscape</p>
+    //                     <p>Margin Default, Scale 98</p>
+    //                 </center></div><div class="print">';
         
-        //Loop Page
-        $no = 1;
-        $grand_qty = 0;
-        $grand_total = 0;
-        for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*,
-                h.qty as qty_sum,
-                h.price as prices,
-                d.number as customer_number, 
-                d.name as customer_name,
-                d.type, 
-                b.address, 
-                b.address_billing, 
-                b.telp_billing,
-                b.telp,
-                COALESCE(i.currency,i2.currency) as currency,
-                g.origin,
-                g.sailing,
-                g.ship_by,
-                g.incoterm,
-                g.delivery_order_no,
-                g.trans_type,
-                COALESCE(f.bank_name, "") as bank_name,
-                "PT. BANSHU PLASTIC INDONESIA" as account_name,
-                COALESCE(f.bank_account, 0) as bank_account');
-            $this->db->from('sales_invoices a');
-            $this->db->join('customers d', 'a.customer_id = d.id', 'left');
-            $this->db->join('delivery_notes g', 'a.delivery_note_no = g.delivery_note_no and a.customer_order_no = g.customer_order_no', 'left');
-            $this->db->join('account_banks f', 'a.payment_to = f.bank_name', 'left');
-            $this->db->join('sales_orders i', 'a.sales_order_no = i.sales_order_no', 'left');
-            $this->db->join('sales_order_rm i2', 'a.sales_order_no = i2.sales_order_no', 'left');
-            $this->db->join('customer_address b', 'COALESCE(i.customer_address_id, i2.customer_address_id) = b.id', 'left');
-            $this->db->join("(SELECT id, item_no, item_fg_id, SUM(qty) as qty, price FROM sales_invoices WHERE number = '$invoice_no' GROUP BY item_fg_id, item_no, price) h", "(a.item_fg_id = h.item_fg_id OR (a.item_fg_id IS NULL AND a.item_no = h.item_no))","left");
-            $this->db->where('a.deleted', 0);
-            $this->db->where('a.number', $invoice_no);
-            // $this->db->group_by('h.item_fg_id');
-            $this->db->group_by('h.item_no');
-            $this->db->group_by('h.price');
-            $this->db->order_by('a.item_no', 'ASC');
-            // $this->db->order_by('a.trans_date', 'DESC');
-            $this->db->limit(20, ($i * 20));
-            $records = $this->db->get()->result_array();
+    //     //Loop Page
+    //     $no = 1;
+    //     $grand_qty = 0;
+    //     $grand_total = 0;
+    //     for ($i = 0; $i < $page; $i++) {
+    //         $this->db->select('a.*,
+    //             h.qty as qty_sum,
+    //             h.price as prices,
+    //             d.number as customer_number, 
+    //             d.name as customer_name,
+    //             d.type, 
+    //             b.address, 
+    //             b.address_billing, 
+    //             b.telp_billing,
+    //             b.telp,
+    //             COALESCE(i.currency,i2.currency) as currency,
+    //             g.origin,
+    //             g.sailing,
+    //             g.ship_by,
+    //             g.incoterm,
+    //             g.delivery_order_no,
+    //             g.trans_type,
+    //             COALESCE(f.bank_name, "") as bank_name,
+    //             "PT. BANSHU PLASTIC INDONESIA" as account_name,
+    //             COALESCE(f.bank_account, 0) as bank_account');
+    //         $this->db->from('sales_invoices a');
+    //         $this->db->join('customers d', 'a.customer_id = d.id', 'left');
+    //         $this->db->join('delivery_notes g', 'a.delivery_note_no = g.delivery_note_no and a.customer_order_no = g.customer_order_no', 'left');
+    //         $this->db->join('account_banks f', 'a.payment_to = f.bank_name', 'left');
+    //         $this->db->join('sales_orders i', 'a.sales_order_no = i.sales_order_no', 'left');
+    //         $this->db->join('sales_order_rm i2', 'a.sales_order_no = i2.sales_order_no', 'left');
+    //         $this->db->join('customer_address b', 'COALESCE(i.customer_address_id, i2.customer_address_id) = b.id', 'left');
+    //         $this->db->join("(SELECT id, item_no, item_fg_id, SUM(qty) as qty, price FROM sales_invoices WHERE number = '$invoice_no' GROUP BY item_fg_id, item_no, price) h", "(a.item_fg_id = h.item_fg_id OR (a.item_fg_id IS NULL AND a.item_no = h.item_no))","left");
+    //         $this->db->where('a.deleted', 0);
+    //         $this->db->where('a.number', $invoice_no);
+    //         // $this->db->group_by('h.item_fg_id');
+    //         $this->db->group_by('h.item_no');
+    //         $this->db->group_by('h.price');
+    //         $this->db->order_by('a.item_no', 'ASC');
+    //         // $this->db->order_by('a.trans_date', 'DESC');
+    //         $this->db->limit(20, ($i * 20));
+    //         $records = $this->db->get()->result_array();
 
-            // var_dump($records);
-            // die;
+    //         // var_dump($records);
+    //         // die;
 
-            if (!empty($records) && isset($records[0]['type'])) {
-                if ($records[0]['type'] == "EXPORT") {
-                    $header = ' <th width="60">Price</th>
-                                <th width="60">Total</th>';
-                } else {
-                    $title = "DELIVERY NOTE";
-                    $header = "";
-                }
-            } else {
-                $title = "DELIVERY NOTE";
-                $header = "";
-            }
+    //         if (!empty($records) && isset($records[0]['type'])) {
+    //             if ($records[0]['type'] == "EXPORT") {
+    //                 $header = ' <th width="60">Price</th>
+    //                             <th width="60">Total</th>';
+    //             } else {
+    //                 $title = "DELIVERY NOTE";
+    //                 $header = "";
+    //             }
+    //         } else {
+    //             $title = "DELIVERY NOTE";
+    //             $header = "";
+    //         }
 
-            $customer_number = (!empty($records) && isset($records[0]['customer_number'])) ? $records[0]['customer_number'] : '-';
-            $customer_name = (!empty($records) && isset($records[0]['customer_name'])) ? $records[0]['customer_name'] : '-';
+    //         $customer_number = (!empty($records) && isset($records[0]['customer_number'])) ? $records[0]['customer_number'] : '-';
+    //         $customer_name = (!empty($records) && isset($records[0]['customer_name'])) ? $records[0]['customer_name'] : '-';
 
-            $html .= '  <table style="width:100%; ">
-                            <tr>
-                                <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
-                                <td width="250" style="padding:10px;">
-                                    <b style="font-size:14px;">' . $config->name . '</b><br>
-                                    <span style="font-size:10px;">' . $config->address . '</span><br>
-                                </td>
-                                <th width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
-                                        <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $sales_invoice->number . '.png') . '" width="60"/></td>
-                                            <td width="60">Doc No</td>
-                                            <td width="5">:</td>
-                                            <td width="100">' . $config_iso->doc_sales_invoice . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Form</td>
-                                            <td>:</td>
-                                            <td>' . $config_iso->form_sales_invoice . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Print Date</td>
-                                            <td>:</td>
-                                            <td>' . date("Y-m-d H:i") . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Print By</td>
-                                            <td>:</td>
-                                            <td>' . $this->session->name . '</td>
-                                        </tr>
-                                    </table>
-                                </th>
-                            </tr>
-                        </table>
-                        <div style="border: 0px; width:100%; height:73%;">
-                            <div style="padding:10px;">
-                                <center>
-                                    <h3>INVOICE</h3>
-                                </center>
-                                <div style="float:left; width:60%;">
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
-                                        <tr>
-                                            <td width="150">Customer Code</td>
-                                            <td width="10">:</td>
-                                            <td><b>' . $customer_number . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Customer Name</td>
-                                            <td>:</td>
-                                            <td><b>' . $customer_name . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td style="vertical-align:top;">Ship To</td>
-                                            <td style="vertical-align:top;">:</td>
-                                            <td><b>' . $records[0]['address' . $address_no] . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td style="vertical-align:top;">Bill To</td>
-                                            <td style="vertical-align:top;">:</td>
-                                            <td><b>' . $records[0]['address_billing' . $address_no] . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Attention</td>
-                                            <td>:</td>
-                                            <td><b>' . $address_no . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Telp</td>
-                                            <td>:</td>
-                                            <td><b>' . $records[0]['telp' . $address_no] . '</b></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <div style="float:left; width:40%;">
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
-                                        <tr>
-                                            <td width="100">Sales Invoice No</td>
-                                            <td width="10">:</td>
-                                            <td><b>' . @$sales_invoice->number . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Faktur No</td>
-                                            <td>:</td>
-                                            <td><b>' . @$sales_invoice->faktur_no . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Trans Type</td>
-                                            <td>:</td>
-                                            <td><b>' . @$records[0]['trans_type'] . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Ship By</td>
-                                            <td>:</td>
-                                            <td><b>' . $records[0]['ship_by'] . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Delivery Date</td>
-                                            <td>:</td>
-                                            <td><b>' . date("d F Y", strtotime($sales_invoice->trans_date)) . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Payment Due</td>
-                                            <td>:</td>
-                                            <td><b>' . date("d F Y", strtotime($sales_invoice->due_date)) . '</b></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <table id="customers">
-                                    <tr>
-                                        <th width="20">No</th>
-                                        <th>Product No</th>
-                                        <th>Product Name</th>
-                                        <th width="60">UoM</th>
-                                        <th width="60">Qty</th>
-                                        <th width="60">Currency</th>
-                                        <th width="60">Price</th>
-                                        <th width="60">Total</th>
-                                    </tr>';
-            $sub_total = 0;
-            $vat_total = 0;
-            $dpp_total = 0;
-            $tax_total = 0;
-            $tax = "";
+    //         $html .= '  <table style="width:100%; ">
+    //                         <tr>
+    //                             <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+    //                             <td width="250" style="padding:10px;">
+    //                                 <b style="font-size:14px;">' . $config->name . '</b><br>
+    //                                 <span style="font-size:10px;">' . $config->address . '</span><br>
+    //                             </td>
+    //                             <th width="100" style="text-align:right;">
+    //                                 <table style="width:100%; font-size:10px;">
+    //                                     <tr>
+    //                                         <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $sales_invoice->number . '.png') . '" width="60"/></td>
+    //                                         <td width="60">Doc No</td>
+    //                                         <td width="5">:</td>
+    //                                         <td width="100">' . $config_iso->doc_sales_invoice . '</td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Form</td>
+    //                                         <td>:</td>
+    //                                         <td>' . $config_iso->form_sales_invoice . '</td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Print Date</td>
+    //                                         <td>:</td>
+    //                                         <td>' . date("Y-m-d H:i") . '</td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Print By</td>
+    //                                         <td>:</td>
+    //                                         <td>' . $this->session->name . '</td>
+    //                                     </tr>
+    //                                 </table>
+    //                             </th>
+    //                         </tr>
+    //                     </table>
+    //                     <div style="border: 0px; width:100%; height:73%;">
+    //                         <div style="padding:10px;">
+    //                             <center>
+    //                                 <h3>INVOICE</h3>
+    //                             </center>
+    //                             <div style="float:left; width:60%;">
+    //                                 <table style="width:100%; font-size:12px; margin-bottom:10px;">
+    //                                     <tr>
+    //                                         <td width="150">Customer Code</td>
+    //                                         <td width="10">:</td>
+    //                                         <td><b>' . $customer_number . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Customer Name</td>
+    //                                         <td>:</td>
+    //                                         <td><b>' . $customer_name . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td style="vertical-align:top;">Ship To</td>
+    //                                         <td style="vertical-align:top;">:</td>
+    //                                         <td><b>' . $records[0]['address' . $address_no] . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td style="vertical-align:top;">Bill To</td>
+    //                                         <td style="vertical-align:top;">:</td>
+    //                                         <td><b>' . $records[0]['address_billing' . $address_no] . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Attention</td>
+    //                                         <td>:</td>
+    //                                         <td><b>' . $address_no . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Telp</td>
+    //                                         <td>:</td>
+    //                                         <td><b>' . $records[0]['telp' . $address_no] . '</b></td>
+    //                                     </tr>
+    //                                 </table>
+    //                             </div>
+    //                             <div style="float:left; width:40%;">
+    //                                 <table style="width:100%; font-size:12px; margin-bottom:10px;">
+    //                                     <tr>
+    //                                         <td width="100">Sales Invoice No</td>
+    //                                         <td width="10">:</td>
+    //                                         <td><b>' . @$sales_invoice->number . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Faktur No</td>
+    //                                         <td>:</td>
+    //                                         <td><b>' . @$sales_invoice->faktur_no . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Trans Type</td>
+    //                                         <td>:</td>
+    //                                         <td><b>' . @$records[0]['trans_type'] . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Ship By</td>
+    //                                         <td>:</td>
+    //                                         <td><b>' . $records[0]['ship_by'] . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Delivery Date</td>
+    //                                         <td>:</td>
+    //                                         <td><b>' . date("d F Y", strtotime($sales_invoice->trans_date)) . '</b></td>
+    //                                     </tr>
+    //                                     <tr>
+    //                                         <td>Payment Due</td>
+    //                                         <td>:</td>
+    //                                         <td><b>' . date("d F Y", strtotime($sales_invoice->due_date)) . '</b></td>
+    //                                     </tr>
+    //                                 </table>
+    //                             </div>
+    //                             <table id="customers">
+    //                                 <tr>
+    //                                     <th width="20">No</th>
+    //                                     <th>Product No</th>
+    //                                     <th>Product Name</th>
+    //                                     <th width="60">UoM</th>
+    //                                     <th width="60">Qty</th>
+    //                                     <th width="60">Currency</th>
+    //                                     <th width="60">Price</th>
+    //                                     <th width="60">Total</th>
+    //                                 </tr>';
+    //         $sub_total = 0;
+    //         $vat_total = 0;
+    //         $dpp_total = 0;
+    //         $tax_total = 0;
+    //         $tax = "";
 
-            foreach ($records as $record) {
-                if ($record['customer_order_no'] == "") {
-                    $sales_order_no = $record['sales_order_no'];
-                } else {
-                    $sales_order_no = $record['customer_order_no'];
-                }
+    //         foreach ($records as $record) {
+    //             if ($record['customer_order_no'] == "") {
+    //                 $sales_order_no = $record['sales_order_no'];
+    //             } else {
+    //                 $sales_order_no = $record['customer_order_no'];
+    //             }
 
-                $total_invoice = ($record['total_invoice']);
-                $discount = ($record['discount']);
-                $sub_total = ($record['total_sub']);
-                $down_payment = ($record['down_payment']);
-                $dpp_total = (($record['total_sub'] - $record['down_payment']) * 11/12);
-                $vat_total = ($dpp_total * ($record['taxes']/100));
-                $disc_pr = ($record['disc_pr']);
-                $disc_dp = ($record['disc_dp']);
-                $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.130.00') AND number = ?", [$record['number']])->result();
-                // var_dump($sales_invoices);
+    //             $total_invoice = ($record['total_invoice']);
+    //             $discount = ($record['discount']);
+    //             $sub_total = ($record['total_sub']);
+    //             $down_payment = ($record['down_payment']);
+    //             $dpp_total = (($record['total_sub'] - $record['down_payment']) * 11/12);
+    //             $vat_total = ($dpp_total * ($record['taxes']/100));
+    //             $disc_pr = ($record['disc_pr']);
+    //             $disc_dp = ($record['disc_dp']);
+    //             $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.130.00') AND number = ?", [$record['number']])->result();
+    //             // var_dump($sales_invoices);
                 
-                if (!empty($sales_invoices)) {
-                    foreach ($sales_invoices as $invoice) {
-                        if ($invoice->account_number == "170.110.00" && $invoice->credit == "0" && $invoice->debit == "0" ) {
-                            $tax = "21 (5%)";
-                            $tax_total = 0;
-                            break;
-                        } elseif ($invoice->account_number == "170.110.00") {
-                            $tax = "21 (5%)";
-                            $tax_total = ($sub_total * (5/100));
-                            break;
-                        } elseif($invoice->account_number == "170.130.00") {
-                            $tax = "23 (2%)";
-                            $tax_total = ($sub_total * (2/100));
-                            break;
-                        } else{
-                            $tax = "";
-                            $tax_total = 0;
-                        }
-                    }
-                } else {
-                    $tax = "";
-                    $tax_total = 0;
-                }
+    //             if (!empty($sales_invoices)) {
+    //                 foreach ($sales_invoices as $invoice) {
+    //                     if ($invoice->account_number == "170.110.00" && $invoice->credit == "0" && $invoice->debit == "0" ) {
+    //                         $tax = "21 (5%)";
+    //                         $tax_total = 0;
+    //                         break;
+    //                     } elseif ($invoice->account_number == "170.110.00") {
+    //                         $tax = "21 (5%)";
+    //                         $tax_total = ($sub_total * (5/100));
+    //                         break;
+    //                     } elseif($invoice->account_number == "170.130.00") {
+    //                         $tax = "23 (2%)";
+    //                         $tax_total = ($sub_total * (2/100));
+    //                         break;
+    //                     } else{
+    //                         $tax = "";
+    //                         $tax_total = 0;
+    //                     }
+    //                 }
+    //             } else {
+    //                 $tax = "";
+    //                 $tax_total = 0;
+    //             }
                 
-                if($record['currency'] == 'IDR'){
-                    $format_no = 2;
-                }else{
-                    $format_no = 4;
-                }
+    //             if($record['currency'] == 'IDR'){
+    //                 $format_no = 2;
+    //             }else{
+    //                 $format_no = 4;
+    //             }
                 
-                $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
+    //             $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
 
-                if ($record['type'] == "EXPORT") {
-                    $content = '<td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>';
-                } else {
-                    $content = "";
-                }
+    //             if ($record['type'] == "EXPORT") {
+    //                 $content = '<td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>
+    //                             <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>';
+    //             } else {
+    //                 $content = "";
+    //             }
 
-                $html .= '  <tr>
-                                <td style="text-align:center">' . $no . '</td>
-                                <td style="font-size:10px;">' . $record['item_no'] . '</td>
-                                <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
-                                <td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['qty_sum'], 0, ",", ".") . '</td>
-                                <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['prices'], $format_no, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), $format_no, ",", ".") . '</td>
-                            </tr>';
-                $no++;
-            }
+    //             $html .= '  <tr>
+    //                             <td style="text-align:center">' . $no . '</td>
+    //                             <td style="font-size:10px;">' . $record['item_no'] . '</td>
+    //                             <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
+    //                             <td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>
+    //                             <td style="text-align:right">' . number_format($record['qty_sum'], 0, ",", ".") . '</td>
+    //                             <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
+    //                             <td style="text-align:right">' . number_format($record['prices'], $format_no, ",", ".") . '</td>
+    //                             <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), $format_no, ",", ".") . '</td>
+    //                         </tr>';
+    //             $no++;
+    //         }
 
-            if (($i + 1) == $page) {
-                $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Total Invoice</b></td>
-                            <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
-                        </tr>';
-                $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
-                        </tr>';
+    //         if (($i + 1) == $page) {
+    //             $html .= '<tr>
+    //                         <td colspan="7" style="text-align:right"><b>Total Invoice</b></td>
+    //                         <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
+    //                     </tr>';
+    //             $html .= '<tr>
+    //                         <td colspan="7" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
+    //                         <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
+    //                     </tr>';
 
-                $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Sub Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
-                        </tr>';
+    //             $html .= '<tr>
+    //                         <td colspan="7" style="text-align:right"><b>Sub Total</b></td>
+    //                         <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
+    //                     </tr>';
 
-                $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
-                        </tr>';
+    //             $html .= '<tr>
+    //                         <td colspan="7" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
+    //                         <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
+    //                     </tr>';
 
-                $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>DPP</b></td>
-                            <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
-                        </tr>';
+    //             $html .= '<tr>
+    //                         <td colspan="7" style="text-align:right"><b>DPP</b></td>
+    //                         <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
+    //                     </tr>';
 
-                $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
-                        </tr>';
+    //             $html .= '<tr>
+    //                         <td colspan="7" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
+    //                         <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
+    //                     </tr>';
                 
-                $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
-                            <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
-                        </tr>';
-                $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Grand Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
-                        </tr>';
+    //             $html .= '<tr>
+    //                         <td colspan="7" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
+    //                         <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
+    //                     </tr>';
+    //             $html .= '<tr>
+    //                         <td colspan="7" style="text-align:right"><b>Grand Total</b></td>
+    //                         <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
+    //                     </tr>';
 
-                $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
-                    <table id="customers" style="margin-top:10px; font-size:10px; border: 2px solid black;border-collapse: collapse;">
-                        <tr>
-                            <th width="400" style="text-align:left; vertical-align:top;" rowspan="4">
-                                Total Invoice Value in Words: <br><br>
-                                ' . $this->convertcurrency->convertCurrencyToWords($grand_total, $records[0]['currency']) . ' <br><br><br>
-                                Payment Information <br>
-                                Please transfer the Grand Total Amount to the following bank account: <br>
-                                <table style="width:100%; margin-top:10px; font-size:10px; border: none;">
-                                    <tr>
-                                        <td style="width:15%; text-align:left; border: none;"><b>Bank Name</td>
-                                        <td style="width:2%; text-align:left; border: none;"><b>:</td>
-                                        <td style="width:90%; text-align:left; border: none;"><b>' . $record['bank_name'] . '</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align:left; border: none;"><b>Account Name</td>
-                                        <td style="text-align:left; border: none;"><b>:</td>
-                                        <td style="text-align:left; border: none;"><b>' . $record['account_name'] . '</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align:left; border: none;"><b>Bank Account</td>
-                                        <td style="text-align:left; border: none;"><b>:</td>
-                                        <td style="text-align:left; border: none;"><b>' . $record['bank_account'] . '</td>
-                                    </tr>
-                                </table>
-                            </th>
-                        </tr>
-                    </table>
-                    <table id="customers" style="margin-top:10px; font-size:12px;"><br><br>
-                        <tr>
-                            <th width="420" style="text-align:left; vertical-align:top;" rowspan="4">
-                            Note. <br><br>
-                        </th>
-                        </tr>
-                        <tr>
-                            <th width="200" style="text-align:center;">AUTHORISED SIGNATURE</th>
-                        </tr>
-                        <tr>
-                            <th style="height:150px;"></th>
-                        </tr>
-                        <tr>
-                            <th style="height:20px; text-align:center;">Finance Dept</th>
-                        </tr>
-                    </table>
-                </div>';
+    //             $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
+    //                 <table id="customers" style="margin-top:10px; font-size:10px; border: 2px solid black;border-collapse: collapse;">
+    //                     <tr>
+    //                         <th width="400" style="text-align:left; vertical-align:top;" rowspan="4">
+    //                             Total Invoice Value in Words: <br><br>
+    //                             ' . $this->convertcurrency->convertCurrencyToWords($grand_total, $records[0]['currency']) . ' <br><br><br>
+    //                             Payment Information <br>
+    //                             Please transfer the Grand Total Amount to the following bank account: <br>
+    //                             <table style="width:100%; margin-top:10px; font-size:10px; border: none;">
+    //                                 <tr>
+    //                                     <td style="width:15%; text-align:left; border: none;"><b>Bank Name</td>
+    //                                     <td style="width:2%; text-align:left; border: none;"><b>:</td>
+    //                                     <td style="width:90%; text-align:left; border: none;"><b>' . $record['bank_name'] . '</td>
+    //                                 </tr>
+    //                                 <tr>
+    //                                     <td style="text-align:left; border: none;"><b>Account Name</td>
+    //                                     <td style="text-align:left; border: none;"><b>:</td>
+    //                                     <td style="text-align:left; border: none;"><b>' . $record['account_name'] . '</td>
+    //                                 </tr>
+    //                                 <tr>
+    //                                     <td style="text-align:left; border: none;"><b>Bank Account</td>
+    //                                     <td style="text-align:left; border: none;"><b>:</td>
+    //                                     <td style="text-align:left; border: none;"><b>' . $record['bank_account'] . '</td>
+    //                                 </tr>
+    //                             </table>
+    //                         </th>
+    //                     </tr>
+    //                 </table>
+    //                 <table id="customers" style="margin-top:10px; font-size:12px;"><br><br>
+    //                     <tr>
+    //                         <th width="420" style="text-align:left; vertical-align:top;" rowspan="4">
+    //                         Note. <br><br>
+    //                     </th>
+    //                     </tr>
+    //                     <tr>
+    //                         <th width="200" style="text-align:center;">AUTHORISED SIGNATURE</th>
+    //                     </tr>
+    //                     <tr>
+    //                         <th style="height:150px;"></th>
+    //                     </tr>
+    //                     <tr>
+    //                         <th style="height:20px; text-align:center;">Finance Dept</th>
+    //                     </tr>
+    //                 </table>
+    //             </div>';
                
-            }
+    //         }
 
-            $html .= '</table>';
+    //         $html .= '</table>';
 
-            if ($i + 1 != $page) {
-                $html .= '<div style="page-break-after:always;"></div>';
-            }
+    //         if ($i + 1 != $page) {
+    //             $html .= '<div style="page-break-after:always;"></div>';
+    //         }
 
-            $html .= '</div></div>';
+    //         $html .= '</div></div>';
 
-        }
-        $html .= '</div><script>window.print()</script>';
-        die($html);
-    }
+    //     }
+    //     $html .= '</div><script>window.print()</script>';
+    //     die($html);
+    // }
 
     public function print_commercial_sum($invoice_no)
     {
@@ -2806,7 +2676,7 @@ class Sales_invoices extends CI_Controller
             b.address_billing, 
             b.telp_billing,
             b.telp,
-            COALESCE(i.currency,i2.currency) as currency,
+            a.currency,
             g.origin,
             g.sailing,
             g.ship_by,
@@ -2945,22 +2815,17 @@ class Sales_invoices extends CI_Controller
                 $discount       = $row['discount'] ?? 0;
                 $taxes          = $row['taxes'];
                 $down_payment   = $row['down_payment'];
-
-                // --- SUB TOTAL = total_invoice - discount
+                
+                $disc_pr        = $record['disc_pr'];
+                $disc_dp        = $record['disc_dp'];
+                $raw_vat_total  = $record['total_vat']; // sementara ambil dari db
                 $sub_total      = ($row['total_sub'] - $discount);
-
-                // --- DPP = sub_total * 11/12
-                $dpp_total      = (($record['total_sub']) * 11/12);
-
-                // --- VAT = ((sub_total - down_payment) * 11/12) * taxes
-                // $vat_total      = (($sub_total - $down_payment) * 11/12) * ($taxes/100);
-                $vat_total      = ($record['total_vat']); // sementara ambil dari db
-
-                $disc_pr = ($record['disc_pr']);
-                $disc_dp = ($record['disc_dp']);
+                $dpp_total      = ($record['total_sub'] * (11/12));
 
                 $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.130.00') AND number = ?", [$record['number']])->result();
-                // var_dump($sales_invoices);
+                
+                $tax = "";
+                $tax_total = 0;
                 
                 if (!empty($sales_invoices)) {
                     foreach ($sales_invoices as $invoice) {
@@ -2976,30 +2841,37 @@ class Sales_invoices extends CI_Controller
                             $tax = "23 (2%)";
                             $tax_total = ($sub_total * (2/100));
                             break;
-                        } else{
-                            $tax = "";
-                            $tax_total = 0;
                         }
                     }
+                }
+
+                $raw_tax_total = $row['total_pph'] ?? $tax_total;
+
+                $raw_grand_total = ((($sub_total - $down_payment) + $raw_vat_total) - $raw_tax_total);
+
+                $currency = strtoupper($record['currency'] ?? 'IDR');
+
+                if ($currency === 'IDR') {
+                    // Bulatkan semua nominal untuk IDR
+                    $total_invoice = round($total_invoice);
+                    $discount      = round($discount);
+                    $sub_total     = round($sub_total);
+                    $down_payment  = round($down_payment);
+                    $dpp_total     = round($dpp_total);
+                    $vat_total     = round($raw_vat_total);
+                    $tax_total     = round($raw_tax_total);
+                    $grand_total   = round($raw_grand_total);
+                    
+                    $format_no = 2; 
                 } else {
-                    $tax = "";
-                    $tax_total = 0;
-                }
-
-                // Tax Total = Total PPH from table sales_invoices
-                $tax_total = $row['total_pph'] ?? $tax_total;
-
-                
-                if($record['currency'] == 'IDR'){
+                    // Non-IDR (USD, dll): Pertahankan nilai desimal aslinya
+                    $vat_total     = $raw_vat_total;
+                    $tax_total     = $raw_tax_total;
+                    $grand_total   = $raw_grand_total;
+                    
                     $format_no = 2;
-                }else{
-                    $format_no = 4;
                 }
                 
-                // --- GRAND TOTAL = (Subtotal - DP) + Vat - Tax Total // $grand_total = $row['total_grand'];
-                $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
-                
-                $format_no = $row['currency'] === 'IDR' ? 2 : 4;
                 $line_total = $row['price'] * $qty;
                 // $sub_total += $line_total;
                 
@@ -3354,6 +3226,9 @@ class Sales_invoices extends CI_Controller
             $sub_total_local = 0;
             foreach ($records as $record) {
                 $currency = $record['currency'];
+                
+                // Tentukan jumlah desimal: IDR = 0 (tanpa desimal), Non-IDR = 2 digit desimal
+                $format_no = ($currency == 'IDR') ? 0 : 2;
 
                 $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record['trans_date'])));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
@@ -3368,58 +3243,96 @@ class Sales_invoices extends CI_Controller
                     $price = 1;
                 }
 
-                if($record['currency'] == 'IDR'){
-                    $format_no = 2;
-                }else{
-                    $format_no = 4;
+                $raw_total = $record['total'];
+                $raw_amount = ($raw_total * $price);
+                $raw_price = $record['price'];
+
+                // Terapkan pembulatan (Round Option 1) jika IDR, biarkan desimal utuh jika Non-IDR
+                if ($currency == 'IDR') {
+                    $item_price = round($raw_price);
+                    $item_total = round($raw_total);
+                    $amount     = round($raw_amount);
+                } else {
+                    $item_price = $raw_price;
+                    $item_total = $raw_total;
+                    $amount     = $raw_amount;
                 }
 
-                $amount = ($record['total'] * $price);
-                $sub_total += $record['total'];
+                $sub_total += $item_total;
                 $sub_total_local += $amount;
-                $grand_total += $record['total'];
+                $grand_total += $item_total;
                 $grand_total_local += $amount;
-                $discount = ($record['discount']);
-                $down_payment = ($record['down_payment']);
+
+                $raw_discount = ($record['discount']);
+                $raw_down_payment = ($record['down_payment']);
+
+                if ($currency == 'IDR') {
+                    $discount = round($raw_discount);
+                    $down_payment = round($raw_down_payment);
+                } else {
+                    $discount = $raw_discount;
+                    $down_payment = $raw_down_payment;
+                }
+
                 $dpp_total = (($sub_total - $down_payment) * 11/12);
+                if ($currency == 'IDR') {
+                    $dpp_total = round($dpp_total);
+                }
                 
                 $html .= '  <tr>
-                                <td style="text-align:center">' . $no . '</td>
-                                <td>' . $record['sales_order_no'] . '</td>
-                                <td>' . $record['delivery_note_no'] . '</td>
-                                <td>' . $record['item_number'] . '</td>
-                                <td>' . $record['item_name'] . '</td>
-                                <td>' . $record['uom'] . '</td>
-                                <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
-                                <td>' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . @number_format($record['price'], $format_no) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['total'], $format_no) . '</td>
-                                <td>IDR</td>
-                                <td style="text-align:right;">' . @number_format($amount, $format_no) . '</td>
-                            </tr>';
+                            <td style="text-align:center">' . $no . '</td>
+                            <td>' . $record['sales_order_no'] . '</td>
+                            <td>' . $record['delivery_note_no'] . '</td>
+                            <td>' . $record['item_number'] . '</td>
+                            <td>' . $record['item_name'] . '</td>
+                            <td>' . $record['uom'] . '</td>
+                            <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
+                            <td>' . $record['currency'] . '</td>
+                            <td style="text-align:right;">' . @number_format($item_price, $format_no) . '</td>
+                            <td style="text-align:right;">' . @number_format($item_total, $format_no) . '</td>
+                            <td>IDR</td>
+                            <td style="text-align:right;">' . @number_format($amount, $format_no) . '</td>
+                        </tr>';
                 $no++;
+            }
+
+            // Format khusus untuk bagian ringkasan bawah berdasarkan mata uang invoice
+            $main_currency = isset($records[0]['currency']) ? $records[0]['currency'] : 'IDR';
+            $summary_format = ($main_currency == 'IDR') ? 0 : 2;
+
+            $raw_vat = @$records[0]['total_vat'] ?? 0;
+            $raw_pph = @$records[0]['total_pph'] ?? 0;
+
+            if ($main_currency == 'IDR') {
+                $vat_val = round($raw_vat);
+                $pph_val = round($raw_pph);
+                $grand_total_summary = round((((@$grand_total - $discount) - $down_payment) + $raw_vat) - $raw_pph);
+            } else {
+                $vat_val = $raw_vat;
+                $pph_val = $raw_pph;
+                $grand_total_summary = (((@$grand_total - $discount) - $down_payment) + $raw_vat) - $raw_pph;
             }
             
             if (($i + 1) == $page) {
                 $html .= '<tr>
                             <th colspan="9" style="text-align:right">SUB TOTAL</th>
-                            <th style="text-align:right">' . number_format($sub_total, $format_no) . '</th>
+                            <th style="text-align:right">' . number_format($sub_total, $summary_format) . '</th>
                             <th></th>
-                            <th style="text-align:right">' . number_format($sub_total_local, $format_no) . '</th>
-                          </tr>
-                          <tr>
+                            <th style="text-align:right">' . number_format($sub_total_local, $summary_format) . '</th>
+                        </tr>
+                        <tr>
                             <th colspan="9" style="text-align:right">GRAND TOTAL</th>
-                            <th style="text-align:right">' . number_format($grand_total, $format_no) . '</th>
+                            <th style="text-align:right">' . number_format($grand_total, $summary_format) . '</th>
                             <th></th>
-                            <th style="text-align:right">' . number_format($grand_total_local, $format_no) . '</th>
-                          </tr>';
-            }else{
+                            <th style="text-align:right">' . number_format($grand_total_local, $summary_format) . '</th>
+                        </tr>';
+            } else {
                 $html .= '<tr>
                             <th colspan="9" style="text-align:right">SUB TOTAL</th>
-                            <th style="text-align:right">' . number_format($sub_total, 2) . '</th>
+                            <th style="text-align:right">' . number_format($sub_total, $summary_format) . '</th>
                             <th></th>
-                            <th style="text-align:right">' . number_format($sub_total_local, 2) . '</th>
-                          </tr>';
+                            <th style="text-align:right">' . number_format($sub_total_local, $summary_format) . '</th>
+                        </tr>';
             }
             
             $html .= '</table>';
@@ -3452,19 +3365,25 @@ class Sales_invoices extends CI_Controller
             $total_debit += $journal->debit;
             $total_credit += $journal->credit;
 
+            $journal_debit = ($main_currency == 'IDR') ? round($journal->debit) : $journal->debit;
+            $journal_credit = ($main_currency == 'IDR') ? round($journal->credit) : $journal->credit;
+
             $html .= '  <tr>
-                                <td>' . $journal->account_number . '</td>
-                                <td>' . $journal->account_name . '</td>
-                                <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
-                            </tr>';
+                            <td>' . $journal->account_number . '</td>
+                            <td>' . $journal->account_name . '</td>
+                            <td style="text-align:right;">' . number_format($journal_debit, $summary_format) . '</td>
+                            <td style="text-align:right;">' . number_format($journal_credit, $summary_format) . '</td>
+                        </tr>';
         }
 
+        $balance_debit = ($main_currency == 'IDR') ? round($total_debit) : $total_debit;
+        $balance_credit = ($main_currency == 'IDR') ? round($total_credit) : $total_credit;
+
         $html .= '      <tr>
-                                <td colspan="2">Balance</td>
-                                <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
-                            </tr>
+                            <td colspan="2">Balance</td>
+                            <td style="text-align:right;">' . @number_format($balance_debit, $summary_format) . '</td>
+                            <td style="text-align:right;">' . @number_format($balance_credit, $summary_format) . '</td>
+                        </tr>
                         </table>
                     </div>
                     <div style="width:20%; float:left;">
@@ -3474,31 +3393,31 @@ class Sales_invoices extends CI_Controller
                         <table id="customers" style="width:100%; font-size:12px;">
                             <tr>
                                 <td style="font-weight:bold;">Discount</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format($discount, $format_no) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format($discount, $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Sub Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(($grand_total - $discount), $format_no) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(($grand_total - $discount), $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Down Payment</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(($down_payment), $format_no) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(($down_payment), $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">DPP</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(($dpp_total), $format_no) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(($dpp_total), $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">VAT</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_vat'], $format_no) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format($vat_val, $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">PPH</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_pph'], $format_no) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format($pph_val, $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Grand Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(((((@$grand_total - $discount) - $down_payment) + $records[0]['total_vat']) - $records[0]['total_pph']), $format_no) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format($grand_total_summary, $summary_format) . '</td>
                             </tr>
                         </table>
                     </div>
@@ -3683,8 +3602,7 @@ class Sales_invoices extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-
-    public function print($option = "")
+public function print($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
@@ -4605,14 +4523,11 @@ class Sales_invoices extends CI_Controller
             a.total, 
             a.total_discount, 
             a.taxes, 
-            a.currency,
-            g.middle as rate,
             f.description as uom,
             e.hs_code')
             ->from('sales_invoices a')
             ->join('item_fg e', 'a.item_fg_id = e.id')
             ->join('uom f', 'e.uom = f.name', 'left')
-            ->join('exchange_rates g', "(a.trans_date BETWEEN g.start_date AND g.end_date) AND (g.currency_from = a.currency)", 'left')
             ->where_in('a.number', $si_nos)
             ->order_by('a.number', 'ASC')
             ->get()->result_array();
@@ -4741,21 +4656,11 @@ class Sales_invoices extends CI_Controller
                     $product_no= htmlspecialchars($detail['product_no']);
                     $item_name = htmlspecialchars($detail['item_name']);
 
-                    // Gunakan Local Currency = Price * Rate (Bu Nina)
-                    $currency = $detail['currency'] ?? '';
-                    if ($currency != "IDR") {
-                        $rate = $detail['rate'] ?? 0;
-                    } else {
-                        $rate = 1;
-                    }
-
                     // Perbarui tag dengan nilai yang sudah digabungkan
                     $itemNode->addChild('Opt', 'A');
                     $itemNode->addChild('Code', $hs_code);
                     $itemNode->addChild('Name', $product_no . '/' . $item_name . $hs_code_item);
                     $itemNode->addChild('Unit', $uom);
-
-                    /** -- existing tanpa rate
                     $itemNode->addChild('Price', round($detail['price'], 2));
                     $itemNode->addChild('Qty', round($detail['qty'], 2)); // Gunakan qty yang sudah dijumlahkan
                     $itemNode->addChild('TotalDiscount', round($detail['total_discount'], 2));
@@ -4763,15 +4668,6 @@ class Sales_invoices extends CI_Controller
                     $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']), 2)); // Gunakan total yang sudah dijumlahkan
                     $itemNode->addChild('VATRate', round($detail['taxes'], 2));
                     $itemNode->addChild('VAT', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100), 2));
-                    // -- versi baru dikalikan dgn rate */
-                    $itemNode->addChild('Price', round($detail['price'] * $rate, 2));
-                    $itemNode->addChild('Qty', round($detail['qty'], 2));
-                    $itemNode->addChild('TotalDiscount', round($detail['total_discount'] * $rate, 2));
-                    $itemNode->addChild('TaxBase', round(($detail['total'] - $detail['total_discount']) * $rate, 2));
-                    $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']) * $rate, 2));
-                    $itemNode->addChild('VATRate', round($detail['taxes'], 2));
-                    $itemNode->addChild('VAT', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100) * $rate, 2));
-
                     $itemNode->addChild('STLGRate', 0);
                     $itemNode->addChild('STLG', 0);
                 }
