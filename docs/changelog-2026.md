@@ -982,3 +982,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-10-05]
 - **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([b67eb384](https://github.com/hilmanf11/erp_bpi/commit/b67eb384a46800564167bca1c05bbc0286e65879))
+
+### [2026-10-05]
+- **kurniawan**: Update delivery_notes.php ([c67e2435](https://github.com/hilmanf11/erp_bpi/commit/c67e24350fa6cfc85885d2de7ae88bf1fefa627b))
