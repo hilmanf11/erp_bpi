@@ -81,7 +81,7 @@ class Feasibilitys extends CI_Controller
             //Select Query
             $this->db->select('a.*');
             $this->db->from('feasibilitys a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id','left');
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_number', $filter_item_fg_number);
             
