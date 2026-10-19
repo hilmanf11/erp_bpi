@@ -511,7 +511,7 @@ class Checksheets extends CI_Controller
                 $item_fg_id_for_update = $item_fg_id_posted;
             }
 
-            if ($post['receipt'] > 0) {
+            if ($post['receipt'] > 0 && floatval($post['packing_qty'] ?? 0) > 0) {
                 // Cek duplikat berdasarkan data WO, tanggal, shift & accumulate
                 $checksheet = $this->crud->reads("checksheets", [], [
                     "wo_no" => $post['wo_no'],
@@ -553,7 +553,7 @@ class Checksheets extends CI_Controller
             } else {
                 echo json_encode([
                     'theme' => 'error',
-                    'message' => 'Receipt Qty cannot <= 0',
+                    'message' => 'Receipt and Packing Qty must be > 0',
                     'title' => 'Invalid'
                 ]);
             }
@@ -569,15 +569,23 @@ class Checksheets extends CI_Controller
     public function create_label()
     {
         $post = $this->input->post();
-        @$checksheet_number = $post['checksheet_number'];
-        @$qty = $post['qty'];
+        $checksheet_number = $post['checksheet_number'] ?? '';
+        $qty = floatval($post['qty'] ?? 0);
+
+        if (empty($checksheet_number) || $qty <= 0) {
+            die(json_encode([
+                'theme' => 'error',
+                'title' => 'Invalid',
+                'message' => 'Checksheet number or Qty invalid'
+            ]));
+        }
 
         //Read Label ID
         $sqlGetID = $this->db->query("SELECT max(checksheet_label) as kode FROM wip_receipt_labels WHERE checksheet_number = '$checksheet_number'");
         $rowID = $sqlGetID->row();
         $label = $rowID->kode;
         if ($label == NULL) {
-            $autoID = $checksheet_number .  sprintf("%03s", $label + 1);
+            $autoID = $checksheet_number . sprintf("%03s", 1);
         } else {
             $urutan = (int) substr($label, -3);
             $autoID = $checksheet_number . sprintf("%03s", $urutan + 1);
@@ -597,15 +605,23 @@ class Checksheets extends CI_Controller
     public function create_label_box()
     {
         $post = $this->input->post();
-        $checksheet_number = $post['checksheet_number'];
-        $qty = $post['qty'];
+        $checksheet_number = $post['checksheet_number'] ?? '';
+        $qty = floatval($post['qty'] ?? 0);
+
+        if (empty($checksheet_number) || $qty <= 0) {
+            die(json_encode([
+                'theme' => 'error',
+                'title' => 'Invalid',
+                'message' => 'Checksheet number or Qty invalid'
+            ]));
+        }
 
         //Read Label ID
         $sqlGetID = $this->db->query("SELECT max(checksheet_label) as kode FROM wip_receipt_boxs WHERE checksheet_number = '$checksheet_number'");
         $rowID = $sqlGetID->row();
         $label = $rowID->kode;
         if ($label == NULL) {
-            $autoID = "B" . $checksheet_number .  sprintf("%03s", $label + 1);
+            $autoID = "B" . $checksheet_number . sprintf("%03s", 1);
         } else {
             $urutan = (int) substr($label, -3);
             $autoID = "B" . $checksheet_number . sprintf("%03s", $urutan + 1);

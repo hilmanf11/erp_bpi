@@ -798,17 +798,23 @@
                     $('#frm_insert').form('submit', {
                         url: url_save,
                         onSubmit: function() {
-                            var label = $("#label").numberbox('getValue');
-                            //var number = $("#number").textbox('getValue');
-                            if (!label || label == 0) {
-                                toastr.error('Qty label empty.', 'Error');
-                                return false; // Batalkan submit jika validasi gagal
+                            var receipt = parseFloat($("#receipt").numberbox('getValue')) || 0;
+                            var packing_qty = parseFloat($("#packing_qty").textbox('getValue')) || 0;
+                            var label = parseInt($("#label").numberbox('getValue')) || 0;
+
+                            if (receipt <= 0) {
+                                toastr.error('Receipt Qty must be greater than 0.', 'Error');
+                                return false;
+                            }
+                            if (packing_qty <= 0) {
+                                toastr.error('Packing Qty must be greater than 0.', 'Error');
+                                return false;
+                            }
+                            if (label <= 0) {
+                                toastr.error('Qty label must be greater than 0.', 'Error');
+                                return false;
                             }
 
-                            // if (!number) {
-                            //     toastr.error('Checksheet Number Null', 'Error');
-                            //     return false; // Batalkan submit jika validasi gagal
-                            // }
                             return $(this).form('validate');
                         },
                         success: function(result) {
@@ -817,110 +823,87 @@
                                 toastr.success(result.message, result.title);
 
                                 var checksheet_number = result.checksheet_number;
-                                var qty = $("#receipt").numberbox('getValue');
-                                var packing_qty = $("#packing_qty").textbox('getValue');
+                                var qty = parseFloat($("#receipt").numberbox('getValue')) || 0;
+                                var packing_qty = parseFloat($("#packing_qty").textbox('getValue')) || 0;
                                 var packing = $("#packing").combobox('getValue');
-                                var label = $("#label").numberbox('getValue');
+                                var label = parseInt($("#label").numberbox('getValue')) || 0;
 
-                                var totalData = Math.ceil(qty / packing_qty); // Menghitung total data
-                                var jmlData = 0; // Inisialisasi jumlah data yang telah diproses
+                                var totalData = Math.ceil(qty / packing_qty);
+                                if (totalData <= 0 || isNaN(totalData)) {
+                                    totalData = label;
+                                }
 
-                                function requestDataBox(total, qty, number, value, success, failed) {
-                                    if (value < 100) {
-                                        value = Math.floor((number / total) * 100);
-                                        $('#p_upload').progressbar('setValue', value);
+                                $('#p_success').html(0);
+                                $('#p_failed').html(0);
+                                $('#p_upload').progressbar('setValue', 0);
+                                $('#p_start').html(0);
+                                $('#p_finish').html(totalData);
+                                $("#p_remarks").html('');
+                                $("#dlg_label").dialog('open');
+
+                                function processLabel(qty_balance, number, successCount, failedCount, retryCount) {
+                                    qty_balance = parseFloat(qty_balance);
+
+                                    if (number <= totalData && qty_balance > 0) {
+                                        var qty_final = (qty_balance > packing_qty) ? packing_qty : qty_balance;
+                                        var progressVal = Math.floor(((number - 1) / totalData) * 100);
+                                        $('#p_upload').progressbar('setValue', progressVal);
                                         $('#p_start').html(number);
-                                        $('#p_finish').html(total);
+                                        $('#p_finish').html(totalData);
 
-                                        var qty_final = (parseInt(qty) > parseInt(packing_qty)) ? packing_qty : qty;
+                                        var labelUrl = (packing == 2)
+                                            ? "<?= base_url('planning/checksheets/create_label_box') ?>"
+                                            : "<?= base_url('planning/checksheets/create_label') ?>";
 
                                         $.ajax({
                                             type: "POST",
                                             async: true,
-                                            url: "<?= base_url('planning/checksheets/create_label_box') ?>",
+                                            url: labelUrl,
                                             data: {
                                                 "checksheet_number": checksheet_number,
-                                                "qty": qty_final,
+                                                "qty": qty_final
                                             },
                                             cache: false,
                                             dataType: "json",
-                                            success: function(result) {
-                                                var qty_balance = (parseInt(qty) - parseInt(packing_qty));
-                                                if (result.theme == "success") {
-                                                    $('#p_success').html(success);
-                                                    var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                    jmlData++; // Update jumlah data yang telah diproses
-                                                    requestDataBox(total, qty_balance, number + 1, value, success + 1, failed);
+                                            success: function(res) {
+                                                if (res && res.theme == "success") {
+                                                    $('#p_success').html(successCount + 1);
+                                                    var title = "<b style='color: green;'>" + (res.title || 'Success') + "</b> | Label No-" + number + " (" + qty_final + ")";
+                                                    $("#p_remarks").append(title + "<br>");
+                                                    processLabel(qty_balance - qty_final, number + 1, successCount + 1, failedCount, 0);
                                                 } else {
-                                                    $('#p_failed').html(failed);
-                                                    var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                    jmlData++; // Update jumlah data yang telah diproses
-                                                    requestDataBox(total, qty_balance, number + 1, value, success, failed + 1);
-                                                }
-                                                $("#p_remarks").append(title + "<br>");
-                                                if (jmlData === totalData) {
-                                                    $("#dlg_label").dialog('close');
-                                                    showPrintConfirmation();
-                                                } else {
-                                                    $("#dlg_label").dialog('open');
+                                                    $('#p_failed').html(failedCount + 1);
+                                                    var title = "<b style='color: red;'>" + (res && res.title ? res.title : 'Failed') + "</b> | " + (res && res.message ? res.message : 'Error');
+                                                    $("#p_remarks").append(title + "<br>");
+                                                    processLabel(qty_balance - qty_final, number + 1, successCount, failedCount + 1, 0);
                                                 }
                                             }
                                         }).fail(function(jqXHR, textStatus) {
-                                            toastr.error("Connection Time Out, Please Wait");
-                                            requestDataBox(total, qty, number, value, success, failed);
+                                            if (retryCount < 2) {
+                                                toastr.warning("Koneksi lambat, mencoba ulang label ke-" + number + " (" + (retryCount + 1) + "/2)...");
+                                                setTimeout(function() {
+                                                    processLabel(qty_balance, number, successCount, failedCount, retryCount + 1);
+                                                }, 1500);
+                                            } else {
+                                                $('#p_failed').html(failedCount + 1);
+                                                $("#p_remarks").append("<b style='color:red;'>Connection Error</b>: Gagal membuat label ke-" + number + "<br>");
+                                                Swal.fire({
+                                                    icon: 'error',
+                                                    title: 'Koneksi Terputus',
+                                                    text: 'Gagal membuat label ke-' + number + ' karena kendala jaringan. Silakan gunakan tombol ReCreate pada tabel.'
+                                                }).then(() => {
+                                                    $("#dlg_label").dialog('close');
+                                                    window.location.reload();
+                                                });
+                                            }
                                         });
-                                    }
-                                }
-
-                                function requestDataLabel(total, qty, number, value, success, failed) {
-                                    if (total > 0) {
-                                        if (value < 100) {
-                                            value = Math.floor((number / total) * 100);
-                                            $('#p_upload').progressbar('setValue', value);
-                                            $('#p_start').html(number);
-                                            $('#p_finish').html(total);
-
-                                            var qty_final = (parseInt(qty) > parseInt(packing_qty)) ? packing_qty : qty;
-
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('planning/checksheets/create_label') ?>",
-                                                data: {
-                                                    "checksheet_number": checksheet_number,
-                                                    "qty": qty_final,
-                                                },
-                                                cache: false,
-                                                dataType: "json",
-                                                success: function(result) {
-                                                    var qty_balance = (parseInt(qty) - parseInt(packing_qty));
-                                                    if (result.theme == "success") {
-                                                        $('#p_success').html(success);
-                                                        var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                        jmlData++; // Update jumlah data yang telah diproses
-                                                        requestDataLabel(total, qty_balance, number + 1, value, success + 1, failed);
-                                                    } else {
-                                                        $('#p_failed').html(failed);
-                                                        var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                        jmlData++; // Update jumlah data yang telah diproses
-                                                        requestDataLabel(total, qty_balance, number + 1, value, success, failed + 1);
-                                                    }
-                                                    $("#p_remarks").append(title + "<br>");
-                                                    if (jmlData === totalData) {
-                                                        $("#dlg_label").dialog('close');
-                                                        showPrintConfirmation();
-                                                    } else {
-                                                        $("#dlg_label").dialog('open');
-                                                    }
-                                                }
-                                            }).fail(function(jqXHR, textStatus) {
-                                                toastr.error("Connection Time Out, Please Wait");
-                                                requestDataLabel(total, qty, number, value, success, failed);
-                                            });
-                                        }
                                     } else {
-                                        toastr.error("Qty Label is Zero, Please Add Qty Sub Box in Item Finish Good");
-                                        requestData(totalData, jsonData, jmlData + 1, valueData);
+                                        $('#p_upload').progressbar('setValue', 100);
+                                        $('#p_start').html(totalData);
+                                        setTimeout(function() {
+                                            $("#dlg_label").dialog('close');
+                                            showPrintConfirmation();
+                                        }, 400);
                                     }
                                 }
 
@@ -932,9 +915,6 @@
                                         denyButtonText: "No"
                                     }).then((result) => {
                                         if (result.isConfirmed) {
-                                            // var checksheet_number = $("#number").textbox('getValue');
-                                            var packing = $("#packing").combobox('getValue');
-
                                             var cs = {
                                                 checksheet_number: checksheet_number,
                                                 packing: packing
@@ -952,11 +932,7 @@
                                     });
                                 }
 
-                                if (packing == 2) {
-                                    requestDataBox(label, qty, 1, 0, 1, 1);
-                                } else {
-                                    requestDataLabel(label, qty, 1, 0, 1, 1);
-                                }
+                                processLabel(qty, 1, 0, 0, 0);
 
                             } else {
                                 toastr.error(result.message, result.title);
@@ -1065,12 +1041,14 @@
         });
 
         function calculateLabel() {
-            var receipt = $("#receipt").numberbox('getValue'); // Ambil nilai receipt
-            var packing_qty = $("#packing_qty").textbox('getValue'); // Ambil nilai packing_qty
+            var receipt = parseFloat($("#receipt").numberbox('getValue')) || 0;
+            var packing_qty = parseFloat($("#packing_qty").textbox('getValue')) || 0;
 
-            if (receipt != "" && packing_qty != "") {
+            if (receipt > 0 && packing_qty > 0) {
                 var label_value = Math.ceil(receipt / packing_qty);
                 $("#label").numberbox('setValue', label_value);
+            } else {
+                $("#label").numberbox('setValue', 0);
             }
         }
 
