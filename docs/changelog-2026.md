@@ -985,3 +985,6 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-10-05]
 - **kurniawan**: Update delivery_notes.php ([c67e2435](https://github.com/hilmanf11/erp_bpi/commit/c67e24350fa6cfc85885d2de7ae88bf1fefa627b))
+
+### [2026-10-19]
+- **kurniawan**: Update Perihal qty packing 0 dan kondisi saat lag ([b7d2f961](https://github.com/hilmanf11/erp_bpi/commit/b7d2f96142473cfa0c841f7e68495d4b92be79bd))
