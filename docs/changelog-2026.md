@@ -988,3 +988,22 @@ add histories Price ([2b2fc375](https://github.com/hilmanf11/erp_bpi/commit/2b2f
 
 ### [2026-10-19]
 - **kurniawan**: Update Perihal qty packing 0 dan kondisi saat lag ([b7d2f961](https://github.com/hilmanf11/erp_bpi/commit/b7d2f96142473cfa0c841f7e68495d4b92be79bd))
+
+### [2026-10-27]
+- **Yudhazaldi**: fix: kompatibilitas PHP 8.5 (deprecation & null-safety)
+
+- (string)/(float) cast pada input CI, number_format, strtotime, trim,
+  abs(?? 0) agar tidak deprecated saat null (perilaku tetap sama)
+- #[\AllowDynamicProperties] di core CI, DB driver, excel_reader2
+- Session: sid_length hanya dipakai di PHP < 8.4, #[\ReturnTypeWillChange]
+  di Session_files_driver
+- E_STRICT dihapus, imagedestroy/finfo_close hanya di PHP lama,
+  ?Exception implicit nullable, ${var} -> {$var}
+- DB_query_builder: trim((string)) di order_by()/join()
+- Crud: null-safe autoid/query/read/reads/upload
+- index.php: sembunyikan E_DEPRECATED di mode development
+
+Logika Journal Inventory / autoposting TIDAK termasuk.
+Sudah live di dummy & live (2026-10-22 s/d 2026-10-26).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com> ([5b4da5cc](https://github.com/hilmanf11/erp_bpi/commit/5b4da5ccd27f7b22cafc55117c3475a285fa2aac))
