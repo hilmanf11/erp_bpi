@@ -1007,3 +1007,17 @@ Logika Journal Inventory / autoposting TIDAK termasuk.
 Sudah live di dummy & live (2026-10-22 s/d 2026-10-26).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com> ([5b4da5cc](https://github.com/hilmanf11/erp_bpi/commit/5b4da5ccd27f7b22cafc55117c3475a285fa2aac))
+
+### [2026-10-27]
+- **Yudhazaldi**: fix: datatables error 500 di PHP 8 saat filterRules kosong
+
+filterRules tidak dikirim saat load awal datagrid, json_decode() = null,
+lalu @count(null) melempar TypeError di PHP 8 (@ tidak meredam TypeError).
+
+- json_decode($this->input->post('filterRules') ?? '[]')
+- if (@count($filters) > 0) -> if (!empty($filters))
+
+Perilaku identik di PHP 7. 99 controller, sudah live di dummy & live
+sejak 2026-10-23.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com> ([b067305f](https://github.com/hilmanf11/erp_bpi/commit/b067305f9816337891406931f614a117c43aba00))
