@@ -97,7 +97,7 @@ class Bpm extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime($trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM bpm WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -139,7 +139,7 @@ class Bpm extends CI_Controller
             // $filter_workorder   = $this->input->get('filter_workorder');
             $filter_request_no = $this->input->get('filter_request_no');
             $filter_product_family = $this->input->get('filter_product_family');
-            $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+            $filter_product_no = base64_decode((string) $this->input->get('filter_product_no'));
             $filter_kanban_date_from = $this->input->get('filter_kanban_date_from');
             $filter_kanban_date_to   = $this->input->get('filter_kanban_date_to');
             $filter_status = $this->input->get('filter_status');
@@ -456,7 +456,7 @@ class Bpm extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -618,7 +618,7 @@ class Bpm extends CI_Controller
                                         <tr>
                                             <td width="50">Doc Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime($kanban->request_date)) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime((string) $kanban->request_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Created By</td>
@@ -691,7 +691,7 @@ class Bpm extends CI_Controller
         // $filter_workorder   = $this->input->get('filter_workorder');
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_product_family = $this->input->get('filter_product_family');
-        $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+        $filter_product_no = base64_decode((string) $this->input->get('filter_product_no'));
         $filter_kanban_date_from = $this->input->get('filter_kanban_date_from');
         $filter_kanban_date_to   = $this->input->get('filter_kanban_date_to');
         $filter_status = $this->input->get('filter_status');

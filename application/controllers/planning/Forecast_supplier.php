@@ -56,14 +56,14 @@ class Forecast_supplier extends CI_Controller
         $p_month = $this->input->post('p_month');
         $p_year = $this->input->post('p_year');
         $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);

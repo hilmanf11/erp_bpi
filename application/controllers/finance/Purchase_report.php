@@ -202,7 +202,7 @@ class Purchase_report extends CI_Controller
             $totalAmountIDR = 0;
             foreach ($records as $record) {
                 $currency = $record->currency;
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record->receipt_date)));
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $record->receipt_date)));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                 if ($currency != "IDR") {
@@ -432,7 +432,7 @@ class Purchase_report extends CI_Controller
             }
     
             $currency = $record['currency'];
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record['receipt_date'])));
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $record['receipt_date'])));
             $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
     
             if ($currency != "IDR") {
@@ -463,9 +463,9 @@ class Purchase_report extends CI_Controller
     function numberFormatPrint($nominal, $option = "") 
     {
         if ($option == "excel") {
-            $formatted = number_format($nominal, 2, ",", "");
+            $formatted = number_format((float) $nominal, 2, ",", "");
         } else {
-            $formatted = number_format($nominal, 2, ",", ".");        
+            $formatted = number_format((float) $nominal, 2, ",", ".");        
         }
         return $formatted;
     }

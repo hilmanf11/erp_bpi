@@ -132,8 +132,8 @@ class Report_history_transactions_wip_rm extends CI_Controller
         // var_dump($filter_workorder);
         // return;
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
         //Config
@@ -177,7 +177,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
             $result = $db->query($query)->result_array();
             $map = [];
             foreach ($result as $row) {
-                $map[$row[$keyField]] = (float)$row[$valueField];
+                $map[(string) $row[$keyField]] = (float)$row[$valueField];
             }
             return $map;
         }
@@ -1081,7 +1081,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
         //         // Cek apakah FG ini punya BOM di array yang sudah kita buat
         //         if (isset($bom_map[$fg->id])) {
         //             foreach ($bom_map[$fg->id] as $bom) {
-        //                 $item_rm_id = $bom->item_rm_id;
+        //                 $item_rm_id = (string) $bom->item_rm_id;
         //                 $composition = floatval($bom->composition);
                         
         //                 if (!isset($endingBalancePerRM[$item_rm_id])) {
@@ -1189,7 +1189,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
             // 6. Alokasikan Ending Balance ke RM berdasarkan BOM yang sudah ditarik di awal (Tanpa Query Berulang)
             if (isset($bom_map[$id])) {
                 foreach ($bom_map[$id] as $bom) {
-                    $item_rm_id = $bom->item_rm_id;
+                    $item_rm_id = (string) $bom->item_rm_id;
                     $composition = floatval($bom->composition);
                     
                     if (!isset($endingBalancePerRM[$item_rm_id])) {
@@ -1281,17 +1281,17 @@ class Report_history_transactions_wip_rm extends CI_Controller
                 <td colspan="2">' . $record['division'] . '</td>
                 <td colspan="2">' . $record['category_name'] . '</td>
                 <td>' . $record['prodfam'] . '</td>
-                <td style="text-align:right;">' . number_format($record['begin_stock'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_supply'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_matreq'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_adj_in'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_other'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_return'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_rfg'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_ng_other'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_ng_process'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($record['qty_adj_out'], 2) . '</td>
-                <td style="text-align:right;">' . number_format($totalEndingBalance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['begin_stock'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_supply'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_matreq'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_adj_in'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_other'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_return'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_rfg'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_ng_other'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_ng_process'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record['qty_adj_out'], 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalEndingBalance, 2) . '</td>
                 <td style="text-align:right;">' . number_format((@$record['begin_stock'] + @$record['qty_supply'] + @$record['qty_matreq'] + @$record['qty_adj_in'] + $record['qty_other']) - (@$record['qty_return'] + @$record['qty_rfg'] + @$record['qty_ng_other'] + @$record['qty_ng_process'] + @$record['qty_adj_out'] + @$totalEndingBalance), 2) . '</td>
             </tr>';
 
@@ -1735,7 +1735,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
 
                     // Sort the data by date
                     usort($all_data, function ($a, $b) {
-                        return strtotime($a['date']) - strtotime($b['date']);
+                        return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                     });
 
                     foreach ($all_data as $data) {
@@ -1746,20 +1746,20 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">' . $data['type'] . '</td>
                                 <td colspan="2">' . $data['username'] . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($data['date'])) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $data['date'])) . '</td>
                                 <td colspan="2">' . $data['wo_no'] . '</td>
                                 <td colspan="2">' . $data['doc_no'] . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_supply'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_matreq'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_other'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_return'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_rfg'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_ng'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_sto_out'], 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_supply'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_matreq'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_adj_in'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_other'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_return'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_rfg'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_ng'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_adj_out'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_sto_out'], 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
 
                         $begin = $balance;
@@ -2153,7 +2153,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
 
                     // Sort the data by date
                     usort($all_data, function ($a, $b) {
-                        return strtotime($a['date']) - strtotime($b['date']);
+                        return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                     });
 
                     foreach ($all_data as $data) {
@@ -2164,20 +2164,20 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">' . $data['type'] . '</td>
                                 <td colspan="2">' . $data['username'] . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($data['date'])) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $data['date'])) . '</td>
                                 <td colspan="2">' . $data['wo_no'] . '</td>
                                 <td colspan="2">' . $data['doc_no'] . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_supply'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_matreq'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_other'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_return'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_rfg'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_ng'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_sto_out'], 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_supply'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_matreq'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_adj_in'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_other'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_return'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_rfg'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_ng'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_adj_out'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_sto_out'], 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
 
                         $begin = $balance;
@@ -2572,7 +2572,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
 
                     // Sort the data by date
                     usort($all_data, function ($a, $b) {
-                        return strtotime($a['date']) - strtotime($b['date']);
+                        return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                     });
 
                     foreach ($all_data as $data) {
@@ -2583,20 +2583,20 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">' . $data['type'] . '</td>
                                 <td colspan="2">' . $data['username'] . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($data['date'])) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $data['date'])) . '</td>
                                 <td colspan="2">' . $data['wo_no'] . '</td>
                                 <td colspan="2">' . $data['doc_no'] . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_supply'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_matreq'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_other'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_return'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_rfg'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_ng'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_sto_out'], 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_supply'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_matreq'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_adj_in'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_other'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_return'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_rfg'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_ng'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_adj_out'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_sto_out'], 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
 
                         $begin = $balance;
@@ -2643,20 +2643,20 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">SUPPLY</td>
                                 <td colspan="2">' . $supply->request_name . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($supply->request_date)) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $supply->request_date)) . '</td>
                                 <td colspan="2">' . $supply->wo_no . '</td>
                                 <td colspan="2">' . $supply->doc_no . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($supply->qty_supply, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $supply->qty_supply, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($supply->qty_other, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $supply->qty_other, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         $begin += $supply->qty_supply;
                         $nod++;
@@ -2694,20 +2694,20 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">MATREQ</td>
                                 <td colspan="2">' . $matreq->request_name . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($matreq->request_date)) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $matreq->request_date)) . '</td>
                                 <td colspan="2">' . $matreq->workorder . '</td>
                                 <td colspan="2">' . $matreq->request_no . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($matreq->qty_matreq, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $matreq->qty_matreq, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($matreq->qty_other, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(0, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $matreq->qty_other, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td style="text-align:right;">' . number_format(0, 2) . '</td>
+                                <td style="text-align:right;">' . number_format(0, 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         $begin += $matreq->qty_matreq;
                         $nod++;
@@ -2722,19 +2722,19 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">ADJ IN</td>
                                 <td colspan="2">' . $adjin->request_name . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($adjin->request_date)) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $adjin->request_date)) . '</td>
                                 <td colspan="2">' . $adjin->workorder . '</td>
                                 <td colspan="2">' . $adjin->request_no . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($adjin->qty, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $adjin->qty, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         $begin += $adjin->qty;
                         $nod++;
@@ -2754,19 +2754,19 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">RETURN</td>
                                 <td colspan="2">' . $return->request_name . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($return->request_date)) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $return->request_date)) . '</td>
                                 <td colspan="2">' . $return->workorder . '</td>
                                 <td colspan="2">' . $return->request_no . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($return->qty, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $return->qty, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         $begin -= $return->qty;
                         $nod++;
@@ -2859,7 +2859,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
                     }
                     // Sort the data by date
                     usort($all_dataRFG, function ($a, $b) {
-                        return strtotime($a['date']) - strtotime($b['date']);
+                        return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                     });
 
                     foreach ($all_dataRFG as $data) {
@@ -2869,18 +2869,18 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">' . $data['type'] . '</td>
                                 <td colspan="2">' . $data['username'] . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($data['date'])) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $data['date'])) . '</td>
                                 <td colspan="2">' . $data['wo_no'] . '</td>
                                 <td colspan="2">' . $data['doc_no'] . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_rfg'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_rfg'], 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         $begin -= $data['qty_rfg'];
                         $nod++;
@@ -2915,19 +2915,19 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">NG</td>
                                 <td colspan="2">' . $ng->name . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($ng->trans_date)) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $ng->trans_date)) . '</td>
                                 <td colspan="2">' . $ng->workorder . '</td>
                                 <td colspan="2">' . $ng->document . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($ng->qty, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $ng->qty, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         $begin -= $ng->qty;
                         $nod++;
@@ -2962,19 +2962,19 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">NG</td>
                                 <td colspan="2">' . $ng->name . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($ng->trans_date)) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $ng->trans_date)) . '</td>
                                 <td colspan="2">' . $ng->workorder . '</td>
                                 <td colspan="2">' . $ng->document . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($ng->qty, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $ng->qty, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         $begin -= $ng->qty;
                         $nod++;
@@ -2989,10 +2989,10 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td colspan="2">ADJ OUT</td>
                                 <td colspan="2">' . $adjout->request_name . '</td>
-                                <td colspan="3">' . date("Y-m-d", strtotime($adjout->request_date)) . '</td>
+                                <td colspan="3">' . date("Y-m-d", strtotime((string) $adjout->request_date)) . '</td>
                                 <td colspan="2">' . $adjout->workorder . '</td>
                                 <td colspan="2">' . $adjout->request_no . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
@@ -3000,8 +3000,8 @@ class Report_history_transactions_wip_rm extends CI_Controller
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($adjout->qty, 2) . '</td>
-                                <td colspan="2" style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $adjout->qty, 2) . '</td>
+                                <td colspan="2" style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         $begin -= $adjout->qty;
                         $nod++;
@@ -3012,16 +3012,16 @@ class Report_history_transactions_wip_rm extends CI_Controller
 
         // $html .= '<tr>
         //     <td colspan="13" style="text-align:right;"><b>GRAND TOTAL</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalSupply, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalMatreq, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalAdjIn, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalReturn, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalRfg, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalNg, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalAdjOut, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalEndingBalanceTotal, 2) . '</b></td>
-        //     <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalBeginStock, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalSupply, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalMatreq, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalAdjIn, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalReturn, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalRfg, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalNg, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalAdjOut, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalEndingBalanceTotal, 2) . '</b></td>
+        //     <td style="text-align:right;"><b>' . number_format((float) $totalEndingStock, 2) . '</b></td>
         // </tr>';
 
         $html .= '</table></body></html>';

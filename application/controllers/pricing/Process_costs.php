@@ -332,7 +332,7 @@ class Process_costs extends CI_Controller
     // public function update()
     // {
     //     if ($this->input->post()) {
-    //         $id   = base64_decode($this->input->get('id'));
+    //         $id   = base64_decode((string) $this->input->get('id'));
     //         $post = $this->input->post();
     //         if (isset($post['wo_no_assembly']) && $post['wo_no_assembly'] === '') {
     //             $post['wo_no_assembly'] = null;
@@ -565,25 +565,25 @@ class Process_costs extends CI_Controller
                         <td style="text-align:center;">' . $data['revision'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td style="text-align:right;">' . number_format($data['cycle_time'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['cycle_time_process'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['cycle_time'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['cycle_time_process'], 2) . '</td>
                         <td style="text-align:center;">' . $data['cavity_standard'] . '</td>
                         <td style="text-align:center;">' . $data['toonage'] . '</td>
-                        <td style="text-align:right;">' . number_format($data['plain_rate_sec'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['total_process_cost'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['total_material_cost'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['ng_ratio'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['ng_ratio_cost'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['adm_foh'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['adm_foh_cost'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['mtn'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['mtn_cost'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['profit'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['profit_nominal'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['plain_rate_sec'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['total_process_cost'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['total_material_cost'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['ng_ratio'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['ng_ratio_cost'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['adm_foh'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['adm_foh_cost'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['mtn'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['mtn_cost'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['profit'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['profit_nominal'], 2) . '</td>
                         <td style="text-align:center;">' . $data['purging'] . '</td>
-                        <td style="text-align:right;">' . number_format($data['purging_cost'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['moq'], 2) . '</td>
-                        <td style="text-align:right;">' . number_format($data['mold_depreciation'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['purging_cost'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['moq'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['mold_depreciation'], 2) . '</td>
                     </tr>';
             $no++;
         }

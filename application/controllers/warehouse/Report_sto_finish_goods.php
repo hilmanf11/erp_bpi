@@ -309,7 +309,7 @@ class Report_sto_finish_goods extends CI_Controller
 
         foreach ($records as $record) {
             $deviation = $record->deviation;
-            $formatted_deviation = $deviation < 0 ? '(' . abs($deviation) . ')' : $deviation;
+            $formatted_deviation = $deviation < 0 ? '(' . abs($deviation ?? 0) . ')' : $deviation;
             
             if ($deviation < 0) {
                 $description = 'Deviation -';

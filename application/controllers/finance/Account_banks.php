@@ -38,7 +38,7 @@ class Account_banks extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -92,7 +92,7 @@ class Account_banks extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('account_banks', ["id" => $id], $post);
             echo $send;
@@ -266,9 +266,9 @@ class Account_banks extends CI_Controller
                             <td>' . $data['bank_code'] . '</td>
                             <td>' . $data['start_date'] . '</td>
                             <td>' . $data['currency'] . '</td>
-                            <td>' . number_format($data['balance'], 2) . '</td>
+                            <td>' . number_format((float) $data['balance'], 2) . '</td>
                             <td>' . $data['currency_local'] . '</td>
-                            <td>' . number_format($data['balance_local']) . '</td>
+                            <td>' . number_format((float) $data['balance_local']) . '</td>
                             <td>' . $data['p_supplier'] . '</td>
                             <td>' . $data['p_customer'] . '</td>
                         </tr>';

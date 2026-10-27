@@ -140,7 +140,7 @@ class Sales_invoices extends CI_Controller
 
         echo json_encode([
             'amount' => $amount,
-            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format($amount, 2)
+            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format((float) $amount, 2)
         ]);
     }
 
@@ -408,7 +408,7 @@ class Sales_invoices extends CI_Controller
             $customer_name = $customer->name;
             // Menghapus titik (.), koma (,), dan spasi ganda
             $cleaned_name = str_replace(array('.', ',', '  '), '', $customer_name);            
-            $normalized_customer_name = strtolower(trim($cleaned_name));
+            $normalized_customer_name = strtolower(trim((string) $cleaned_name));
         }
 
         // Division
@@ -451,7 +451,7 @@ class Sales_invoices extends CI_Controller
         $customer_name = strtolower($customer->name);
         // Hapus PT, CV, titik, dan koma
         $search_term = str_replace(['pt ', 'cv ', '.', ','], '', $customer_name);
-        $search_term = trim($search_term);
+        $search_term = trim((string) $search_term);
 
         $this->db->select('id, name');
         $this->db->from('journal_types');
@@ -505,7 +505,7 @@ class Sales_invoices extends CI_Controller
 
     public function check_faktur_no()
     {
-        $faktur_no = base64_decode($this->input->get('faktur_no'));
+        $faktur_no = base64_decode((string) $this->input->get('faktur_no'));
         
         // Menggunakan query builder CodeIgniter
         $this->db->select('faktur_no');
@@ -794,8 +794,8 @@ class Sales_invoices extends CI_Controller
 
     public function datatablesTemp()
     {
-        // $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
-        $delivery_note_no = explode(",", base64_decode($this->input->get('delivery_note_no')));
+        // $delivery_note_no = base64_decode((string) $this->input->get('delivery_note_no'));
+        $delivery_note_no = explode(",", base64_decode((string) $this->input->get('delivery_note_no')));
         $division = $this->input->get('division');
 
         // $this->db->select('a.delivery_note_no, 
@@ -957,16 +957,16 @@ class Sales_invoices extends CI_Controller
 
     public function datatables($details = "")
     {
-        $filter_type  = base64_decode($this->input->get('filter_type'));
-        $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-        $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-        $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-        $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-        $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
-        $filter_status = base64_decode($this->input->get('filter_status'));
+        $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+        $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+        $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+        $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+        $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+        $filter_sales_invoice = base64_decode((string) $this->input->get('filter_sales_invoice'));
+        $filter_delivery_note_no = base64_decode((string) $this->input->get('filter_delivery_note_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode((string) $this->input->get('filter_faktur_no'));
+        $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
         $date_from = date("Y-m-01");
         $date_to = date("Y-m-t");
@@ -1008,7 +1008,7 @@ class Sales_invoices extends CI_Controller
             //Limit 1 - 10
             $this->db->limit($rows, $offset);
         } else {
-            $number = base64_decode($this->input->get('number'));
+            $number = base64_decode((string) $this->input->get('number'));
 
             $this->db->select('a.*');
             $this->db->select('c.hs_code');
@@ -1298,7 +1298,7 @@ class Sales_invoices extends CI_Controller
 
         foreach ($query->result() as $row) {
             if (!empty($row->delivery_note_no)) {
-                $notes[] = trim($row->delivery_note_no);
+                $notes[] = trim((string) $row->delivery_note_no);
             }
         }
 
@@ -1424,7 +1424,7 @@ class Sales_invoices extends CI_Controller
         $journal_types  = $this->crud->read('journal_types', ["number" => $data['journal_type_code']]);
         $account_coa    = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
         $divisions      = $this->crud->read('divisions', ["id" => $data['division_id']]);
-        $account_banks  = $this->db->select('*')->from('account_banks')->like('bank_account', trim($data['payment_to']), 'both')->get()->row();
+        $account_banks  = $this->db->select('*')->from('account_banks')->like('bank_account', trim((string) $data['payment_to']), 'both')->get()->row();
         $item_fg        = $this->db->select('*')->from('item_fg')->like('division_id', $data['division_id'])->like('number', $data['item_no'], 'both')->get()->row();
         $item_fg_id     = !empty($item_fg) ? $item_fg->id : "";
         $sales_invoices = $this->db->select('*')->from('sales_invoices')->where('number', $data['number'])->where('account_number', $data['account_number'])->like('delivery_note_no', $data['delivery_note_no'])->like('sales_order_no', $data['sales_order_no'])->like('price', $data['price'])->like('item_fg_id', $item_fg_id, 'both')->get()->row();
@@ -1514,7 +1514,7 @@ class Sales_invoices extends CI_Controller
 
             // Get Rate
             $currency = $data['currency'];
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($data["trans_date"])));
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $data["trans_date"])));
             $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
             if ($currency != "IDR") {
                 if ($exchange) {
@@ -1529,7 +1529,7 @@ class Sales_invoices extends CI_Controller
             // Prepare data
             $payment_term   = $customers->payment_term ?? $data["payment_term"];
             $vat_rate       = $customers->taxes ?? 0;
-            $due_date       = date('Y-m-d', strtotime('+' . $customers->payment_term . ' days', strtotime($data['trans_date'])));
+            $due_date       = date('Y-m-d', strtotime('+' . $customers->payment_term . ' days', strtotime((string) $data['trans_date'])));
             $payment_to     = $account_banks->bank_name ?? $data["payment_to"];
             $price          = (float)($data['price'] ?? 0);
             $qty            = (float)($data['qty'] ?? 0);
@@ -1976,12 +1976,12 @@ class Sales_invoices extends CI_Controller
                                         <tr>
                                             <td>Delivery Date</td>
                                             <td>:</td>
-                                            <td><b>' . date("d F Y", strtotime($sales_invoice->trans_date)) . '</b></td>
+                                            <td><b>' . date("d F Y", strtotime((string) $sales_invoice->trans_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td>Payment Due</td>
                                             <td>:</td>
-                                            <td><b>' . date("d F Y", strtotime($sales_invoice->due_date)) . '</b></td>
+                                            <td><b>' . date("d F Y", strtotime((string) $sales_invoice->due_date)) . '</b></td>
                                         </tr>
                                     </table>
                                 </div>
@@ -2104,7 +2104,7 @@ class Sales_invoices extends CI_Controller
                 }
 
                 // if ($record['type'] == "EXPORT") {
-                //     $content = '<td style="text-align:right">' . number_format($record['price'], 4, ",", ".") . '</td>
+                //     $content = '<td style="text-align:right">' . number_format((float) $record['price'], 4, ",", ".") . '</td>
                 //                 <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), 2, ",", ".") . '</td>';
                 // } else {
                 //     $content = "";
@@ -2123,9 +2123,9 @@ class Sales_invoices extends CI_Controller
                 $currency_display = $record['currency'];
 
                 $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>';
-                $html .= '<td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>';
+                $html .= '<td style="text-align:right">' . number_format((float) $record['qty'], 0, ",", ".") . '</td>';
                 $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $currency_display . '</span></td>';
-                $html .= '<td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>';
+                $html .= '<td style="text-align:right">' . number_format((float) $record['price'], $format_no, ",", ".") . '</td>';
                 $html .= '<td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>';
                 $html .= '</tr>';
 
@@ -2140,41 +2140,41 @@ class Sales_invoices extends CI_Controller
 
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>Total Invoice</b></td>
-                            <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $total_invoice, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="'.$column.'" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Discount ('. number_format((float) $disc_pr,0).' %)</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $discount, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>Sub Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $sub_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                        <td colspan="'.$column.'" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
-                        <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
+                        <td colspan="'.$column.'" style="text-align:right"><b>Down Payment ('. number_format((float) $disc_dp,0).' %)</b></td>
+                        <td style="text-align:right"><b>' . number_format((float) $down_payment, $format_no, ",", ".") . '</b></td>
                     </tr>';
 
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>DPP</b></td>
-                            <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $dpp_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="'.$column.'" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>VAT ('. number_format((float) $record['taxes'],0).' %)</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $vat_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
-                            <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $tax_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>Grand Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $grand_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
@@ -2440,12 +2440,12 @@ class Sales_invoices extends CI_Controller
     //                                     <tr>
     //                                         <td>Delivery Date</td>
     //                                         <td>:</td>
-    //                                         <td><b>' . date("d F Y", strtotime($sales_invoice->trans_date)) . '</b></td>
+    //                                         <td><b>' . date("d F Y", strtotime((string) $sales_invoice->trans_date)) . '</b></td>
     //                                     </tr>
     //                                     <tr>
     //                                         <td>Payment Due</td>
     //                                         <td>:</td>
-    //                                         <td><b>' . date("d F Y", strtotime($sales_invoice->due_date)) . '</b></td>
+    //                                         <td><b>' . date("d F Y", strtotime((string) $sales_invoice->due_date)) . '</b></td>
     //                                     </tr>
     //                                 </table>
     //                             </div>
@@ -2517,7 +2517,7 @@ class Sales_invoices extends CI_Controller
     //             $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
 
     //             if ($record['type'] == "EXPORT") {
-    //                 $content = '<td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>
+    //                 $content = '<td style="text-align:right">' . number_format((float) $record['price'], $format_no, ",", ".") . '</td>
     //                             <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>';
     //             } else {
     //                 $content = "";
@@ -2528,9 +2528,9 @@ class Sales_invoices extends CI_Controller
     //                             <td style="font-size:10px;">' . $record['item_no'] . '</td>
     //                             <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
     //                             <td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>
-    //                             <td style="text-align:right">' . number_format($record['qty_sum'], 0, ",", ".") . '</td>
+    //                             <td style="text-align:right">' . number_format((float) $record['qty_sum'], 0, ",", ".") . '</td>
     //                             <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
-    //                             <td style="text-align:right">' . number_format($record['prices'], $format_no, ",", ".") . '</td>
+    //                             <td style="text-align:right">' . number_format((float) $record['prices'], $format_no, ",", ".") . '</td>
     //                             <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), $format_no, ",", ".") . '</td>
     //                         </tr>';
     //             $no++;
@@ -2539,40 +2539,40 @@ class Sales_invoices extends CI_Controller
     //         if (($i + 1) == $page) {
     //             $html .= '<tr>
     //                         <td colspan="7" style="text-align:right"><b>Total Invoice</b></td>
-    //                         <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
+    //                         <td style="text-align:right"><b>' . number_format((float) $total_invoice, $format_no, ",", ".") . '</b></td>
     //                     </tr>';
     //             $html .= '<tr>
-    //                         <td colspan="7" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
-    //                         <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
+    //                         <td colspan="7" style="text-align:right"><b>Discount ('. number_format((float) $disc_pr,0).' %)</b></td>
+    //                         <td style="text-align:right"><b>' . number_format((float) $discount, $format_no, ",", ".") . '</b></td>
     //                     </tr>';
 
     //             $html .= '<tr>
     //                         <td colspan="7" style="text-align:right"><b>Sub Total</b></td>
-    //                         <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
+    //                         <td style="text-align:right"><b>' . number_format((float) $sub_total, $format_no, ",", ".") . '</b></td>
     //                     </tr>';
 
     //             $html .= '<tr>
-    //                         <td colspan="7" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
-    //                         <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
+    //                         <td colspan="7" style="text-align:right"><b>Down Payment ('. number_format((float) $disc_dp,0).' %)</b></td>
+    //                         <td style="text-align:right"><b>' . number_format((float) $down_payment, $format_no, ",", ".") . '</b></td>
     //                     </tr>';
 
     //             $html .= '<tr>
     //                         <td colspan="7" style="text-align:right"><b>DPP</b></td>
-    //                         <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
+    //                         <td style="text-align:right"><b>' . number_format((float) $dpp_total, $format_no, ",", ".") . '</b></td>
     //                     </tr>';
 
     //             $html .= '<tr>
-    //                         <td colspan="7" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
-    //                         <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
+    //                         <td colspan="7" style="text-align:right"><b>VAT ('. number_format((float) $record['taxes'],0).' %)</b></td>
+    //                         <td style="text-align:right"><b>' . number_format((float) $vat_total, $format_no, ",", ".") . '</b></td>
     //                     </tr>';
                 
     //             $html .= '<tr>
     //                         <td colspan="7" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
-    //                         <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
+    //                         <td style="text-align:right"><b>' . number_format((float) $tax_total, $format_no, ",", ".") . '</b></td>
     //                     </tr>';
     //             $html .= '<tr>
     //                         <td colspan="7" style="text-align:right"><b>Grand Total</b></td>
-    //                         <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
+    //                         <td style="text-align:right"><b>' . number_format((float) $grand_total, $format_no, ",", ".") . '</b></td>
     //                     </tr>';
 
     //             $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
@@ -2771,8 +2771,8 @@ class Sales_invoices extends CI_Controller
                     <tr><td>Faktur No</td><td>:</td><td><b>' . $record['faktur_no'] . '</b></td></tr>
                     <tr><td>Trans Type</td><td>:</td><td><b>' . $record['trans_type'] . '</b></td></tr>
                     <tr><td>Ship By</td><td>:</td><td><b>' . $record['ship_by'] . '</b></td></tr>
-                    <tr><td>Delivery Date</td><td>:</td><td><b>' . date("d F Y", strtotime($record['trans_date'])) . '</b></td></tr>
-                    <tr><td>Payment Due</td><td>:</td><td><b>' . date("d F Y", strtotime($record['due_date'])) . '</b></td></tr>
+                    <tr><td>Delivery Date</td><td>:</td><td><b>' . date("d F Y", strtotime((string) $record['trans_date'])) . '</b></td></tr>
+                    <tr><td>Payment Due</td><td>:</td><td><b>' . date("d F Y", strtotime((string) $record['due_date'])) . '</b></td></tr>
                 </table>
             </div>';
 
@@ -2885,10 +2885,10 @@ class Sales_invoices extends CI_Controller
                 }
 
                 $html .= '<td style="text-align:center">' . $row['uom'] . '</td>';
-                $html .= '<td style="text-align:right">' . number_format($qty, 0, ",", ".") . '</td>';
+                $html .= '<td style="text-align:right">' . number_format((float) $qty, 0, ",", ".") . '</td>';
                 $html .= '<td style="text-align:center">' . $row['currency'] . '</td>';
-                $html .= '<td style="text-align:right">' . number_format($row['price'], $format_no, ",", ".") . '</td>';
-                $html .= '<td style="text-align:right">' . number_format($line_total, $format_no, ",", ".") . '</td>';
+                $html .= '<td style="text-align:right">' . number_format((float) $row['price'], $format_no, ",", ".") . '</td>';
+                $html .= '<td style="text-align:right">' . number_format((float) $line_total, $format_no, ",", ".") . '</td>';
                 $html .= '</tr>';
             }
 
@@ -2900,40 +2900,40 @@ class Sales_invoices extends CI_Controller
 
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>Total Invoice</b></td>
-                            <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $total_invoice, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
-                            <td colspan="'.$column.'" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Discount ('. number_format((float) $disc_pr,0).' %)</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $discount, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>Sub Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $sub_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="'.$column.'" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Down Payment ('. number_format((float) $disc_dp,0).' %)</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $down_payment, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>DPP</b></td>
-                            <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $dpp_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="'.$column.'" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>VAT ('. number_format((float) $record['taxes'],0).' %)</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $vat_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
-                            <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $tax_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
                             <td colspan="'.$column.'" style="text-align:right"><b>Grand Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $grand_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
@@ -3230,7 +3230,7 @@ class Sales_invoices extends CI_Controller
                 // Tentukan jumlah desimal: IDR = 0 (tanpa desimal), Non-IDR = 2 digit desimal
                 $format_no = ($currency == 'IDR') ? 0 : 2;
 
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record['trans_date'])));
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $record['trans_date'])));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                 if ($currency != "IDR") {
@@ -3288,10 +3288,10 @@ class Sales_invoices extends CI_Controller
                             <td>' . $record['uom'] . '</td>
                             <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
                             <td>' . $record['currency'] . '</td>
-                            <td style="text-align:right;">' . @number_format($item_price, $format_no) . '</td>
-                            <td style="text-align:right;">' . @number_format($item_total, $format_no) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $item_price, $format_no) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $item_total, $format_no) . '</td>
                             <td>IDR</td>
-                            <td style="text-align:right;">' . @number_format($amount, $format_no) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $amount, $format_no) . '</td>
                         </tr>';
                 $no++;
             }
@@ -3316,22 +3316,22 @@ class Sales_invoices extends CI_Controller
             if (($i + 1) == $page) {
                 $html .= '<tr>
                             <th colspan="9" style="text-align:right">SUB TOTAL</th>
-                            <th style="text-align:right">' . number_format($sub_total, $summary_format) . '</th>
+                            <th style="text-align:right">' . number_format((float) $sub_total, $summary_format) . '</th>
                             <th></th>
-                            <th style="text-align:right">' . number_format($sub_total_local, $summary_format) . '</th>
+                            <th style="text-align:right">' . number_format((float) $sub_total_local, $summary_format) . '</th>
                         </tr>
                         <tr>
                             <th colspan="9" style="text-align:right">GRAND TOTAL</th>
-                            <th style="text-align:right">' . number_format($grand_total, $summary_format) . '</th>
+                            <th style="text-align:right">' . number_format((float) $grand_total, $summary_format) . '</th>
                             <th></th>
-                            <th style="text-align:right">' . number_format($grand_total_local, $summary_format) . '</th>
+                            <th style="text-align:right">' . number_format((float) $grand_total_local, $summary_format) . '</th>
                         </tr>';
             } else {
                 $html .= '<tr>
                             <th colspan="9" style="text-align:right">SUB TOTAL</th>
-                            <th style="text-align:right">' . number_format($sub_total, $summary_format) . '</th>
+                            <th style="text-align:right">' . number_format((float) $sub_total, $summary_format) . '</th>
                             <th></th>
-                            <th style="text-align:right">' . number_format($sub_total_local, $summary_format) . '</th>
+                            <th style="text-align:right">' . number_format((float) $sub_total_local, $summary_format) . '</th>
                         </tr>';
             }
             
@@ -3371,8 +3371,8 @@ class Sales_invoices extends CI_Controller
             $html .= '  <tr>
                             <td>' . $journal->account_number . '</td>
                             <td>' . $journal->account_name . '</td>
-                            <td style="text-align:right;">' . number_format($journal_debit, $summary_format) . '</td>
-                            <td style="text-align:right;">' . number_format($journal_credit, $summary_format) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal_debit, $summary_format) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal_credit, $summary_format) . '</td>
                         </tr>';
         }
 
@@ -3381,8 +3381,8 @@ class Sales_invoices extends CI_Controller
 
         $html .= '      <tr>
                             <td colspan="2">Balance</td>
-                            <td style="text-align:right;">' . @number_format($balance_debit, $summary_format) . '</td>
-                            <td style="text-align:right;">' . @number_format($balance_credit, $summary_format) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $balance_debit, $summary_format) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $balance_credit, $summary_format) . '</td>
                         </tr>
                         </table>
                     </div>
@@ -3393,7 +3393,7 @@ class Sales_invoices extends CI_Controller
                         <table id="customers" style="width:100%; font-size:12px;">
                             <tr>
                                 <td style="font-weight:bold;">Discount</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format($discount, $summary_format) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format((float) $discount, $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Sub Total</td>
@@ -3409,15 +3409,15 @@ class Sales_invoices extends CI_Controller
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">VAT</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format($vat_val, $summary_format) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format((float) $vat_val, $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">PPH</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format($pph_val, $summary_format) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format((float) $pph_val, $summary_format) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Grand Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format($grand_total_summary, $summary_format) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format((float) $grand_total_summary, $summary_format) . '</td>
                             </tr>
                         </table>
                     </div>
@@ -3460,16 +3460,16 @@ class Sales_invoices extends CI_Controller
             header("Content-Disposition: attachment; filename=sales_invoices_$format.xls");
         }
 
-        $filter_type  = base64_decode($this->input->get('filter_type'));
-        $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-        $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-        $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-        $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-        $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
-        $filter_status = base64_decode($this->input->get('filter_status'));
+        $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+        $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+        $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+        $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+        $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+        $filter_sales_invoice = base64_decode((string) $this->input->get('filter_sales_invoice'));
+        $filter_delivery_note_no = base64_decode((string) $this->input->get('filter_delivery_note_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode((string) $this->input->get('filter_faktur_no'));
+        $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
         // if no filter_type, then get data per this month same as datatables()
         $date_from = date("Y-m-01");
@@ -3554,12 +3554,12 @@ class Sales_invoices extends CI_Controller
                             <td>' . $data['customer_name'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
                             <td>' . $data['due_date'] . '</td>
-                            <td style="text-align:right;">' . number_format($data['total_invoice'], 4) . '</td>
-                            <td style="text-align:right;">' . number_format($data['discount'], 4) . '</td>
-                            <td style="text-align:right;">' . number_format($data['total_sub'], 4) . '</td>
-                            <td style="text-align:right;">' . number_format($data['total_vat'], 4) . '</td>
-                            <td style="text-align:right;">' . number_format($data['total_pph'], 4) . '</td>
-                            <td colspan="2" style="text-align:right;">' . number_format($data['total_grand'], 4) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $data['total_invoice'], 4) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $data['discount'], 4) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $data['total_sub'], 4) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $data['total_vat'], 4) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $data['total_pph'], 4) . '</td>
+                            <td colspan="2" style="text-align:right;">' . number_format((float) $data['total_grand'], 4) . '</td>
                         </tr>';
             $html .= '  <tr>
                             <td colspan="11" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['number'] . '</b></td>
@@ -3590,11 +3590,11 @@ class Sales_invoices extends CI_Controller
                                 <td>' . $detail['customer_order_no'] . '</td>
                                 <td>' . $detail['item_no'] . '</td>
                                 <td>' . $detail['item_name'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['qty'], 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['qty'], 2, ',', '.') . '</td>
                                 <td>' . $detail['uom'] . '</td>
                                 <td>' . $detail['currency'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['price'], $format, ',', '.') . '</td>
-                                <td style="text-align:right">' . number_format($detail['total'], 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['price'], $format, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['total'], 2, ',', '.') . '</td>
                             </tr>';
             }
             $no++;
@@ -3612,16 +3612,16 @@ public function print($option = "")
             header("Expires: 0");
         }
 
-        $filter_type             = base64_decode($this->input->get('filter_type'));
-        $filter_trans_date_from  = base64_decode($this->input->get('filter_trans_date_from'));
-        $filter_trans_date_to    = base64_decode($this->input->get('filter_trans_date_to'));
-        $filter_due_date_from    = base64_decode($this->input->get('filter_due_date_from'));
-        $filter_due_date_to      = base64_decode($this->input->get('filter_due_date_to'));
-        $filter_sales_invoice    = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
-        $filter_customer         = base64_decode($this->input->get('filter_customer'));
-        $filter_faktur_no        = base64_decode($this->input->get('filter_faktur_no'));
-        $filter_status           = base64_decode($this->input->get('filter_status'));
+        $filter_type             = base64_decode((string) $this->input->get('filter_type'));
+        $filter_trans_date_from  = base64_decode((string) $this->input->get('filter_trans_date_from'));
+        $filter_trans_date_to    = base64_decode((string) $this->input->get('filter_trans_date_to'));
+        $filter_due_date_from    = base64_decode((string) $this->input->get('filter_due_date_from'));
+        $filter_due_date_to      = base64_decode((string) $this->input->get('filter_due_date_to'));
+        $filter_sales_invoice    = base64_decode((string) $this->input->get('filter_sales_invoice'));
+        $filter_delivery_note_no = base64_decode((string) $this->input->get('filter_delivery_note_no'));
+        $filter_customer         = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_faktur_no        = base64_decode((string) $this->input->get('filter_faktur_no'));
+        $filter_status           = base64_decode((string) $this->input->get('filter_status'));
 
         // if no filter_type, then get data per this month same as datatables()
         $date_from = date("Y-m-01");
@@ -3777,16 +3777,16 @@ public function print($option = "")
             header("Content-Disposition: attachment; filename=sales_invoices_$format.xls");
         }
 
-        $filter_type  = base64_decode($this->input->get('filter_type'));
-        $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-        $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-        $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-        $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-        $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
-        $filter_status = base64_decode($this->input->get('filter_status'));
+        $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+        $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+        $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+        $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+        $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+        $filter_sales_invoice = base64_decode((string) $this->input->get('filter_sales_invoice'));
+        $filter_delivery_note_no = base64_decode((string) $this->input->get('filter_delivery_note_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode((string) $this->input->get('filter_faktur_no'));
+        $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
         // if no filter_type, then get data per this month same as datatables()
         $date_from = date("Y-m-01");
@@ -3941,16 +3941,16 @@ public function print($option = "")
             header("Content-Disposition: attachment; filename=sales_invoices_details_$format.xls");
         }
 
-        $filter_type  = base64_decode($this->input->get('filter_type'));
-        $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-        $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-        $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-        $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-        $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
-        $filter_status = base64_decode($this->input->get('filter_status'));
+        $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+        $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+        $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+        $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+        $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+        $filter_sales_invoice = base64_decode((string) $this->input->get('filter_sales_invoice'));
+        $filter_delivery_note_no = base64_decode((string) $this->input->get('filter_delivery_note_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode((string) $this->input->get('filter_faktur_no'));
+        $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
         // if no filter_type, then get data per this month same as datatables()
         $date_from = date("Y-m-01");
@@ -4162,16 +4162,16 @@ public function print($option = "")
             header("Content-Disposition: attachment; filename=sales_invoices_journals_$format.xls");
         }
 
-        $filter_type  = base64_decode($this->input->get('filter_type'));
-        $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-        $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-        $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-        $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-        $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
-        $filter_status = base64_decode($this->input->get('filter_status'));
+        $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+        $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+        $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+        $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+        $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+        $filter_sales_invoice = base64_decode((string) $this->input->get('filter_sales_invoice'));
+        $filter_delivery_note_no = base64_decode((string) $this->input->get('filter_delivery_note_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode((string) $this->input->get('filter_faktur_no'));
+        $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
         // if no filter_type, then get data per this month same as datatables()
         $date_from = date("Y-m-01");
@@ -4348,8 +4348,8 @@ public function print($option = "")
     //     foreach ($invoiceRecords as $invoice) {
     //         // FK row
     //         fputcsv($output, [
-    //             'FK', $invoice['faktur_code'], $invoice['fp_pengganti'], $invoice['faktur_no'], date('m', strtotime($invoice['trans_date'])), date('Y', strtotime($invoice['trans_date'])),
-    //             date('d/m/Y', strtotime($invoice['trans_date'])), $config->npwp, $invoice['cust_name'], $invoice['address'], $invoice['total_sub'], $invoice['total_vat'], '0', '0', '0', '0', '0', '0', $invoice['invoice_number'], '0'
+    //             'FK', $invoice['faktur_code'], $invoice['fp_pengganti'], $invoice['faktur_no'], date('m', strtotime((string) $invoice['trans_date'])), date('Y', strtotime((string) $invoice['trans_date'])),
+    //             date('d/m/Y', strtotime((string) $invoice['trans_date'])), $config->npwp, $invoice['cust_name'], $invoice['address'], $invoice['total_sub'], $invoice['total_vat'], '0', '0', '0', '0', '0', '0', $invoice['invoice_number'], '0'
     //         ]);
     
     //         // LT row
@@ -4430,7 +4430,7 @@ public function print($option = "")
 
             // HEADER row
             fputcsv($output, [
-                'HEADER', $invoice['invoice_number'], $invoice['faktur_no'], date('d/m/Y', strtotime($invoice['trans_date'])), $invoice['cust_id'], $invoice['address'], $ppn,'Tidak', $invoice['faktur_no'], 'Ya', 
+                'HEADER', $invoice['invoice_number'], $invoice['faktur_no'], date('d/m/Y', strtotime((string) $invoice['trans_date'])), $invoice['cust_id'], $invoice['address'], $ppn,'Tidak', $invoice['faktur_no'], 'Ya', 
                 '', '', '', '', '', '', '', '', '', '', 
                 '', '', '', '', '', '', '', '', '', '', 
                 '', '', '', '', ''
@@ -4579,7 +4579,7 @@ public function print($option = "")
             $fakturNode->addChild('TrxCode', $faktur['faktur_code']);
             $fakturNode->addChild('AddInfo', $additional_info);
             $fakturNode->addChild('CustomDoc', $faktur['invoice_number']);
-            $fakturNode->addChild('CustomDocMonthYear', date('mY', strtotime($faktur['trans_date'])));
+            $fakturNode->addChild('CustomDocMonthYear', date('mY', strtotime((string) $faktur['trans_date'])));
             $fakturNode->addChild('RefDesc', $faktur['invoice_number']);
             $fakturNode->addChild('FacilityStamp', $facility_stamp);
 

@@ -162,11 +162,11 @@ class Request_material_memo extends CI_Controller
         $filter_to   = $this->input->get('filter_to');
         $filter_cutoff = $this->input->get('filter_cutoff');
 
-        $month = date('m', strtotime($filter_to));
-        $year = date('Y', strtotime($filter_to));
+        $month = date('m', strtotime((string) $filter_to));
+        $year = date('Y', strtotime((string) $filter_to));
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $query_main = "
         SELECT * FROM (    
@@ -456,16 +456,16 @@ class Request_material_memo extends CI_Controller
         // var_dump($item_rm_id);
         // return;
 
-        $month = date('m', strtotime($filter_to));
-        $year = date('Y', strtotime($filter_to));
+        $month = date('m', strtotime((string) $filter_to));
+        $year = date('Y', strtotime((string) $filter_to));
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
 
         $filter_item = '';
         if (!empty($item_rm_id)) {
             $escaped_ids = implode(',', array_map(function ($id) {
-                return "'" . addslashes(trim($id)) . "'";
+                return "'" . addslashes(trim((string) $id)) . "'";
             }, $item_rm_id));
             $filter_item = " AND a.id IN ($escaped_ids)";
         }
@@ -614,7 +614,7 @@ class Request_material_memo extends CI_Controller
 
     public function datatable_updates()
     {
-        $memo_no = base64_decode($this->input->get('memo_no'));
+        $memo_no = base64_decode((string) $this->input->get('memo_no'));
         $this->db->select('a.id,
                 a.item_rm_id,
                 a.maker,
@@ -687,7 +687,7 @@ class Request_material_memo extends CI_Controller
     // public function update()
     // {
     //     if ($this->input->post()) {
-    //         $id   = base64_decode($this->input->get('id'));
+    //         $id   = base64_decode((string) $this->input->get('id'));
     //         $post = $this->input->post();
     //         var_dump($post);
     //         return;
@@ -895,9 +895,9 @@ class Request_material_memo extends CI_Controller
                                         <td width="30%"><b>' . @$to . '</b></td>
                                         <td style="text-align:right; padding-right: 20px;" rowspan="7">
                                             Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
-                                            Memo Date:<br><b>' . date("d F Y", strtotime($request_material_memos->memo_date)) . '</b><br>
+                                            Memo Date:<br><b>' . date("d F Y", strtotime((string) $request_material_memos->memo_date)) . '</b><br>
                                             Revision:<br><b>' . $request_material_memos->revision . '</b><br>
-                                            Revision Date:<br><b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
+                                            Revision Date:<br><b>' . date("d F Y", strtotime((string) $revision_date)) . '</b><br>
                                         </td>
                                     </tr>
                                     <tr>
@@ -932,10 +932,10 @@ class Request_material_memo extends CI_Controller
                                 <td style="text-align:center;">' . $no . '</td>
                                 <td style="text-align:center;">' . $record['item_number'] . '</td>
                                 <td style="text-align:center;">' . $record['item_name'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $record['qty'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
                                 <td style="text-align:center;">' . $record['po_no'] . '</td>
-                                <td style="text-align:center;">' . number_format($record['os_po'],2) . '</td>
+                                <td style="text-align:center;">' . number_format((float) $record['os_po'],2) . '</td>
                                 <td style="text-align:right;">' . number_format($record['os_po'] - $record['qty'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
                             </tr>';
@@ -1153,10 +1153,10 @@ class Request_material_memo extends CI_Controller
     //                     <td>' . $data['supplier_name'] . '</td>
     //                     <td>' . $data['item_rm_id'] . '</td>
     //                     <td>' . $data['item_name'] . '</td>
-    //                     <td>' . number_format($data['qty_receipt'], 2) . '</td>
+    //                     <td>' . number_format((float) $data['qty_receipt'], 2) . '</td>
     //                     <td>' . $data['uom'] . '</td>
     //                     <td>' . $data['currency'] . '</td>
-    //                     <td>' . number_format($data['qty_label']) . '</td>
+    //                     <td>' . number_format((float) $data['qty_label']) . '</td>
     //                 </tr>';
     //         $no++;
     //     }

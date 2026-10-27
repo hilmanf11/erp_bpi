@@ -36,13 +36,13 @@ class Inventory_wip extends CI_Controller
         $filter_from = $this->input->post('filter_from');
         $filter_to   = $this->input->post('filter_to');
         $filter_item_fg = $this->input->post('filter_item_fg');
-        $periode = date("Y-m", strtotime($filter_from));
-        $periode_bf = date("Y-m", strtotime("-1 month", strtotime($filter_from)));
-        $month = date("m", strtotime($filter_from));
-        $year = date("m", strtotime($filter_from));
+        $periode = date("Y-m", strtotime((string) $filter_from));
+        $periode_bf = date("Y-m", strtotime("-1 month", strtotime((string) $filter_from)));
+        $month = date("m", strtotime((string) $filter_from));
+        $year = date("m", strtotime((string) $filter_from));
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Item Receipts
         $records = $this->crud->query("SELECT
@@ -230,8 +230,8 @@ class Inventory_wip extends CI_Controller
         $filter_division = $this->input->get("filter_division");
         $filter_shift = $this->input->get("filter_shift");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Config
         $this->db->select('*');
@@ -742,18 +742,18 @@ class Inventory_wip extends CI_Controller
                             <td>' . $record->division . '</td>
                             <td>FINISH GOOD</td>
                             <td style="text-align:center;">' . $record->currency . '</td>
-                            <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $rate, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format(@$record->begin_balance, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->begin_balance, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_out, 2) . '</td>
 
@@ -1019,7 +1019,7 @@ class Inventory_wip extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
 
                 // Generate HTML
@@ -1034,21 +1034,21 @@ class Inventory_wip extends CI_Controller
                                     <td colspan="2">' . $data['date'] . '</td>
                                     <td colspan="2">' . $data['wo_no'] . '</td>
                                     <td style="text-align:center;">' . $currency . '</td>
-                                    <td style="text-align:right;">' . number_format($price, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($rate, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $rate, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_in'], 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_out'], 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
                                 </tr>';
@@ -1061,18 +1061,18 @@ class Inventory_wip extends CI_Controller
         }
         $html .= '<tr>
             <td colspan="10" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalBeginStock, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalIn, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalBeginAmount, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalIn, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountIn, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalOut, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountOut, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalEndingStock, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountEndingStock, 2) . '</b></td>
         </tr>';
         $html .= '</table></body></html>';
         echo $html;

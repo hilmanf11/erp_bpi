@@ -166,8 +166,8 @@ class dn_scrap extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_item_rm_id = base64_decode($this->input->get('item_rm_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_item_rm_id = base64_decode((string) $this->input->get('item_rm_id'));
 
             $this->db->select("a.*, b.number as item_number, b.name as item_name, b.uom, c.name as family_name, d.name as category_name");
             $this->db->from('dn_scrap a');
@@ -188,9 +188,9 @@ class dn_scrap extends CI_Controller
     // public function datatableUpdates()
     // {
     //     if ($this->input->get()) {
-    //         $customer_id = base64_decode($this->input->get('customer_id'));
-    //         $division_id = base64_decode($this->input->get('division_id'));
-    //         $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+    //         $customer_id = base64_decode((string) $this->input->get('customer_id'));
+    //         $division_id = base64_decode((string) $this->input->get('division_id'));
+    //         $customer_address_id = base64_decode((string) $this->input->get('customer_address_id'));
             
     //         $this->db->select('a.*, b.number as item_fg_number, b.number_customer as item_fg_customer, a.currency');
     //         $this->db->from('customer_items a');
@@ -210,10 +210,10 @@ class dn_scrap extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
-            $division_id = base64_decode($this->input->get('division_id'));
-            $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+            $customer_id = base64_decode((string) $this->input->get('customer_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
+            $division_id = base64_decode((string) $this->input->get('division_id'));
+            $customer_address_id = base64_decode((string) $this->input->get('customer_address_id'));
 
             $this->db->select('*');
             $this->db->from('customer_item_histories');
@@ -232,7 +232,7 @@ class dn_scrap extends CI_Controller
     public function create()
     {
         $header  = $this->input->post('header');
-        $details = json_decode($this->input->post('details'), true);
+        $details = json_decode((string) $this->input->post('details'), true);
 
         if (empty($header) || empty($details)) {
             echo json_encode([
@@ -245,8 +245,8 @@ class dn_scrap extends CI_Controller
 
         $trans_date = $header['transaction_date'];
         $div        = $header['division'];
-        $year       = date("Y", strtotime($trans_date));
-        $monthYear  = date("my", strtotime($trans_date));
+        $year       = date("Y", strtotime((string) $trans_date));
+        $monthYear  = date("my", strtotime((string) $trans_date));
 
         $sqlGetID = $this->db->query("SELECT MAX(LEFT(document_no,3)) as kode 
                                     FROM dn_scrap 
@@ -688,7 +688,7 @@ class dn_scrap extends CI_Controller
                                         <td width="30%"><b>' . @$customer_address->address . '</b></td>
                                         <td style="text-align:right; padding-right: 20px;" rowspan="7">
                                             Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
-                                            Transaction Date:<br><b>' . date("d F Y", strtotime($dn_scraps->transaction_date)) . '</b><br>
+                                            Transaction Date:<br><b>' . date("d F Y", strtotime((string) $dn_scraps->transaction_date)) . '</b><br>
                                         </td>
                                     </tr>
                                     <tr>
@@ -721,7 +721,7 @@ class dn_scrap extends CI_Controller
                                 <td style="text-align:center;">' . $record['category_name'] . '</td>
                                 <td style="text-align:center;">' . $record['family_name'] . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $record['qty'], 2) . '</td>
                                 <td style="text-align:right;">' . $record['qty_karung'] . '</td>
                                 <td style="text-align:center;">' . $record['remarks'] . '</td>
                             </tr>';
@@ -732,8 +732,8 @@ class dn_scrap extends CI_Controller
             }
             $html .= '<tr>
                 <td colspan="6" style="text-align:center; font-weight:bold;">TOTAL</td>
-                <td style="text-align:right; font-weight:bold;">' . number_format($subtotal, 2, ",", ".") . '</td>
-                <td style="text-align:right; font-weight:bold;">' . number_format($subtotal_karung, 2, ",", ".") . '</td>
+                <td style="text-align:right; font-weight:bold;">' . number_format((float) $subtotal, 2, ",", ".") . '</td>
+                <td style="text-align:right; font-weight:bold;">' . number_format((float) $subtotal_karung, 2, ",", ".") . '</td>
                 <td>-</td>
             </tr>';
             if (($i + 1) == $page) {

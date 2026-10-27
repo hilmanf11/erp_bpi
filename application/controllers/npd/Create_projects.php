@@ -80,7 +80,7 @@ class Create_projects extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -174,7 +174,7 @@ class Create_projects extends CI_Controller
 
     // public function datatableDetails()
     // {
-    //     $number = base64_decode($this->input->get('number'));
+    //     $number = base64_decode((string) $this->input->get('number'));
 
     //     if ($number) {
     //         $this->db->select('details');
@@ -195,7 +195,7 @@ class Create_projects extends CI_Controller
 
     public function datatableDetails()
     {
-        $number = base64_decode($this->input->get('number'));
+        $number = base64_decode((string) $this->input->get('number'));
 
         if ($number) {
             // 1. JOIN tabel details ke header untuk mendapatkan data berdasarkan nomor project

@@ -38,7 +38,7 @@ class Exchange_rates extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -99,7 +99,7 @@ class Exchange_rates extends CI_Controller
         }
         $post = $this->input->post();
 
-        $id = base64_decode($this->input->get('id'));
+        $id = base64_decode((string) $this->input->get('id'));
         if (empty($id)) {
             show_error("Invalid ID provided.");
             return;
@@ -126,7 +126,7 @@ class Exchange_rates extends CI_Controller
     public function update_backup()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $exchange_rates = $this->crud->read('exchange_rates', [], ["start_date" => $post['start_date'],"end_date" => $post['end_date'], "currency_from" => $post['currency_from'], "currency_to" => $post['currency_to']]);
             if($exchange_rates){

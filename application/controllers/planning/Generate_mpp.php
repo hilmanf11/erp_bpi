@@ -81,9 +81,9 @@ class Generate_mpp extends CI_Controller
 
     public function checkLoadcap()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         //Select Query
         $this->db->select('*');
@@ -103,11 +103,11 @@ class Generate_mpp extends CI_Controller
     public function datatables()
     {
         // Filter Data 
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-        $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+        $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         if (empty($filter_month) || empty($filter_year)) {
             echo json_encode(["total" => 0, "rows" => []]);
@@ -209,16 +209,16 @@ class Generate_mpp extends CI_Controller
     {
         if ($this->input->get()) {
 
-            $filter_month       = base64_decode($this->input->get('filter_month'));
-            $filter_year        = base64_decode($this->input->get('filter_year'));
-            $filter_cutoff      = base64_decode($this->input->get('filter_cutoff'));
-            $filter_customer    = base64_decode($this->input->get('filter_customer'));
-            $filter_product_no  = base64_decode($this->input->get('filter_item_fg'));
-            $filter_revision    = base64_decode($this->input->get('filter_revision'));
+            $filter_month       = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year        = base64_decode((string) $this->input->get('filter_year'));
+            $filter_cutoff      = base64_decode((string) $this->input->get('filter_cutoff'));
+            $filter_customer    = base64_decode((string) $this->input->get('filter_customer'));
+            $filter_product_no  = base64_decode((string) $this->input->get('filter_item_fg'));
+            $filter_revision    = base64_decode((string) $this->input->get('filter_revision'));
 
             $current_period = $filter_year . '-' . $filter_month; 
             $first_day_of_month = $current_period . '-01';
-            $prev_month_time    = strtotime('-1 month', strtotime($first_day_of_month));
+            $prev_month_time    = strtotime('-1 month', strtotime((string) $first_day_of_month));
             $filter_from   = date('Y-m-01', $prev_month_time);
             $filter_to     = date('Y-m-t', $prev_month_time);
             $days_in_month = date('t', $prev_month_time);
@@ -982,11 +982,11 @@ class Generate_mpp extends CI_Controller
         $config = $this->db->get()->row();
 
         //Filter Data
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-        $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+        $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
         $period = $filter_year . "-" . $filter_month;
 
         $cutoff = $this->crud->read("generate_mpp", [], ["p_month" => $filter_month, "p_year" => $filter_year,"revision" => $filter_revision]);
@@ -1060,7 +1060,7 @@ class Generate_mpp extends CI_Controller
                             <small>'.$config->description.'</small>
                             <p style="font-size:12px; margin:0;">Period ' . $this->monthName($filter_month) . ' ' . $filter_year . '</p>
                             <p style="font-size:12px; margin:0;">Revision ' . $filter_revision . '</p>
-                            <p style="font-size:12px; margin:0;">Generate Date ' . date('Y-m-d', strtotime($cutoff->created_date)) . '</p>
+                            <p style="font-size:12px; margin:0;">Generate Date ' . date('Y-m-d', strtotime((string) $cutoff->created_date)) . '</p>
                         </td>
                     </tr>
                 </table>
@@ -1768,7 +1768,7 @@ class Generate_mpp extends CI_Controller
                                     </tr>
                                     <tr>
                                         <td class="text-center text-bold" style="font-size: 17px; padding: 8px;">'.$data['lot_no'].'</td>
-                                        <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.number_format($data['qty']).'</td>
+                                        <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.number_format((float) $data['qty']).'</td>
                                     </tr>
                                     <tr>
                                         <td class="text-center text-bold">lead time (hour)</td>
@@ -1942,12 +1942,12 @@ class Generate_mpp extends CI_Controller
     //     $config = $this->db->get()->row();
 
     //     //Filter Data
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     // $filter_customer = base64_decode($this->input->get('filter_customer'));
-    //     $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-    //     $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //     $filter_month = base64_decode((string) $this->input->get('filter_month'));
+    //     $filter_year = base64_decode((string) $this->input->get('filter_year'));
+    //     // $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+    //     $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+    //     $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+    //     $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
     //     $period = $filter_year . "-" . $filter_month;
 
     //     $query_main = "SELECT a.*, 
@@ -2074,12 +2074,12 @@ class Generate_mpp extends CI_Controller
     //     $config = $this->db->get()->row();
 
     //     //Filter Data
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     // $filter_customer = base64_decode($this->input->get('filter_customer'));
-    //     $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-    //     $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //     $filter_month = base64_decode((string) $this->input->get('filter_month'));
+    //     $filter_year = base64_decode((string) $this->input->get('filter_year'));
+    //     // $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+    //     $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+    //     $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+    //     $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
     //     $period = $filter_year . "-" . $filter_month;
 
     //     $query_main = "SELECT a.*
@@ -2173,9 +2173,9 @@ class Generate_mpp extends CI_Controller
     //     $this->db->from('config');
     //     $config = $this->db->get()->row();
 
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //     $filter_month = base64_decode((string) $this->input->get('filter_month'));
+    //     $filter_year = base64_decode((string) $this->input->get('filter_year'));
+    //     $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
     //     // === REKAP PER MACHINE ===
     //     $query_main = "
@@ -2284,10 +2284,10 @@ class Generate_mpp extends CI_Controller
     //                 <td align="center">' . $no++ . '</td>
     //                 <td>' . $r->machine_number . '</td>
     //                 <td align="center">' . $r->toonage . '</td>
-    //                 <td align="right" style="color:' . ($r->loadcap1 > 100 ? 'red' : 'black') . ';">' . number_format($r->loadcap1, 2) . '%</td>
-    //                 <td align="right" style="color:' . ($r->loadcap2 > 100 ? 'red' : 'black') . ';">' . number_format($r->loadcap2, 2) . '%</td>
-    //                 <td align="right" style="color:' . ($r->loadcap3 > 100 ? 'red' : 'black') . ';">' . number_format($r->loadcap3, 2) . '%</td>
-    //                 <td align="right" style="color:' . ($r->loadcap4 > 100 ? 'red' : 'black') . ';">' . number_format($r->loadcap4, 2) . '%</td>
+    //                 <td align="right" style="color:' . ($r->loadcap1 > 100 ? 'red' : 'black') . ';">' . number_format((float) $r->loadcap1, 2) . '%</td>
+    //                 <td align="right" style="color:' . ($r->loadcap2 > 100 ? 'red' : 'black') . ';">' . number_format((float) $r->loadcap2, 2) . '%</td>
+    //                 <td align="right" style="color:' . ($r->loadcap3 > 100 ? 'red' : 'black') . ';">' . number_format((float) $r->loadcap3, 2) . '%</td>
+    //                 <td align="right" style="color:' . ($r->loadcap4 > 100 ? 'red' : 'black') . ';">' . number_format((float) $r->loadcap4, 2) . '%</td>
     //             </tr>';
     //     }
 
@@ -2316,10 +2316,10 @@ class Generate_mpp extends CI_Controller
     //                     <td align="center">' . $no++ . '</td>
     //                     <td>' . $m->machine_number . '</td>
     //                     <td align="center">' . $m->toonage . '</td>
-    //                     <td align="right" style="color:' . ($m->manpower1 > 100 ? 'red' : 'black') . ';">' . number_format($m->manpower1, 2) . '</td>
-    //                     <td align="right" style="color:' . ($m->manpower2 > 100 ? 'red' : 'black') . ';">' . number_format($m->manpower2, 2) . '</td>
-    //                     <td align="right" style="color:' . ($m->manpower3 > 100 ? 'red' : 'black') . ';">' . number_format($m->manpower3, 2) . '</td>
-    //                     <td align="right" style="color:' . ($m->manpower4 > 100 ? 'red' : 'black') . ';">' . number_format($m->manpower4, 2) . '</td>
+    //                     <td align="right" style="color:' . ($m->manpower1 > 100 ? 'red' : 'black') . ';">' . number_format((float) $m->manpower1, 2) . '</td>
+    //                     <td align="right" style="color:' . ($m->manpower2 > 100 ? 'red' : 'black') . ';">' . number_format((float) $m->manpower2, 2) . '</td>
+    //                     <td align="right" style="color:' . ($m->manpower3 > 100 ? 'red' : 'black') . ';">' . number_format((float) $m->manpower3, 2) . '</td>
+    //                     <td align="right" style="color:' . ($m->manpower4 > 100 ? 'red' : 'black') . ';">' . number_format((float) $m->manpower4, 2) . '</td>
     //                 </tr>';
     //     }
 
@@ -2345,9 +2345,9 @@ class Generate_mpp extends CI_Controller
     //                 <tr>
     //                     <td align="center">' . $no++ . '</td>
     //                     <td align="center">' . $t->toonage . '</td>
-    //                     <td align="right">' . number_format($t->total, 2) . '%</td>
+    //                     <td align="right">' . number_format((float) $t->total, 2) . '%</td>
     //                     <td align="center">' . $t->unit . '</td>
-    //                     <td align="right">' . number_format($t->average, 2) . '%</td>
+    //                     <td align="right">' . number_format((float) $t->average, 2) . '%</td>
     //                 </tr>';
     //     }
 

@@ -131,7 +131,7 @@ class Stock_fg extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('stock_fg', ["id" => $id], $post);
             echo $send;
@@ -381,7 +381,7 @@ class Stock_fg extends CI_Controller
                             <td>' . $data['document_no'] . '</td>
                             <td>' . $data['item_fg_number'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
                         </tr>';
                 $no++;
             }
@@ -464,7 +464,7 @@ class Stock_fg extends CI_Controller
                             <td>' . $data['document_no'] . '</td>
                             <td>' . $data['item_fg_number'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
                         </tr>';
                 $no++;
             }
@@ -550,7 +550,7 @@ class Stock_fg extends CI_Controller
                             <td>' . $data['document_no'] . '</td>
                             <td>' . $data['item_fg_number'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
                         </tr>';
                 $no++;
             }
@@ -636,7 +636,7 @@ class Stock_fg extends CI_Controller
                             <td>' . $data['document_no'] . '</td>
                             <td>' . $data['item_fg_number'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
                         </tr>';
                 $no++;
             }

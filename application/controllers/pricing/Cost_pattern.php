@@ -106,12 +106,12 @@ class Cost_pattern extends CI_Controller
     //         show_error("Cannot process your request");
     //     }
 
-    //     $p_month     = base64_decode($this->input->get('p_month'));
-    //     $p_year      = base64_decode($this->input->get('p_year'));
-    //     $revision    = base64_decode($this->input->get('revision'));
-    //     $customer_id = base64_decode($this->input->get('customer_id'));
-    //     $item_fg_id  = base64_decode($this->input->get('item_fg_id'));
-    //     $model_name  = base64_decode($this->input->get('model_name'));
+    //     $p_month     = base64_decode((string) $this->input->get('p_month'));
+    //     $p_year      = base64_decode((string) $this->input->get('p_year'));
+    //     $revision    = base64_decode((string) $this->input->get('revision'));
+    //     $customer_id = base64_decode((string) $this->input->get('customer_id'));
+    //     $item_fg_id  = base64_decode((string) $this->input->get('item_fg_id'));
+    //     $model_name  = base64_decode((string) $this->input->get('model_name'));
 
     //     /* =====================================================
     //     * 0. DETERMINE ITEM FG LIST (SINGLE / BULK GENERATE)
@@ -369,12 +369,12 @@ class Cost_pattern extends CI_Controller
             show_error("Cannot process your request");
         }
 
-        $p_month     = base64_decode($this->input->get('p_month'));
-        $p_year      = base64_decode($this->input->get('p_year'));
-        $revision    = base64_decode($this->input->get('revision'));
-        $customer_id = base64_decode($this->input->get('customer_id'));
-        $item_fg_id  = base64_decode($this->input->get('item_fg_id'));
-        $model_name  = base64_decode($this->input->get('model_name'));
+        $p_month     = base64_decode((string) $this->input->get('p_month'));
+        $p_year      = base64_decode((string) $this->input->get('p_year'));
+        $revision    = base64_decode((string) $this->input->get('revision'));
+        $customer_id = base64_decode((string) $this->input->get('customer_id'));
+        $item_fg_id  = base64_decode((string) $this->input->get('item_fg_id'));
+        $model_name  = base64_decode((string) $this->input->get('model_name'));
 
         /* =====================================================
         * 0. DETERMINE ITEM FG LIST (SINGLE / BULK GENERATE)
@@ -660,8 +660,8 @@ class Cost_pattern extends CI_Controller
 
     public function check_packaging_trans_cost()
     {
-        $p_month = base64_decode($this->input->get('p_month'));
-        $p_year = base64_decode($this->input->get('p_year'));
+        $p_month = base64_decode((string) $this->input->get('p_month'));
+        $p_year = base64_decode((string) $this->input->get('p_year'));
 
         //Select Query
         $this->db->select('*');
@@ -683,8 +683,8 @@ class Cost_pattern extends CI_Controller
 
     public function check_material_cost()
     {
-        $p_month = base64_decode($this->input->get('p_month'));
-        $p_year = base64_decode($this->input->get('p_year'));
+        $p_month = base64_decode((string) $this->input->get('p_month'));
+        $p_year = base64_decode((string) $this->input->get('p_year'));
 
         //Select Query
         $this->db->select('*');
@@ -706,8 +706,8 @@ class Cost_pattern extends CI_Controller
 
     public function check_process_cost()
     {
-        $p_month = base64_decode($this->input->get('p_month'));
-        $p_year = base64_decode($this->input->get('p_year'));
+        $p_month = base64_decode((string) $this->input->get('p_month'));
+        $p_year = base64_decode((string) $this->input->get('p_year'));
 
         //Select Query
         $this->db->select('*');
@@ -729,8 +729,8 @@ class Cost_pattern extends CI_Controller
 
     public function check_rate()
     {
-        $p_month = base64_decode($this->input->get('p_month'));
-        $p_year = base64_decode($this->input->get('p_year'));
+        $p_month = base64_decode((string) $this->input->get('p_month'));
+        $p_year = base64_decode((string) $this->input->get('p_year'));
 
         //Select Query
         // $this->db->select('*');
@@ -1493,42 +1493,42 @@ class Cost_pattern extends CI_Controller
                     $html .= '<td>'.$data['part_no_vg'].'</td>
                             <td>'.$data['part_no_mb'].'</td>
                             <td>'.$data['part_no_cp'].'</td>
-                            <td align="right">'.number_format($data['used_vg'],4).'</td>
+                            <td align="right">'.number_format((float) $data['used_vg'],4).'</td>
                             <td align="center">'.$data['nett_vg'].'</td>
                             <td align="center">'.$data['uom'].'</td>
-                            <td align="right">'.number_format($data['used_mb'],4).'</td>
-                            <td align="right">'.number_format($data['used_cp'],4).'</td>
+                            <td align="right">'.number_format((float) $data['used_mb'],4).'</td>
+                            <td align="right">'.number_format((float) $data['used_cp'],4).'</td>
 
-                            <td align="right">'.number_format($data['price_vg'],2).'</td>
-                            <td align="right">'.number_format($data['price_mb'],2).'</td>
-                            <td align="right">'.number_format($data['price_cp'],2).'</td>
+                            <td align="right">'.number_format((float) $data['price_vg'],2).'</td>
+                            <td align="right">'.number_format((float) $data['price_mb'],2).'</td>
+                            <td align="right">'.number_format((float) $data['price_cp'],2).'</td>
 
-                            <td align="right">'.number_format($data['virgin_cost'],4).'</td>
-                            <td align="right">'.number_format($data['mb_cost'],4).'</td>
-                            <td align="right">'.number_format($data['child_part_cost'],4).'</td>
-                            <td align="right">'.number_format($data['total_material_cost'],4).'</td>';
+                            <td align="right">'.number_format((float) $data['virgin_cost'],4).'</td>
+                            <td align="right">'.number_format((float) $data['mb_cost'],4).'</td>
+                            <td align="right">'.number_format((float) $data['child_part_cost'],4).'</td>
+                            <td align="right">'.number_format((float) $data['total_material_cost'],4).'</td>';
 
                     if ($first) {
-                        $html .= '<td rowspan="'.$rowspan.'" align="right">'.number_format($data['cycle_time'],4).'</td>
+                        $html .= '<td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['cycle_time'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="center">'.$data['cavity_standard'].'</td>
                                 <td rowspan="'.$rowspan.'" align="center">'.$data['toonage'].'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['plain_rate_sec'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['cycle_time_process'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['total_process_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['sub_total'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['ng_ratio_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['adm_foh_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mtn_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['total_packing_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['transportasion_cost_pcs'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_value'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mold_depreciation'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['profit_nominal'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['plain_rate_sec'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['cycle_time_process'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['total_process_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['sub_total'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['ng_ratio_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['adm_foh_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['mtn_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['total_packing_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['transportasion_cost_pcs'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['purging_value'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['mold_depreciation'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['profit_nominal'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.$grand_total.'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['moq'],2).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['volume'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['start_setting'],4).'</td>';
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['moq'],2).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['volume'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['purging_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['start_setting'],4).'</td>';
                     }
                     $html .= '</tr>';
                     $first = false;
@@ -1731,42 +1731,42 @@ class Cost_pattern extends CI_Controller
                     $html .= '<td>'.$data['part_no_vg'].'</td>
                             <td>'.$data['part_no_mb'].'</td>
                             <td>'.$data['part_no_cp'].'</td>
-                            <td align="right">'.number_format($data['used_vg'],4).'</td>
+                            <td align="right">'.number_format((float) $data['used_vg'],4).'</td>
                             <td align="center">'.$data['nett_vg'].'</td>
                             <td align="center">'.$data['uom'].'</td>
-                            <td align="right">'.number_format($data['used_mb'],4).'</td>
-                            <td align="right">'.number_format($data['used_cp'],4).'</td>
+                            <td align="right">'.number_format((float) $data['used_mb'],4).'</td>
+                            <td align="right">'.number_format((float) $data['used_cp'],4).'</td>
 
-                            <td align="right">'.number_format($data['price_vg'],2).'</td>
-                            <td align="right">'.number_format($data['price_mb'],2).'</td>
-                            <td align="right">'.number_format($data['price_cp'],2).'</td>
+                            <td align="right">'.number_format((float) $data['price_vg'],2).'</td>
+                            <td align="right">'.number_format((float) $data['price_mb'],2).'</td>
+                            <td align="right">'.number_format((float) $data['price_cp'],2).'</td>
 
-                            <td align="right">'.number_format($data['virgin_cost'],4).'</td>
-                            <td align="right">'.number_format($data['mb_cost'],4).'</td>
-                            <td align="right">'.number_format($data['child_part_cost'],4).'</td>
-                            <td align="right">'.number_format($data['total_material_cost'],4).'</td>';
+                            <td align="right">'.number_format((float) $data['virgin_cost'],4).'</td>
+                            <td align="right">'.number_format((float) $data['mb_cost'],4).'</td>
+                            <td align="right">'.number_format((float) $data['child_part_cost'],4).'</td>
+                            <td align="right">'.number_format((float) $data['total_material_cost'],4).'</td>';
 
                     if ($first) {
-                        $html .= '<td rowspan="'.$rowspan.'" align="right">'.number_format($data['cycle_time'],4).'</td>
+                        $html .= '<td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['cycle_time'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="center">'.$data['cavity_standard'].'</td>
                                 <td rowspan="'.$rowspan.'" align="center">'.$data['toonage'].'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['plain_rate_sec'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['cycle_time_process'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['total_process_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['sub_total'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['ng_ratio_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['adm_foh_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mtn_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['total_packing_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['transportasion_cost_pcs'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_value'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['mold_depreciation'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['profit_nominal'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['plain_rate_sec'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['cycle_time_process'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['total_process_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['sub_total'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['ng_ratio_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['adm_foh_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['mtn_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['total_packing_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['transportasion_cost_pcs'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['purging_value'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['mold_depreciation'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['profit_nominal'],4).'</td>
                                 <td rowspan="'.$rowspan.'" align="right">'.$grand_total.'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['moq'],2).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['volume'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['purging_cost'],4).'</td>
-                                <td rowspan="'.$rowspan.'" align="right">'.number_format($data['start_setting'],4).'</td>';
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['moq'],2).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['volume'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['purging_cost'],4).'</td>
+                                <td rowspan="'.$rowspan.'" align="right">'.number_format((float) $data['start_setting'],4).'</td>';
                     }
                     $html .= '</tr>';
                     $first = false;

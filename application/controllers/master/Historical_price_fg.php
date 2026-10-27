@@ -80,11 +80,11 @@ class Historical_price_fg extends CI_Controller
         $formHistoricalRM = !empty($config_iso->form_historical_rm) ? $config_iso->form_historical_rm : 'DOC';
         
         $months = [];
-        $start_date = date('Y-m-01', strtotime($filter_from)); 
-        $end_date   = date('Y-m-01', strtotime($filter_to));
+        $start_date = date('Y-m-01', strtotime((string) $filter_from)); 
+        $end_date   = date('Y-m-01', strtotime((string) $filter_to));
         
-        $current = strtotime($start_date);
-        $end     = strtotime($end_date);
+        $current = strtotime((string) $start_date);
+        $end     = strtotime((string) $end_date);
 
         while ($current <= $end) {
             $months[] = [
@@ -119,7 +119,7 @@ class Historical_price_fg extends CI_Controller
         ORDER BY g.name ASC, e.name ASC, c.name ASC, b.name ASC, b.number";
 
         $records = $this->db->query($query_main)->result();
-        $date_limit = date('Y-m-d 23:59:59', strtotime($filter_to));
+        $date_limit = date('Y-m-d 23:59:59', strtotime((string) $filter_to));
         $query_history = "SELECT 
                             item_fg_id, 
                             customer_id, 
@@ -235,7 +235,7 @@ class Historical_price_fg extends CI_Controller
             $key = $record->item_fg_id . '_' . $record->customer_id;
             $item_histories = isset($history_map[$key]) ? $history_map[$key] : [];
 
-            $start_period = date('Y-m', strtotime($filter_from));
+            $start_period = date('Y-m', strtotime((string) $filter_from));
             $last_price = 0;
 
             foreach ($item_histories as $h) {
@@ -269,7 +269,7 @@ class Historical_price_fg extends CI_Controller
                 }
 
                 $bg_color = $price_changed_this_month ? 'background-color: #FFCFCF;' : '';
-                $display_price = ($price_this_month > 0) ? number_format($price_this_month, 2) : '-';
+                $display_price = ($price_this_month > 0) ? number_format((float) $price_this_month, 2) : '-';
                 $html .= '<td style="text-align:right; font-weight:bold; ' . $bg_color . '">' . $display_price . '</td>';
                 $last_price = $price_this_month; 
             }

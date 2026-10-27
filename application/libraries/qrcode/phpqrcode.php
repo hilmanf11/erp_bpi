@@ -955,7 +955,7 @@
                 }
             }
             
-            ImageDestroy($image);
+            if (PHP_VERSION_ID < 80000) ImageDestroy($image); // no-op sejak PHP 8.0, deprecated di PHP 8.5
         }
     
         //----------------------------------------------------------------------
@@ -970,7 +970,7 @@
                 ImageJpeg($image, $filename, $q);            
             }
             
-            ImageDestroy($image);
+            if (PHP_VERSION_ID < 80000) ImageDestroy($image); // no-op sejak PHP 8.0, deprecated di PHP 8.5
         }
     
         //----------------------------------------------------------------------
@@ -999,7 +999,7 @@
             
             $target_image =ImageCreate($imgW * $pixelPerPoint, $imgH * $pixelPerPoint);
             ImageCopyResized($target_image, $base_image, 0, 0, 0, 0, $imgW * $pixelPerPoint, $imgH * $pixelPerPoint, $imgW, $imgH);
-            ImageDestroy($base_image);
+            if (PHP_VERSION_ID < 80000) ImageDestroy($base_image); // no-op sejak PHP 8.0, deprecated di PHP 8.5
             
             return $target_image;
         }

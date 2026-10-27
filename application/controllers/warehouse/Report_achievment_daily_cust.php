@@ -103,10 +103,10 @@ class Report_achievment_daily_cust extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
 
-            $filter_from = base64_decode($this->input->get('filter_from'));
-            $filter_to = base64_decode($this->input->get('filter_to'));
-            $filter_customer = base64_decode($this->input->get('filter_customer'));
-            $filter_item_fg = base64_decode($this->input->get('filter_item_fg'));
+            $filter_from = base64_decode((string) $this->input->get('filter_from'));
+            $filter_to = base64_decode((string) $this->input->get('filter_to'));
+            $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+            $filter_item_fg = base64_decode((string) $this->input->get('filter_item_fg'));
 
             $this->db->select("a.*, 
                 b.number as item_number,
@@ -175,8 +175,8 @@ class Report_achievment_daily_cust extends CI_Controller
                     $total_del = 0;
 
                     $day = 1;
-                    // while (strtotime($currentDate) <= strtotime($filter_to)) {
-                    //     $trans_date = date("Y-m-d", strtotime($currentDate));
+                    // while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+                    //     $trans_date = date("Y-m-d", strtotime((string) $currentDate));
                 
                     //     $this->db->select('*');
                     //     $this->db->from('sales_order_deliveries');
@@ -207,7 +207,7 @@ class Report_achievment_daily_cust extends CI_Controller
                     //         "qty_".$day => number_format($actual_qty - $delivery_qty, 2),
                     //     ]);
                 
-                    //     $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+                    //     $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
                     //     $day++;
                     //     $total_qty += $actual_qty;
                     //     $total_del += $delivery_qty;
@@ -215,8 +215,8 @@ class Report_achievment_daily_cust extends CI_Controller
 
                     $prevBalance = 0; // Inisialisasi balance awal
 
-                    while (strtotime($currentDate) <= strtotime($filter_to)) {
-                        $trans_date = date("Y-m-d", strtotime($currentDate));
+                    while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+                        $trans_date = date("Y-m-d", strtotime((string) $currentDate));
 
                         $this->db->select('SUM(qty) as qty');
                         $this->db->from('sales_order_deliveries');
@@ -247,12 +247,12 @@ class Report_achievment_daily_cust extends CI_Controller
                         ]);
 
                         $arrBalance = array_merge($arrBalance, [
-                            "qty_" . $day => number_format($currentBalance, 2),
+                            "qty_" . $day => number_format((float) $currentBalance, 2),
                         ]);
 
                         $prevBalance = $currentBalance; // Simpan balance saat ini untuk digunakan pada hari berikutnya
 
-                        $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+                        $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
                         $day++;
                         $total_qty += $actual_qty;
                         $total_del += $delivery_qty;
@@ -310,10 +310,10 @@ class Report_achievment_daily_cust extends CI_Controller
         $config = $this->db->get()->row();
 
         // Filter Data
-        $filter_from = base64_decode($this->input->get('filter_from'));
-        $filter_to = base64_decode($this->input->get('filter_to'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_item_fg = base64_decode($this->input->get('filter_item_fg'));
+        $filter_from = base64_decode((string) $this->input->get('filter_from'));
+        $filter_to = base64_decode((string) $this->input->get('filter_to'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_item_fg = base64_decode((string) $this->input->get('filter_item_fg'));
 
         // Fetch Data
         $this->db->select("a.*, 
@@ -371,16 +371,16 @@ class Report_achievment_daily_cust extends CI_Controller
 
         // Iterasi Tanggal Berdasarkan filter_from dan filter_to
         $currentDate = $filter_from;
-        while (strtotime($currentDate) <= strtotime($filter_to)) {
-            $working_date = date("Y-m-d", strtotime($currentDate));
-            $working_date2 = date("d F", strtotime($currentDate));
+        while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+            $working_date = date("Y-m-d", strtotime((string) $currentDate));
+            $working_date2 = date("d F", strtotime((string) $currentDate));
 
             $this->db->select('remarks');
             $this->db->from('calendars');
             $this->db->where('working_date', $working_date);
             $holiday = $this->db->get()->row();
 
-            if (date('w', strtotime($currentDate)) !== '0' && date('w', strtotime($currentDate)) !== '6') {
+            if (date('w', strtotime((string) $currentDate)) !== '0' && date('w', strtotime((string) $currentDate)) !== '6') {
                 if (!empty($holiday->remarks)) {
                     $styles = 'background:#FFD974;';
                 } else {
@@ -394,7 +394,7 @@ class Report_achievment_daily_cust extends CI_Controller
             $date .= '<th width="50" style="text-align:center; ' . $styles . '">' . $working_date2 . '</th>';
 
             $colspan++;
-            $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+            $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
         }
 
 
@@ -410,8 +410,8 @@ class Report_achievment_daily_cust extends CI_Controller
 
                 $prevBalance = 0;
 
-                while (strtotime($currentDate) <= strtotime($filter_to)) {
-                    $trans_date = date("Y-m-d", strtotime($currentDate));
+                while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+                    $trans_date = date("Y-m-d", strtotime((string) $currentDate));
         
                     // Ambil data actual_qty dari sales_order_deliveries
                     $this->db->reset_query();
@@ -439,19 +439,19 @@ class Report_achievment_daily_cust extends CI_Controller
         
                     // Isi data berdasarkan tipe
                     if ($type == "PLAN") {
-                        $isi .= "<td style='text-align:right;'>" . number_format($actual_qty, 2) . "</td>";
+                        $isi .= "<td style='text-align:right;'>" . number_format((float) $actual_qty, 2) . "</td>";
                         $total_qty += $actual_qty;
                     } elseif ($type == "ACTUAL") {
-                        $isi .= "<td style='text-align:right;'>" . number_format($delivery_qty, 2) . "</td>";
+                        $isi .= "<td style='text-align:right;'>" . number_format((float) $delivery_qty, 2) . "</td>";
                         $total_del += $delivery_qty;
                     } elseif ($type == "BALANCE") {
-                        $isi .= "<td style='text-align:right;'>" . number_format($currentBalance, 2) . "</td>";
+                        $isi .= "<td style='text-align:right;'>" . number_format((float) $currentBalance, 2) . "</td>";
                         $total_balance += $currentBalance;
                         $total_qty += $actual_qty;
                         $total_del += $delivery_qty;
                     }
         
-                    $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+                    $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
                     $prevBalance = $currentBalance;
                 }
 
@@ -459,9 +459,9 @@ class Report_achievment_daily_cust extends CI_Controller
                 // Tambahkan total di akhir baris
 
                 if ($type == "PLAN") {
-                    $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format($total_qty, 2) . "</td>";
+                    $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format((float) $total_qty, 2) . "</td>";
                 } elseif ($type == "ACTUAL") {
-                    $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format($total_del, 2) . "</td>";
+                    $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format((float) $total_del, 2) . "</td>";
                 } elseif ($type == "BALANCE") {
                     $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format(($total_del - $total_qty), 2) . "</td>";
                 }
@@ -473,10 +473,10 @@ class Report_achievment_daily_cust extends CI_Controller
                                 <td>" . $record['item_name'] . "</td>
                                 <td>" . $record['division'] . "</td>
                                 <td>" . $record['customer_name'] . "</td>
-                                <td>" . number_format($record['qty_so'], 2) . "</td>
-                                <td>" . number_format($record['qty_dn'], 2) . "</td>
-                                <td>" . number_format($record['qty_ds'], 2) . "</td>
-                                <td>" . number_format($record['ost_so'], 2) . "</td>
+                                <td>" . number_format((float) $record['qty_so'], 2) . "</td>
+                                <td>" . number_format((float) $record['qty_dn'], 2) . "</td>
+                                <td>" . number_format((float) $record['qty_ds'], 2) . "</td>
+                                <td>" . number_format((float) $record['ost_so'], 2) . "</td>
                                 <td style='text-align:left; font-weight:bold;'>" . $type . "</td>" . $isi . "</tr>";
             }
             $no++;

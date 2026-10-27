@@ -56,8 +56,8 @@ class Costing_products extends CI_Controller
         $year = $this->input->post('filter_year');
         $periode = $year . '-' . $month;
 
-        $filter_from = date("Y-m-01", strtotime($periode));
-        $filter_to = date("Y-m-t", strtotime($periode));
+        $filter_from = date("Y-m-01", strtotime((string) $periode));
+        $filter_to = date("Y-m-t", strtotime((string) $periode));
 
         // $this->db->select('number');
         // $this->db->from('purchase_invoices');
@@ -86,8 +86,8 @@ class Costing_products extends CI_Controller
         $year = $this->input->post('filter_year');
         $periode = $year . '-' . $month;
 
-        $filter_from = date("Y-m-01", strtotime($periode));
-        $filter_to = date("Y-m-t", strtotime($periode));
+        $filter_from = date("Y-m-01", strtotime((string) $periode));
+        $filter_to = date("Y-m-t", strtotime((string) $periode));
 
         $this->db->select('number');
         $this->db->from('sales_invoices');
@@ -116,8 +116,8 @@ class Costing_products extends CI_Controller
         $year = $this->input->post('filter_year');
         $periode = $year . '-' . $month;
 
-        $filter_from = date("Y-m-01", strtotime($periode));
-        $filter_to = date("Y-m-t", strtotime($periode));
+        $filter_from = date("Y-m-01", strtotime((string) $periode));
+        $filter_to = date("Y-m-t", strtotime((string) $periode));
 
         $this->db->select('payment_no');
         $this->db->from('ap_payments');
@@ -146,8 +146,8 @@ class Costing_products extends CI_Controller
         $year = $this->input->post('filter_year');
         $periode = $year . '-' . $month;
 
-        $filter_from = date("Y-m-01", strtotime($periode));
-        $filter_to = date("Y-m-t", strtotime($periode));
+        $filter_from = date("Y-m-01", strtotime((string) $periode));
+        $filter_to = date("Y-m-t", strtotime((string) $periode));
 
         $this->db->select('receipt_no');
         $this->db->from('ar_receipts');
@@ -176,8 +176,8 @@ class Costing_products extends CI_Controller
         $year = $this->input->post('filter_year');
         $periode = $year . '-' . $month;
 
-        $filter_from = date("Y-m-01", strtotime($periode));
-        $filter_to = date("Y-m-t", strtotime($periode));
+        $filter_from = date("Y-m-01", strtotime((string) $periode));
+        $filter_to = date("Y-m-t", strtotime((string) $periode));
 
         $this->db->select('asset_no');
         $this->db->from('asset_journals');
@@ -205,8 +205,8 @@ class Costing_products extends CI_Controller
         $year = $this->input->post('filter_year');
         $periode = $year . '-' . $month;
 
-        $filter_from = date("Y-m-01", strtotime($periode));
-        $filter_to = date("Y-m-t", strtotime($periode));
+        $filter_from = date("Y-m-01", strtotime((string) $periode));
+        $filter_to = date("Y-m-t", strtotime((string) $periode));
 
         $this->db->select('number');
         $this->db->from('journal_revaluations');
@@ -242,8 +242,8 @@ class Costing_products extends CI_Controller
             $periode = $year . '-' . $month;
             $periode2 = $year . $month;
 
-            $filter_from = date("Y-m-01", strtotime($periode));
-            $filter_to = date("Y-m-t", strtotime($periode));
+            $filter_from = date("Y-m-01", strtotime((string) $periode));
+            $filter_to = date("Y-m-t", strtotime((string) $periode));
 
             $this->db->select('c.*');
             $this->db->from('item_fg a');
@@ -328,13 +328,13 @@ class Costing_products extends CI_Controller
                             "supply_type" => "SUPPLY SHEET",
                             "supply_date" => $supply_sheet->trans_date,
                             "supply_no" => $supply_sheet->document_no,
-                            "issued" => abs($supply_sheet->qty),
-                            "price" => abs($supply_sheet->price),
-                            "amount" => abs($supply_sheet->amount),
+                            "issued" => abs($supply_sheet->qty ?? 0),
+                            "price" => abs($supply_sheet->price ?? 0),
+                            "amount" => abs($supply_sheet->amount ?? 0),
                         );
 
                         // $this->crud->create("costing_product_details", $arr);
-                        $direct_material += abs($supply_sheet->amount);
+                        $direct_material += abs($supply_sheet->amount ?? 0);
                     }
 
                     $supply_materials = $this->crud->query("SELECT a.item_fg_id, a.trans_date, a.document_no, SUM(a.qty) as qty, a.price, SUM(a.amount) as amount
@@ -354,13 +354,13 @@ class Costing_products extends CI_Controller
                             "supply_type" => "NON SUPPLY SHEET",
                             "supply_date" => $supply_material->trans_date,
                             "supply_no" => $supply_material->document_no,
-                            "issued" => abs($supply_material->qty),
-                            "price" => abs($supply_material->price),
-                            "amount" => abs($supply_material->amount),
+                            "issued" => abs($supply_material->qty ?? 0),
+                            "price" => abs($supply_material->price ?? 0),
+                            "amount" => abs($supply_material->amount ?? 0),
                         );
 
                         // $this->crud->create("costing_product_details", $arr);
-                        $non_supply += abs($supply_material->amount);
+                        $non_supply += abs($supply_material->amount ?? 0);
                     }
 
                     $supply_requestions = $this->crud->query("SELECT a.item_fg_id, a.trans_date, a.document_no, SUM(a.qty) as qty, a.price, SUM(a.amount) as amount
@@ -380,13 +380,13 @@ class Costing_products extends CI_Controller
                             "supply_type" => "MATERIAL REQUESTION",
                             "supply_date" => $supply_requestion->trans_date,
                             "supply_no" => $supply_requestion->document_no,
-                            "issued" => abs($supply_requestion->qty),
-                            "price" => abs($supply_requestion->price),
-                            "amount" => abs($supply_requestion->amount),
+                            "issued" => abs($supply_requestion->qty ?? 0),
+                            "price" => abs($supply_requestion->price ?? 0),
+                            "amount" => abs($supply_requestion->amount ?? 0),
                         );
 
                         // $this->crud->create("costing_product_details", $arr);
-                        $direct_requestion += abs($supply_requestion->amount);
+                        $direct_requestion += abs($supply_requestion->amount ?? 0);
                     }
 
                     $dataFinals[] = array(
@@ -471,8 +471,8 @@ class Costing_products extends CI_Controller
             $item_fg_id = $this->input->post('item_fg_id');
             $periode = $year . '-' . $month;
 
-            $filter_from = date("Y-m-01", strtotime($periode));
-            $filter_to = date("Y-m-t", strtotime($periode));
+            $filter_from = date("Y-m-01", strtotime((string) $periode));
+            $filter_to = date("Y-m-t", strtotime((string) $periode));
 
             $this->db->select('*');
             $this->db->from('bom');
@@ -503,11 +503,11 @@ class Costing_products extends CI_Controller
                     $direct_material_qty = 0;
                     foreach ($inventories as $inventory) {
                         if(empty($inventory['request_no'])){
-                            $direct_requestion += round(abs($inventory['amount']), 2);
-                            $direct_requestion_qty += abs($inventory['qty']);
+                            $direct_requestion += round(abs($inventory['amount'] ?? 0), 2);
+                            $direct_requestion_qty += abs($inventory['qty'] ?? 0);
                         }else{
-                            $direct_material += round(abs($inventory['amount']), 2);
-                            $direct_material_qty += abs($inventory['qty']);
+                            $direct_material += round(abs($inventory['amount'] ?? 0), 2);
+                            $direct_material_qty += abs($inventory['qty'] ?? 0);
                         }
                     }
 
@@ -618,9 +618,9 @@ class Costing_products extends CI_Controller
     {
         if ($this->input->get()) {
 
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_item = base64_decode($this->input->get('filter_item'));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $filter_item = base64_decode((string) $this->input->get('filter_item'));
 
             $filter_period = $filter_year . "-" . $filter_month;
 
@@ -683,8 +683,8 @@ class Costing_products extends CI_Controller
 
     public function datatableWorkorders(){
         if ($this->input->get()) {
-            $periode = base64_decode($this->input->get('periode'));
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
+            $periode = base64_decode((string) $this->input->get('periode'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
 
             //Select Query
             $this->db->select('a.*, b.number as item_number, b.name as item_name');
@@ -708,8 +708,8 @@ class Costing_products extends CI_Controller
 
     public function datatableDetails(){
         if ($this->input->get()) {
-            $periode = base64_decode($this->input->get('periode'));
-            $workorder = base64_decode($this->input->get('workorder'));
+            $periode = base64_decode((string) $this->input->get('periode'));
+            $workorder = base64_decode((string) $this->input->get('workorder'));
 
             //Select Query
             $this->db->select('a.*, b.number as item_number, b.name as item_name, c.name as uom');
@@ -871,9 +871,9 @@ class Costing_products extends CI_Controller
             header("Content-Disposition: attachment; filename=costing_products_$format.xls");
         }
 
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_item = base64_decode($this->input->get('filter_item'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_item = base64_decode((string) $this->input->get('filter_item'));
 
         $filter_period = $filter_year . "-" . $filter_month;
 

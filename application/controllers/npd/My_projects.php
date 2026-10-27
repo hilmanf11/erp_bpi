@@ -130,7 +130,7 @@ class My_projects extends CI_Controller
                         $task_end_dt = null;
                         if (!empty($t['end_date']) && $t['end_date'] !== '0000-00-00') {
                             $clean_end_date = str_replace('/', '-', $t['end_date']);
-                            $ts_end = strtotime($clean_end_date);
+                            $ts_end = strtotime((string) $clean_end_date);
                             if ($ts_end !== false && $ts_end > 0) { 
                                 $task_end_dt = new DateTime(date('Y-m-d', $ts_end));
                                 $task_end_dt->setTime(0, 0, 0);
@@ -152,7 +152,7 @@ class My_projects extends CI_Controller
                             // ==========================================
                             $created_dt = null;
                             if (!empty($target_data['created_date']) && $target_data['created_date'] !== '0000-00-00 00:00:00') {
-                                $ts_created = strtotime($target_data['created_date']);
+                                $ts_created = strtotime((string) $target_data['created_date']);
                                 if ($ts_created !== false && $ts_created > 0) {
                                     $created_dt = new DateTime(date('Y-m-d', $ts_created));
                                     $created_dt->setTime(0, 0, 0);
@@ -230,7 +230,7 @@ class My_projects extends CI_Controller
 
     public function datatableDetails()
     {
-        $number = base64_decode($this->input->get('project_number'));
+        $number = base64_decode((string) $this->input->get('project_number'));
 
         if ($number) {
             $this->db->select('
@@ -288,7 +288,7 @@ class My_projects extends CI_Controller
 
     public function datatableTasks() //dokumentasi : penarapan tanpa item id
     {
-        $number = base64_decode($this->input->get('project_number'));
+        $number = base64_decode((string) $this->input->get('project_number'));
 
         if ($number) {
             $this->db->select('a.id as task_id, a.phase_name, a.description, a.attachment1, a.attachment2, a.attachment3, a.attachment4, a.attachment5, b.status as project_status, d.item_fg_number'); 
@@ -332,7 +332,7 @@ class My_projects extends CI_Controller
 
                         $task_end_ts = 0;
                         if (!empty($item['end_date'])) {
-                            $parsed_date = strtotime($item['end_date']);
+                            $parsed_date = strtotime((string) $item['end_date']);
                             if ($parsed_date !== false && $parsed_date > 0) {
                                 $task_end_ts = strtotime(date('Y-m-d', $parsed_date));
                             }
@@ -361,7 +361,7 @@ class My_projects extends CI_Controller
                                     $item['status']     = 'COMPLETE'; 
                                     $item['status_val'] = 1;
                                     
-                                    $created_ts = strtotime(date('Y-m-d', strtotime($target_data['created_date'])));
+                                    $created_ts = strtotime(date('Y-m-d', strtotime((string) $target_data['created_date'])));
                                     
                                     if ($task_end_ts > 0 && $created_ts > $task_end_ts) {
                                         $item['status_time'] = 'Complete (Late)';
@@ -430,7 +430,7 @@ class My_projects extends CI_Controller
 
             $task_end_ts = 0;
             if (!empty($row['end_date'])) {
-                $parsed_date = strtotime($row['end_date']);
+                $parsed_date = strtotime((string) $row['end_date']);
                 if ($parsed_date !== false && $parsed_date > 0) {
                     $task_end_ts = strtotime(date('Y-m-d', $parsed_date));
                 }
@@ -454,7 +454,7 @@ class My_projects extends CI_Controller
 
                     // KONDISI 1: SUDAH COMPLETE, TAPI TANGGAL INPUT > END DATE TASK
                     if ($task_end_ts > 0) {
-                        $created_ts = strtotime(date('Y-m-d', strtotime($target_data['created_date'])));
+                        $created_ts = strtotime(date('Y-m-d', strtotime((string) $target_data['created_date'])));
                         if ($created_ts > $task_end_ts) {
                             $summary['overdue']++; // Tercatat sebagai Overdue
                         }
@@ -497,7 +497,7 @@ class My_projects extends CI_Controller
                 if (!empty($p['end_date'])) {
                     
                     $clean_date = str_replace('/', '-', $p['end_date']);
-                    $project_end_date = strtotime($clean_date);
+                    $project_end_date = strtotime((string) $clean_date);
 
                     if ($project_end_date < $today) {
                         $overdue++; // Tanggal sudah lewat

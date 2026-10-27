@@ -156,10 +156,10 @@ class Rate extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $year = base64_decode($this->input->get('year'));
-            $eficiency = base64_decode($this->input->get('eficiency'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_eficiency = base64_decode($this->input->get('filter_eficiency'));
+            $year = base64_decode((string) $this->input->get('year'));
+            $eficiency = base64_decode((string) $this->input->get('eficiency'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $filter_eficiency = base64_decode((string) $this->input->get('filter_eficiency'));
 
             $this->db->select('a.*');
             $this->db->from('rates a');
@@ -179,8 +179,8 @@ class Rate extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $year = base64_decode($this->input->get('year'));
-            $eficiency = base64_decode($this->input->get('eficiency'));
+            $year = base64_decode((string) $this->input->get('year'));
+            $eficiency = base64_decode((string) $this->input->get('eficiency'));
 
             $this->db->select('a.*');
             $this->db->from('rates a');
@@ -624,7 +624,7 @@ class Rate extends CI_Controller
                     <td>' . $data['labour'] . '</td>
                     <td>' . $data['labour_cost'] . '</td>
                     <td>' . $data['machine_depretiation_cost'] . '</td>
-                    <td>' . number_format($data['price'], 2) . '</td>
+                    <td>' . number_format((float) $data['price'], 2) . '</td>
                     <td>' . $data['jumlah_machine'] . '</td>
                     <td>' . $data['depretiation'] . '</td>
                     <td>' . $data['interest'] . '</td>

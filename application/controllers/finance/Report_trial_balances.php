@@ -44,7 +44,7 @@ class Report_trial_balances extends CI_Controller
     {
         return [
             'debit' => $balance >= 0 ? $balance : 0,
-            'credit' => $balance < 0 ? abs($balance) : 0,
+            'credit' => $balance < 0 ? abs($balance ?? 0) : 0,
         ];
     }
 
@@ -55,7 +55,7 @@ class Report_trial_balances extends CI_Controller
         $filter_to   = $this->input->post('filter_to');
 
         // Modifikasi: Sesuaikan beginning balance per 2026-01-01 berdasarkan dari Chart of Account
-        $filter_before = date("Y-01-01", strtotime($filter_from));
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
 
         // Validasi input tanggal
         if (empty($filter_from) || empty($filter_to)) {
@@ -229,12 +229,12 @@ class Report_trial_balances extends CI_Controller
             return;
         }
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
-        $period = date("Ym", strtotime($filter_from));
-        $period_before = date("Ym", strtotime("-1 month", strtotime($filter_from)));
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
+        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
+        $period = date("Ym", strtotime((string) $filter_from));
+        $period_before = date("Ym", strtotime("-1 month", strtotime((string) $filter_from)));
 
         $data = [];
 
@@ -346,10 +346,10 @@ class Report_trial_balances extends CI_Controller
 
             $net_begin_balance_group = $begin_debit_total_group - $begin_credit_total_group;
             if ($net_begin_balance_group > 0) {
-                $final_begin_debit = abs($net_begin_balance_group);
+                $final_begin_debit = abs($net_begin_balance_group ?? 0);
                 $final_begin_credit = 0;
             } else {
-                $final_begin_credit = abs($net_begin_balance_group);
+                $final_begin_credit = abs($net_begin_balance_group ?? 0);
                 $final_begin_debit = 0;
             }
 
@@ -363,7 +363,7 @@ class Report_trial_balances extends CI_Controller
                 $ending_credit_total_group = 0;
             } else {
                 $ending_debit_total_group = 0;
-                $ending_credit_total_group = abs($begin_balance_group);
+                $ending_credit_total_group = abs($begin_balance_group ?? 0);
             }
 
             // Jika header 0, ending_debit/credit-nya adalah saldo awal untuk detail
@@ -409,11 +409,11 @@ class Report_trial_balances extends CI_Controller
                 $journal_end_credit = 0;
 
                 if ($begin_balance_detail > 0) {
-                    $journal_end_debit = abs($begin_balance_detail);
+                    $journal_end_debit = abs($begin_balance_detail ?? 0);
                     $journal_end_credit = 0;
                 } else {
                     $journal_end_debit = 0;
-                    $journal_end_credit = abs($begin_balance_detail);
+                    $journal_end_credit = abs($begin_balance_detail ?? 0);
                 }
 
                 // Memastikan tidak ada duplikasi jika account_group['number'] sama dengan account['account_number']
@@ -473,9 +473,9 @@ class Report_trial_balances extends CI_Controller
         }
         
         if (!empty($option) && $option == "excel") {
-            return number_format($value, $decimal, ".", ""); // tanpa separator
+            return number_format((float) $value, $decimal, ".", ""); // tanpa separator
         } else {
-            return number_format($value, $decimal, ",", ".");
+            return number_format((float) $value, $decimal, ",", ".");
         }
     }
 
@@ -487,20 +487,20 @@ class Report_trial_balances extends CI_Controller
             header("Content-Disposition: attachment; filename=trial_balances_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to   = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to   = base64_decode((string) $this->input->get("filter_to"));
 
-        if (empty($filter_from) || !strtotime($filter_from)) {
+        if (empty($filter_from) || !strtotime((string) $filter_from)) {
             show_error('Invalid "filter_from" date parameter.');
             return;
         }
-        if (empty($filter_to) || !strtotime($filter_to)) {
+        if (empty($filter_to) || !strtotime((string) $filter_to)) {
             show_error('Invalid "filter_to" date parameter.');
             return;
         }
 
-        $period_start = date("Ym", strtotime($filter_from));
-        $period_end   = date("Ym", strtotime($filter_to));
+        $period_start = date("Ym", strtotime((string) $filter_from));
+        $period_end   = date("Ym", strtotime((string) $filter_to));
 
         //Config
         $this->db->select('*');
@@ -640,7 +640,7 @@ class Report_trial_balances extends CI_Controller
         
         $html = '<html>
             <head>
-                <title>Trial Balance - <?php echo date("F Y", strtotime($filter_to)); ?></title>
+                <title>Trial Balance - <?php echo date("F Y", strtotime((string) $filter_to)); ?></title>
                 <style>
                     body {
                         font-family: Arial, Helvetica, sans-serif;
@@ -755,7 +755,7 @@ class Report_trial_balances extends CI_Controller
 
             $html .= '<div class="report-title">
                     <h3>TRIAL BALANCE</h3>
-                    <small>PERIOD : <b>' . htmlspecialchars(date("d M Y", strtotime($filter_from))) . '</b> To <b> ' . htmlspecialchars(date("d M Y", strtotime($filter_to))) . ' </b></small>
+                    <small>PERIOD : <b>' . htmlspecialchars(date("d M Y", strtotime((string) $filter_from))) . '</b> To <b> ' . htmlspecialchars(date("d M Y", strtotime((string) $filter_to))) . ' </b></small>
                 </div>
                 <br><br>                
                 <table id="customers">
@@ -874,7 +874,7 @@ class Report_trial_balances extends CI_Controller
     }
 
     function formatIDR($number, $decimal_places = 2) {
-        $formatted_number = number_format($number, $decimal_places, ',', '.');
+        $formatted_number = number_format((float) $number, $decimal_places, ',', '.');
         return $formatted_number;
     }
 
@@ -886,12 +886,12 @@ class Report_trial_balances extends CI_Controller
             header("Content-Disposition: attachment; filename=trial_balances_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
-        $period = date("Ym", strtotime($filter_from));
-        $period_to = date("Ym", strtotime($filter_to));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
+        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
+        $period = date("Ym", strtotime((string) $filter_from));
+        $period_to = date("Ym", strtotime((string) $filter_to));
 
         //Config
         $this->db->select('*');
@@ -980,12 +980,12 @@ class Report_trial_balances extends CI_Controller
                             <td style="'.$font.'">' . $no . '</td>
                             <td style="'.$font.'">' . $trial_balance['account_number'] . '</td>
                             <td style="'.$font.'">' . $trial_balance['account_name'] . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['begin_debit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['begin_credit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['local_debit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['local_credit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['ending_debit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['ending_credit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format((float) $trial_balance['begin_debit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format((float) $trial_balance['begin_credit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format((float) $trial_balance['local_debit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format((float) $trial_balance['local_credit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format((float) $trial_balance['ending_debit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format((float) $trial_balance['ending_credit'], 2, ',', '.') . '</td>
                         </tr>';
 
             if($trial_balance['header'] == 0){
@@ -1005,8 +1005,8 @@ class Report_trial_balances extends CI_Controller
                         <td style="text-align:right;"><b>' . number_format(@$grand_total_begin_credit, 2, ',', '.') . '</b></td>
                         <td style="text-align:right;"><b>' . number_format(@$grand_total_local_debit, 2, ',', '.') . '</b></td>
                         <td style="text-align:right;"><b>' . number_format(@$grand_total_local_credit, 2, ',', '.') . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_ending_debit, 2, ',', '.') . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_ending_credit, 2, ',', '.') . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_total_ending_debit, 2, ',', '.') . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_total_ending_credit, 2, ',', '.') . '</b></td>
                     </tr>';
 
 

@@ -37,7 +37,7 @@ class Locks extends CI_Controller
             $period = $post['period'];
             $menus_id = $post['menus_id'];
 
-            $change = date("F Y", strtotime($period));
+            $change = date("F Y", strtotime((string) $period));
 
             $reads = $this->crud->reads('account_lock', [], ["period" => $change, "menus_id" => $menus_id, "lock" => 1]);
             die(json_encode(array("total" => count($reads))));
@@ -98,7 +98,7 @@ class Locks extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id     = base64_decode($this->input->get('id'));
+            $id     = base64_decode((string) $this->input->get('id'));
             $post   = $this->input->post();
             $send   = $this->crud->update('account_lock', ["id" => $id], $post);
             echo $send;

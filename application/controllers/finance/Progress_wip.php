@@ -42,11 +42,11 @@ class Progress_wip extends CI_Controller
         $filter_from = $this->input->post('filter_from');
         $filter_to   = $this->input->post('filter_to');
         $filter_item_fg = $this->input->post('filter_item_fg');
-        $periode = date("Y-m", strtotime($filter_from));
-        $periode_bf = date("Y-m", strtotime("-1 month", strtotime($filter_from)));
+        $periode = date("Y-m", strtotime((string) $filter_from));
+        $periode_bf = date("Y-m", strtotime("-1 month", strtotime((string) $filter_from)));
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Item Receipts
         $records = $this->crud->query("SELECT
@@ -95,18 +95,18 @@ class Progress_wip extends CI_Controller
                     "customer_po" => "",
                     "document_no" => $receipt->document_no,
                     "uom" => $record->uom,
-                    "qty" => abs($receipt->qty),
-                    "direct_material" => abs($receipt->direct_material),
-                    "direct_labor" => abs($receipt->direct_labor),
-                    "direct_foh" => abs($receipt->direct_foh),
-                    "price" => abs($receipt->price),
-                    "amount" => abs($receipt->amount),
+                    "qty" => abs($receipt->qty ?? 0),
+                    "direct_material" => abs($receipt->direct_material ?? 0),
+                    "direct_labor" => abs($receipt->direct_labor ?? 0),
+                    "direct_foh" => abs($receipt->direct_foh ?? 0),
+                    "price" => abs($receipt->price ?? 0),
+                    "amount" => abs($receipt->amount ?? 0),
                 );
 
-                $in_qty += abs($receipt->qty);
-                $in_dm += abs($receipt->direct_material);
-                $in_dl += abs($receipt->direct_labor);
-                $in_foh += abs($receipt->direct_foh);
+                $in_qty += abs($receipt->qty ?? 0);
+                $in_dm += abs($receipt->direct_material ?? 0);
+                $in_dl += abs($receipt->direct_labor ?? 0);
+                $in_foh += abs($receipt->direct_foh ?? 0);
             }
 
             //Delivery Note
@@ -198,8 +198,8 @@ class Progress_wip extends CI_Controller
         $filter_shift = $this->input->get("filter_shift");
         $filter_workorder = $this->input->get("filter_workorder");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Config
         $this->db->select('*');
@@ -723,22 +723,22 @@ class Progress_wip extends CI_Controller
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
                             <td colspan="2" style="mso-number-format:\@;">' . $record->name . '</td>
-                            <td colspan="2" style="text-align:right;">' . number_format($record->qty_wo, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->begin_balance, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_actual, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_wip, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_ng, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->total_production, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->subconts_jasa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_adj_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_ng_sa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_ng_wip, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_output, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_repacking, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->rfg_jasa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_adj_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
+                            <td colspan="2" style="text-align:right;">' . number_format((float) $record->qty_wo, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->begin_balance, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_actual, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_wip, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_ng, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->total_production, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->subconts_jasa, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_adj_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_ng_sa, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_ng_wip, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_output, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_rfg, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_repacking, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->rfg_jasa, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_adj_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->ending_balance, 2) . '</td>
                         </tr>';
 
             if ($filter_display == "DETAIL" && $filter_workorder !="" && $filter_items !="") {
@@ -1045,7 +1045,7 @@ class Progress_wip extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
 
                 $qty_wo_read = $this->crud->query("select qty FROM production_schedules where item_fg_id='$item_fg_id' and wo_no like '%$filter_workorder%'");
@@ -1087,18 +1087,18 @@ class Progress_wip extends CI_Controller
                             <td>-</td>
                             <td>-</td>
                             <td>' . $data['wo_no']  . '</td>
-                            <td style="text-align:right;">' . number_format($qty_wo, 2)  . '</td>
-                            <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                            <td style="text-align:right;">' . number_format($total_actual_production, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_qty_wip, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_ng, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_production, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_subconts_jasa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_qty_adj_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_rfg, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_rfg_repacking, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_rfg_subconts_jasa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_qty_adj_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $qty_wo, 2)  . '</td>
+                            <td style="text-align:right;">' . number_format((float) $begin, 2)  . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_actual_production, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_qty_wip, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_ng, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_production, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_subconts_jasa, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_qty_adj_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_rfg, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_rfg_repacking, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_rfg_subconts_jasa, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_qty_adj_out, 2) . '</td>
                             <td></td>
                         </tr>';
 
@@ -1116,19 +1116,19 @@ class Progress_wip extends CI_Controller
                                     <td>' . $data['type']  . '</td>
                                     <td>' . $data['date']  . '</td>
                                     <td>' . $data['wo_no']  . '</td>
-                                    <td style="text-align:right;">' . number_format($qty_wo, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['actual_production'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_wip'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['ng'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($total_production, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['subconts_jasa'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg_repacking'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg_subconts_jasa'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $qty_wo, 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $begin, 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['actual_production'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_wip'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['ng'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $total_production, 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['subconts_jasa'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_adj_in'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['rfg'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['rfg_repacking'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['rfg_subconts_jasa'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_adj_out'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                 </tr>';
 
                     $begin = $balance;
@@ -1450,7 +1450,7 @@ class Progress_wip extends CI_Controller
 
                     // Urutkan data berdasarkan tanggal
                     usort($all_data, function ($a, $b) {
-                        return strtotime($a['date']) - strtotime($b['date']);
+                        return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                     });
 
                     $qty_wo_read = $this->crud->query("select qty FROM production_schedules where item_fg_id='$item_fg_id' and wo_no like '%$filter_workorder%'");
@@ -1492,18 +1492,18 @@ class Progress_wip extends CI_Controller
                                 <td>-</td>
                                 <td>-</td>
                                 <td>' . $data['wo_no']  . '</td>
-                                <td style="text-align:right;">' . number_format($qty_wo, 2)  . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                                <td style="text-align:right;">' . number_format($total_actual_production, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_qty_wip, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_ng, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_production, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_subconts_jasa, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_qty_adj_in, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_rfg, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_rfg_repacking, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_rfg_subconts_jasa, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_qty_adj_out, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $qty_wo, 2)  . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2)  . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_actual_production, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_qty_wip, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_ng, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_production, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_subconts_jasa, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_qty_adj_in, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_rfg, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_rfg_repacking, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_rfg_subconts_jasa, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $total_qty_adj_out, 2) . '</td>
                                 <td></td>
                             </tr>';
 
@@ -1521,19 +1521,19 @@ class Progress_wip extends CI_Controller
                                         <td>' . $data['type']  . '</td>
                                         <td>' . $data['date']  . '</td>
                                         <td>' . $data['wo_no']  . '</td>
-                                        <td style="text-align:right;">' . number_format($qty_wo, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['actual_production'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['qty_wip'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['ng'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($total_production, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['subconts_jasa'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['rfg'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['rfg_repacking'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['rfg_subconts_jasa'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $qty_wo, 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $begin, 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['actual_production'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['qty_wip'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['ng'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $total_production, 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['subconts_jasa'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['qty_adj_in'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['rfg'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['rfg_repacking'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['rfg_subconts_jasa'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $data['qty_adj_out'], 2)  . '</td>
+                                        <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                     </tr>';
 
                         $begin = $balance;
@@ -1858,7 +1858,7 @@ class Progress_wip extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
 
                 // Generate HTML
@@ -1875,19 +1875,19 @@ class Progress_wip extends CI_Controller
                                     <td>' . $data['type']  . '</td>
                                     <td>' . $data['date']  . '</td>
                                     <td>' . $data['wo_no']  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['wo_qty'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['actual_production'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_wip'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['ng'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($total_production, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['subconts_jasa'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg_repacking'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg_subconts_jasa'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['wo_qty'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $begin, 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['actual_production'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_wip'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['ng'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $total_production, 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['subconts_jasa'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_adj_in'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['rfg'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['rfg_repacking'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['rfg_subconts_jasa'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_adj_out'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                 </tr>';
 
                     $begin = $balance;
@@ -1900,21 +1900,21 @@ class Progress_wip extends CI_Controller
 
         $html .= '<tr>
             <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;">' . number_format($totalBeginBalance, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyAct, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyWip, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyNg, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalTotalProduction, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalSubcontsJasa, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyAdjIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyNgSa, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyNgWip, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyOutput, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyRfg, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyRfgRepacking, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyJasa, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyAdjOut, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalEndingBalance, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalBeginBalance, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyAct, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyWip, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyNg, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalTotalProduction, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalSubcontsJasa, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyAdjIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyNgSa, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyNgWip, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyOutput, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyRfg, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyRfgRepacking, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyJasa, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyAdjOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalEndingBalance, 2) . '</td>
 
         </tr>
         </tbody>';
@@ -1938,8 +1938,8 @@ class Progress_wip extends CI_Controller
         $filter_shift = $this->input->get("filter_shift");
         $filter_workorder = $this->input->get("filter_workorder");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Config
         $this->db->select('*');
@@ -2188,7 +2188,7 @@ class Progress_wip extends CI_Controller
 
             // Urutkan data berdasarkan tanggal
             usort($all_data, function ($a, $b) {
-                return strtotime($a['date']) - strtotime($b['date']);
+                return strtotime((string) $a['date']) - strtotime((string) $b['date']);
             });
 
 
@@ -2631,7 +2631,7 @@ class Progress_wip extends CI_Controller
 
             // Urutkan data berdasarkan tanggal
             usort($all_data, function ($a, $b) {
-                return strtotime($a['date']) - strtotime($b['date']);
+                return strtotime((string) $a['date']) - strtotime((string) $b['date']);
             });
 
 
@@ -3057,7 +3057,7 @@ class Progress_wip extends CI_Controller
 
             // Urutkan data berdasarkan tanggal
             usort($all_data, function ($a, $b) {
-                return strtotime($a['date']) - strtotime($b['date']);
+                return strtotime((string) $a['date']) - strtotime((string) $b['date']);
             });
 
 
@@ -3532,7 +3532,7 @@ class Progress_wip extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
 
                 $no = 1;
@@ -3918,7 +3918,7 @@ class Progress_wip extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
 
                 $no = 1;
@@ -4035,8 +4035,8 @@ class Progress_wip extends CI_Controller
         $filter_shift = $this->input->get("filter_shift");
         $filter_workorder = $this->input->get("filter_workorder");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Config
         $this->db->select('*');
@@ -4281,7 +4281,7 @@ class Progress_wip extends CI_Controller
 
             // Urutkan data berdasarkan tanggal
             usort($all_data, function ($a, $b) {
-                return strtotime($a['date']) - strtotime($b['date']);
+                return strtotime((string) $a['date']) - strtotime((string) $b['date']);
             });
 
 
@@ -4678,7 +4678,7 @@ class Progress_wip extends CI_Controller
 
             // Urutkan data berdasarkan tanggal
             usort($all_data, function ($a, $b) {
-                return strtotime($a['date']) - strtotime($b['date']);
+                return strtotime((string) $a['date']) - strtotime((string) $b['date']);
             });
 
 
@@ -5129,7 +5129,7 @@ class Progress_wip extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
 
                 $no = 1;
@@ -5524,7 +5524,7 @@ class Progress_wip extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
 
                 $no = 1;

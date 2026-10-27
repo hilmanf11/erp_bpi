@@ -87,9 +87,9 @@ class Report_inventory_turnover_fg extends CI_Controller
 
 
 
-        $start = strtotime($filter_from);
+        $start = strtotime((string) $filter_from);
 
-        $finish = strtotime($filter_to);
+        $finish = strtotime((string) $filter_to);
 
 
 
@@ -491,13 +491,13 @@ class Report_inventory_turnover_fg extends CI_Controller
 
                             <td style="text-align:right;">' . number_format(@$endstock[0]->begin_stock, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format((@$endstock[0]->begin_stock + $record->qty_in - $record->qty_out), 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->avg_usage_3_months, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->avg_usage_3_months, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format(($record->avg_usage_3_months > 0) ? ((@$endstock[0]->begin_stock + $record->qty_in - $record->qty_out) / $record->avg_usage_3_months) * 30 : 0, 2) . '</td>
                         </tr>';
@@ -674,13 +674,13 @@ class Report_inventory_turnover_fg extends CI_Controller
 
                                             <td>' . $receipt->checksheet_label . '</td>
 
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
 
-                                            <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $receipt->qty, 2) . '</td>
 
                                             <td style="text-align:right;">' . number_format(0)  . '</td>
 
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
 
                                         </tr>';
 
@@ -714,13 +714,13 @@ class Report_inventory_turnover_fg extends CI_Controller
 
                                             <td>' . $delivery_note->delivery_note_no . '</td>
 
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
 
                                             <td style="text-align:right;">' . number_format(0) . '</td>
 
-                                            <td style="text-align:right;">' . number_format($delivery_note->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $delivery_note->qty, 2)  . '</td>
 
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
 
                                         </tr>';
 
@@ -752,19 +752,19 @@ class Report_inventory_turnover_fg extends CI_Controller
 
                                             <td>' . $transaction->username . '</td>
 
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
 
                                             <td>-</td>
 
                                             <td>' . $transaction->request_no . '</td>
 
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
 
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
 
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
 
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
 
                                         </tr>';
 
@@ -866,13 +866,13 @@ class Report_inventory_turnover_fg extends CI_Controller
 
                                             <td>' . $receipt->checksheet_label . '</td>
 
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
 
-                                            <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $receipt->qty, 2) . '</td>
 
                                             <td style="text-align:right;">' . number_format(0)  . '</td>
 
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
 
                                         </tr>';
 
@@ -924,13 +924,13 @@ class Report_inventory_turnover_fg extends CI_Controller
 
                                             <td>' . $return->delivery_note_no . '</td>
 
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
 
                                             <td style="text-align:right;">' . number_format(0) . '</td>
 
-                                            <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $return->qty, 2)  . '</td>
 
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
 
                                         </tr>';
 
@@ -990,19 +990,19 @@ class Report_inventory_turnover_fg extends CI_Controller
 
                                             <td>' . $transaction->username . '</td>
 
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
 
                                             <td>-</td>
 
                                             <td>' . $transaction->request_no . '</td>
 
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
 
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
 
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
 
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
 
                                         </tr>';
 
@@ -1076,19 +1076,19 @@ class Report_inventory_turnover_fg extends CI_Controller
 
                                             <td>' . $transaction->username . '</td>
 
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
 
                                             <td>-</td>
 
                                             <td>' . $transaction->request_no . '</td>
 
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
 
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
 
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
 
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
 
                                         </tr>';
 

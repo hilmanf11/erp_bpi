@@ -122,7 +122,7 @@ class Mold_prices extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('mold_prices', ["id" => $id], $post);
             echo $send;

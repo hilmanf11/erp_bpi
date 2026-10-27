@@ -77,8 +77,8 @@ class Report_outstanding_pr extends CI_Controller
 
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $item_family_id = $this->input->get("item_family_id");
         $item_rm_id = $this->input->get("item_id");
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -102,12 +102,12 @@ class Report_outstanding_pr extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
         }
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $filter_display = $this->input->get("filter_display");
         $filter_item_family = $this->input->get("filter_item_family");
         $filter_product_no = $this->input->get("filter_product_no");
-        $filter_purchase_request = base64_decode($this->input->get("filter_purchase_request"));
+        $filter_purchase_request = base64_decode((string) $this->input->get("filter_purchase_request"));
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -226,7 +226,7 @@ class Report_outstanding_pr extends CI_Controller
                                         <td>' . $detail['item_number'] . '</td>
                                         <td>' . $detail['item_description'] . '</td>
                                         <td>' . $detail['uom'] . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
+                                        <td style="text-align:right">' . number_format((float) $detail['qty'], 2) . '</td>
                                         <td>' . @$detail['po_no'] . '</td>
                                         <td>' . @$status_po . '</td>
                                     </tr>';

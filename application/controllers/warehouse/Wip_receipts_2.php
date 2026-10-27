@@ -58,7 +58,7 @@ class Wip_receipts extends CI_Controller
 
     public function label_no($trans_date)
     {
-        $datenow = date("Y-m", strtotime($trans_date));
+        $datenow = date("Y-m", strtotime((string) $trans_date));
         $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM wip_receipts WHERE trans_date like '%$datenow%'");
         $rowID = $sqlGetID->row();
         $kode = $rowID->kode;
@@ -280,7 +280,7 @@ class Wip_receipts extends CI_Controller
                                     </tr>
                                     <tr>
                                         <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Quantity</td>
-                                        <td style="width:25mm;"><small style="font-size:20px;"><b>' . number_format($wip_receipt_label->qty, 2) . '</b></small></td>
+                                        <td style="width:25mm;"><small style="font-size:20px;"><b>' . number_format((float) $wip_receipt_label->qty, 2) . '</b></small></td>
                                         <td style="text-align:left;" style="width:25mm" rowspan="3">
                                             <img src="' . base_url('assets/image/qrcode/' . $wip_receipt_label->checksheet_label . '.png') . '" width="100"/>
                                         </td>
@@ -385,7 +385,7 @@ class Wip_receipts extends CI_Controller
                                     </tr>
                                     <tr>
                                         <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Quantity</td>
-                                        <td style="width:25mm;"><small style="font-size:20px;"><b>' . number_format($wip_receipt_label->qty, 2) . '</b></small></td>
+                                        <td style="width:25mm;"><small style="font-size:20px;"><b>' . number_format((float) $wip_receipt_label->qty, 2) . '</b></small></td>
                                         <td style="text-align:center;" style="width:25mm" rowspan="3">
                                             <img src="' . base_url('assets/image/qrcode/' . $wip_receipt_label->checksheet_label . '.png') . '" width="100"/>
                                         </td>
@@ -567,11 +567,11 @@ class Wip_receipts extends CI_Controller
                             <td>' . $data['product_no'] . '</td>
                             <td>' . $data['product_name'] . '</td>
                             <td>' . $data['uom'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                            <td>' . number_format($data['lot_label']) . '</td>
-                            <td>' . number_format($data['lot_box']) . '</td>
-                            <td>' . number_format($data['label']) . '</td>
-                            <td>' . number_format($data['label_box']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
+                            <td>' . number_format((float) $data['lot_label']) . '</td>
+                            <td>' . number_format((float) $data['lot_box']) . '</td>
+                            <td>' . number_format((float) $data['label']) . '</td>
+                            <td>' . number_format((float) $data['label_box']) . '</td>
                         </tr>';
             $no++;
         }

@@ -60,7 +60,7 @@ class Customers extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -94,7 +94,7 @@ class Customers extends CI_Controller
     public function datatables2($customer_id)
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -128,7 +128,7 @@ class Customers extends CI_Controller
     public function datatables3($customer_address_id)//berubah
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -199,7 +199,7 @@ class Customers extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('customers', ["id" => $id], $post);
             echo $send;
@@ -211,7 +211,7 @@ class Customers extends CI_Controller
     public function update2()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('customer_address', ["id" => $id], $post);
 
@@ -312,7 +312,7 @@ class Customers extends CI_Controller
     // DATATABLE 
     public function datatableMultiAccounts() 
     {
-        $customer_id = base64_decode($this->input->get('id'));
+        $customer_id = base64_decode((string) $this->input->get('id'));
         
         $customer = $this->db->select('a.id, a.account_number, b.account_name')
             ->from('customers a')

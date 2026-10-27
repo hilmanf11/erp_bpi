@@ -238,9 +238,9 @@ class Report_inventory_turnover extends CI_Controller
 
 
 
-        $start = strtotime($filter_from);
+        $start = strtotime((string) $filter_from);
 
-        $finish = strtotime($filter_to);
+        $finish = strtotime((string) $filter_to);
 
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
@@ -647,13 +647,13 @@ class Report_inventory_turnover extends CI_Controller
 
                             <td style="text-align:right;">' . number_format(@$itemReceipts[0]->begin_stock, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format((@$itemReceipts[0]->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->avg_usage_3_months, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->avg_usage_3_months, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format(($record->avg_usage_3_months > 0) ? (((@$itemReceipts[0]->begin_stock + $record->qty_in) - $record->qty_out) / $record->avg_usage_3_months) * 30 : 0, 2) . '</td>
 
@@ -669,17 +669,17 @@ class Report_inventory_turnover extends CI_Controller
 
             <td colspan="13" style="text-align:right;"><b>GRAND TOTAL</b></td>
 
-            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalBeginStock, 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalIn, 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalOut, 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalEndingStock, 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalQtyOut3Months, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyOut3Months, 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalITO, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalITO, 2) . '</td>
 
         </tr>';
 

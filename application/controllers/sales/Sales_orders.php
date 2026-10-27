@@ -154,7 +154,7 @@ class Sales_orders extends CI_Controller
 
     public function check_customer_order_no()
     {
-        $customer_order_no = base64_decode($this->input->get('customer_order_no'));
+        $customer_order_no = base64_decode((string) $this->input->get('customer_order_no'));
         
         // Menggunakan query builder CodeIgniter
         $this->db->select('customer_order_no');
@@ -272,7 +272,7 @@ class Sales_orders extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $sales_order_no = base64_decode((string) $this->input->get('sales_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, COALESCE(c.qty,0) as delivery, a.qty - COALESCE(c.qty, 0) as outstanding');
             $this->db->from('sales_orders a');
@@ -292,7 +292,7 @@ class Sales_orders extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $sales_order_no = base64_decode((string) $this->input->get('sales_order_no'));
 
             $this->db->select('a.item_fg_id, 
             a.id, 
@@ -410,7 +410,7 @@ class Sales_orders extends CI_Controller
     // public function update()
     // {
     //     if ($this->input->post()) {
-    //         $id   = base64_decode($this->input->get('id'));
+    //         $id   = base64_decode((string) $this->input->get('id'));
     //         $post = $this->input->post();
     //         $send = $this->crud->update('sales_orders', ["id" => $id], $post);
     //         echo $send;
@@ -533,7 +533,7 @@ class Sales_orders extends CI_Controller
     //     $customer_id = $data->val(2, 3);
     //     $sales_order_date = $data->val(3, 3);
 
-    //     $datenow    = "SO" . $customer_id . date("ymd", strtotime($sales_order_date));
+    //     $datenow    = "SO" . $customer_id . date("ymd", strtotime((string) $sales_order_date));
     //     $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
     //     $rowID      = $sqlGetID->row();
     //     $kode       = $rowID->kode;
@@ -671,7 +671,7 @@ class Sales_orders extends CI_Controller
     //     $customer_id = $data->val(2, 3);
     //     $sales_order_date = $data->val(3, 3);
 
-    //     $datenow = "SO" . $customer_id . date("ymd", strtotime($sales_order_date));
+    //     $datenow = "SO" . $customer_id . date("ymd", strtotime((string) $sales_order_date));
     //     $sqlGetID = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
     //     $rowID = $sqlGetID->row();
     //     $kode = $rowID->kode;
@@ -748,7 +748,7 @@ class Sales_orders extends CI_Controller
         $customer_id = $data->val(2, 3);
         $sales_order_date = $data->val(3, 3);
 
-        $datenow = "SO" . $customer_id . date("ymd", strtotime($sales_order_date));
+        $datenow = "SO" . $customer_id . date("ymd", strtotime((string) $sales_order_date));
         $sqlGetID = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
         $rowID = $sqlGetID->row();
         $kode = $rowID->kode;
@@ -953,7 +953,7 @@ class Sales_orders extends CI_Controller
     //             $customer_order_no = $item['customer_order_no'];
 
     //             // Generate sales_order_no unik untuk setiap item
-    //             $datenow = "SO" . $customer_id . date("ymd", strtotime($sales_order_date));
+    //             $datenow = "SO" . $customer_id . date("ymd", strtotime((string) $sales_order_date));
     //             $sqlGetID = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
     //             $rowID = $sqlGetID->row();
     //             $kode = $rowID->kode;

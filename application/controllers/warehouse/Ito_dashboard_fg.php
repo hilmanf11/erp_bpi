@@ -42,9 +42,9 @@ class Ito_dashboard_fg extends CI_Controller
 
     public function get_dashboard_datatables() 
     {
-        $filter_month       = @base64_decode($this->input->get('month'));
-        $filter_year        = @base64_decode($this->input->get('year'));
-        $filter_display     = @base64_decode($this->input->get('display'));
+        $filter_month       = @base64_decode((string) $this->input->get('month'));
+        $filter_year        = @base64_decode((string) $this->input->get('year'));
+        $filter_display     = @base64_decode((string) $this->input->get('display'));
 
         $currency_date_from = $filter_year .'-01-01';
         $currency_date_to = $filter_year .'-12-31';
@@ -52,22 +52,22 @@ class Ito_dashboard_fg extends CI_Controller
         // Membuat tanggal awal bulan (selalu tanggal 01)
         if($filter_display=='MONTHLY'){
             $filter_from = $filter_year . '-' . $filter_month . '-01';
-            $filter_to = $filter_year . '-' . $filter_month . '-' . date('t', strtotime($filter_from));
+            $filter_to = $filter_year . '-' . $filter_month . '-' . date('t', strtotime((string) $filter_from));
         }else{
             $filter_from = $filter_year . '-01-01';
             $filter_to = $filter_year . '-12-31';
         }
         
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime((string) $filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime((string) $filter_from)));
 
         $query_qty_out = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
         FROM transaction_fg a
@@ -325,9 +325,9 @@ class Ito_dashboard_fg extends CI_Controller
 
     public function get_dashboard_datatables_peritem() 
     {
-        $filter_month       = @base64_decode($this->input->get('month'));
-        $filter_year        = @base64_decode($this->input->get('year'));
-        $filter_display     = @base64_decode($this->input->get('display'));
+        $filter_month       = @base64_decode((string) $this->input->get('month'));
+        $filter_year        = @base64_decode((string) $this->input->get('year'));
+        $filter_display     = @base64_decode((string) $this->input->get('display'));
 
         $currency_date_from = $filter_year .'-01-01';
         $currency_date_to = $filter_year .'-12-31';
@@ -335,22 +335,22 @@ class Ito_dashboard_fg extends CI_Controller
         // Membuat tanggal awal bulan (selalu tanggal 01)
         if($filter_display=='MONTHLY'){
             $filter_from = $filter_year . '-' . $filter_month . '-01';
-            $filter_to = $filter_year . '-' . $filter_month . '-' . date('t', strtotime($filter_from));
+            $filter_to = $filter_year . '-' . $filter_month . '-' . date('t', strtotime((string) $filter_from));
         }else{
             $filter_from = $filter_year . '-01-01';
             $filter_to = $filter_year . '-12-31';
         }
         
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime((string) $filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime((string) $filter_from)));
 
         // Step 1: Hitung qty_in dari checksheet
         $query_qty_in_checksheet = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_checksheet

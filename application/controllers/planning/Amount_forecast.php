@@ -67,14 +67,14 @@ class Amount_forecast extends CI_Controller
         $p_month = $this->input->post('p_month');
         $p_year = $this->input->post('p_year');
         $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);
@@ -156,11 +156,11 @@ class Amount_forecast extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $document_no = base64_decode($this->input->get('document_no'));
-            $p_month = base64_decode($this->input->get('p_month'));
-            $p_year = base64_decode($this->input->get('p_year'));
-            $revision = base64_decode($this->input->get('revision'));
+            $customer_id = base64_decode((string) $this->input->get('customer_id'));
+            $document_no = base64_decode((string) $this->input->get('document_no'));
+            $p_month = base64_decode((string) $this->input->get('p_month'));
+            $p_year = base64_decode((string) $this->input->get('p_year'));
+            $revision = base64_decode((string) $this->input->get('revision'));
 
             $this->db->select("a.*, c.number as item_fg_number, c.name as item_fg_name, c.number_customer as item_fg_customer");
             $this->db->select("d.currency, d.price");
@@ -196,10 +196,10 @@ class Amount_forecast extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
-            $p_month = base64_decode($this->input->get('p_month'));
-            $p_year = base64_decode($this->input->get('p_year'));
+            $customer_id = base64_decode((string) $this->input->get('customer_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
+            $p_month = base64_decode((string) $this->input->get('p_month'));
+            $p_year = base64_decode((string) $this->input->get('p_year'));
 
             $this->db->select('*');
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
@@ -220,7 +220,7 @@ class Amount_forecast extends CI_Controller
     public function autoid(){
         $post = $this->input->post();
         $issued_date = $post["issued_date"];
-        $month = date('ym',strtotime($issued_date));
+        $month = date('ym',strtotime((string) $issued_date));
         $format = "FC".$month;
         $sql = $this->db->query("SELECT max(document_no) as kode FROM forecasts WHERE document_no LIKE '%$format%'");
         $row = $sql->row();
@@ -251,13 +251,13 @@ class Amount_forecast extends CI_Controller
         $filter_revision = @base64_decode($get['filter_revision']);
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         //Config
@@ -399,7 +399,7 @@ class Amount_forecast extends CI_Controller
             foreach ($records as $data) 
             {
                 $rate  = ($data['currency'] == 'IDR') ? '1' : (!empty($data['rate']) ? $data['rate'] : 0);
-                $price = ($data['currency'] == 'IDR') ? number_format($data['price'], 0, ',', '.') : number_format($data['price'], 5, ',', '.');
+                $price = ($data['currency'] == 'IDR') ? number_format((float) $data['price'], 0, ',', '.') : number_format((float) $data['price'], 5, ',', '.');
 
                 $html .= '<tr>
                     <td>' . $no . '</td>
@@ -413,7 +413,7 @@ class Amount_forecast extends CI_Controller
                     <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['currency'] . '</td>
                     <td>' . $price . '</td>
-                    <td>' . number_format($rate, 0, ',', '.') . '</td>
+                    <td>' . number_format((float) $rate, 0, ',', '.') . '</td>
                     <td>' . $data['month_1'] . '</td>
                     <td>' . number_format($rate * $data['amount_1'], 0, ',', '.') . '</td>
                     <td>' . $data['month_2'] . '</td>
@@ -550,7 +550,7 @@ class Amount_forecast extends CI_Controller
             foreach ($records as $data) 
             {
                 $rate  = ($data['currency'] == 'IDR') ? '1' : (!empty($data['rate']) ? $data['rate'] : 0);
-                $price = ($data['currency'] == 'IDR') ? number_format($data['price'], 0, ',', '.') : number_format($data['price'], 5, ',', '.');
+                $price = ($data['currency'] == 'IDR') ? number_format((float) $data['price'], 0, ',', '.') : number_format((float) $data['price'], 5, ',', '.');
 
                 $html .= '<tr>
                     <td>' . $no . '</td>
@@ -564,7 +564,7 @@ class Amount_forecast extends CI_Controller
                     <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['currency'] . '</td>
                     <td>' . $price . '</td>
-                    <td>' . number_format($rate, 0, ',', '.') . '</td>
+                    <td>' . number_format((float) $rate, 0, ',', '.') . '</td>
                     <td>' . $data['month_1'] . '</td>
                     <td>' . number_format($rate * $data['amount_1'], 0, ',', '.') . '</td>
                     <td>' . $data['month_2'] . '</td>

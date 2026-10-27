@@ -121,8 +121,8 @@ class Inventory_rm extends CI_Controller
         $filter_division = $this->input->get('filter_division');
         $filter_trans_type = $this->input->get('filter_trans_type');
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
         //Config
@@ -420,18 +420,18 @@ class Inventory_rm extends CI_Controller
                             <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
                             <td style="text-align:right;">' . $record->currency . '</td>
-                            <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $rate, 2) . '</td>
                             
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->begin_stock, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_out, 2) . '</td>
 
@@ -669,7 +669,7 @@ class Inventory_rm extends CI_Controller
                     }
 
                     usort($all_data, function ($a, $b) {
-                        return strtotime($a['date']) - strtotime($b['date']);
+                        return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                     });
 
                     foreach ($all_data as $data) {
@@ -680,27 +680,27 @@ class Inventory_rm extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td>' . $data['type'] . '</td>
                                 <td>' . $data['username'] . '</td>
-                                <td>' . date("Y-m-d", strtotime($data['date'])) . '</td>
+                                <td>' . date("Y-m-d", strtotime((string) $data['date'])) . '</td>
                                 <td>' . $data['doc1'] . '</td>
                                 <td>' . $data['doc2'] . '</td>
                                 <td>' . $data['doc3'] . '</td>
                                 <td>' . $data['doc4'] . '</td>
                                 <td style="text-align:right;">' . $currency . '</td>
-                                <td style="text-align:right;">' . number_format($price, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($rate, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $price, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $rate, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
 
-                                <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_in'], 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
 
-                                <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_out'], 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
 
-                                <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
                             </tr>';
@@ -723,10 +723,10 @@ class Inventory_rm extends CI_Controller
                     //                     <td>' . $receipt->bc_aju . '</td>
                     //                     <td>' . $receipt->bc_document . '</td>
                     //                     <td>' . $receipt->bc_date . '</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $receipt->qty_receipt, 2) . '</td>
                     //                     <td style="text-align:right;">' . number_format(0)  . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                     //                 </tr>';
                     //     $begin += $receipt->qty_receipt;
                     //     $nod++;
@@ -740,15 +740,15 @@ class Inventory_rm extends CI_Controller
                     //                     <td style="text-align:center">' . $nod . '</td>
                     //                     <td>ISSUED</td>
                     //                     <td>' . $user->name . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime((string) $issued->created_date)) . '</td>
                     //                     <td>-</td>
                     //                     <td>' . $issued->label_no . '</td>
                     //                     <td>' . $issued->request_no . '</td>
                     //                     <td>-</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                     //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $issued->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                     //                 </tr>';
                     //     $begin -= $issued->qty;
                     //     $nod++;
@@ -761,15 +761,15 @@ class Inventory_rm extends CI_Controller
                     //                     <td style="text-align:center">' . $nod . '</td>
                     //                     <td>RETURN</td>
                     //                     <td>' . $return->username . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($return->return_date)) . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime((string) $return->return_date)) . '</td>
                     //                     <td>-</td>
                     //                     <td>' . $return->label_no . '</td>
                     //                     <td>' . $return->return_no . '</td>
                     //                     <td>-</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $return->qty, 2)  . '</td>
                     //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                     //                 </tr>';
                     //     $begin += $return->qty;
                     //     $nod++;
@@ -783,15 +783,15 @@ class Inventory_rm extends CI_Controller
                     //                     <td style="text-align:center">' . $nod . '</td>
                     //                     <td>OS RM</td>
                     //                     <td>' . $user->name . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($os_rm->created_date)) . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime((string) $os_rm->created_date)) . '</td>
                     //                     <td>-</td>
                     //                     <td>-</td>
                     //                     <td>-</td>
                     //                     <td>-</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($os_rm->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $os_rm->qty, 2)  . '</td>
                     //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                     //                 </tr>';
                     //     $begin += $os_rm->qty;
                     //     $nod++;
@@ -805,15 +805,15 @@ class Inventory_rm extends CI_Controller
                     //                     <td style="text-align:center">' . $nod . '</td>
                     //                     <td>BPM</td>
                     //                     <td>' . $user->name . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($bpm_scan->created_date)) . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime((string) $bpm_scan->created_date)) . '</td>
                     //                     <td>-</td>
                     //                     <td>' . $bpm_scan->label . '</td>
                     //                     <td>' . $bpm_scan->request_id . '</td>
                     //                     <td>' . $bpm_scan->request_date . '</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $bpm_scan->qty, 2)  . '</td>
                     //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                     //                 </tr>';
                     //     $begin += $bpm_scan->qty;
                     //     $nod++;
@@ -828,15 +828,15 @@ class Inventory_rm extends CI_Controller
                     //                     <td style="text-align:center">' . $nod . '</td>
                     //                     <td>' . $trans_type_label . '</td>
                     //                     <td>' . $transaction->username . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                     //                     <td>-</td>
                     //                     <td>-</td>
                     //                     <td>' . $transaction->request_no . '</td>
                     //                     <td>-</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                     <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                     //                 </tr>';
 
                     //     // Update balance
@@ -880,10 +880,10 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $receipt->bc_aju . '</td>
                                             <td>' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $receipt->qty_receipt, 2) . '</td>
                                             <td style="text-align:right;">' . number_format(0)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                         $begin += $receipt->qty_receipt;
                         $nod++;
@@ -914,15 +914,15 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>ADJ IN STO</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                         // Update balance
@@ -960,15 +960,15 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>BPM</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                         // Update balance
@@ -993,15 +993,15 @@ class Inventory_rm extends CI_Controller
                                                 <td style="text-align:center">' . $nod . '</td>
                                                 <td>BPM</td>
                                                 <td>' . $user->name . '</td>
-                                                <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                                <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                                 <td>-</td>
                                                 <td>' . $transaction->label . '</td>
                                                 <td>' . $transaction->request_id . '</td>
                                                 <td>' . $transaction->request_date . '</td>
-                                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                                <td style="text-align:right;">' . number_format($transaction->qty, 2)  . '</td>
+                                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                                <td style="text-align:right;">' . number_format((float) $transaction->qty, 2)  . '</td>
                                                 <td style="text-align:right;">' . number_format(0) . '</td>
-                                                <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                                <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                             </tr>';
                             $begin += $transaction->qty;
                             $nod++;
@@ -1033,15 +1033,15 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>ADJ OUT STO</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                         // Update balance
@@ -1079,15 +1079,15 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>BPB</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                         // Update balance
@@ -1125,15 +1125,15 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>KANBAN WO</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                         // Update balance
@@ -1159,15 +1159,15 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>ISSUED</td>
                                             <td>' . $user->name . '</td>
-                                            <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $issued->created_date)) . '</td>
                                             <td>-</td>
                                             <td>' . $issued->label_no . '</td>
                                             <td>' . $issued->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                             <td style="text-align:right;">' . number_format(0) . '</td>
-                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $issued->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                         $begin -= $issued->qty;
                         $nod++;
@@ -1180,18 +1180,18 @@ class Inventory_rm extends CI_Controller
 
         $html .= '<tr>
             <td colspan="12" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalBeginStock, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
-            <td style="text-align:right;">' . number_format($totalIn, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalBeginAmount, 2) . '</b></td>
+            <td style="text-align:right;">' . number_format((float) $totalIn, 2) . '</b></td>
             <td style="text-align:right;"><b></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountIn, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalOut, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountOut, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalEndingStock, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountEndingStock, 2) . '</b></td>
         </tr>';
 
         $html .= '</table></body></html>';
@@ -1216,8 +1216,8 @@ class Inventory_rm extends CI_Controller
         $filter_division = $this->input->get('filter_division');
         $filter_trans_type = $this->input->get('filter_trans_type');
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
         //Config
@@ -1530,8 +1530,8 @@ class Inventory_rm extends CI_Controller
                             <td>' . $record->prodfam . '</td>
                             <td>' . $record->sub_prodfam . '</td>
                             <td style="text-align:right;">' . number_format(@$itemReceipts[0]->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format((@$itemReceipts[0]->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
                             
                             <td style="text-align:right;">' . $record->receipt_qty . '</td>
@@ -1554,24 +1554,24 @@ class Inventory_rm extends CI_Controller
 
         $html .= '<tr>
             <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalBeginStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalEndingStock, 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalReceiptQty, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalBpmQty, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalAdjInQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalReceiptQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalBpmQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalAdjInQty, 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalQtyIssued, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyKanban, 2) . '</td>
-             <td style="text-align:right;">' . number_format($totalBpbQty, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalAdjOutQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyIssued, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyKanban, 2) . '</td>
+             <td style="text-align:right;">' . number_format((float) $totalBpbQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalAdjOutQty, 2) . '</td>
            
-            <td style="text-align:right;">' . number_format($totalQtyIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyOut, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtySelisihIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtySelisihOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtyOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtySelisihIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalQtySelisihOut, 2) . '</td>
             
         </tr>';
 
@@ -1597,8 +1597,8 @@ class Inventory_rm extends CI_Controller
         $filter_division = $this->input->get('filter_division');
         $filter_trans_type = $this->input->get('filter_trans_type');
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
         //Config
@@ -1874,10 +1874,10 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $receipt->bc_aju . '</td>
                                             <td>' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $receipt->qty_receipt, 2) . '</td>
                                             <td style="text-align:right;">' . number_format(0, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                             $begin += $receipt->qty_receipt;
                             $no++;
@@ -1896,15 +1896,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>ISSUED</td>
                                             <td>' . $user->name . '</td>
-                                            <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $issued->created_date)) . '</td>
                                             <td>-</td>
                                             <td>' . $issued->label_no . '</td>
                                             <td>' . $issued->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                             <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $issued->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                             $begin -= $issued->qty;
                             $no++;
@@ -1921,15 +1921,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>RETURN</td>
                                             <td>' . $return->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($return->return_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $return->return_date)) . '</td>
                                             <td>-</td>
                                             <td>' . $return->label_no . '</td>
                                             <td>' . $return->return_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $return->qty, 2)  . '</td>
                                             <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                             $begin += $return->qty;
                             $no++;
@@ -1948,15 +1948,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>OS RM</td>
                                             <td>' . $user->name . '</td>
-                                            <td>' . date("Y-m-d", strtotime($os_rm->created_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $os_rm->created_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($os_rm->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $os_rm->qty, 2)  . '</td>
                                             <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                             $begin += $os_rm->qty;
                             $no++;
@@ -1975,15 +1975,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>BPM</td>
                                             <td>' . $user->name . '</td>
-                                            <td>' . date("Y-m-d", strtotime($bpm_scan->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $bpm_scan->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>-</td>
-                                            <td>' . date("Y-m-d", strtotime($bpm_scan->request_date)) . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $bpm_scan->request_date)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $bpm_scan->qty, 2)  . '</td>
                                             <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                             $begin += $bpm_scan->qty;
                             $no++;
@@ -2002,15 +2002,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>' . $trans_type_label . '</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                             // Update balance
@@ -2056,10 +2056,10 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $receipt->bc_aju . '</td>
                                             <td>' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $receipt->qty_receipt, 2) . '</td>
                                             <td style="text-align:right;">' . number_format(0, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                             $begin += $receipt->qty_receipt;
                             $no++;
@@ -2093,15 +2093,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>ADJ IN STO</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                             // Update balance
@@ -2143,15 +2143,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>BPM</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                             // Update balance
@@ -2192,15 +2192,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>ADJ OUT STO</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                             // Update balance
@@ -2241,15 +2241,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>BPB</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                             // Update balance
@@ -2290,15 +2290,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>KANBAN WO</td>
                                             <td>' . $transaction->username . '</td>
-                                            <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                         </tr>';
 
                             // Update balance
@@ -2328,15 +2328,15 @@ class Inventory_rm extends CI_Controller
                                             <td>' . $record->uom . '</td>
                                             <td>ISSUED</td>
                                             <td>' . $user->name . '</td>
-                                            <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                                            <td>' . date("Y-m-d", strtotime((string) $issued->created_date)) . '</td>
                                             <td>-</td>
                                             <td>' . $issued->label_no . '</td>
                                             <td>' . $issued->request_no . '</td>
                                             <td>-</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                             <td style="text-align:right;">' . number_format(0) . '</td>
-                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $issued->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                                         </tr>';
                             $begin -= $issued->qty;
                             $no++;
@@ -2349,10 +2349,10 @@ class Inventory_rm extends CI_Controller
 
         // $html .= '<tr>
         //     <td colspan="14" style="text-align:right;"><b>GRAND TOTAL</b></td>
-        //     <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalBeginStock, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalIn, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalOut, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalEndingStock, 2) . '</td>
         // </tr>';
 
         $html .= '</table></body></html>';

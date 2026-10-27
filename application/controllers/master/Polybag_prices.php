@@ -39,8 +39,8 @@ class Polybag_prices extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $id = base64_decode($this->input->get('id'));
-            $size = base64_decode($this->input->get('size'));
+            $id = base64_decode((string) $this->input->get('id'));
+            $size = base64_decode((string) $this->input->get('size'));
 
             $this->db->select('*');
             $this->db->from('polybag_price_histories');
@@ -57,7 +57,7 @@ class Polybag_prices extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -168,7 +168,7 @@ class Polybag_prices extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('polybag_prices', ["id" => $id], $post);
 
@@ -365,8 +365,8 @@ class Polybag_prices extends CI_Controller
                     <td>' . $data['weigth'] . '</td>
                     <td>' . $data['uom'] . '</td>
                     <td>' . $data['qty'] . '</td>
-                    <td>' . number_format($data['price_kg'],2) . '</td>
-                    <td>' . number_format($data['price_pcs'],2) . '</td>
+                    <td>' . number_format((float) $data['price_kg'],2) . '</td>
+                    <td>' . number_format((float) $data['price_pcs'],2) . '</td>
                     <td>' . $data['status'] . '</td>';
             $no++;
         }

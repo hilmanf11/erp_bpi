@@ -184,8 +184,8 @@ class Dn_boxs extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_box_name = base64_decode($this->input->get('item_box_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_box_name = base64_decode((string) $this->input->get('item_box_id'));
 
             $this->db->select('a.*, b.name as item_box_name, b.color as item_box_color, b.code as item_box_code, b.size as item_box_size, b.uom');
             $this->db->from('dn_boxs a');
@@ -204,9 +204,9 @@ class Dn_boxs extends CI_Controller
     // public function datatableUpdates()
     // {
     //     if ($this->input->get()) {
-    //         $customer_id = base64_decode($this->input->get('customer_id'));
-    //         $division_id = base64_decode($this->input->get('division_id'));
-    //         $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+    //         $customer_id = base64_decode((string) $this->input->get('customer_id'));
+    //         $division_id = base64_decode((string) $this->input->get('division_id'));
+    //         $customer_address_id = base64_decode((string) $this->input->get('customer_address_id'));
             
     //         $this->db->select('a.*, b.number as item_fg_number, b.number_customer as item_fg_customer, a.currency');
     //         $this->db->from('customer_items a');
@@ -226,10 +226,10 @@ class Dn_boxs extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
-            $division_id = base64_decode($this->input->get('division_id'));
-            $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+            $customer_id = base64_decode((string) $this->input->get('customer_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
+            $division_id = base64_decode((string) $this->input->get('division_id'));
+            $customer_address_id = base64_decode((string) $this->input->get('customer_address_id'));
 
             $this->db->select('*');
             $this->db->from('customer_item_histories');
@@ -248,7 +248,7 @@ class Dn_boxs extends CI_Controller
     public function create()
     {
         $header  = $this->input->post('header');
-        $details = json_decode($this->input->post('details'), true);
+        $details = json_decode((string) $this->input->post('details'), true);
 
         if (empty($header) || empty($details)) {
             echo json_encode([
@@ -261,8 +261,8 @@ class Dn_boxs extends CI_Controller
 
         $trans_date = $header['transaction_date'];
         $div        = $header['division'];
-        $year       = date("Y", strtotime($trans_date));
-        $monthYear  = date("my", strtotime($trans_date));
+        $year       = date("Y", strtotime((string) $trans_date));
+        $monthYear  = date("my", strtotime((string) $trans_date));
 
         $sqlGetID = $this->db->query("SELECT MAX(LEFT(document_no,3)) as kode 
                                     FROM dn_boxs 
@@ -698,7 +698,7 @@ class Dn_boxs extends CI_Controller
                                         <td>Doc No</td>
                                         <td>:</td>
                                         <td><b>' . @$dn_boxss->document_no . '</b></td>
-                                        <td style="text-align:right;"><b>' . date("d F Y", strtotime($dn_boxss->transaction_date)) . '</b></td>
+                                        <td style="text-align:right;"><b>' . date("d F Y", strtotime((string) $dn_boxss->transaction_date)) . '</b></td>
                                     </tr>
                                 </table>
                                 <table id="customers">
@@ -724,7 +724,7 @@ class Dn_boxs extends CI_Controller
                                 <td style="text-align:center;">' . $record['item_box_size'] . '</td>
                                 <td style="text-align:center;">' . $record['item_box_color'] . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $record['qty'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['remarks'] . '</td>
                             </tr>';
                 $row++;
@@ -733,7 +733,7 @@ class Dn_boxs extends CI_Controller
             }
             $html .= '<tr>
                 <td colspan="6" style="text-align:center; font-weight:bold;">TOTAL</td>
-                <td style="text-align:right; font-weight:bold;">' . number_format($subtotal, 2, ",", ".") . '</td>
+                <td style="text-align:right; font-weight:bold;">' . number_format((float) $subtotal, 2, ",", ".") . '</td>
                 <td>-</td>
             </tr>';
 

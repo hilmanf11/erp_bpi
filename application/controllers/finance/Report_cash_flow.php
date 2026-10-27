@@ -45,8 +45,8 @@ class Report_cash_flow extends CI_Controller
     // }
 
     function getData($filter_from, $filter_to, $number){
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
+        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
 
         $this->db->select('b.account_number, b.account_name, b.local_debit, b.local_kredit');
         $this->db->from('account_cash_flow a');
@@ -100,12 +100,12 @@ class Report_cash_flow extends CI_Controller
             $local_credit += @$journal->local_credit;
         }
 
-        if(($begin_debit - abs($begin_credit)) > 0){
-            $final_begin_debit = abs($begin_debit - abs($begin_credit));
+        if(($begin_debit - abs($begin_credit ?? 0)) > 0){
+            $final_begin_debit = abs($begin_debit - abs($begin_credit ?? 0));
             $final_begin_credit = 0;
         }else{
             $final_begin_debit = 0;
-            $final_begin_credit = abs($begin_debit - abs($begin_credit));
+            $final_begin_credit = abs($begin_debit - abs($begin_credit ?? 0));
         }
 
         $begin_balance = ($final_begin_debit - $final_begin_credit);
@@ -144,18 +144,18 @@ class Report_cash_flow extends CI_Controller
             header("Content-Disposition: attachment; filename=report_ap_$format.xls");
         }
 
-        $filter_date = base64_decode($this->input->get("filter_date"));
+        $filter_date = base64_decode((string) $this->input->get("filter_date"));
 
-        $year_now = date("Y", strtotime($filter_date));
-        $filter_from_now = date("Y-01-01", strtotime($filter_date));
+        $year_now = date("Y", strtotime((string) $filter_date));
+        $filter_from_now = date("Y-01-01", strtotime((string) $filter_date));
         $filter_to_now = $filter_date;
 
-        $year_bf = date("Y", strtotime('-1 years', strtotime($filter_date)));
-        $filter_from_bf = date("Y-01-01", strtotime('-1 years', strtotime($filter_date)));
-        $filter_to_bf = date("Y-12-t", strtotime('-1 years', strtotime($filter_date)));
+        $year_bf = date("Y", strtotime('-1 years', strtotime((string) $filter_date)));
+        $filter_from_bf = date("Y-01-01", strtotime('-1 years', strtotime((string) $filter_date)));
+        $filter_to_bf = date("Y-12-t", strtotime('-1 years', strtotime((string) $filter_date)));
 
-        $date_header_ind = date("d F Y", strtotime($filter_date));
-        $date_header_eng = date("F d, Y", strtotime($filter_date));
+        $date_header_ind = date("d F Y", strtotime((string) $filter_date));
+        $date_header_eng = date("F d, Y", strtotime((string) $filter_date));
 
         //Config
         $this->db->select('*');

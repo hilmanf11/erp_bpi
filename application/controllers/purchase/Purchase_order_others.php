@@ -160,7 +160,7 @@ class Purchase_order_others extends CI_Controller
     }
 
     public function datatable_updates(){
-        $po_no = base64_decode($this->input->get('po_no'));
+        $po_no = base64_decode((string) $this->input->get('po_no'));
         $records = $this->crud->query("SELECT b.number as item_number, b.name as item_name, a.item_rm_id, d.mpq, d.moq, a.qty, c.currency, d.price, a.total as amount, a.delivery_date, a.remarks
             FROM purchase_order_others a
             JOIN item_rm b on a.item_rm_id = b.id
@@ -432,9 +432,9 @@ class Purchase_order_others extends CI_Controller
                                         <td width="30%"><b>' . @$supplier->name . '</b></td>
                                         <td style="text-align:right; padding-right: 20px;" rowspan="7">
                                             Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
-                                            PO Date:<br><b>' . date("d F Y", strtotime($purchase_order_others->po_date)) . '</b><br>
+                                            PO Date:<br><b>' . date("d F Y", strtotime((string) $purchase_order_others->po_date)) . '</b><br>
                                             Revision:<br><b>' . $purchase_order_others->revision . '</b><br>
-                                            Revision Date:<br><b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
+                                            Revision Date:<br><b>' . date("d F Y", strtotime((string) $revision_date)) . '</b><br>
                                             Payment Terms:<br><b>' . $supplier->payment_term . ' Days</b>
                                         </td>
                                     </tr>
@@ -493,10 +493,10 @@ class Purchase_order_others extends CI_Controller
                                 <td  style="text-align:center;">' . $no . '</td>
                                 <td>' . $record['item_rm_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
-                                <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $record['qty'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
                                 <td style="text-align:center;">' . $record['delivery_date'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['price'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $record['price'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . number_format(($record['qty'] * $record['price']), 2) . '</td>
                             </tr>';
@@ -532,7 +532,7 @@ class Purchase_order_others extends CI_Controller
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Sub Total</th>
-                                <th style="text-align:right;">' . number_format($subtotal, 2) . '</th>
+                                <th style="text-align:right;">' . number_format((float) $subtotal, 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">VAT (' . $tax . '%)</th>
@@ -715,10 +715,10 @@ class Purchase_order_others extends CI_Controller
                         <td>' . $data['supplier_name'] . '</td>
                         <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
-                        <td>' . number_format($data['mpq'], 2) . '</td>
-                        <td>' . number_format($data['moq'], 2) . '</td>
-                        <td>' . number_format($data['qty'], 2) . '</td>
-                        <td>' . number_format($data['price'], 4, ",", ".") . '</td>
+                        <td>' . number_format((float) $data['mpq'], 2) . '</td>
+                        <td>' . number_format((float) $data['moq'], 2) . '</td>
+                        <td>' . number_format((float) $data['qty'], 2) . '</td>
+                        <td>' . number_format((float) $data['price'], 4, ",", ".") . '</td>
                         <td>' . number_format(($data['qty'] * $data['price']), 2, ",", ".") . '</td>
                         <td>' . $data['currency'] . '</td>
                         <td>' . $data['uom'] . '</td>

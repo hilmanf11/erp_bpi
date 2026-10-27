@@ -315,8 +315,8 @@ class Checksheets extends CI_Controller
     // public function checksheet_id($trans_date)
     // {
     //     $trans_date = base64_decode($trans_date);
-    //     $datenow = date("Y-m-d", strtotime($trans_date));
-    //     $datenow2 = date("Ymd", strtotime($trans_date));
+    //     $datenow = date("Y-m-d", strtotime((string) $trans_date));
+    //     $datenow2 = date("Ymd", strtotime((string) $trans_date));
 
     //     $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM checksheets WHERE trans_date like '%$datenow%'");
     //     $rowID = $sqlGetID->row();
@@ -336,8 +336,8 @@ class Checksheets extends CI_Controller
 
     private function generate_checksheet_id($trans_date)
     {
-        $datenow = date("Y-m-d", strtotime($trans_date));
-        $datenow2 = date("Ymd", strtotime($trans_date));
+        $datenow = date("Y-m-d", strtotime((string) $trans_date));
+        $datenow2 = date("Ymd", strtotime((string) $trans_date));
 
         $sqlGetID = $this->db->query("SELECT MAX(`number`) AS kode FROM checksheets WHERE trans_date = '$datenow'");
         $rowID = $sqlGetID->row();
@@ -823,7 +823,7 @@ class Checksheets extends CI_Controller
     //                     <tr>
     //                         <td width="100" style="padding:5px;">Date</td>
     //                         <td width="20">:</td>
-    //                         <td><b>' . date("d F Y", strtotime($checksheet->trans_date)) . '</b></td>
+    //                         <td><b>' . date("d F Y", strtotime((string) $checksheet->trans_date)) . '</b></td>
     //                     </tr>
     //                     <tr>
     //                         <td style="padding:5px;">Product No</td>
@@ -1019,7 +1019,7 @@ class Checksheets extends CI_Controller
                                     </tr>
                                    <tr>
                                         <td style="width:15mm; height: 5mm; style="text-align:left; border: 1px solid black;">
-                                            <small style="font-size:12px;">Qty</small><br><b style="font-size:16px;">' . number_format($wip_receipt_label->qty, 2) . '</b>
+                                            <small style="font-size:12px;">Qty</small><br><b style="font-size:16px;">' . number_format((float) $wip_receipt_label->qty, 2) . '</b>
                                         </td>
 
                                         <td style="text-align:left; border: 1px solid black;">
@@ -1193,7 +1193,7 @@ class Checksheets extends CI_Controller
                                     </tr>
                                    <tr>
                                         <td style="width:15mm; height: 5mm; style="text-align:left; border: 1px solid black;">
-                                            <small style="font-size:12px;">Qty</small><br><b style="font-size:16px;">' . number_format($wip_receipt_label->qty, 2) . '</b>
+                                            <small style="font-size:12px;">Qty</small><br><b style="font-size:16px;">' . number_format((float) $wip_receipt_label->qty, 2) . '</b>
                                         </td>
 
                                         <td style="text-align:left; border: 1px solid black;">
@@ -1375,10 +1375,10 @@ class Checksheets extends CI_Controller
                             <td>' . $data['product_no'] . '</td>
                             <td>' . $data['product_name'] . '</td>
                             <td>' . $data['uom'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                            <td>' . number_format($data['receipt']) . '</td>
-                            <td>' . number_format($data['accumulate']) . '</td>
-                            <td>' . number_format($data['balance']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
+                            <td>' . number_format((float) $data['receipt']) . '</td>
+                            <td>' . number_format((float) $data['accumulate']) . '</td>
+                            <td>' . number_format((float) $data['balance']) . '</td>
                             <td>' . $data['prod_date'] . '</td>
                             <td>' . $data['packing_date'] . '</td>
                             <td>' . $data['qc_1'] . '</td>

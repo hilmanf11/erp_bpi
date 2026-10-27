@@ -105,7 +105,7 @@ class Sales_dashboard extends CI_Controller
     // Get Rate di memory (Optimasi mencegah N+1 Query)
     private function _find_rate_in_cache($date, $currency) {
         if ($currency == "IDR" || empty($currency)) return 1.0;
-        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($date)));
+        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $date)));
         
         foreach ($this->_get_rates as $r) {
             if ($r['currency_from'] == $currency && ($r['currency_to'] ?? 'IDR') == 'IDR') {
@@ -476,7 +476,7 @@ class Sales_dashboard extends CI_Controller
             'customer_values' => array_values(array_map(function($v) { return round($v, 2); }, $top_10_customers)),
             'avg_values'      => array_fill(0, count($trend_values), round($average, 2)),
             'title'           => "Sales Amount (IDR) - " . (!empty($filter_division) ? strtoupper($filter_division) : "ALL"),
-            'period'          => "Period: " . date($label_format, strtotime($period_start_date)) . " to " . date($label_format, strtotime($period_end_date)),
+            'period'          => "Period: " . date($label_format, strtotime((string) $period_start_date)) . " to " . date($label_format, strtotime((string) $period_end_date)),
             'conclusion'      => null,
             'impact'          => null,
         ];
@@ -498,7 +498,7 @@ class Sales_dashboard extends CI_Controller
         $years  = [];
 
         if ($filter_period_type == 'monthly') {
-            $start = date('Y-m-01', strtotime($filter_period_value));
+            $start = date('Y-m-01', strtotime((string) $filter_period_value));
             $currentDate = new DateTime($start);
             
             for ($i = 5; $i >= 0; $i--) {
@@ -552,7 +552,7 @@ class Sales_dashboard extends CI_Controller
             'title'                  => "Forecast vs Sales - " . strtoupper($filter_period_type),
             'amount_title'           => "Forecast vs Sales in Amount - " . strtoupper($filter_period_type),
             'qty_title'              => "Forecast vs Sales in QTY - " . strtoupper($filter_period_type),
-            'period'                 => "Period: " . date("F Y", strtotime($period_start)) . " to " . date("F Y", strtotime($period_end)),
+            'period'                 => "Period: " . date("F Y", strtotime((string) $period_start)) . " to " . date("F Y", strtotime((string) $period_end)),
             'forecast_qty_values'    => array_values($forecast_qty_map),
             'sales_qty_values'       => array_values($sales_qty_map),
             'forecast_amount_values' => array_values($forecast_amount_map),
@@ -573,7 +573,7 @@ class Sales_dashboard extends CI_Controller
         $years  = [];
 
         if ($filter_period_type == 'monthly') {
-            $start = date('Y-m-01', strtotime($filter_period_value));
+            $start = date('Y-m-01', strtotime((string) $filter_period_value));
             $currentDate = new DateTime($start);
             for ($i = 5; $i >= 0; $i--) {
                 $date = clone $currentDate;
@@ -655,7 +655,7 @@ class Sales_dashboard extends CI_Controller
             'title'                  => "Forecast vs Sales Order - " . strtoupper($filter_period_type),
             'amount_title'           => "Forecast vs Sales Order in Amount - " . strtoupper($filter_period_type),
             'qty_title'              => "Forecast vs Sales Order in QTY - " . strtoupper($filter_period_type),
-            'period'                 => "Period: " . date("F Y", strtotime($period_start)) . " to " . date("F Y", strtotime($period_end)),
+            'period'                 => "Period: " . date("F Y", strtotime((string) $period_start)) . " to " . date("F Y", strtotime((string) $period_end)),
             'forecast_qty_values'    => array_values($forecast_qty_map),
             'sales_qty_values'       => array_values($so_qty_map),
             'forecast_amount_values' => array_values($forecast_amount_map),
@@ -676,7 +676,7 @@ class Sales_dashboard extends CI_Controller
         $years  = [];
 
         if ($filter_period_type == 'monthly') {
-            $start = date('Y-m-01', strtotime($filter_period_value));
+            $start = date('Y-m-01', strtotime((string) $filter_period_value));
             $currentDate = new DateTime($start);
             for ($i = 5; $i >= 0; $i--) {
                 $date = clone $currentDate;
@@ -769,7 +769,7 @@ class Sales_dashboard extends CI_Controller
             'title'               => "Sales Order VS Actual Sales - " . strtoupper($filter_period_type),
             'amount_title'        => "Sales Order VS Actual Sales in Amount - " . strtoupper($filter_period_type),
             'qty_title'           => "Sales Order VS Actual Sales in QTY - " . strtoupper($filter_period_type),
-            'period'              => "Period: " . date("F Y", strtotime($period_start)) . " to " . date("F Y", strtotime($period_end)),
+            'period'              => "Period: " . date("F Y", strtotime((string) $period_start)) . " to " . date("F Y", strtotime((string) $period_end)),
             'order_qty_values'    => array_values($order_qty_map),
             'sales_qty_values'    => array_values($sales_qty_map),
             'order_amount_values' => array_values($order_amount_map),

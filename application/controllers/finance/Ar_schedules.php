@@ -35,8 +35,8 @@ class Ar_schedules extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=ar_aging_schedules_$format.xls");
         }
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $filter_customers = $this->input->get("filter_customers");
 
         $start  = new DateTime($filter_from);
@@ -136,11 +136,11 @@ class Ar_schedules extends CI_Controller
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $customer['name'] . '</td>
                             <td style="text-align:center;">' . $customer['currency'] . '</td>
-                            <td style="text-align:right;">' . number_format($total_current, 4, ",", ".") . '</td>
-                            <td style="text-align:right;">' . number_format($total_week_1, 4, ",", ".") . '</td>
-                            <td style="text-align:right;">' . number_format($total_week_2, 4, ",", ".") . '</td>
-                            <td style="text-align:right;">' . number_format($total_week_3, 4, ",", ".") . '</td>
-                            <td style="text-align:right;">' . number_format($total_week_4, 4, ",", ".") . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_current, 4, ",", ".") . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_week_1, 4, ",", ".") . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_week_2, 4, ",", ".") . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_week_3, 4, ",", ".") . '</td>
+                            <td style="text-align:right;">' . number_format((float) $total_week_4, 4, ",", ".") . '</td>
                         </tr>';
             $no++;
 
@@ -153,11 +153,11 @@ class Ar_schedules extends CI_Controller
 
         $html .= '  <tr>
                         <td style="text-align:right;" colspan="3"><b>GRAND TOTAL</b></td>
-                        <td style="text-align:right;">' . number_format($grand_total_current, 4, ",", ".") . '</td>
-                        <td style="text-align:right;">' . number_format($grand_total_week_1, 4, ",", ".") . '</td>
-                        <td style="text-align:right;">' . number_format($grand_total_week_2, 4, ",", ".") . '</td>
-                        <td style="text-align:right;">' . number_format($grand_total_week_3, 4, ",", ".") . '</td>
-                        <td style="text-align:right;">' . number_format($grand_total_week_4, 4, ",", ".") . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_current, 4, ",", ".") . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_week_1, 4, ",", ".") . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_week_2, 4, ",", ".") . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_week_3, 4, ",", ".") . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_week_4, 4, ",", ".") . '</td>
                     </tr>';
 
         $html .= '</table></body></html>';

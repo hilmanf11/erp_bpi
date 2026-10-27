@@ -41,7 +41,7 @@ class Compound_alias extends CI_Controller
      public function datatables()
      {
          if ($this->input->post()) {
-             $filters = json_decode($this->input->post('filterRules'));
+             $filters = json_decode((string) $this->input->post('filterRules'));
              $page = $this->input->post('page');
              $rows = $this->input->post('rows');
              //Pagination 1-10
@@ -108,7 +108,7 @@ class Compound_alias extends CI_Controller
       public function update()
       {
           if ($this->input->post()) {
-                $id   = base64_decode($this->input->get('id'));
+                $id   = base64_decode((string) $this->input->get('id'));
                 $post = $this->input->post();
 
                 $compound_alias = $this->crud->read('compound_alias', [], ["item_fg_id" => @$post['item_fg_id'],"item_rm_id" => @$post['item_rm_id']]);

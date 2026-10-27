@@ -107,7 +107,7 @@ class Issued_materials extends CI_Controller
         $item_rm_ids = json_decode(base64_decode($item_rm_ids_encoded));
 
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             $page = isset($page) ? intval($page) : 1;
@@ -322,7 +322,7 @@ class Issued_materials extends CI_Controller
     public function datatables()
     {
         if ($this->input->get()) {
-            $request_no = base64_decode($this->input->get('request_no'));
+            $request_no = base64_decode((string) $this->input->get('request_no'));
             //Select Query
             $this->db->select('a.*, b.number as item_number, c.number as item_rm_no, c.name as item_rm_name, c.uom, COALESCE(d.qty_req, 0) as qty_req, 0 as qty_req_crusher, f.warehouse, (COALESCE(d.qty_req,0) - a.qty) as balance');
             $this->db->from('issued_materials a');
@@ -461,7 +461,7 @@ class Issued_materials extends CI_Controller
     // public function update2()
     // {
     //     if ($this->input->post()) {
-    //         $id   = base64_decode($this->input->get('id'));
+    //         $id   = base64_decode((string) $this->input->get('id'));
     //         $post = $this->input->post();
     //         $send = $this->crud->update('issued_material_details', ["id" => $id], $post);
     //         echo $send;
@@ -778,7 +778,7 @@ class Issued_materials extends CI_Controller
     public function update2()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('issued_material_details', ["id" => $id], $post);
             echo $send;

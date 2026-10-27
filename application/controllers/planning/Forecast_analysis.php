@@ -38,7 +38,7 @@ class Forecast_analysis extends CI_Controller
         $numeric_value = (float) $numeric_value;
 
         // Format the number to '15.000'
-        return number_format($numeric_value, 0, '.', '.');
+        return number_format((float) $numeric_value, 0, '.', '.');
     }
 
     //GET PERIOD
@@ -70,14 +70,14 @@ class Forecast_analysis extends CI_Controller
         $p_month = $this->input->post('p_month');
         $p_year = $this->input->post('p_year');
         $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);
@@ -104,20 +104,20 @@ class Forecast_analysis extends CI_Controller
             header("Content-Disposition: attachment; filename=forecast_analysis_$format.xls");
         }
 
-        $filter_period_year = base64_decode($this->input->get("filter_period_year"));
-        $filter_period_month = base64_decode($this->input->get("filter_period_month"));
+        $filter_period_year = base64_decode((string) $this->input->get("filter_period_year"));
+        $filter_period_month = base64_decode((string) $this->input->get("filter_period_month"));
         $filter_customer_name = $this->input->get("filter_customer_name");
         $filter_item_fg = $this->input->get("filter_item_fg");
-        $filter_product_family = base64_decode($this->input->get("filter_product_family"));
+        $filter_product_family = base64_decode((string) $this->input->get("filter_product_family"));
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         $selected_month_int = (int)$filter_period_month;

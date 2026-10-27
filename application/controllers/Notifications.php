@@ -323,7 +323,7 @@ class Notifications extends CI_Controller
     //     $user = base64_decode($user);
     //     $name = base64_decode($name);
 
-    //     $filters = json_decode($this->input->post('filterRules'));
+    //     $filters = json_decode((string) $this->input->post('filterRules'));
     //     $page = $this->input->post('page');
     //     $rows = $this->input->post('rows');
 
@@ -406,7 +406,7 @@ class Notifications extends CI_Controller
         $user = base64_decode($user);
         $name = base64_decode($name);
 
-        $filters = json_decode($this->input->post('filterRules'));
+        $filters = json_decode((string) $this->input->post('filterRules'));
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
 

@@ -32,9 +32,9 @@ class Report_balance_sheets extends CI_Controller
     }
 
     function getData($filter_from, $filter_to, $category, $modul, $name){
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
-        $period = date("Ym", strtotime($filter_from));
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
+        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
+        $period = date("Ym", strtotime((string) $filter_from));
 
         $this->db->select('b.account_number, b.account_name, b.local_debit, b.local_kredit');
         $this->db->from('account_statements a');
@@ -55,9 +55,9 @@ class Report_balance_sheets extends CI_Controller
     }
 
     function getDataRotate($filter_from, $filter_to, $category, $modul, $name){
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
-        $period = date("Ym", strtotime($filter_from));
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
+        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
+        $period = date("Ym", strtotime((string) $filter_from));
 
         $this->db->select('b.account_number, b.account_name, b.local_debit, b.local_kredit');
         $this->db->from('account_statements a');
@@ -79,8 +79,8 @@ class Report_balance_sheets extends CI_Controller
     }
 
     function balanceSheet($filter_from){
-        $jan = strtotime(date("Y-01-01", strtotime($filter_from)));
-        $now = strtotime($filter_from);
+        $jan = strtotime(date("Y-01-01", strtotime((string) $filter_from)));
+        $now = strtotime((string) $filter_from);
         
         $total = 0;
         if($filter_from != date("Y-01-01")){
@@ -102,9 +102,9 @@ class Report_balance_sheets extends CI_Controller
         }
 
         if ($amount >= 0) {
-            return number_format($amount, 2, ",", ".");
+            return number_format((float) $amount, 2, ",", ".");
         } else {
-            return "(".number_format(abs($amount), 2, ",", ".").")";
+            return "(".number_format(abs($amount ?? 0), 2, ",", ".").")";
         }
     }
 
@@ -118,9 +118,9 @@ class Report_balance_sheets extends CI_Controller
 
     public function generateData(){
         $filter_date   = $this->input->post('filter_date');
-        $filter_from = date("Y-m-01", strtotime($filter_date));
-        $filter_to = date("Y-m-t", strtotime($filter_date));
-        $period = date("Ym", strtotime($filter_date));
+        $filter_from = date("Y-m-01", strtotime((string) $filter_date));
+        $filter_to = date("Y-m-t", strtotime((string) $filter_date));
+        $period = date("Ym", strtotime((string) $filter_date));
 
         //Current Assets
         $cash_on_hand = $this->getData($filter_from, $filter_to, "Current Assets", "Balance Sheet", "Cash on Hand");
@@ -213,7 +213,7 @@ class Report_balance_sheets extends CI_Controller
 
     public function generateData2(){
         $filter_date = $this->input->post('filter_date');
-        $period = date("Ym", strtotime($filter_date));
+        $period = date("Ym", strtotime((string) $filter_date));
         $getData = $this->crud->reads("balance_sheets", [], ["index" => 1, "period" => $period]);
 
         $datas = array();
@@ -285,8 +285,8 @@ class Report_balance_sheets extends CI_Controller
     }
 
     function datatableYear($account_number, $filter_date, $header = ""){
-        $filter_year = date('Y', strtotime($filter_date));
-        $filter_month = date('m', strtotime($filter_date));
+        $filter_year = date('Y', strtotime((string) $filter_date));
+        $filter_month = date('m', strtotime((string) $filter_date));
 
         $months = [];
 
@@ -376,12 +376,12 @@ class Report_balance_sheets extends CI_Controller
             header("Content-Disposition: attachment; filename=balance_sheets_$format.xls");
         }
 
-        $filter_date = base64_decode($this->input->get("filter_date"));
-        $filter_display = base64_decode($this->input->get("filter_display"));
+        $filter_date = base64_decode((string) $this->input->get("filter_date"));
+        $filter_display = base64_decode((string) $this->input->get("filter_display"));
 
-        $period = date("Ym", strtotime($filter_date));
-        $filter_from = date("Y-m-01", strtotime($filter_date));
-        $filter_to = date("Y-m-t", strtotime($filter_date));
+        $period = date("Ym", strtotime((string) $filter_date));
+        $filter_from = date("Y-m-01", strtotime((string) $filter_date));
+        $filter_to = date("Y-m-t", strtotime((string) $filter_date));
 
         //Config
         $this->db->select('*');

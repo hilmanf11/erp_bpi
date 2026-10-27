@@ -57,7 +57,7 @@ class Create_tasks extends CI_Controller
         $ids_array = explode(',', $phase_ids);
         
         $quoted_ids = array_map(function($id) {
-            return "'" . $this->db->escape_str(trim($id)) . "'";
+            return "'" . $this->db->escape_str(trim((string) $id)) . "'";
         }, $ids_array);
         
         $phase_ids_formatted = implode(',', $quoted_ids);
@@ -119,7 +119,7 @@ class Create_tasks extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -179,7 +179,7 @@ class Create_tasks extends CI_Controller
 
     public function datatableDetails()
     {
-        $number = base64_decode($this->input->get('project_number'));
+        $number = base64_decode((string) $this->input->get('project_number'));
 
         if ($number) {
             $this->db->select('b.*, a.project_category');
@@ -358,8 +358,8 @@ class Create_tasks extends CI_Controller
                             'department'     => $row['department'] ?? null,
                             'sub_department' => $row['sub_department'] ?? null,
                             'level'          => $this->input->post('project_level') ?? null,
-                            'start_date'     => (!empty($row['start_date'])) ? date('Y-m-d', strtotime($row['start_date'])) : null,
-                            'end_date'       => (!empty($row['end_date'])) ? date('Y-m-d', strtotime($row['end_date'])) : null,
+                            'start_date'     => (!empty($row['start_date'])) ? date('Y-m-d', strtotime((string) $row['start_date'])) : null,
+                            'end_date'       => (!empty($row['end_date'])) ? date('Y-m-d', strtotime((string) $row['end_date'])) : null,
                             'remark'         => $row['remark'] ?? null
                         );
                     }
@@ -421,8 +421,8 @@ class Create_tasks extends CI_Controller
                         'department'     => $row['department'] ?? null,
                         'sub_department' => $row['sub_department'] ?? null,
                         'level'          => $row['level'] ?? null,
-                        'start_date'     => (!empty($row['start_date'])) ? date('Y-m-d', strtotime($row['start_date'])) : null,
-                        'end_date'       => (!empty($row['end_date'])) ? date('Y-m-d', strtotime($row['end_date'])) : null,
+                        'start_date'     => (!empty($row['start_date'])) ? date('Y-m-d', strtotime((string) $row['start_date'])) : null,
+                        'end_date'       => (!empty($row['end_date'])) ? date('Y-m-d', strtotime((string) $row['end_date'])) : null,
                         'remark'         => $row['remark'] ?? null
                     );
                 }

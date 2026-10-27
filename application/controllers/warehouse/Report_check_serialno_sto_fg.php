@@ -35,11 +35,11 @@ class Report_check_serialno_sto_fg extends CI_Controller
             header("Content-Disposition: attachment; filename=check_serial_no_sto_rm_$format.xls");
         }
         
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_label_no = base64_decode($this->input->get("filter_label_no"));
-        $filter_division = base64_decode($this->input->get("filter_division"));
-        $filter_items = base64_decode($this->input->get("filter_items"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
+        $filter_label_no = base64_decode((string) $this->input->get("filter_label_no"));
+        $filter_division = base64_decode((string) $this->input->get("filter_division"));
+        $filter_items = base64_decode((string) $this->input->get("filter_items"));
 
         //Details
         $this->db->select('a.label_no, b.number as item_number, b.name as item_name, a.qty, a.division, a.uom, a.created_by, a.created_date, a.lot_no');
@@ -108,7 +108,7 @@ class Report_check_serialno_sto_fg extends CI_Controller
                                 <td>' . $data['division'] . '</td>
                                 <td>' . $data['lot_no'] . '</td>
                                 <td>' . $data['uom'] . '</td>
-                                <td style="text-align:right">' . number_format($data['qty'], 2) . '</td>
+                                <td style="text-align:right">' . number_format((float) $data['qty'], 2) . '</td>
                                 <td>' . $data['created_by'] . '</td>
                                 <td>' . $data['created_date'] . '</td>
                             </tr>';

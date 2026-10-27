@@ -167,8 +167,8 @@ class Consumable_part extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_item_rm_id = base64_decode((string) $this->input->get('filter_item_rm_id'));
 
             $this->db->select('a.*, 
             (CASE 
@@ -212,7 +212,7 @@ class Consumable_part extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
 
             // $this->db->select('a.*,c.number as item_rm_number, c.name as item_rm_name, c.uom, d.name as item_family_name');
             $this->db->select('a.*, 

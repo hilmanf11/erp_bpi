@@ -107,7 +107,7 @@ class Item_equivalent extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
+            $number = base64_decode((string) $this->input->get('number'));
 
             $this->db->select('a.*,c.name as item_family_name');
             $this->db->from('item_equivalents a');
@@ -126,7 +126,7 @@ class Item_equivalent extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $item_rm_id = base64_decode($this->input->get('item_rm_id'));
+            $item_rm_id = base64_decode((string) $this->input->get('item_rm_id'));
 
             $this->db->select('a.*,c.name as item_family_name');
             $this->db->from('item_equivalents a');

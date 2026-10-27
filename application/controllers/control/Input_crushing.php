@@ -62,8 +62,8 @@ class Input_crushing extends CI_Controller
     public function input_crushing_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $year       = date("Y", strtotime($trans_date));
-        $datenow    = date("ymd", strtotime($trans_date));
+        $year       = date("Y", strtotime((string) $trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
         $sqlGetID   = $this->db->query("SELECT MAX(SUBSTR(document, -4, 4)) as kode FROM input_crushing WHERE trans_date like '%$year%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -144,7 +144,7 @@ class Input_crushing extends CI_Controller
 
     public function datatablesTemp()
     {
-        $workorder = base64_decode($this->input->get('workorder'));
+        $workorder = base64_decode((string) $this->input->get('workorder'));
         //var_dump($workorder);
 
         $this->db->select('b.id, b.number, b.name, b.uom');
@@ -226,7 +226,7 @@ class Input_crushing extends CI_Controller
      public function datatableDetails()
      {
          if ($this->input->get()) {
-            $document = base64_decode($this->input->get('document'));
+            $document = base64_decode((string) $this->input->get('document'));
 
             $this->db->select('a.*, b.number as item_number, b.name as item_name, d.number as machine_number');
             $this->db->from('input_crushing a');
@@ -268,7 +268,7 @@ class Input_crushing extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
 
             $itemNg = $this->crud->read("input_crushing", [], ["id" => $id]);
@@ -480,8 +480,8 @@ class Input_crushing extends CI_Controller
 
                 // generate autonumber (satu nomor untuk semua row dalam upload ini)
                 $trans_date = $data['trans_date'];
-                $year       = date("Y", strtotime($trans_date));
-                $datenow    = date("ymd", strtotime($trans_date));
+                $year       = date("Y", strtotime((string) $trans_date));
+                $datenow    = date("ymd", strtotime((string) $trans_date));
                 $sqlGetID   = $this->db->query("
                     SELECT MAX(RIGHT(document,4)) as kode 
                     FROM input_crushing 
@@ -610,7 +610,7 @@ class Input_crushing extends CI_Controller
                             <td>' . $data['item_rm_number'] . '</td>
                             <td>' . $data['item_rm_name'] . '</td>
                             <td style="text-align:center;">' . $data['uom'] . '</td>
-                            <td>' . number_format($data['qty'],2) . '</td>
+                            <td>' . number_format((float) $data['qty'],2) . '</td>
                             <td>' . $data['machine_number'] . '</td>
                             <td>' . $data['remarks'] . '</td>
                             <td style="text-align:center;">' . $data['created_by'] . '</td>

@@ -61,7 +61,7 @@ class Component_rates extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -131,7 +131,7 @@ class Component_rates extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('component_rates', ["id" => $id], $post);
             echo $send;
@@ -312,9 +312,9 @@ class Component_rates extends CI_Controller
                     <td>' . $no . '</td>
                     <td>' . $data['year'] . '</td>
                     <td>' . $data['division'] . '</td>
-                    <td>' . number_format($data['salary'],2) . '</td>
-                    <td>' . number_format($data['overhead'],2) . '</td>
-                    <td>' . number_format($data['electricity'],2) . '</td>
+                    <td>' . number_format((float) $data['salary'],2) . '</td>
+                    <td>' . number_format((float) $data['overhead'],2) . '</td>
+                    <td>' . number_format((float) $data['electricity'],2) . '</td>
                     <td>' . $data['hkw'] . '</td>
                     <td>' . $data['shift'] . '</td>
                     <td>' . $data['hour'] . '</td>

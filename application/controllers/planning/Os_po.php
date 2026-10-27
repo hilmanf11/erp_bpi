@@ -122,7 +122,7 @@ class Os_po extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('os_po', ["id" => $id], $post);
             echo $send;
@@ -324,7 +324,7 @@ class Os_po extends CI_Controller
                             <td>' . $data['item_rm_number'] . '</td>
                             <td>' . $data['item_rm_name'] . '</td>
                             <td>' . $data['uom'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
                             <td>' . $data['currency'] . '</td>
                             <td>' . $data['price'] . '</td>
                         </tr>';

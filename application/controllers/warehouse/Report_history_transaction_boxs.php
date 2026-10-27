@@ -88,15 +88,15 @@ class Report_history_transaction_boxs extends CI_Controller
         $filter_trans_type = $this->input->get('filter_trans_type');
         $filter_customer_name = $this->input->get('filter_customer_name');
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime((string) $filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime((string) $filter_from)));
 
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
@@ -350,20 +350,20 @@ class Report_history_transaction_boxs extends CI_Controller
                                 <td>' . $record->name . '</td>
                                 <td>' . $record->code . '</td>
                                 <td>' . $record->color . '</td>
-                                <td style="text-align:right">' . number_format($total_begin_utama) . '</td>
-                                <td style="text-align:right">' . number_format($record->empty_begin) . '</td>
-                                <td style="text-align:right">' . number_format($record->empty_in) . '</td>
-                                <td style="text-align:right">' . number_format($record->empty_out) . '</td>
-                                <td style="text-align:right">' . number_format($empty_balance) . '</td>
-                                <td style="text-align:right">' . number_format($record->wip_begin) . '</td>
-                                <td style="text-align:right">' . number_format($record->wip_in) . '</td>
-                                <td style="text-align:right">' . number_format($record->wip_out) . '</td>
-                                <td style="text-align:right">' . number_format($wip_balance) . '</td>
-                                <td style="text-align:right">' . number_format($record->supp_begin) . '</td>
-                                <td style="text-align:right">' . number_format($record->supp_in) . '</td>
-                                <td style="text-align:right">' . number_format($record->supp_out) . '</td>
-                                <td style="text-align:right">' . number_format($supp_balance) . '</td>
-                                <td style="text-align:center" colspan="5" >' . number_format($total_balance_utama) . '</td>
+                                <td style="text-align:right">' . number_format((float) $total_begin_utama) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->empty_begin) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->empty_in) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->empty_out) . '</td>
+                                <td style="text-align:right">' . number_format((float) $empty_balance) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->wip_begin) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->wip_in) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->wip_out) . '</td>
+                                <td style="text-align:right">' . number_format((float) $wip_balance) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->supp_begin) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->supp_in) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->supp_out) . '</td>
+                                <td style="text-align:right">' . number_format((float) $supp_balance) . '</td>
+                                <td style="text-align:center" colspan="5" >' . number_format((float) $total_balance_utama) . '</td>
                             </tr>';
                 if ($filter_display == "DETAIL") {
                     $html .= '
@@ -520,29 +520,29 @@ class Report_history_transaction_boxs extends CI_Controller
                                     <td>' . $row->color . '</td>
                                     <td>' . $row->type . '</td>
                                     <td>' . $row->desc . '</td>
-                                    <td>' . date("Y-m-d", strtotime($row->date)) . '</td>
+                                    <td>' . date("Y-m-d", strtotime((string) $row->date)) . '</td>
                                     <td style="text-align:right;">' . number_format($begin_empty + $begin_wip + $begin_supp) . '</td>
 
                                     <!-- EMPTY -->
-                                    <td style="text-align:right;">' . number_format($begin_empty) . '</td>
-                                    <td style="text-align:right;">' . number_format($empty_in) . '</td>
-                                    <td style="text-align:right;">' . number_format($empty_out) . '</td>
-                                    <td style="text-align:right;">' . number_format($end_empty) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $begin_empty) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $empty_in) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $empty_out) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $end_empty) . '</td>
 
                                     <!-- WIP / FG -->
-                                    <td style="text-align:right;">' . number_format($begin_wip) . '</td>
-                                    <td style="text-align:right;">' . number_format($wip_in) . '</td>
-                                    <td style="text-align:right;">' . number_format($wip_out) . '</td>
-                                    <td style="text-align:right;">' . number_format($end_wip) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $begin_wip) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $wip_in) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $wip_out) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $end_wip) . '</td>
 
                                     <!-- SUPPLIER / CUSTOMER -->
-                                    <td style="text-align:right;">' . number_format($begin_supp) . '</td>
-                                    <td style="text-align:right;">' . number_format($supp_in) . '</td>
-                                    <td style="text-align:right;">' . number_format($supp_out) . '</td>
-                                    <td style="text-align:right;">' . number_format($end_supp) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $begin_supp) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $supp_in) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $supp_out) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $end_supp) . '</td>
 
                                     <!-- BALANCE -->
-                                    <td style="text-align:right;">' . number_format($balance) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $balance) . '</td>
                                 </tr>';
 
                                 // Update saldo awal untuk baris berikutnya
@@ -585,10 +585,10 @@ class Report_history_transaction_boxs extends CI_Controller
                         //                         <td>' . $receipt->lotno . '</td>
                         //                         <td>' . $receipt->bc_document . '</td>
                         //                         <td>' . $receipt->bc_date . '</td>
-                        //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                        //                         <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                        //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                        //                         <td style="text-align:right;">' . number_format((float) $receipt->qty_receipt, 2) . '</td>
                         //                         <td style="text-align:right;">' . number_format(0)  . '</td>
-                        //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                        //                         <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                         //                     </tr>';
                         //         $begin += $receipt->qty_receipt;
                         //         $nod++;
@@ -784,10 +784,10 @@ ORDER BY
                                 <td>' . $record->customer_name . '</td>
                                 <td>' . $record->code . '</td>
                                 <td>' . $record->color . '</td>
-                                <td style="text-align:right">' . number_format($record->supp_begin) . '</td>
-                                <td style="text-align:right">' . number_format($record->supp_in) . '</td>
-                                <td style="text-align:right">' . number_format($record->supp_out) . '</td>
-                                <td style="text-align:right">' . number_format($supp_balance) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->supp_begin) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->supp_in) . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->supp_out) . '</td>
+                                <td style="text-align:right">' . number_format((float) $supp_balance) . '</td>
                             </tr>';
                 $no++;
             }
@@ -813,15 +813,15 @@ ORDER BY
         $filter_division = $this->input->get('filter_division');
         $filter_trans_type = $this->input->get('filter_trans_type');
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime((string) $filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime((string) $filter_from)));
 
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
@@ -1119,18 +1119,18 @@ ORDER BY
                 <td>' . $rec->name . '</td>
                 <td>' . $rec->code . '</td>
                 <td>' . $rec->color . '</td>
-                <td style="text-align:right;">' . number_format($empty_balance) . '</td>
-                <td style="text-align:right;">' . number_format($wip_balance) . '</td>
-                <td style="text-align:right;">' . number_format($total_bpi) . '</td>';
+                <td style="text-align:right;">' . number_format((float) $empty_balance) . '</td>
+                <td style="text-align:right;">' . number_format((float) $wip_balance) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_bpi) . '</td>';
 
             // Kolom customer dinamis
             foreach ($customers as $cust) {
                 $cust_num = $cust->number;
                 $qty = isset($customer_qtys_for_item[$cust_num]) ? $customer_qtys_for_item[$cust_num] : 0;
-                $html .= '<td style="text-align:right;">' . number_format($qty) . '</td>';
+                $html .= '<td style="text-align:right;">' . number_format((float) $qty) . '</td>';
             }
 
-            $html .= '<td style="text-align:right;">' . number_format($balance_total) . '</td></tr>';
+            $html .= '<td style="text-align:right;">' . number_format((float) $balance_total) . '</td></tr>';
         }
       
         $html .= '</table></body></html>';

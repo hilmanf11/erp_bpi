@@ -43,9 +43,9 @@ class Ap_schedules extends CI_Controller
         }
         
         if (!empty($option) && $option == "excel") {
-            return number_format($value, $decimal, ".", ""); // tanpa separator
+            return number_format((float) $value, $decimal, ".", ""); // tanpa separator
         } else {
-            return number_format($value, $decimal, ",", ".");
+            return number_format((float) $value, $decimal, ",", ".");
         }
     }
 
@@ -56,9 +56,9 @@ class Ap_schedules extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=ap_aging_schedules_$format.xls");
         }
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_supplier = base64_decode($this->input->get("filter_supplier"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
+        $filter_supplier = base64_decode((string) $this->input->get("filter_supplier"));
         $filter_currency = $this->input->get('filter_currency') ?? null;
 
         $currency_show = !empty($filter_currency) ? $filter_currency : 'IDR'; // default showed currency = IDR
@@ -397,8 +397,8 @@ class Ap_schedules extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=ap_aging_schedules_$format.xls");
         }
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $filter_supplier = $this->input->get("filter_supplier");
 
         $start  = new DateTime($filter_from);
@@ -505,11 +505,11 @@ class Ap_schedules extends CI_Controller
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $supplier['name'] . '</td>
                             <td style="text-align:center;">' . $supplier['currency'] . '</td>
-                            <td style="text-align:right;">' . number_format($current, $decimal) . '</td>
-                            <td style="text-align:right;">' . number_format($week_1, $decimal) . '</td>
-                            <td style="text-align:right;">' . number_format($week_2, $decimal) . '</td>
-                            <td style="text-align:right;">' . number_format($week_3, $decimal) . '</td>
-                            <td style="text-align:right;">' . number_format($week_4, $decimal) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $current, $decimal) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $week_1, $decimal) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $week_2, $decimal) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $week_3, $decimal) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $week_4, $decimal) . '</td>
                         </tr>';
             $no++;
 
@@ -522,11 +522,11 @@ class Ap_schedules extends CI_Controller
 
         $html .= '  <tr>
                         <td style="text-align:right;" colspan="3"><b>GRAND TOTAL</b></td>
-                        <td style="text-align:right;">' . number_format($grand_total_current, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($grand_total_week_1, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($grand_total_week_2, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($grand_total_week_3, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($grand_total_week_4, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_current, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_week_1, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_week_2, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_week_3, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $grand_total_week_4, 2) . '</td>
                     </tr>';
 
         $html .= '</table></body></html>';

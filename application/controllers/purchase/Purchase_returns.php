@@ -349,12 +349,12 @@ class purchase_returns extends CI_Controller
                                         <tr>
                                             <td>Return Date</td>
                                             <td>:</td>
-                                            <td><b>' . date("d F Y", strtotime($records[0]['return_date'])) . '</b></td>
+                                            <td><b>' . date("d F Y", strtotime((string) $records[0]['return_date'])) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td>Create Date</td>
                                             <td>:</td>
-                                            <td><b>' . date("d F Y", strtotime($records[0]['created_date'])) . '</b></td>
+                                            <td><b>' . date("d F Y", strtotime((string) $records[0]['created_date'])) . '</b></td>
                                         </tr>
                                     </table>
                                 </div>
@@ -372,7 +372,7 @@ class purchase_returns extends CI_Controller
                                 <td style="font-size:10px;">' . $record['item_rm_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['qty'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['qty'], 2, ",", ".") . '</td>
                             </tr>';
                 $no++;
             }
@@ -488,7 +488,7 @@ class purchase_returns extends CI_Controller
                         <td>' . $data['supplier_name'] . '</td>
                         <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
-                        <td>' . number_format($data['qty'], 2) . '</td>
+                        <td>' . number_format((float) $data['qty'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $status . '</td>
                         <td>' . $data['remarks'] . '</td>

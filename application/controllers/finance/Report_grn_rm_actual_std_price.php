@@ -287,21 +287,21 @@ class Report_grn_rm_actual_std_price extends CI_Controller
                         <td>' . $record->receipt_date . '</td>
                         <td>' . $record->part_no . '</td>
                         <td>' . $record->part_name . '</td>
-                        <td style="text-align:right;">' . number_format($qty, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $qty, 2) . '</td>
                         <td>' . $record->uom . '</td>
 
                         <td style="text-align:center;">' . $currency . '</td>
-                        <td style="text-align:right;">' . number_format($standar_price, 4) . '</td>
-                        <td style="text-align:right;">' . number_format($std_amount, 4) . '</td>
-                        <td style="text-align:right;">' . number_format($std_amount_idr, 4) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $standar_price, 4) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $std_amount, 4) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $std_amount_idr, 4) . '</td>
                         
                         <td style="text-align:center;">' . $currency . '</td>
-                        <td style="text-align:right;">' . number_format($actual_price, 4) . '</td>
-                        <td style="text-align:right;">' . number_format($act_amount, 4) . '</td>
-                        <td style="text-align:right;">' . number_format($act_amount_idr, 4) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $actual_price, 4) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $act_amount, 4) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $act_amount_idr, 4) . '</td>
                         
-                        <td style="text-align:right;">' . number_format($variance_unit, 4) . '</td>
-                        <td style="text-align:right;">' . number_format($variance_amount, 4) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $variance_unit, 4) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $variance_amount, 4) . '</td>
                     </tr>';
             $no++;
         }
@@ -309,15 +309,15 @@ class Report_grn_rm_actual_std_price extends CI_Controller
         // --- BARIS GRAND TOTAL ---
         $html .= '<tr style="background-color: #e9ecef;">
                     <td colspan="11" style="text-align:right; padding-right:15px;"><b>GRAND TOTAL</b></td>
-                    <td style="text-align:right;"><b>' . number_format($grand_qty, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format((float) $grand_qty, 2) . '</b></td>
                     <td colspan="3" style="background-color: #e9ecef; text-align:center;">-</td> 
-                    <td style="text-align:right;"><b>' . number_format($grand_std_amount, 4) . '</b></td>
-                    <td style="text-align:right;"><b>' . number_format($grand_std_amount_idr, 4) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format((float) $grand_std_amount, 4) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format((float) $grand_std_amount_idr, 4) . '</b></td>
                     <td colspan="2" style="background-color: #e9ecef; text-align:center;">-</td>
-                    <td style="text-align:right;"><b>' . number_format($grand_act_amount, 4) . '</b></td>
-                    <td style="text-align:right;"><b>' . number_format($grand_act_amount_idr, 4) . '</b></td>
-                    <td style="text-align:right;"><b>' . number_format($grand_variance_unit, 4) . '</b></td>
-                    <td style="text-align:right;"><b>' . number_format($grand_variance_amount, 4) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format((float) $grand_act_amount, 4) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format((float) $grand_act_amount_idr, 4) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format((float) $grand_variance_unit, 4) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format((float) $grand_variance_amount, 4) . '</b></td>
                 </tr>';
       
         $html .= '</table></body></html>';

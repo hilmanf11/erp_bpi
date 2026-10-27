@@ -50,8 +50,8 @@ class Journal_postings extends CI_Controller
 
         $modul = @base64_decode($get['modul']);
         $journal_date = @base64_decode($get['journal_date']);
-        $transaction_from = date("Y-m-01", strtotime($journal_date));
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
+        $transaction_from = date("Y-m-01", strtotime((string) $journal_date));
+        $transaction_to = date("Y-m-t", strtotime((string) $journal_date));
         $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
 
@@ -241,8 +241,8 @@ class Journal_postings extends CI_Controller
         $get = $this->input->get();
         $modul = base64_decode($get['modul']);
         $journal_date = @base64_decode($get['journal_date']);
-        $transaction_from = date("Y-m-01", strtotime($journal_date));
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
+        $transaction_from = date("Y-m-01", strtotime((string) $journal_date));
+        $transaction_to = date("Y-m-t", strtotime((string) $journal_date));
         $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $journal_type = base64_decode($get['journal_type']);
@@ -444,8 +444,8 @@ class Journal_postings extends CI_Controller
         $get = $this->input->get();
         $modul = base64_decode($get['modul']);
         $journal_date = @base64_decode($get['journal_date']);
-        $transaction_from = date("Y-m-01", strtotime($journal_date));
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
+        $transaction_from = date("Y-m-01", strtotime((string) $journal_date));
+        $transaction_to = date("Y-m-t", strtotime((string) $journal_date));
         $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $journal_type = base64_decode($get['journal_type']);
@@ -531,7 +531,7 @@ class Journal_postings extends CI_Controller
             */
 
             $journal_date = base64_decode($get['journal_date']);
-            $periode_target = date('Y-m', strtotime($journal_date));
+            $periode_target = date('Y-m', strtotime((string) $journal_date));
 
             $this->db->select('c.asset_no as number');
             $this->db->from('journal_types a');
@@ -676,8 +676,8 @@ class Journal_postings extends CI_Controller
     {
         $get = $this->input->get();
         $journal_date = @base64_decode($get['journal_date']);
-        $transaction_from = date("Y-m-01", strtotime($journal_date));
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
+        $transaction_from = date("Y-m-01", strtotime((string) $journal_date));
+        $transaction_to = date("Y-m-t", strtotime((string) $journal_date));
         $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $modul = base64_decode($get['modul']);
@@ -689,8 +689,8 @@ class Journal_postings extends CI_Controller
             $journal_type = base64_decode($get['journal_type']);
         }
 
-        $start = strtotime($transaction_from);
-        $finish = strtotime($transaction_to);
+        $start = strtotime((string) $transaction_from);
+        $finish = strtotime((string) $transaction_to);
 
         if ($modul == "PURCHASE INVOICING") 
         {
@@ -747,7 +747,7 @@ class Journal_postings extends CI_Controller
                             $supplier_name = $purchase_invoice['supplier_name'];
                             $trans_date = $purchase_invoice['trans_date'];
 
-                            // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($purchase_invoice['trans_date'])));
+                            // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime((string) $purchase_invoice['trans_date'])));
                             // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                             if ($currency != "IDR") {
@@ -813,7 +813,7 @@ class Journal_postings extends CI_Controller
                             $grand_local_credit += $local_credit;
                         }
                     } else {
-                        // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($trans_date)));
+                        // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime((string) $trans_date)));
                         // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                         if ($currency != "IDR") {
@@ -1008,9 +1008,9 @@ class Journal_postings extends CI_Controller
                     $gainLossCredit = 0;
                     
                     if ($difference > 0) {
-                        $gainLossCredit = abs($difference);
+                        $gainLossCredit = abs($difference ?? 0);
                     } else if ($difference < 0) {
-                        $gainLossDebit = abs($difference);
+                        $gainLossDebit = abs($difference ?? 0);
                     }
 
                     $gainloss_ap = $this->db->select('*')->from('account_coa')->where('account_number', '810.150.00')->get()->row();
@@ -1132,9 +1132,9 @@ class Journal_postings extends CI_Controller
                     $gainLossCredit = 0;
                     
                     if ($difference > 0) {
-                        $gainLossCredit = abs($difference);
+                        $gainLossCredit = abs($difference ?? 0);
                     } else if ($difference < 0) {
-                        $gainLossDebit = abs($difference);
+                        $gainLossDebit = abs($difference ?? 0);
                     }
 
                     $gainloss_ar = $this->db->select('*')->from('account_coa')->where('account_number', '810.140.00')->get()->row();
@@ -1187,7 +1187,7 @@ class Journal_postings extends CI_Controller
              */
             
             $journal_date = base64_decode($get['journal_date']);
-            $periode_target = date('Y-m', strtotime($journal_date));
+            $periode_target = date('Y-m', strtotime((string) $journal_date));
 
             $sql = "SELECT 
                 a.periode, a.asset_no, a.trans_date, a.account_number, a.debit, a.credit, 
@@ -1223,7 +1223,7 @@ class Journal_postings extends CI_Controller
                 $debit = $journal['debit'];
                 $credit = $journal['credit'];
 
-                $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['trans_date'])));
+                $transmonth = date('Y-m-01', strtotime('-1 month', strtotime((string) $journal['trans_date'])));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
 
                 if ($journal['currency'] != "IDR") {
@@ -1365,7 +1365,7 @@ class Journal_postings extends CI_Controller
             $data = array();
             $total_amount_out = 0;
             foreach ($itemReceipts as $itemReceipt) {
-                $total_amount_out += abs($itemReceipt->amount);
+                $total_amount_out += abs($itemReceipt->amount ?? 0);
             }
 
             $this->db->select('a.id, a.account_number, b.account_name');
@@ -1557,10 +1557,10 @@ class Journal_postings extends CI_Controller
                 "account_name" => "COST OF GOOD SOLD - LOCAL - MATERIAL",
                 "description" => "-",
                 "currency" => "IDR",
-                "original_debit" => round(abs($total_inventory_rm), 2),
+                "original_debit" => round(abs($total_inventory_rm ?? 0), 2),
                 "original_credit" => 0,
                 "rates" => 1,
-                "local_debit" => round(abs($total_inventory_rm), 2),
+                "local_debit" => round(abs($total_inventory_rm ?? 0), 2),
                 "local_credit" => 0,
             );
 
@@ -1575,10 +1575,10 @@ class Journal_postings extends CI_Controller
                 "account_name" => "COST OF GOOD SOLD - LOCAL - DIRECTLABOR",
                 "description" => "-",
                 "currency" => "IDR",
-                "original_debit" => round(abs($total_final_labor), 2),
+                "original_debit" => round(abs($total_final_labor ?? 0), 2),
                 "original_credit" => 0,
                 "rates" => 1,
-                "local_debit" => round(abs($total_final_labor), 2),
+                "local_debit" => round(abs($total_final_labor ?? 0), 2),
                 "local_credit" => 0,
             );
 
@@ -1593,10 +1593,10 @@ class Journal_postings extends CI_Controller
                 "account_name" => "COST OF GOOD SOLD - LOCAL - OVERHEAD",
                 "description" => "-",
                 "currency" => "IDR",
-                "original_debit" => round(abs($total_final_foh), 2),
+                "original_debit" => round(abs($total_final_foh ?? 0), 2),
                 "original_credit" => 0,
                 "rates" => 1,
-                "local_debit" => round(abs($total_final_foh), 2),
+                "local_debit" => round(abs($total_final_foh ?? 0), 2),
                 "local_credit" => 0,
             );
 
@@ -1702,7 +1702,7 @@ class Journal_postings extends CI_Controller
 
             $total_labour = 0;
             foreach ($labours as $labour) {
-                $total_labour += ($labour->local_debit - abs($labour->local_credit));
+                $total_labour += ($labour->local_debit - abs($labour->local_credit ?? 0));
             }
 
             $data[] = array(
@@ -1726,12 +1726,12 @@ class Journal_postings extends CI_Controller
             $total_labour_debit = $total_labour;
             $total_labour_credit = 0;
             foreach ($labours as $labour) {
-                if(($labour->local_debit - abs($labour->local_credit)) > 0){
+                if(($labour->local_debit - abs($labour->local_credit ?? 0)) > 0){
                     $labor_debit = 0;
-                    $labor_credit = abs($labour->local_debit - abs($labour->local_credit));
+                    $labor_credit = abs($labour->local_debit - abs($labour->local_credit ?? 0));
                 }else{
                     $labor_credit = 0;
-                    $labor_debit = abs($labour->local_debit - abs($labour->local_credit));
+                    $labor_debit = abs($labour->local_debit - abs($labour->local_credit ?? 0));
                 }
 
                  $data[] = array(
@@ -1775,7 +1775,7 @@ class Journal_postings extends CI_Controller
             $total_debit = 0;
             $total_credit = 0;
             foreach ($accounts as $account) {
-                $trial_balance = $this->crud->read("trial_balances", [], ["period" => date("Ym", strtotime($journal_date)), "account_number" => $account->account_number]);
+                $trial_balance = $this->crud->read("trial_balances", [], ["period" => date("Ym", strtotime((string) $journal_date)), "account_number" => $account->account_number]);
                 
                 if(@$trial_balance->ending_debit > 0 || @$trial_balance->ending_credit > 0){
                     if(@$trial_balance->ending_debit > 0){
@@ -1853,8 +1853,8 @@ class Journal_postings extends CI_Controller
     {
         $get = $this->input->get();
         $journal_date = @base64_decode($get['journal_date']);
-        $transaction_from = date("Y-m-01", strtotime($journal_date));
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
+        $transaction_from = date("Y-m-01", strtotime((string) $journal_date));
+        $transaction_to = date("Y-m-t", strtotime((string) $journal_date));
         $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $modul = base64_decode($get['modul']);
@@ -1866,8 +1866,8 @@ class Journal_postings extends CI_Controller
             $journal_type = base64_decode($get['journal_type']);
         }
 
-        $start = strtotime($transaction_from);
-        $finish = strtotime($transaction_to);
+        $start = strtotime((string) $transaction_from);
+        $finish = strtotime((string) $transaction_to);
 
         if ($modul == "PURCHASE INVOICING") {
             $this->db->select('a.number, b.trans_date, b.invoice_no, c.name as supplier_name, b.currency, b.item_no, b.item_name, a.account_number, a.account_name, a.debit, a.credit, b.rate, a.flag');
@@ -1923,7 +1923,7 @@ class Journal_postings extends CI_Controller
                             $supplier_name = $purchase_invoice['supplier_name'];
                             $trans_date = $purchase_invoice['trans_date'];
 
-                            // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($purchase_invoice['trans_date'])));
+                            // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime((string) $purchase_invoice['trans_date'])));
                             // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                             if ($currency != "IDR") {
@@ -1989,7 +1989,7 @@ class Journal_postings extends CI_Controller
                             $grand_local_credit += $local_credit;
                         }
                     } else {
-                        // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($trans_date)));
+                        // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime((string) $trans_date)));
                         // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                         if ($currency != "IDR") {
@@ -2094,7 +2094,7 @@ class Journal_postings extends CI_Controller
                             $customer_name = $sales_invoice['customer_name'];
                             $trans_date = $sales_invoice['trans_date'];
 
-                            $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($sales_invoice['trans_date'])));
+                            $transmonth = date('Y-m-01', strtotime('-1 month', strtotime((string) $sales_invoice['trans_date'])));
                             $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                             if ($currency != "IDR") {
@@ -2154,7 +2154,7 @@ class Journal_postings extends CI_Controller
                             $grand_local_credit += $local_credit;
                         }
                     } else {
-                        $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['trans_date'])));
+                        $transmonth = date('Y-m-01', strtotime('-1 month', strtotime((string) $journal['trans_date'])));
                         $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
 
                         if ($journal['currency'] != "IDR") {
@@ -2287,9 +2287,9 @@ class Journal_postings extends CI_Controller
                     $gainLossCredit = 0;
                     
                     if ($difference > 0) {
-                        $gainLossCredit = abs($difference);
+                        $gainLossCredit = abs($difference ?? 0);
                     } else if ($difference < 0) {
-                        $gainLossDebit = abs($difference);
+                        $gainLossDebit = abs($difference ?? 0);
                     }
 
                     $gainloss_ap = $this->db->select('*')->from('account_coa')->where('account_number', '810.150.00')->get()->row();
@@ -2410,9 +2410,9 @@ class Journal_postings extends CI_Controller
                     $gainLossCredit = 0;
                     
                     if ($difference > 0) {
-                        $gainLossCredit = abs($difference);
+                        $gainLossCredit = abs($difference ?? 0);
                     } else if ($difference < 0) {
-                        $gainLossDebit = abs($difference);
+                        $gainLossDebit = abs($difference ?? 0);
                     }
 
                     $gainloss_ar = $this->db->select('*')->from('account_coa')->where('account_number', '810.140.00')->get()->row();
@@ -2463,7 +2463,7 @@ class Journal_postings extends CI_Controller
              */
             
             $journal_date = base64_decode($get['journal_date']);
-            $periode_target = date('Y-m', strtotime($journal_date));
+            $periode_target = date('Y-m', strtotime((string) $journal_date));
 
             $sql = "SELECT 
                 a.periode, a.asset_no, a.trans_date, a.account_number, a.debit, a.credit, 
@@ -2499,7 +2499,7 @@ class Journal_postings extends CI_Controller
                 $debit = $journal['debit'];
                 $credit = $journal['credit'];
 
-                $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['trans_date'])));
+                $transmonth = date('Y-m-01', strtotime('-1 month', strtotime((string) $journal['trans_date'])));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
 
                 if ($journal['currency'] != "IDR") {
@@ -2637,7 +2637,7 @@ class Journal_postings extends CI_Controller
             $data = array();
             $total_amount_out = 0;
             foreach ($itemReceipts as $itemReceipt) {
-                $total_amount_out += abs($itemReceipt->amount);
+                $total_amount_out += abs($itemReceipt->amount ?? 0);
             }
 
             $this->db->select('a.id, a.account_number, b.account_name');
@@ -2825,10 +2825,10 @@ class Journal_postings extends CI_Controller
                 "account_name" => "COST OF GOOD SOLD - LOCAL - MATERIAL",
                 "description" => "-",
                 "currency" => "IDR",
-                "original_debit" => round(abs($total_inventory_rm), 2),
+                "original_debit" => round(abs($total_inventory_rm ?? 0), 2),
                 "original_credit" => 0,
                 "rates" => 1,
-                "local_debit" => round(abs($total_inventory_rm), 2),
+                "local_debit" => round(abs($total_inventory_rm ?? 0), 2),
                 "local_credit" => 0,
             );
 
@@ -2843,10 +2843,10 @@ class Journal_postings extends CI_Controller
                 "account_name" => "COST OF GOOD SOLD - LOCAL - DIRECTLABOR",
                 "description" => "-",
                 "currency" => "IDR",
-                "original_debit" => round(abs($total_final_labor), 2),
+                "original_debit" => round(abs($total_final_labor ?? 0), 2),
                 "original_credit" => 0,
                 "rates" => 1,
-                "local_debit" => round(abs($total_final_labor), 2),
+                "local_debit" => round(abs($total_final_labor ?? 0), 2),
                 "local_credit" => 0,
             );
 
@@ -2861,10 +2861,10 @@ class Journal_postings extends CI_Controller
                 "account_name" => "COST OF GOOD SOLD - LOCAL - OVERHEAD",
                 "description" => "-",
                 "currency" => "IDR",
-                "original_debit" => round(abs($total_final_foh), 2),
+                "original_debit" => round(abs($total_final_foh ?? 0), 2),
                 "original_credit" => 0,
                 "rates" => 1,
-                "local_debit" => round(abs($total_final_foh), 2),
+                "local_debit" => round(abs($total_final_foh ?? 0), 2),
                 "local_credit" => 0,
             );
 
@@ -2966,7 +2966,7 @@ class Journal_postings extends CI_Controller
 
             $total_labour = 0;
             foreach ($labours as $labour) {
-                $total_labour += ($labour->local_debit - abs($labour->local_credit));
+                $total_labour += ($labour->local_debit - abs($labour->local_credit ?? 0));
             }
 
             $data[] = array(
@@ -2990,12 +2990,12 @@ class Journal_postings extends CI_Controller
             $total_labour_debit = $total_labour;
             $total_labour_credit = 0;
             foreach ($labours as $labour) {
-                if(($labour->local_debit - abs($labour->local_credit)) > 0){
+                if(($labour->local_debit - abs($labour->local_credit ?? 0)) > 0){
                     $labor_debit = 0;
-                    $labor_credit = abs($labour->local_debit - abs($labour->local_credit));
+                    $labor_credit = abs($labour->local_debit - abs($labour->local_credit ?? 0));
                 }else{
                     $labor_credit = 0;
-                    $labor_debit = abs($labour->local_debit - abs($labour->local_credit));
+                    $labor_debit = abs($labour->local_debit - abs($labour->local_credit ?? 0));
                 }
 
                  $data[] = array(
@@ -3037,7 +3037,7 @@ class Journal_postings extends CI_Controller
             $total_debit = 0;
             $total_credit = 0;
             foreach ($accounts as $account) {
-                $trial_balance = $this->crud->read("trial_balances", [], ["period" => date("Ym", strtotime($journal_date)), "account_number" => $account->account_number]);
+                $trial_balance = $this->crud->read("trial_balances", [], ["period" => date("Ym", strtotime((string) $journal_date)), "account_number" => $account->account_number]);
                 
                 if(@$trial_balance->ending_debit > 0 || @$trial_balance->ending_credit > 0){
                     if(@$trial_balance->ending_debit > 0){
@@ -3114,11 +3114,11 @@ class Journal_postings extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filter_from = base64_decode($this->input->get('filter_from'));
-            $filter_to = base64_decode($this->input->get('filter_to'));
-            $filter_journal_type = base64_decode($this->input->get('filter_journal_type'));
-            $filter_modul = base64_decode($this->input->get('filter_modul'));
-            $filter_voucher = base64_decode($this->input->get('filter_voucher'));
+            $filter_from = base64_decode((string) $this->input->get('filter_from'));
+            $filter_to = base64_decode((string) $this->input->get('filter_to'));
+            $filter_journal_type = base64_decode((string) $this->input->get('filter_journal_type'));
+            $filter_modul = base64_decode((string) $this->input->get('filter_modul'));
+            $filter_voucher = base64_decode((string) $this->input->get('filter_voucher'));
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -3168,7 +3168,7 @@ class Journal_postings extends CI_Controller
         $post = $this->input->post();
 
         $journal_date = $post['journal_date'];
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
+        $transaction_to = date("Y-m-t", strtotime((string) $journal_date));
         $modul = $post['modul'];
         $company_id = $post['company_id'];
 
@@ -3197,8 +3197,8 @@ class Journal_postings extends CI_Controller
 
     public function datatableDetails()
     {
-        $number = base64_decode($this->input->get('number'));
-        $filters = json_decode($this->input->post('filterRules'));
+        $number = base64_decode((string) $this->input->get('number'));
+        $filters = json_decode((string) $this->input->post('filterRules'));
 
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
@@ -3270,7 +3270,7 @@ class Journal_postings extends CI_Controller
 
     public function datatableUpdates()
     {
-        $number = base64_decode($this->input->get('number'));
+        $number = base64_decode((string) $this->input->get('number'));
 
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
@@ -3323,7 +3323,7 @@ class Journal_postings extends CI_Controller
         if ($this->input->post()) {
 
             $post = $this->input->post();
-            $period = date("Ym", strtotime($post['trans_date']));
+            $period = date("Ym", strtotime((string) $post['trans_date']));
 
             if(empty($post['id'])){
                 if($post['modul'] == "CLOSING JOURNAL"){
@@ -3650,11 +3650,11 @@ class Journal_postings extends CI_Controller
                                 <td>' . $record['account_name'] . '</td>
                                 <td>' . $record['description'] . '</td>
                                 <td>' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . @number_format($record['original_debit'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['original_credit'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['rates'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['local_debit'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['local_credit'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['original_debit'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['original_credit'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['rates'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['local_debit'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['local_credit'], 2) . '</td>
                             </tr>';
 
                 $original_debit += $record['original_debit'];
@@ -3667,11 +3667,11 @@ class Journal_postings extends CI_Controller
 
             $html .= '  <tr>
                             <th style="text-align:right" colspan="6">SUB TOTAL</th>
-                            <th style="text-align:right;">' . @number_format($original_debit, 2) . '</th>
-                            <th style="text-align:right;">' . @number_format($original_credit, 2) . '</th>
+                            <th style="text-align:right;">' . @number_format((float) $original_debit, 2) . '</th>
+                            <th style="text-align:right;">' . @number_format((float) $original_credit, 2) . '</th>
                             <th style="text-align:right;">-</th>
-                            <th style="text-align:right;">' . @number_format($local_debit, 2) . '</th>
-                            <th style="text-align:right;">' . @number_format($local_credit, 2) . '</th>
+                            <th style="text-align:right;">' . @number_format((float) $local_debit, 2) . '</th>
+                            <th style="text-align:right;">' . @number_format((float) $local_credit, 2) . '</th>
                         </tr>
                     </table>';
 
@@ -3720,11 +3720,11 @@ class Journal_postings extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $filter_from = base64_decode($this->input->get('filter_from'));
-        $filter_to = base64_decode($this->input->get('filter_to'));
-        $filter_journal_type = base64_decode($this->input->get('filter_journal_type'));
-        $filter_modul = base64_decode($this->input->get('filter_modul'));
-        $filter_voucher = base64_decode($this->input->get('filter_voucher'));
+        $filter_from = base64_decode((string) $this->input->get('filter_from'));
+        $filter_to = base64_decode((string) $this->input->get('filter_to'));
+        $filter_journal_type = base64_decode((string) $this->input->get('filter_journal_type'));
+        $filter_modul = base64_decode((string) $this->input->get('filter_modul'));
+        $filter_voucher = base64_decode((string) $this->input->get('filter_voucher'));
 
         $this->db->select('a.*, b.name as journal_type_name');
         $this->db->from('journal_postings a');
@@ -3822,9 +3822,9 @@ class Journal_postings extends CI_Controller
         
         $decimal = (empty($currency) || $currency === 'IDR') ? 2 : 4;
         if (!empty($option) && $option == "excel") {
-            return number_format($value, $decimal, ".", "");
+            return number_format((float) $value, $decimal, ".", "");
         } else {
-            return number_format($value, $decimal, ",", ".");
+            return number_format((float) $value, $decimal, ",", ".");
         }
     }
 
@@ -3972,7 +3972,7 @@ class Journal_postings extends CI_Controller
                         <td>' . $record['currency'] . '</td>
                         <td style="text-align:right;">' . $linked_ori_debit . '</td>
                         <td style="text-align:right;">' . $linked_ori_credit . '</td>
-                        <td style="text-align:right;">' . @number_format($record['rates'], 2) . '</td>
+                        <td style="text-align:right;">' . @number_format((float) $record['rates'], 2) . '</td>
                         <td style="text-align:right;">' . $linked_debit . '</td>
                         <td style="text-align:right;">' . $linked_credit . '</td>
                     </tr>';
@@ -3987,11 +3987,11 @@ class Journal_postings extends CI_Controller
 
         $html .= '<tr>
                         <th style="text-align:right" colspan="6">SUB TOTAL</th>
-                        <th style="text-align:right;">' . @number_format($total_ori_debit, 2) . '</th>
-                        <th style="text-align:right;">' . @number_format($total_ori_credit, 2) . '</th>
+                        <th style="text-align:right;">' . @number_format((float) $total_ori_debit, 2) . '</th>
+                        <th style="text-align:right;">' . @number_format((float) $total_ori_credit, 2) . '</th>
                         <th style="text-align:right;">-</th>
-                        <th style="text-align:right;">' . @number_format($total_local_debit, 2) . '</th>
-                        <th style="text-align:right;">' . @number_format($total_local_credit, 2) . '</th>
+                        <th style="text-align:right;">' . @number_format((float) $total_local_debit, 2) . '</th>
+                        <th style="text-align:right;">' . @number_format((float) $total_local_credit, 2) . '</th>
                     </tr>
                 </table>
                 <br>
@@ -4056,7 +4056,7 @@ class Journal_postings extends CI_Controller
     }
     
     function formatIDR($number, $decimal_places = 2) {
-        $formatted_number = @number_format($number, $decimal_places, ',', '');
+        $formatted_number = @number_format((float) $number, $decimal_places, ',', '');
         return $formatted_number;
     }
 }

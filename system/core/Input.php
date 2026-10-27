@@ -48,6 +48,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author		EllisLab Dev Team
  * @link		https://codeigniter.com/user_guide/libraries/input.html
  */
+#[\AllowDynamicProperties]
 class CI_Input {
 
 	/**
@@ -565,7 +566,7 @@ class CI_Input {
 				$which = FILTER_FLAG_IPV6;
 				break;
 			default:
-				$which = NULL;
+				$which = 0; // NULL is deprecated as filter_var() options since PHP 8.1
 				break;
 		}
 

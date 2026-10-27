@@ -832,8 +832,8 @@ class CI_Image_lib {
 		}
 
 		// Kill the file handles
-		imagedestroy($dst_img);
-		imagedestroy($src_img);
+		if (PHP_VERSION_ID < 80000) imagedestroy($dst_img); // no-op sejak PHP 8.0, deprecated di PHP 8.5
+		if (PHP_VERSION_ID < 80000) imagedestroy($src_img); // no-op sejak PHP 8.0, deprecated di PHP 8.5
 
 		if ($this->dynamic_output !== TRUE)
 		{
@@ -1037,8 +1037,8 @@ class CI_Image_lib {
 		}
 
 		// Kill the file handles
-		imagedestroy($dst_img);
-		imagedestroy($src_img);
+		if (PHP_VERSION_ID < 80000) imagedestroy($dst_img); // no-op sejak PHP 8.0, deprecated di PHP 8.5
+		if (PHP_VERSION_ID < 80000) imagedestroy($src_img); // no-op sejak PHP 8.0, deprecated di PHP 8.5
 
 		chmod($this->full_dst_path, $this->file_permissions);
 
@@ -1116,7 +1116,7 @@ class CI_Image_lib {
 		}
 
 		// Kill the file handles
-		imagedestroy($src_img);
+		if (PHP_VERSION_ID < 80000) imagedestroy($src_img); // no-op sejak PHP 8.0, deprecated di PHP 8.5
 
 		chmod($this->full_dst_path, $this->file_permissions);
 
@@ -1246,8 +1246,8 @@ class CI_Image_lib {
 			return FALSE;
 		}
 
-		imagedestroy($src_img);
-		imagedestroy($wm_img);
+		if (PHP_VERSION_ID < 80000) imagedestroy($src_img); // no-op sejak PHP 8.0, deprecated di PHP 8.5
+		if (PHP_VERSION_ID < 80000) imagedestroy($wm_img); // no-op sejak PHP 8.0, deprecated di PHP 8.5
 
 		return TRUE;
 	}
@@ -1417,7 +1417,7 @@ class CI_Image_lib {
 			$this->image_save_gd($src_img);
 		}
 
-		imagedestroy($src_img);
+		if (PHP_VERSION_ID < 80000) imagedestroy($src_img); // no-op sejak PHP 8.0, deprecated di PHP 8.5
 
 		return TRUE;
 	}

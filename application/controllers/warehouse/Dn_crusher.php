@@ -161,8 +161,8 @@ class Dn_crusher extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_item_rm_id = base64_decode($this->input->get('item_rm_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_item_rm_id = base64_decode((string) $this->input->get('item_rm_id'));
 
             $this->db->select("a.*, b.number as item_number, b.name as item_name, b.uom, c.name as family_name, d.name as category_name, SUM(a.qty) as qtys");
             $this->db->from('scan_dn_crusher a');
@@ -482,7 +482,7 @@ class Dn_crusher extends CI_Controller
                                         <td width="30%"><b>' . @$suppliers->name . '</b></td>
                                         <td style="text-align:right; padding-right: 20px;" rowspan="7">
                                             Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
-                                            Transaction Date:<br><b>' . date("d F Y", strtotime($scan_dn_crushers->transaction_date)) . '</b><br>
+                                            Transaction Date:<br><b>' . date("d F Y", strtotime((string) $scan_dn_crushers->transaction_date)) . '</b><br>
                                         </td>
                                     </tr>
                                     <tr>
@@ -514,7 +514,7 @@ class Dn_crusher extends CI_Controller
                                 <td style="text-align:center;">' . $record['category_name'] . '</td>
                                 <td style="text-align:center;">' . $record['family_name'] . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['qtys'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $record['qtys'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['remarks'] . '</td>
                             </tr>';
                 $no++;

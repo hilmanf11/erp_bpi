@@ -210,7 +210,7 @@ class Report_ap extends CI_Controller
 
         // --- LOGIKA BALANCE ---
         // Cek apakah tanggal filter_from adalah tanggal 1 Januari (Awal Tahun)
-        $is_start_of_year = (date('m-d', strtotime($filter_from)) === '01-01');
+        $is_start_of_year = (date('m-d', strtotime((string) $filter_from)) === '01-01');
 
         if ($is_start_of_year) {
             // KETENTUAN 1: Periode Januari (Awal Tahun)
@@ -233,7 +233,7 @@ class Report_ap extends CI_Controller
         if ($amount >= 0) {
             return $this->formatNominal(@$amount, 2, $option);
         } else {
-            return "<span style='color:red;'>(" . $this->formatNominal(abs($amount), 2, $option) . ")</span>";
+            return "<span style='color:red;'>(" . $this->formatNominal(abs($amount ?? 0), 2, $option) . ")</span>";
         }
     }
     
@@ -245,9 +245,9 @@ class Report_ap extends CI_Controller
         }
         
         if (!empty($option) && $option == "excel") {
-            return number_format($value, $decimal, ".", ""); // tanpa separator
+            return number_format((float) $value, $decimal, ".", ""); // tanpa separator
         } else {
-            return number_format($value, $decimal, ",", ".");
+            return number_format((float) $value, $decimal, ",", ".");
         }
     }
 
@@ -259,12 +259,12 @@ class Report_ap extends CI_Controller
             header("Content-Disposition: attachment; filename=report_ap_$format.xls");
         }
 
-        $filter_from        = base64_decode($this->input->get('filter_from')) ?? '';
-        $filter_to          = base64_decode($this->input->get('filter_to')) ?? '';
-        $filter_supplier    = base64_decode($this->input->get('filter_supplier')) ?? null;
-        $filter_posting_no  = base64_decode($this->input->get("filter_posting_no")) ?? null;
-        $filter_document_no = base64_decode($this->input->get("filter_document_no")) ?? null;
-        $filter_invoice_no  = base64_decode($this->input->get("filter_invoice_no")) ?? null;
+        $filter_from        = base64_decode((string) $this->input->get('filter_from')) ?? '';
+        $filter_to          = base64_decode((string) $this->input->get('filter_to')) ?? '';
+        $filter_supplier    = base64_decode((string) $this->input->get('filter_supplier')) ?? null;
+        $filter_posting_no  = base64_decode((string) $this->input->get("filter_posting_no")) ?? null;
+        $filter_document_no = base64_decode((string) $this->input->get("filter_document_no")) ?? null;
+        $filter_invoice_no  = base64_decode((string) $this->input->get("filter_invoice_no")) ?? null;
         $filter_currency    = $this->input->get('filter_currency') ?? null;
         $filter_status      = $this->input->get('filter_status') ?? null;
         $filter_source      = $this->input->get('filter_source') ?? null;
@@ -557,7 +557,7 @@ class Report_ap extends CI_Controller
         
         // Fungsi Compare (diperlukan untuk sorting)
         function compare_trans_date($a, $b) {
-            return strtotime($a['voucher_date']) - strtotime($b['voucher_date']);
+            return strtotime((string) $a['voucher_date']) - strtotime((string) $b['voucher_date']);
         }
         
         // Get account_number yang termasuk ke REPORT AP
@@ -877,7 +877,7 @@ class Report_ap extends CI_Controller
                     // tampilkan nilai hari OVERDUE sebagai angka positif.                    
                     if ($days < 0) {
                         // Hutang sudah lewat jatuh tempo (Overdue)
-                        $aging_due_days = abs($days);
+                        $aging_due_days = abs($days ?? 0);
                         $style_aging = 'font-weight:bold; color:red;';
                     } elseif ($days > 0) {
                         // Hutang belum jatuh tempo (Not Due Yet).
@@ -1046,14 +1046,14 @@ class Report_ap extends CI_Controller
             header("Content-Disposition: attachment; filename=report_ap_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $filter_supplier = $this->input->get("filter_supplier");
         $filter_currency = $this->input->get("filter_currency");
         $filter_payment = $this->input->get("filter_payment");
         $filter_display = $this->input->get("filter_display");
-        $filter_purchase_invoice = base64_decode($this->input->get("filter_purchase_invoice"));
-        $period = date("Ym", strtotime($filter_to));
+        $filter_purchase_invoice = base64_decode((string) $this->input->get("filter_purchase_invoice"));
+        $period = date("Ym", strtotime((string) $filter_to));
 
         //Config
         $this->db->select('*');
@@ -1228,7 +1228,7 @@ class Report_ap extends CI_Controller
                 }
 
                 foreach ($purchase_invoices as $purchase_invoice) {
-                    if(trim($purchase_invoice['currency']) != "IDR"){
+                    if(trim((string) $purchase_invoice['currency']) != "IDR"){
                         $original_debit2 = $purchase_invoice['original_debit'];
                         $original_credit2 = $purchase_invoice['original_credit'];
                     }else{
@@ -1258,12 +1258,12 @@ class Report_ap extends CI_Controller
                                     <td>'.$purchase_invoice['voucher_no'].'</td>
                                     <td>'.$purchase_invoice['account_number'].'</td>
                                     <td>'.$purchase_invoice['currency'].'</td>
-                                    <td style="text-align:right;">'.number_format($original_debit2, 2).'</td>
-                                    <td style="text-align:right;">'.number_format($original_credit2, 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $original_debit2, 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $original_credit2, 2).'</td>
                                     <td style="text-align:right;">'.$balance_original.'</td>
-                                    <td style="text-align:right;">'.number_format($purchase_invoice['rates'], 2).'</td>
-                                    <td style="text-align:right;">'.number_format($purchase_invoice['local_debit'], 2).'</td>
-                                    <td style="text-align:right;">'.number_format($purchase_invoice['local_credit'], 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $purchase_invoice['rates'], 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $purchase_invoice['local_debit'], 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $purchase_invoice['local_credit'], 2).'</td>
                                     <td style="text-align:right;">'.$balance_local.'</td>
                                 </tr>';
 
@@ -1280,9 +1280,9 @@ class Report_ap extends CI_Controller
                 
                 if(count($purchase_invoices) > 0){
                     if($begin_balance >= 0){
-                        $balance_original = number_format($begin_balance, 2);
+                        $balance_original = number_format((float) $begin_balance, 2);
                     }else{
-                        $balance_original = "<span style='color:red;'>(".number_format(abs($begin_balance), 2).")</span>";
+                        $balance_original = "<span style='color:red;'>(".number_format(abs($begin_balance ?? 0), 2).")</span>";
                     }
 
                     if($begin_balance_local >= 0){
@@ -1293,12 +1293,12 @@ class Report_ap extends CI_Controller
 
                     $detail .= '  <tr style="background: #E5E5E5; font-weight:bold;">
                                     <td colspan="9">SUB TOTAL</td>
-                                    <td style="text-align:right;">'.number_format($original_debit, 2).'</td>
-                                    <td style="text-align:right;">'.number_format($original_credit, 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $original_debit, 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $original_credit, 2).'</td>
                                     <td style="text-align:right;">'.$balance_original.'</td>
                                     <td></td>
-                                    <td style="text-align:right;">'.number_format($local_debit, 2).'</td>
-                                    <td style="text-align:right;">'.number_format($local_credit, 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $local_debit, 2).'</td>
+                                    <td style="text-align:right;">'.number_format((float) $local_credit, 2).'</td>
                                     <td style="text-align:right;">'.$balance_local.'</td>
                                 </tr>
                                 <tr>
@@ -1309,9 +1309,9 @@ class Report_ap extends CI_Controller
                 if($begin_balance_local != 0){
 
                     if($begin_balance >= 0){
-                        $balance_original = number_format($begin_balance, 2);
+                        $balance_original = number_format((float) $begin_balance, 2);
                     }else{
-                        $balance_original = "<span style='color:red;'>(".number_format(abs($begin_balance), 2).")</span>";
+                        $balance_original = "<span style='color:red;'>(".number_format(abs($begin_balance ?? 0), 2).")</span>";
                     }
 
                     if($begin_balance_local >= 0){
@@ -1340,19 +1340,19 @@ class Report_ap extends CI_Controller
 
             $detail .= '  <tr style="background: #C3FFB4; font-weight:bold;">
                             <td colspan="9">GRAND TOTAL</td>
-                            <td style="text-align:right;">'.number_format($grand_original_debit, 2).'</td>
-                            <td style="text-align:right;">'.number_format($grand_original_credit, 2).'</td>
-                            <td style="text-align:right;">'.number_format($grand_original_balance, 2).'</td>
+                            <td style="text-align:right;">'.number_format((float) $grand_original_debit, 2).'</td>
+                            <td style="text-align:right;">'.number_format((float) $grand_original_credit, 2).'</td>
+                            <td style="text-align:right;">'.number_format((float) $grand_original_balance, 2).'</td>
                             <td></td>
-                            <td style="text-align:right;">'.number_format($grand_local_debit, 2).'</td>
-                            <td style="text-align:right;">'.number_format($grand_local_credit, 2).'</td>
-                            <td style="text-align:right;">'.number_format($grand_local_balance, 2).'</td>
+                            <td style="text-align:right;">'.number_format((float) $grand_local_debit, 2).'</td>
+                            <td style="text-align:right;">'.number_format((float) $grand_local_credit, 2).'</td>
+                            <td style="text-align:right;">'.number_format((float) $grand_local_balance, 2).'</td>
                         </tr>';
 
             $summary .= '   <tr style="font-weight:bold;">
                                 <td colspan="3">GRAND TOTAL</td>
-                                <td style="text-align:right;">'.number_format($grand_original_balance, 2).'</td>
-                                <td style="text-align:right;">'.number_format($grand_local_balance, 2).'</td>
+                                <td style="text-align:right;">'.number_format((float) $grand_original_balance, 2).'</td>
+                                <td style="text-align:right;">'.number_format((float) $grand_local_balance, 2).'</td>
                             </tr>';
 
         $htmlend = '</table></body></html>';

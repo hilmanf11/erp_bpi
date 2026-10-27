@@ -87,7 +87,7 @@ class Transaction_wip extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime($trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM transaction_wip WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -128,7 +128,7 @@ class Transaction_wip extends CI_Controller
             // $filter_period = $this->input->get('filter_period');
             // $filter_workorder   = $this->input->get('filter_workorder');
             $filter_request_no = $this->input->get('filter_request_no');
-            $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+            $filter_product_no = base64_decode((string) $this->input->get('filter_product_no'));
             $filter_product_family = $this->input->get('filter_product_family');
             // $filter_kanban_date = $this->input->get('filter_kanban_date');
             $filter_from = $this->input->get('filter_from');
@@ -298,7 +298,7 @@ class Transaction_wip extends CI_Controller
         // $filter_period = $this->input->get('filter_period');
         // $filter_workorder   = $this->input->get('filter_workorder');
         $filter_request_no = $this->input->get('filter_request_no');
-        $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+        $filter_product_no = base64_decode((string) $this->input->get('filter_product_no'));
         $filter_product_family = $this->input->get('filter_product_family');
         // $filter_kanban_date = $this->input->get('filter_kanban_date');
         $filter_from  = $this->input->get('filter_from');

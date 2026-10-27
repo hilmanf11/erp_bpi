@@ -71,7 +71,7 @@ class Supplier_performance extends CI_Controller
 
         foreach ($months as $mNum => $mLabel) {
             $filter_from = $filter_year . '-' . $mNum . '-01';
-            $filter_to = date('Y-m-t', strtotime($filter_from));
+            $filter_to = date('Y-m-t', strtotime((string) $filter_from));
             $year_start_dt = $filter_year . '-01-01';
 
             // Jika bulan yang sedang di-loop melebihi bulan saat ini, anggap belum ada data (null)

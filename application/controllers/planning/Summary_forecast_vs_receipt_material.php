@@ -57,14 +57,14 @@ class Summary_forecast_vs_receipt_material extends CI_Controller
         $p_month = $this->input->post('p_month');
         $p_year = $this->input->post('p_year');
         $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);
@@ -86,8 +86,8 @@ class Summary_forecast_vs_receipt_material extends CI_Controller
     //     }
 
     //     // ==================== 1. FILTER & CONFIG ====================
-    //     $filter_period_year = (int) base64_decode($this->input->get("filter_period_year"));
-    //     $filter_month = (int)base64_decode($this->input->get("filter_month"));
+    //     $filter_period_year = (int) base64_decode((string) $this->input->get("filter_period_year"));
+    //     $filter_month = (int)base64_decode((string) $this->input->get("filter_month"));
     //     $filter_item_rm = $this->input->get("filter_item_rm"); 
     //     $filter_status = $this->input->get("filter_status");
     //     $filter_product_family = $this->input->get("filter_product_family");
@@ -292,11 +292,11 @@ class Summary_forecast_vs_receipt_material extends CI_Controller
     //             <td>' . $row['rm_number'] . '</td>
     //             <td>' . $row['rm_name'] . '</td>
     //             <td>' . $row['fg_name'] . '</td>
-    //             <td class="text-right">' . number_format($row['forecast'], 2) . '</td>
-    //             <td class="text-right" style="background-color:#f9f9f9;">' . number_format($row['receipt'], 2) . '</td>
-    //             <td class="text-right">' . number_format($row['tol_minus'], 2) . '</td>
-    //             <td class="text-right">' . number_format($row['tol_plus'], 2) . '</td>
-    //             <td class="text-right">' . number_format($row['diff'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['forecast'], 2) . '</td>
+    //             <td class="text-right" style="background-color:#f9f9f9;">' . number_format((float) $row['receipt'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['tol_minus'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['tol_plus'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['diff'], 2) . '</td>
     //             <td class="text-center" '.$status_style.'>' . $row['status'] . '</td>
     //         </tr>';
     //     }
@@ -318,8 +318,8 @@ class Summary_forecast_vs_receipt_material extends CI_Controller
     //     }
 
     //     // ==================== 1. FILTER & CONFIG ====================
-    //     $filter_period_year = (int) base64_decode($this->input->get("filter_period_year"));
-    //     $filter_month = (int)base64_decode($this->input->get("filter_month"));
+    //     $filter_period_year = (int) base64_decode((string) $this->input->get("filter_period_year"));
+    //     $filter_month = (int)base64_decode((string) $this->input->get("filter_month"));
     //     $filter_item_rm = $this->input->get("filter_item_rm"); 
     //     $filter_status = $this->input->get("filter_status");
     //     $filter_product_family = $this->input->get("filter_product_family");
@@ -550,12 +550,12 @@ class Summary_forecast_vs_receipt_material extends CI_Controller
     //             <td>' . $row['rm_number'] . '</td>
     //             <td>' . $row['rm_name'] . '</td>
     //             <td>' . $row['fg_name'] . '</td>
-    //             <td class="text-right">' . number_format($row['stock'], 2) . '</td>
-    //             <td class="text-right">' . number_format($row['forecast'], 2) . '</td>
-    //             <td class="text-right" style="background-color:#f9f9f9;">' . number_format($row['receipt'], 2) . '</td>
-    //             <td class="text-right">' . number_format($row['tol_minus'], 2) . '</td>
-    //             <td class="text-right">' . number_format($row['tol_plus'], 2) . '</td>
-    //             <td class="text-right">' . number_format($row['diff'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['stock'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['forecast'], 2) . '</td>
+    //             <td class="text-right" style="background-color:#f9f9f9;">' . number_format((float) $row['receipt'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['tol_minus'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['tol_plus'], 2) . '</td>
+    //             <td class="text-right">' . number_format((float) $row['diff'], 2) . '</td>
     //             <td class="text-center" '.$status_style.'>' . $row['status'] . '</td>
     //         </tr>';
     //     }
@@ -577,8 +577,8 @@ class Summary_forecast_vs_receipt_material extends CI_Controller
         }
 
         // ==================== 1. FILTER & CONFIG ====================
-        $filter_period_year = (int) base64_decode($this->input->get("filter_period_year"));
-        $filter_month = (int)base64_decode($this->input->get("filter_month"));
+        $filter_period_year = (int) base64_decode((string) $this->input->get("filter_period_year"));
+        $filter_month = (int)base64_decode((string) $this->input->get("filter_month"));
         $filter_item_rm = $this->input->get("filter_item_rm"); 
         $filter_status = $this->input->get("filter_status");
         $filter_product_family = $this->input->get("filter_product_family");
@@ -814,12 +814,12 @@ class Summary_forecast_vs_receipt_material extends CI_Controller
                 <td>' . $row['rm_number'] . '</td>
                 <td>' . $row['rm_name'] . '</td>
                 <td>' . $row['fg_name'] . '</td>
-                <td class="text-right">' . number_format($row['stock'], 2) . '</td>
-                <td class="text-right">' . number_format($row['forecast'], 2) . '</td>
-                <td class="text-right" style="background-color:#f9f9f9;">' . number_format($row['receipt'], 2) . '</td>
-                <td class="text-right">' . number_format($row['tol_minus'], 2) . '</td>
-                <td class="text-right">' . number_format($row['tol_plus'], 2) . '</td>
-                <td class="text-right">' . number_format($row['diff'], 2) . '</td>
+                <td class="text-right">' . number_format((float) $row['stock'], 2) . '</td>
+                <td class="text-right">' . number_format((float) $row['forecast'], 2) . '</td>
+                <td class="text-right" style="background-color:#f9f9f9;">' . number_format((float) $row['receipt'], 2) . '</td>
+                <td class="text-right">' . number_format((float) $row['tol_minus'], 2) . '</td>
+                <td class="text-right">' . number_format((float) $row['tol_plus'], 2) . '</td>
+                <td class="text-right">' . number_format((float) $row['diff'], 2) . '</td>
                 <td class="text-center" '.$status_style.'>' . $row['status'] . '</td>
             </tr>';
         }

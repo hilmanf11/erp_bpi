@@ -47,13 +47,13 @@ class Report_achievment_daily_supp extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
 
-            $filter_from = base64_decode($this->input->get('filter_from'));
-            $filter_to = base64_decode($this->input->get('filter_to'));
-            $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-            $filter_item_rm = base64_decode($this->input->get('filter_item_rm'));
+            $filter_from = base64_decode((string) $this->input->get('filter_from'));
+            $filter_to = base64_decode((string) $this->input->get('filter_to'));
+            $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+            $filter_item_rm = base64_decode((string) $this->input->get('filter_item_rm'));
 
             // Ambil kombinasi supplier+item dari purchase_orders yang masih OPEN (status=0), akumulasi dari awal tahun
-            $year_start_dt = date('Y', strtotime($filter_from)) . '-01-01';
+            $year_start_dt = date('Y', strtotime((string) $filter_from)) . '-01-01';
             $sqlMain = "SELECT t.supplier_id, t.item_rm_id, b.number as item_number, b.name as item_name, b.uom,
                         x.name as division, c.name as supplier_name
                         FROM (
@@ -228,8 +228,8 @@ class Report_achievment_daily_supp extends CI_Controller
 
                     $prevBalance = 0;
 
-                    while (strtotime($currentDate) <= strtotime($filter_to)) {
-                        $trans_date = date("Y-m-d", strtotime($currentDate));
+                    while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+                        $trans_date = date("Y-m-d", strtotime((string) $currentDate));
                         $dailyKey = $record['supplier_id'] . '_' . $record['item_rm_id'] . '_' . $trans_date;
 
                         $actual_qty = isset($mapDailyRm[$dailyKey]) ? $mapDailyRm[$dailyKey] : 0;
@@ -247,10 +247,10 @@ class Report_achievment_daily_supp extends CI_Controller
                             $arrPctQty["qty_" . $day] = "";
                             $arrPctQual["qty_" . $day] = "";
                         } else {
-                            $arrSales["qty_" . $day] = number_format($actual_qty, 2);
-                            $arrDelivery["qty_" . $day] = number_format($delivery_qty, 2);
+                            $arrSales["qty_" . $day] = number_format((float) $actual_qty, 2);
+                            $arrDelivery["qty_" . $day] = number_format((float) $delivery_qty, 2);
                             $arrBalance["qty_" . $day] = number_format($delivery_qty - $actual_qty, 2);
-                            $arrNg["qty_" . $day] = number_format($ng_qty, 2);
+                            $arrNg["qty_" . $day] = number_format((float) $ng_qty, 2);
                             
                             // %Quantity: (Actual/Plan)*100 jika Plan > 0, jika Plan == 0 dan Actual > 0 maka 100.00%, else 0.00%
                             $arrPctQty["qty_" . $day] = $actual_qty > 0 ? number_format(($delivery_qty / $actual_qty) * 100, 2) . "%" : ($delivery_qty > 0 ? "100.00%" : "0.00%");
@@ -259,7 +259,7 @@ class Report_achievment_daily_supp extends CI_Controller
                             $arrPctQual["qty_" . $day] = $delivery_qty > 0 ? number_format(100 - (($ng_qty / $delivery_qty) * 100), 2) . "%" : ($ng_qty > 0 ? "0.00%" : "100.00%");
                         }
 
-                        $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+                        $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
                         $day++;
                         $total_qty += $actual_qty;
                         $total_del += $delivery_qty;
@@ -274,7 +274,7 @@ class Report_achievment_daily_supp extends CI_Controller
                         $totBal = ($total_qty == 0 && $total_del == 0) ? "" : number_format($total_del - $total_qty, 2);
                         $arr = array_merge($arrBalance, ["total_qty" => $totBal]);
                     } elseif ($type == "NG") {
-                        $arr = array_merge($arrNg, ["total_qty" => ($total_qty == 0 && $total_del == 0 && $total_ng == 0 ? "" : number_format($total_ng, 2))]);
+                        $arr = array_merge($arrNg, ["total_qty" => ($total_qty == 0 && $total_del == 0 && $total_ng == 0 ? "" : number_format((float) $total_ng, 2))]);
                     } elseif ($type == "%Quantity") {
                         $totPctQty = ($total_qty == 0 && $total_del == 0) ? "" : ($total_qty > 0 ? number_format(($total_del / $total_qty) * 100, 2) . "%" : ($total_del > 0 ? "100.00%" : "0.00%"));
                         $arr = array_merge($arrPctQty, ["total_qty" => $totPctQty]);
@@ -322,7 +322,7 @@ class Report_achievment_daily_supp extends CI_Controller
         $filter_supplier = (base64_encode(base64_decode($raw_supplier, true)) === $raw_supplier) ? base64_decode($raw_supplier) : $raw_supplier;
         $filter_item_rm = (base64_encode(base64_decode($raw_item_rm, true)) === $raw_item_rm) ? base64_decode($raw_item_rm) : $raw_item_rm;
 
-        $year_start_pr = date('Y', strtotime($filter_from)) . '-01-01';
+        $year_start_pr = date('Y', strtotime((string) $filter_from)) . '-01-01';
         $sqlMain = "SELECT t.supplier_id, t.item_rm_id, b.number as item_number, b.name as item_name, b.uom,
                     c.name as supplier_name, x.name as division
                     FROM (
@@ -454,13 +454,13 @@ class Report_achievment_daily_supp extends CI_Controller
         $colspan = 0;
 
         $currentDate = $filter_from;
-        while (strtotime($currentDate) <= strtotime($filter_to)) {
-            $working_date = date("Y-m-d", strtotime($currentDate));
-            $working_date2 = date("d F", strtotime($currentDate));
+        while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+            $working_date = date("Y-m-d", strtotime((string) $currentDate));
+            $working_date2 = date("d F", strtotime((string) $currentDate));
 
             $holiday_remarks = isset($mapHolidays[$working_date]) ? $mapHolidays[$working_date] : null;
 
-            if (date('w', strtotime($currentDate)) !== '0' && date('w', strtotime($currentDate)) !== '6') {
+            if (date('w', strtotime((string) $currentDate)) !== '0' && date('w', strtotime((string) $currentDate)) !== '6') {
                 if (!empty($holiday_remarks)) {
                     $styles = 'background:#FFD974;';
                 } else {
@@ -473,7 +473,7 @@ class Report_achievment_daily_supp extends CI_Controller
             $date .= '<th width="50" style="text-align:center; ' . $styles . '">' . $working_date2 . '</th>';
 
             $colspan++;
-            $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+            $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
         }
 
         // Bulk fetch daily request_materials (PLAN)
@@ -518,8 +518,8 @@ class Report_achievment_daily_supp extends CI_Controller
 
                 $prevBalance = 0;
 
-                while (strtotime($currentDate) <= strtotime($filter_to)) {
-                    $trans_date = date("Y-m-d", strtotime($currentDate));
+                while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+                    $trans_date = date("Y-m-d", strtotime((string) $currentDate));
                     $dailyKey = $record['supplier_id'] . '_' . $record['item_rm_id'] . '_' . $trans_date;
 
                     $actual_qty = isset($mapDailyRm[$dailyKey]) ? $mapDailyRm[$dailyKey] : 0;
@@ -529,11 +529,11 @@ class Report_achievment_daily_supp extends CI_Controller
                     $currentBalance = $prevBalance + $delivery_qty - $actual_qty;
 
                     if ($type == "PLAN") {
-                        $valPlan = ($actual_qty == 0 && $delivery_qty == 0) ? "" : number_format($actual_qty, 2);
+                        $valPlan = ($actual_qty == 0 && $delivery_qty == 0) ? "" : number_format((float) $actual_qty, 2);
                         $isi .= "<td style='text-align:right;'>" . $valPlan . "</td>";
                         $total_qty += $actual_qty;
                     } elseif ($type == "ACTUAL") {
-                        $valAct = ($actual_qty == 0 && $delivery_qty == 0) ? "" : number_format($delivery_qty, 2);
+                        $valAct = ($actual_qty == 0 && $delivery_qty == 0) ? "" : number_format((float) $delivery_qty, 2);
                         $isi .= "<td style='text-align:right;'>" . $valAct . "</td>";
                         $total_del += $delivery_qty;
                     } elseif ($type == "BALANCE") {
@@ -542,7 +542,7 @@ class Report_achievment_daily_supp extends CI_Controller
                         $total_qty += $actual_qty;
                         $total_del += $delivery_qty;
                     } elseif ($type == "NG") {
-                        $valNg = ($actual_qty == 0 && $delivery_qty == 0) ? "" : number_format($ng_qty, 2);
+                        $valNg = ($actual_qty == 0 && $delivery_qty == 0) ? "" : number_format((float) $ng_qty, 2);
                         $isi .= "<td style='text-align:right;'>" . $valNg . "</td>";
                         $total_ng += $ng_qty;
                     } elseif ($type == "%Quantity") {
@@ -557,19 +557,19 @@ class Report_achievment_daily_supp extends CI_Controller
                         $total_ng += $ng_qty;
                     }
 
-                    $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+                    $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
                     $prevBalance = $currentBalance;
                 }
 
                 if ($type == "PLAN") {
-                    $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format($total_qty, 2) . "</td>";
+                    $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format((float) $total_qty, 2) . "</td>";
                 } elseif ($type == "ACTUAL") {
-                    $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format($total_del, 2) . "</td>";
+                    $isi .= "<td style='text-align:right; font-weight:bold;'>" . number_format((float) $total_del, 2) . "</td>";
                 } elseif ($type == "BALANCE") {
                     $totBalPrint = ($total_qty == 0 && $total_del == 0) ? "" : number_format($total_del - $total_qty, 2);
                     $isi .= "<td style='text-align:right; font-weight:bold;'>" . $totBalPrint . "</td>";
                 } elseif ($type == "NG") {
-                    $valTotNg = ($total_qty == 0 && $total_del == 0) ? "" : number_format($total_ng, 2);
+                    $valTotNg = ($total_qty == 0 && $total_del == 0) ? "" : number_format((float) $total_ng, 2);
                     $isi .= "<td style='text-align:right; font-weight:bold;'>" . $valTotNg . "</td>";
                 } elseif ($type == "%Quantity") {
                     $totPctQty = ($total_qty == 0 && $total_del == 0) ? "" : ($total_qty > 0 ? number_format(($total_del / $total_qty) * 100, 2) . "%" : ($total_del > 0 ? "100.00%" : "0.00%"));
@@ -586,9 +586,9 @@ class Report_achievment_daily_supp extends CI_Controller
                     $content .= '<td rowspan="6">' . $record['item_number'] . '</td>';
                     $content .= '<td rowspan="6">' . $record['item_name'] . '</td>';
                     $content .= '<td rowspan="6">' . $record['uom'] . '</td>';
-                    $content .= '<td rowspan="6" style="text-align:right;">' . number_format($record['qty_memo'], 2) . '</td>';
-                    $content .= '<td rowspan="6" style="text-align:right;">' . number_format($record['qty_por'], 2) . '</td>';
-                    $content .= '<td rowspan="6" style="text-align:right;">' . number_format($record['ost_memo'], 2) . '</td>';
+                    $content .= '<td rowspan="6" style="text-align:right;">' . number_format((float) $record['qty_memo'], 2) . '</td>';
+                    $content .= '<td rowspan="6" style="text-align:right;">' . number_format((float) $record['qty_por'], 2) . '</td>';
+                    $content .= '<td rowspan="6" style="text-align:right;">' . number_format((float) $record['ost_memo'], 2) . '</td>';
                 }
 
                 $content .= '<td>' . $type . '</td>';

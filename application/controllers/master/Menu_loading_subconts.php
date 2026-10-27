@@ -76,8 +76,8 @@ class Menu_loading_subconts extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_subcont_id = base64_decode($this->input->get('filter_subcont_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_subcont_id = base64_decode((string) $this->input->get('filter_subcont_id'));
 
             $this->db->select('a.*, b.number as subcont_number, b.name as subcont_name, c.number as machine_number, c.name as machine_name, c.specification as machine_spec, c.maker as machine_maker, c.toonage as machine_toonage, c.tiebar as machine_tiebar, c.uom_tiebar as machine_uom_tiebar, c.min_closing as machine_min_close, c.uom_min as machine_uom_min_close, c.max_open as machine_max_open, c.uom_max as machine_uom_max_open, c.volume as machine_volume, c.uom_volume as machine_uom_volume, c.diameter as machine_diameter, c.uom_diameter as machine_uom_diameter, c.brand as machine_brand, c.status as machine_status');
             $this->db->from('menu_loading_subconts a');
@@ -97,7 +97,7 @@ class Menu_loading_subconts extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $subcont_id = base64_decode($this->input->get('subcont_id'));
+            $subcont_id = base64_decode((string) $this->input->get('subcont_id'));
 
             $this->db->select('a.*, b.number as subcont_number, b.name as subcont_name, c.number as machine_number, c.name as machine_name, c.specification as machine_spec, c.maker as machine_maker, c.toonage as machine_toonage, c.tiebar as machine_tiebar, c.uom_tiebar as machine_uom_tiebar, c.min_closing as machine_min_close, c.uom_min as machine_uom_min_close, c.max_open as machine_max_open, c.uom_max as machine_uom_max_open, c.volume as machine_volume, c.uom_volume as machine_uom_volume, c.diameter as machine_diameter, c.uom_diameter as machine_uom_diameter, c.brand as machine_brand, c.status as machine_status');
             $this->db->from('menu_loading_subconts a');
@@ -115,8 +115,8 @@ class Menu_loading_subconts extends CI_Controller
     // public function datatableHistories()
     // {
     //     if ($this->input->get()) {
-    //         $subcont_id = base64_decode($this->input->get('subcont_id'));
-    //         $machine_id = base64_decode($this->input->get('machine_id'));
+    //         $subcont_id = base64_decode((string) $this->input->get('subcont_id'));
+    //         $machine_id = base64_decode((string) $this->input->get('machine_id'));
 
     //         $this->db->select('*');
     //         $this->db->from('supplier_item_histories');

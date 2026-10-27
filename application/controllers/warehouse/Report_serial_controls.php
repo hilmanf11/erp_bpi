@@ -47,7 +47,7 @@ class Report_serial_controls extends CI_Controller
     public function readDeliveryNote()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $do_number = base64_decode($this->input->get("do_number"));
+        $do_number = base64_decode((string) $this->input->get("do_number"));
 
         $post = isset($_POST['q']) ? $_POST['q'] : "";
 
@@ -70,11 +70,11 @@ class Report_serial_controls extends CI_Controller
 
         $filter_customer = $this->input->get("filter_customer");
         $filter_product_no = $this->input->get("filter_product_no");
-        $filter_do_no = base64_decode($this->input->get("filter_do_no"));
-        $filter_dn_no = base64_decode($this->input->get("filter_dn_no"));
-        $filter_serial_no = base64_decode($this->input->get("filter_serial_no"));
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_do_no = base64_decode((string) $this->input->get("filter_do_no"));
+        $filter_dn_no = base64_decode((string) $this->input->get("filter_dn_no"));
+        $filter_serial_no = base64_decode((string) $this->input->get("filter_serial_no"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
 
         //Config
         $this->db->select('*');
@@ -211,7 +211,7 @@ class Report_serial_controls extends CI_Controller
                             <td>' . $data['item_no'] . '</td>
                             <td>' . $data['item_name'] . '</td>
                             <td>' . $data['checksheet_label'] . '</td>
-                            <td>' . number_format($data['qty'], 2) . '</td>
+                            <td>' . number_format((float) $data['qty'], 2) . '</td>
                             <td>' . $data['lot_no'] . '</td>
                         </tr>';
             $no++;

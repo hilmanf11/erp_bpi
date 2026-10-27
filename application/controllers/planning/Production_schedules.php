@@ -40,7 +40,7 @@ class Production_schedules extends CI_Controller
     }
     public function readWpAll()
     {
-        $period = base64_decode($this->input->get('period'));
+        $period = base64_decode((string) $this->input->get('period'));
         $send = $this->crud->query("SELECT DISTINCT a.wo_no, b.id as item_fg_id, b.number as item_fg_number 
         FROM production_schedules a 
         JOIN item_fg b on a.item_fg_id = b.id 
@@ -55,15 +55,15 @@ class Production_schedules extends CI_Controller
 
     public function readWp()
     {
-        $period = base64_decode($this->input->get('period'));
+        $period = base64_decode((string) $this->input->get('period'));
         $send = $this->crud->query("SELECT DISTINCT wp FROM production_schedules WHERE `status` = 0 and `period` = '$period' ORDER BY `wp` DESC");
         echo json_encode($send);
     }
 
     public function readWorkorder()
     {
-        $period = base64_decode($this->input->get('period'));
-        $wp = base64_decode($this->input->get('wp'));
+        $period = base64_decode((string) $this->input->get('period'));
+        $wp = base64_decode((string) $this->input->get('wp'));
         $send = $this->crud->query("SELECT DISTINCT workorder, so_number FROM production_schedules WHERE `status` = 0 and `period` = '$period' and wp = '$wp' ORDER BY `wp` DESC");
         echo json_encode($send);
     }
@@ -97,9 +97,9 @@ class Production_schedules extends CI_Controller
 
     public function readCustomer()
     {
-        $period = base64_decode($this->input->get('period'));
-        $wp = base64_decode($this->input->get('wp'));
-        $workorder = base64_decode($this->input->get('workorder'));
+        $period = base64_decode((string) $this->input->get('period'));
+        $wp = base64_decode((string) $this->input->get('wp'));
+        $workorder = base64_decode((string) $this->input->get('workorder'));
 
         $send = $this->crud->query("SELECT a.customer_id, b.number as customer_number, b.name as customer_name 
             FROM production_schedules a
@@ -211,7 +211,7 @@ class Production_schedules extends CI_Controller
         // if ($production_schedule) {
         //     return $production_schedule->workorder;
         // } else {
-        $datenow = date("ymd", strtotime($trans_date));
+        $datenow = date("ymd", strtotime((string) $trans_date));
         $sqlGetID = $this->db->query("SELECT max(workorder) as kode FROM production_schedules WHERE workorder like '%$datenow%'");
         $rowID = $sqlGetID->row();
         $kode = $rowID->kode;
@@ -414,7 +414,7 @@ class Production_schedules extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             if (isset($post['wo_no_assembly']) && $post['wo_no_assembly'] === '') {
                 $post['wo_no_assembly'] = null;
@@ -951,9 +951,9 @@ class Production_schedules extends CI_Controller
                             <td style="mso-number-format:\@;">' . $data['item_number'] . '</td>
                             <td style="mso-number-format:\@;">' . $data['item_name'] . '</td>
                             <td>' . $data['uom'] . '</td>
-                            <td>' . number_format($data['qty'], 2) . '</td>
-                            <td>' . number_format($data['os_qty'], 2) . '</td>
-                            <td>' . number_format($data['os_wo'], 2) . '</td>
+                            <td>' . number_format((float) $data['qty'], 2) . '</td>
+                            <td>' . number_format((float) $data['os_qty'], 2) . '</td>
+                            <td>' . number_format((float) $data['os_wo'], 2) . '</td>
                             <td>' . $data['status_subcont'] . '</td>
                             <td>' . $data['subcont_type'] . '</td>
                             <td>' . $supply_sheet_status . '</td>
@@ -1539,7 +1539,7 @@ class Production_schedules extends CI_Controller
                                     </tr>
                                     <tr>
                                         <td class="text-center text-bold" style="font-size: 17px; padding: 8px;">'.$data['lot_no'].'</td>
-                                        <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.number_format($data['qty']).'</td>
+                                        <td class="text-center text-bold" style="font-size: 16px; padding: 8px;">'.number_format((float) $data['qty']).'</td>
                                     </tr>
                                     <tr>
                                         <td class="text-center text-bold">lead time (hour)</td>

@@ -192,8 +192,8 @@ class Supplier_items extends CI_Controller
     // public function datatableDetails()
     // {
     //     if ($this->input->get()) {
-    //         $number = base64_decode($this->input->get('number'));
-    //         $filter_supplier_id = base64_decode($this->input->get('filter_supplier_id'));
+    //         $number = base64_decode((string) $this->input->get('number'));
+    //         $filter_supplier_id = base64_decode((string) $this->input->get('filter_supplier_id'));
 
     //         $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name');
     //         $this->db->from('supplier_items a');
@@ -214,7 +214,7 @@ class Supplier_items extends CI_Controller
     // public function datatableUpdates()
     // {
     //     if ($this->input->get()) {
-    //         $supplier_id = base64_decode($this->input->get('supplier_id'));
+    //         $supplier_id = base64_decode((string) $this->input->get('supplier_id'));
 
     //         $this->db->select('a.*, b.number as item_rm_number, b.name as item_rm_name, b.item_family_id as item_rm_family, c.currency as supplier_currency, d.name as item_family_name');
     //         $this->db->from('supplier_items a');
@@ -233,8 +233,8 @@ class Supplier_items extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $supplier_id = base64_decode($this->input->get('supplier_id'));
-            $item_rm_id = base64_decode($this->input->get('item_rm_id'));
+            $supplier_id = base64_decode((string) $this->input->get('supplier_id'));
+            $item_rm_id = base64_decode((string) $this->input->get('item_rm_id'));
 
             $this->db->select('*');
             $this->db->from('supplier_item_histories');
@@ -275,7 +275,7 @@ class Supplier_items extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
 
             $dataFinal = array(
@@ -538,7 +538,7 @@ class Supplier_items extends CI_Controller
                     <td>' . $data['share_order'] . '</td>
                     <td>' . $data['leadtime'] . '</td>
                     <td>' . $data['supplier_currency'] . '</td>
-                    <td>' . number_format($data['price']) . '</td>
+                    <td>' . number_format((float) $data['price']) . '</td>
                     <td>' . $data['valid_date'] . '</td>
                     <td>' . $data['safety_stock'] . '</td>
                     <td>' . $data['uom_default'] . '</td>

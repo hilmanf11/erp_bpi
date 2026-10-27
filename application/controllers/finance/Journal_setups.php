@@ -40,7 +40,7 @@ class Journal_setups extends CI_Controller
     //GET DATATABLES
     public function datatables()
     {
-        $filters = json_decode($this->input->post('filterRules'));
+        $filters = json_decode((string) $this->input->post('filterRules'));
         $id = $_POST['id'];
         // var_dump($id);
         if ($id === "0") {
@@ -85,7 +85,7 @@ class Journal_setups extends CI_Controller
 
     public function datatable_updates()
     {
-        $journal_type_id = base64_decode($this->input->get('journal_type_id'));
+        $journal_type_id = base64_decode((string) $this->input->get('journal_type_id'));
         $records = $this->crud->query("SELECT a.*, b.account_name FROM journal_setups a JOIN account_coa b ON a.account_number = b.account_number WHERE a.journal_type_id = '$journal_type_id' ORDER BY a.flag ASC");
         echo json_encode($records);
     }

@@ -285,7 +285,7 @@ class Scan_repair_of_goods extends CI_Controller
 
     // public function checkPassword()
     // {
-    //     $inputPassword = base64_decode($this->input->post('password'));
+    //     $inputPassword = base64_decode((string) $this->input->post('password'));
     //     // var_dump($inputPassword);
     //     $sessionPassword = 'SCM01@23#';
 

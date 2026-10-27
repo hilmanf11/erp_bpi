@@ -145,9 +145,9 @@ class Inventory_wip_standard_actual extends CI_Controller
                     if (is_numeric($cutoff)) {
                         $cutoffDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($cutoff)->format('Y-m-d');
                     
-                    } elseif (!empty($cutoff) && strtotime($cutoff)) {
+                    } elseif (!empty($cutoff) && strtotime((string) $cutoff)) {
                         // Jika ternyata formatnya string tanggal (misal: "2024-01-01")
-                        $cutoffDate = date('Y-m-d', strtotime($cutoff));
+                        $cutoffDate = date('Y-m-d', strtotime((string) $cutoff));
                     
                     } else {
                         $cutoffDate = date('Y-01-01'); 
@@ -213,7 +213,7 @@ class Inventory_wip_standard_actual extends CI_Controller
             }
 
             // Prepare Data
-            $cutoff_date = date("Y-m-d", strtotime($data['cutoff_date']));
+            $cutoff_date = date("Y-m-d", strtotime((string) $data['cutoff_date']));
             $dataFinal = [
                 'item_fg_id'  => $item_fg->id,
                 'part_no'     => $data['part_no'],
@@ -589,8 +589,8 @@ class Inventory_wip_standard_actual extends CI_Controller
         $filter_shift     = $this->input->get("filter_shift");
         $filter_workorder = $this->input->get("filter_workorder");
 
-        $start  = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start  = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
 
@@ -1346,93 +1346,93 @@ class Inventory_wip_standard_actual extends CI_Controller
                 <td colspan="2">' . $record->uom . '</td>
                 <td colspan="2">' . $record->division . '</td>
 
-                <td style="text-align:right;">' . number_format($b_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($b_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($b_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_variance, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($i_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($i_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($i_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($i_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $i_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $i_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $i_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $i_variance, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($o_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($o_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($o_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($o_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $o_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $o_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $o_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $o_variance, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->ending_balance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_variance, 2) . '</td>
                 
 
-                <td style="text-align:right;">' . number_format($record->qty_actual, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_actual, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->qty_actual, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->qty_actual, 2) . '</td>
                 
-                <td style="text-align:right;">' . number_format($record->qty_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->qty_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->qty_wip, 2) . '</td>
                 
-                <td style="text-align:right;">' . number_format($record->subconts_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->subconts_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->subconts_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->subconts_jasa, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->qty_adj_in, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_adj_in, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->qty_adj_in, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->qty_adj_in, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->qty_ng_sa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->qty_ng_sa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->qty_ng_sa, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->qty_ng_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->qty_ng_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->qty_ng_wip, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->qty_output, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_output, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->qty_output, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->qty_output, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_rfg, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->qty_rfg, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->qty_rfg, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->rfg_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->rfg_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->rfg_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->rfg_jasa, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->qty_adj_out, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_adj_out, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price * $record->qty_adj_out, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price * $record->qty_adj_out, 2) . '</td>
             </tr>';
 
@@ -1500,93 +1500,93 @@ class Inventory_wip_standard_actual extends CI_Controller
 
         $html .= '<tr style="background-color: #eee; font-weight: bold;">
                 <td colspan="10" style="text-align:right;">GRAND TOTAL</td>
-                <td style="text-align:right;">'.number_format($total_b_qty, 2).'</td>
+                <td style="text-align:right;">'.number_format((float) $total_b_qty, 2).'</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_b_std_amount, 2).'</td>
+                <td style="text-align:right;">'.number_format((float) $total_b_std_amount, 2).'</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_b_act_amount, 2).'</td>
-                <td></td>
-
-                <td style="text-align:right;">'.number_format($total_i_qty, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format($total_i_std_amount, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format($total_i_act_amount, 2).'</td>
+                <td style="text-align:right;">'.number_format((float) $total_b_act_amount, 2).'</td>
                 <td></td>
 
-                <td style="text-align:right;">'.number_format($total_o_qty, 2).'</td>
+                <td style="text-align:right;">'.number_format((float) $total_i_qty, 2).'</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_o_std_amount, 2).'</td>
+                <td style="text-align:right;">'.number_format((float) $total_i_std_amount, 2).'</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_o_act_amount, 2).'</td>
-                <td></td>
-
-                <td style="text-align:right;">'.number_format($total_e_qty, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format($total_e_std_amount, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format($total_e_act_amount, 2).'</td>
+                <td style="text-align:right;">'.number_format((float) $total_i_act_amount, 2).'</td>
                 <td></td>
 
-                <td style="text-align:right;">' . number_format($total_qty_actual, 2) . '</td>
+                <td style="text-align:right;">'.number_format((float) $total_o_qty, 2).'</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_qty_actual, 2) . '</td>
+                <td style="text-align:right;">'.number_format((float) $total_o_std_amount, 2).'</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_qty_actual, 2) . '</td>
+                <td style="text-align:right;">'.number_format((float) $total_o_act_amount, 2).'</td>
+                <td></td>
+
+                <td style="text-align:right;">'.number_format((float) $total_e_qty, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format((float) $total_e_std_amount, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format((float) $total_e_act_amount, 2).'</td>
+                <td></td>
+
+                <td style="text-align:right;">' . number_format((float) $total_qty_actual, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format((float) $total_std_qty_actual, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format((float) $total_act_qty_actual, 2) . '</td>
                 
-                <td style="text-align:right;">' . number_format($total_qty_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_qty_wip, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_qty_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_qty_wip, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_qty_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_qty_wip, 2) . '</td>
                 
-                <td style="text-align:right;">' . number_format($total_subconts_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_subconts_jasa, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_subconts_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_subconts_jasa, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_subconts_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_subconts_jasa, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($total_qty_adj_in, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_qty_adj_in, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_qty_adj_in, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_qty_adj_in, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_qty_adj_in, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_qty_adj_in, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($total_qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_qty_ng_sa, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_qty_ng_sa, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_qty_ng_sa, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($total_qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_qty_ng_wip, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_qty_ng_wip, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_qty_ng_wip, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($total_qty_output, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_qty_output, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_qty_output, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_qty_output, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_qty_output, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_qty_output, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($total_qty_rfg, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_qty_rfg, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_qty_rfg, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_qty_rfg, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_qty_rfg, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_qty_rfg, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($total_rfg_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_rfg_jasa, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_rfg_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_rfg_jasa, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_rfg_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_rfg_jasa, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($total_qty_adj_out, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_qty_adj_out, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_std_qty_adj_out, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_std_qty_adj_out, 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">' . number_format($total_act_qty_adj_out, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $total_act_qty_adj_out, 2) . '</td>
             </tr>';
 
         $html .= '</table></body></html>';
@@ -1608,8 +1608,8 @@ class Inventory_wip_standard_actual extends CI_Controller
         $filter_shift = $this->input->get("filter_shift");
         $filter_workorder = $this->input->get("filter_workorder");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
 
@@ -2276,91 +2276,91 @@ class Inventory_wip_standard_actual extends CI_Controller
                 <td colspan="2">' . $record->uom . '</td>
                 <td colspan="2">' . $record->division . '</td>
 
-                <td style="text-align:right;">' . number_format($record->begin_balance, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($b_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($b_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->begin_balance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_variance, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($in_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($in_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($in_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($in_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $in_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $in_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $in_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $in_variance, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($out_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($out_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($out_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($out_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $out_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $out_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $out_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $out_variance, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->ending_balance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_variance, 2) . '</td>
                 
 
-                <td style="text-align:right;">' . number_format($record->qty_actual, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_actual, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->qty_actual, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
                 
-                <td style="text-align:right;">' . number_format($record->qty_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->qty_wip, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
                 
-                <td style="text-align:right;">' . number_format($record->subconts_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->subconts_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->subconts_jasa, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
 
-                <td style="text-align:right;">' . number_format($record->qty_adj_in, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_adj_in, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->qty_adj_in, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
 
-                <td style="text-align:right;">' . number_format($record->qty_ng_sa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->qty_ng_sa, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
 
-                <td style="text-align:right;">' . number_format($record->qty_ng_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->qty_ng_wip, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
 
-                <td style="text-align:right;">' . number_format($record->qty_output, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_output, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->qty_output, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
 
-                <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_rfg, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->qty_rfg, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
 
-                <td style="text-align:right;">' . number_format($record->rfg_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->rfg_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->rfg_jasa, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
 
-                <td style="text-align:right;">' . number_format($record->qty_adj_out, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_adj_out, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_p * $record->qty_adj_out, 2) . '</td>
                 <td style="text-align:right;"></td>
                 <td style="text-align:right;"></td>
@@ -2386,8 +2386,8 @@ class Inventory_wip_standard_actual extends CI_Controller
         $filter_division = $this->input->get("filter_division");
         $filter_shift = $this->input->get("filter_shift");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
 
@@ -2807,18 +2807,18 @@ class Inventory_wip_standard_actual extends CI_Controller
                             <td>' . $record->division . '</td>
                             <td>FINISH GOOD</td>
                             <td style="text-align:center;">' . $record->currency . '</td>
-                            <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $rate, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format(@$record->begin_balance, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->begin_balance, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_out, 2) . '</td>
 
@@ -3063,7 +3063,7 @@ class Inventory_wip_standard_actual extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
 
                 // Generate HTML
@@ -3078,21 +3078,21 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     <td colspan="2">' . $data['date'] . '</td>
                                     <td colspan="2">' . $data['wo_no'] . '</td>
                                     <td style="text-align:center;">' . $currency . '</td>
-                                    <td style="text-align:right;">' . number_format($price, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($rate, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $rate, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_in'], 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_out'], 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
                                 </tr>';
@@ -3105,18 +3105,18 @@ class Inventory_wip_standard_actual extends CI_Controller
         }
         $html .= '<tr>
             <td colspan="10" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalBeginStock, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalIn, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalBeginAmount, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalIn, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountIn, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalOut, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountOut, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalEndingStock, 2) . '</b></td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format((float) $totalAmountEndingStock, 2) . '</b></td>
         </tr>';
         $html .= '</table></body></html>';
         echo $html;
@@ -3145,8 +3145,8 @@ class Inventory_wip_standard_actual extends CI_Controller
         $filter_shift     = $this->input->get("filter_shift");
         $filter_workorder = $this->input->get("filter_workorder");
 
-        $start  = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start  = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
 
@@ -3750,31 +3750,31 @@ class Inventory_wip_standard_actual extends CI_Controller
                 <td>' . $record->division . '</td>
                 <td> FINISH GOOD </td>
                 <td>' . $record->standard_currency . '</td>
-                <td>' . number_format($rate, 2) . '</td>
+                <td>' . number_format((float) $rate, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($b_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($b_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $b_act_amount, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($in_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($in_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($in_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $in_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $in_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $in_act_amount, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($out_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($out_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($out_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $out_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $out_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $out_act_amount, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->ending_balance, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $e_act_amount, 2) . '</td>
             </tr>';
 
             // Total Summary
@@ -4046,7 +4046,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                 if ($b['type'] === 'UPLOADS') return 1;
 
                 // Transaksi lainnya diurutkan berdasarkan tanggal
-                return strtotime($a['date']) - strtotime($b['date']);
+                return strtotime((string) $a['date']) - strtotime((string) $b['date']);
             });
 
             // PERBAIKAN: Saldo awal baris detail adalah saldo upload + mutasi carry-over sebelum filter_from
@@ -4059,7 +4059,7 @@ class Inventory_wip_standard_actual extends CI_Controller
             $grandtotals['b_std'] += ($running_qty_bal * $std_price);
             $grandtotals['b_act'] += ($running_qty_bal * $act_price);
 
-            $is_upload_month = (date('Y-m', strtotime($start_system)) == date('Y-m', strtotime($filter_from)));
+            $is_upload_month = (date('Y-m', strtotime((string) $start_system)) == date('Y-m', strtotime((string) $filter_from)));
 
             // Tampilkan Baris Kuning HANYA jika ini adalah bulan Upload
             if ($is_upload_month) {
@@ -4070,14 +4070,14 @@ class Inventory_wip_standard_actual extends CI_Controller
                     <td>' . $record->upload_by . '</td>
                     <td>' . $record->upload_date . '</td>
                     <td>BEGIN BALANCE (UPLOAD)</td>
-                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                     <td style="text-align:center;">' . $record->upload_currency . '</td>
-                    <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                    <td style="text-align:right;">' . number_format((float) $rate, 2) . '</td>
 
-                    <td style="text-align:right;">' . number_format($actual_upload_qty, 2) . '</td>
-                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format((float) $actual_upload_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                     <td style="text-align:right;">' . number_format($actual_upload_qty * $std_price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                     <td style="text-align:right;">' . number_format($actual_upload_qty * $act_price, 2) . '</td>
 
                     <td style="text-align:right;">0.00</td>
@@ -4092,10 +4092,10 @@ class Inventory_wip_standard_actual extends CI_Controller
                     <td style="text-align:right;">0.00</td>
                     <td style="text-align:right;">0.00</td>
 
-                    <td style="text-align:right;">' . number_format($actual_upload_qty, 2) . '</td>
-                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format((float) $actual_upload_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                     <td style="text-align:right;">' . number_format($actual_upload_qty * $std_price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                     <td style="text-align:right;">' . number_format($actual_upload_qty * $act_price, 2) . '</td>
                 </tr>';
             }
@@ -4118,32 +4118,32 @@ class Inventory_wip_standard_actual extends CI_Controller
                         <td>' . $data['username'] . '</td>
                         <td>' . $data['date'] . '</td>
                         <td>' . $data['wo_no'] . '</td>
-                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                         <td style="text-align:center;">' . $currency . '</td>
-                        <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $rate, 2) . '</td>
 
-                        <td style="text-align:right;">' . number_format($row_begin_qty, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $row_begin_qty, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                         <td style="text-align:right;">' . number_format($row_begin_qty * $std_price, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                         <td style="text-align:right;">' . number_format($row_begin_qty * $act_price, 2) . '</td>
                         
-                        <td style="text-align:right;">' . number_format($trans_in, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $trans_in, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                         <td style="text-align:right;">' . number_format($trans_in * $std_price, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                         <td style="text-align:right;">' . number_format($trans_in * $act_price, 2) . '</td>
                         
-                        <td style="text-align:right;">' . number_format($trans_out, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $trans_out, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                         <td style="text-align:right;">' . number_format($trans_out * $std_price, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                         <td style="text-align:right;">' . number_format($trans_out * $act_price, 2) . '</td>
                         
-                        <td style="text-align:right; font-weight:bold;">' . number_format($running_qty_bal, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right; font-weight:bold;">' . number_format((float) $running_qty_bal, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
                         <td style="text-align:right;">' . number_format($running_qty_bal * $std_price, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
                         <td style="text-align:right;">' . number_format($running_qty_bal * $act_price, 2) . '</td>
                     </tr>';
                 $nod++;
@@ -4169,29 +4169,29 @@ class Inventory_wip_standard_actual extends CI_Controller
         $html .= '<tfooter>
             <tr style="background:#eee; font-weight:bold;">
                 <td colspan="9" align="right">GRAND TOTAL</td>
-                <td align="right">' . number_format($grandtotals['b_qty'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['b_qty'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['b_std'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['b_std'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['b_act'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['b_act'], 2) . '</td>
 
-                <td align="right">' . number_format($grandtotals['i_qty'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['i_qty'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['i_std'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['i_std'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['i_act'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['i_act'], 2) . '</td>
 
-                <td align="right">' . number_format($grandtotals['o_qty'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['o_qty'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['o_std'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['o_std'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['o_act'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['o_act'], 2) . '</td>
 
-                <td align="right">' . number_format($grandtotals['e_qty'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['e_qty'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['e_std'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['e_std'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['e_act'], 2) . '</td>
+                <td align="right">' . number_format((float) $grandtotals['e_act'], 2) . '</td>
             </tr>
         </tfooter>';
 

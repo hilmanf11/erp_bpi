@@ -91,7 +91,7 @@ class Supply_materials extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime($trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM supply_materials WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -133,7 +133,7 @@ class Supply_materials extends CI_Controller
             // $filter_workorder   = $this->input->get('filter_workorder');
             $filter_request_no = $this->input->get('filter_request_no');
             $filter_product_family = $this->input->get('filter_product_family');
-            $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+            $filter_product_no = base64_decode((string) $this->input->get('filter_product_no'));
             $filter_from = $this->input->get('filter_from');
             $filter_to   = $this->input->get('filter_to');
             $filter_type   = $this->input->get('filter_type');
@@ -478,7 +478,7 @@ class Supply_materials extends CI_Controller
                                         <tr>
                                             <td width="50">Request Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime($kanban->request_date)) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime((string) $kanban->request_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Request Name</td>
@@ -602,7 +602,7 @@ class Supply_materials extends CI_Controller
         // $filter_workorder   = $this->input->get('filter_workorder');
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_product_family = $this->input->get('filter_product_family');
-        $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+        $filter_product_no = base64_decode((string) $this->input->get('filter_product_no'));
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
         $filter_type   = $this->input->get('filter_type');

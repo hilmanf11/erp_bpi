@@ -102,10 +102,10 @@ class Journal_entries extends CI_Controller
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
 
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_category = base64_decode($this->input->get('filter_category'));
-            $filter_asset_no = base64_decode($this->input->get('filter_asset_no'));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $filter_category = base64_decode((string) $this->input->get('filter_category'));
+            $filter_asset_no = base64_decode((string) $this->input->get('filter_asset_no'));
 
             $filter_period = $filter_year . "-" . $filter_month;
 
@@ -273,10 +273,10 @@ class Journal_entries extends CI_Controller
             header("Content-Disposition: attachment; filename=journal_entries_$format.xls");
         }
 
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_category = base64_decode($this->input->get('filter_category'));
-        $filter_asset_no = base64_decode($this->input->get('filter_asset_no'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_category = base64_decode((string) $this->input->get('filter_category'));
+        $filter_asset_no = base64_decode((string) $this->input->get('filter_asset_no'));
 
         $filter_period = $filter_year . "-" . $filter_month;
 
@@ -358,14 +358,14 @@ class Journal_entries extends CI_Controller
                         <td>' . $data['asset_category_name'] . '</td>
                         <td>' . $data['purchase_invoice_number'] . '</td>
                         <td>' . $data['purchase_date'] . '</td>
-                        <td style="text-align:right;">' . number_format($data['cost']) . '</td>
-                        <td style="text-align:right;">' . number_format($data['estimate_year']) . '</td>
-                        <td style="text-align:right;">' . number_format($data['estimate_month']) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['cost']) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['estimate_year']) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['estimate_month']) . '</td>
                         <td>' . $data['expired_date'] . '</td>
                         <td>' . $data['account_number'] . '</td>
                         <td>' . $data['account_name'] . '</td>
-                        <td style="text-align:right;">' . number_format($data['debit']) . '</td>
-                        <td style="text-align:right;">' . number_format($data['credit']) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['debit']) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $data['credit']) . '</td>
                     </tr>';
             $no++;
         }

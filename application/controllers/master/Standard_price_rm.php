@@ -58,7 +58,7 @@ class Standard_price_rm extends CI_Controller
         $division = $post['division'];
         $start_date = $post['start_date'];
         $end_date = $post['end_date'];
-        $datenow = date("y", strtotime($start_date));
+        $datenow = date("y", strtotime((string) $start_date));
         $sql = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where division='$division' AND `start_date`='$start_date' AND `end_date`='$end_date'");
         $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `start_date`='$start_date' AND `end_date`='$end_date'");
         $row = $sql->row();
@@ -129,7 +129,7 @@ class Standard_price_rm extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $document_number = base64_decode($this->input->get('document_number'));
+            $document_number = base64_decode((string) $this->input->get('document_number'));
 
             $this->db->select('a.*,b.number as item_rm_number, b.name as item_rm_name, b.uom, c.name as item_category_name, d.name as item_family_name');
             // $this->db->select('a.*');
@@ -147,7 +147,7 @@ class Standard_price_rm extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $document_number = base64_decode($this->input->get('document_number'));
+            $document_number = base64_decode((string) $this->input->get('document_number'));
 
             $this->db->select('a.*,b.number as item_rm_number, b.name as item_rm_name, b.uom, c.name as item_category_name, d.name as item_family_name, e.name as division_name');
             // $this->db->select('a.*');
@@ -167,9 +167,9 @@ class Standard_price_rm extends CI_Controller
     public function datatableHistory()
     {
 
-        $start_date  = base64_decode($this->input->get('start_date'));
-        $end_date = base64_decode($this->input->get('end_date'));
-        $item_rm_id = base64_decode($this->input->get('item_rm_id'));
+        $start_date  = base64_decode((string) $this->input->get('start_date'));
+        $end_date = base64_decode((string) $this->input->get('end_date'));
+        $item_rm_id = base64_decode((string) $this->input->get('item_rm_id'));
 
         $result = array();
         //Select Query
@@ -325,7 +325,7 @@ class Standard_price_rm extends CI_Controller
             $start_date = $data['start_date'];
             $end_date = $data['end_date'];
 
-            $datenow = date("y", strtotime($start_date));
+            $datenow = date("y", strtotime((string) $start_date));
             $sql = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where division='$division' AND `start_date`='$start_date' AND `end_date`='$end_date'");
             $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `start_date`='$start_date' AND `end_date`='$end_date'");
             $row = $sql->row();

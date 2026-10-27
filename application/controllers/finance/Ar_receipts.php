@@ -84,7 +84,7 @@ class Ar_receipts extends CI_Controller
     // {
     //     $receipt_date = $this->input->post('receipt_date');
     //     $currency = $this->input->post('currency');
-    //     $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+    //     $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $receipt_date)));
 
     //     $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
@@ -94,7 +94,7 @@ class Ar_receipts extends CI_Controller
     //         $amount = 0;
     //     }
 
-    //     echo "Rp. " . number_format($amount, 2);
+    //     echo "Rp. " . number_format((float) $amount, 2);
     // }
     
     function readExchangeRate()
@@ -122,7 +122,7 @@ class Ar_receipts extends CI_Controller
 
         echo json_encode([
             'amount' => $amount,
-            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format($amount, 2)
+            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format((float) $amount, 2)
         ]);
     }
 
@@ -172,7 +172,7 @@ class Ar_receipts extends CI_Controller
 
         foreach ($banks as $bank) {
             if ($currency != "IDR") {
-                // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+                // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $receipt_date)));
                 // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
                 
                 $this->db->select('middle');
@@ -194,13 +194,13 @@ class Ar_receipts extends CI_Controller
 
             if($grand_total < 0){
                 $debit = 0;
-                $credit = abs($grand_total);
+                $credit = abs($grand_total ?? 0);
                 $local_debit = 0;
-                $local_credit = abs($amount);
+                $local_credit = abs($amount ?? 0);
             }else{
-                $debit = abs($grand_total);
+                $debit = abs($grand_total ?? 0);
                 $credit = 0;
-                $local_debit = abs($amount);
+                $local_debit = abs($amount ?? 0);
                 $local_credit = 0;
             }
 
@@ -226,7 +226,7 @@ class Ar_receipts extends CI_Controller
             $receipt_date = $jsonData['receipt_date'];
             $total = $jsonData["receipt"];
 
-            // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+            // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $receipt_date)));
 
             // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
             
@@ -421,8 +421,8 @@ class Ar_receipts extends CI_Controller
     // {
     //     if (!empty($trans_date) && !empty($bank_code)) {
     //         $decoded_date = base64_decode($trans_date);
-    //         $year = date("y", strtotime($decoded_date));
-    //         $month = date("m", strtotime($decoded_date));
+    //         $year = date("y", strtotime((string) $decoded_date));
+    //         $month = date("m", strtotime((string) $decoded_date));
     //         // $bank_code = base64_decode($bank_code);
     //         $datenow    = $bank_code."/".$month."-".$year."/"."M";
     //         $sqlGetID   = $this->db->query("SELECT max(`receipt_no`) as kode FROM ar_receipts WHERE `receipt_no` like '%$datenow%'");
@@ -444,8 +444,8 @@ class Ar_receipts extends CI_Controller
     {
         if (!empty($trans_date) && !empty($bank_code)) {
             $decoded_date = base64_decode($trans_date);
-            $year = date("y", strtotime($decoded_date));
-            $month = date("m", strtotime($decoded_date));
+            $year = date("y", strtotime((string) $decoded_date));
+            $month = date("m", strtotime((string) $decoded_date));
             
             $datenow    = $bank_code."/".$month."-".$year."/"."M";
             
@@ -468,7 +468,7 @@ class Ar_receipts extends CI_Controller
 
     public function datatablesTemp_existing()
     {
-        $sales_invoice = base64_decode($this->input->get('sales_invoice'));
+        $sales_invoice = base64_decode((string) $this->input->get('sales_invoice'));
         $sales_invoice_ex = explode(",", $sales_invoice);
 
         $this->db->select("a.*, a.total_grand as receipt");
@@ -512,7 +512,7 @@ class Ar_receipts extends CI_Controller
 
     public function datatablesTemp()
     {
-        $sales_invoice = base64_decode($this->input->get('sales_invoice'));
+        $sales_invoice = base64_decode((string) $this->input->get('sales_invoice'));
         $sales_invoice_ex = explode(",", $sales_invoice);
 
         $this->db->select("a.*, a.total_grand as receipt");
@@ -569,14 +569,14 @@ class Ar_receipts extends CI_Controller
 
     public function datatables($details = "")
     {
-        $filter_receipt_type  = base64_decode($this->input->get('filter_receipt_type'));
-        $filter_receipt_date_from = base64_decode($this->input->get('filter_receipt_date_from'));
-        $filter_receipt_date_to = base64_decode($this->input->get('filter_receipt_date_to'));
-        $filter_receipt_no = base64_decode($this->input->get('filter_receipt_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_bank_no = base64_decode($this->input->get('filter_bank_no'));
-        $filter_receipt_by = base64_decode($this->input->get('filter_receipt_by'));
+        $filter_receipt_type  = base64_decode((string) $this->input->get('filter_receipt_type'));
+        $filter_receipt_date_from = base64_decode((string) $this->input->get('filter_receipt_date_from'));
+        $filter_receipt_date_to = base64_decode((string) $this->input->get('filter_receipt_date_to'));
+        $filter_receipt_no = base64_decode((string) $this->input->get('filter_receipt_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_bank_no = base64_decode((string) $this->input->get('filter_bank_no'));
+        $filter_receipt_by = base64_decode((string) $this->input->get('filter_receipt_by'));
 
         $date_from = date("Y-m-01");
         $date_to = date("Y-m-t");
@@ -616,7 +616,7 @@ class Ar_receipts extends CI_Controller
             //Limit 1 - 10
             $this->db->limit($rows, $offset);
         } else {
-            $receipt_no = base64_decode($this->input->get('receipt_no'));
+            $receipt_no = base64_decode((string) $this->input->get('receipt_no'));
 
             $this->db->select('*');
             $this->db->select("'view' as details");
@@ -847,7 +847,7 @@ class Ar_receipts extends CI_Controller
         $account_coa   = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
         $journal_types = $this->crud->read('journal_types', ["number" => $data['journal_number']]);
         $sales_invoice = $this->crud->read('sales_invoices', [], ["number" => $data['sales_invoice'], "account_number" => $data['account_number']]);
-        $account_banks = $this->db->select('*')->from('account_banks')->like('bank_account', trim($data['bank_account']), 'both')->get()->row();
+        $account_banks = $this->db->select('*')->from('account_banks')->like('bank_account', trim((string) $data['bank_account']), 'both')->get()->row();
 
         // Tambahkan validasi jika Receipt No. sudah ada dari insert via Form bukan via upload (Bu Nina)
         $this->db->select('*');
@@ -909,8 +909,8 @@ class Ar_receipts extends CI_Controller
                 // KONDISI 1: Jika data dari excel kosong atau '-', buat nomor baru.
                 $bank_code    = $account_banks->bank_code ?? $data['bank_account'];
                 $receipt_date = $data['receipt_date'];                
-                $year  = date("y", strtotime($receipt_date));
-                $month = date("m", strtotime($receipt_date));
+                $year  = date("y", strtotime((string) $receipt_date));
+                $month = date("m", strtotime((string) $receipt_date));
 
                 $number_prefix = $bank_code . "/" . $month . "-" . $year . "/M";
 
@@ -942,7 +942,7 @@ class Ar_receipts extends CI_Controller
             // Get Rate
             $currency  = $data['currency'];
             $date_rate = $data['receipt_date'];
-            $monthBf   = date('Y-m-01', strtotime('-1 month', strtotime($date_rate)));
+            $monthBf   = date('Y-m-01', strtotime('-1 month', strtotime((string) $date_rate)));
             $exchange  = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
             if ($currency != "IDR") {
                 if ($exchange) {
@@ -1235,7 +1235,7 @@ class Ar_receipts extends CI_Controller
             //Exchange Rate
             $receipt_date = $records[0]['receipt_date'];
             $currency = $records[0]['currency'];
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $receipt_date)));
             $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
             if ($exchange) {
@@ -1246,7 +1246,7 @@ class Ar_receipts extends CI_Controller
                 $hide = "hidden";
             }
             // <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $receipt_no . '.png') . '" width="60"/></td>
-            $exchangeName = "Rp. " . number_format($amount, 2);
+            $exchangeName = "Rp. " . number_format((float) $amount, 2);
 
             $html .= '  <table style="width:100%;">
                             <tr>
@@ -1339,11 +1339,11 @@ class Ar_receipts extends CI_Controller
                 if ($record['account_type'] == "DEBIT") {
                     $grand_total -= $record['receipt'];
                     $subtotal -= $record['receipt'];
-                    $receipt = "(".@number_format($record['receipt'], 2).")";
+                    $receipt = "(".@number_format((float) $record['receipt'], 2).")";
                 } else {
                     $grand_total += $record['receipt'];
                     $subtotal += $record['receipt'];
-                    $receipt = @number_format($record['receipt'], 2);
+                    $receipt = @number_format((float) $record['receipt'], 2);
                 }
 
                 $html .= '  <tr>
@@ -1352,7 +1352,7 @@ class Ar_receipts extends CI_Controller
                                 <td>' . $record['description'] . '</td>
                                 <td>' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($record['amount']), 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['balance'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['balance'], 2) . '</td>
                                 <td style="text-align:right;">' . $receipt . '</td>
                                 <td>' . $record['remarks'] . '</td>
                             </tr>';
@@ -1362,7 +1362,7 @@ class Ar_receipts extends CI_Controller
             if (($i + 1) == $page) {
                 $html_grand_total = '<tr>
                                         <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-                                        <th style="text-align:right;">' . @number_format($subtotal, 2) . '</th>
+                                        <th style="text-align:right;">' . @number_format((float) $subtotal, 2) . '</th>
                                         <td></td>
                                     </tr>';
             } else {
@@ -1371,7 +1371,7 @@ class Ar_receipts extends CI_Controller
 
             $html .= '  <tr>
                             <th style="text-align:right" colspan="6">SUB TOTAL</th>
-                            <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+                            <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
                             <td></td>
                         </tr>';
 
@@ -1426,19 +1426,19 @@ class Ar_receipts extends CI_Controller
                             <td>' . $journal->account_number . '</td>
                             <td>' . $journal->account_name . '</td>
                             <td>' . $journal->description . '</td>
-                            <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($journal->local_debit, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($journal->local_credit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal->debit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal->credit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal->local_debit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal->local_credit, 2) . '</td>
                         </tr>';
         }
 
         $html .= '      <tr>
                             <td colspan="3"><b>BALANCE TOTAL</b></td>
-                            <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($local_total_debit, 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($local_total_credit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $total_debit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $total_credit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $local_total_debit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $local_total_credit, 2) . '</td>
                         </tr>
                     </table>
                 </div>';
@@ -1480,14 +1480,14 @@ class Ar_receipts extends CI_Controller
             header("Content-Disposition: attachment; filename=ar_receipt_$format.xls");
         }
 
-        $filter_receipt_type  = base64_decode($this->input->get('filter_receipt_type'));
-        $filter_receipt_date_from = base64_decode($this->input->get('filter_receipt_date_from'));
-        $filter_receipt_date_to = base64_decode($this->input->get('filter_receipt_date_to'));
-        $filter_receipt_no = base64_decode($this->input->get('filter_receipt_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_bank_no = base64_decode($this->input->get('filter_bank_no'));
-        $filter_receipt_by = base64_decode($this->input->get('filter_receipt_by'));
+        $filter_receipt_type  = base64_decode((string) $this->input->get('filter_receipt_type'));
+        $filter_receipt_date_from = base64_decode((string) $this->input->get('filter_receipt_date_from'));
+        $filter_receipt_date_to = base64_decode((string) $this->input->get('filter_receipt_date_to'));
+        $filter_receipt_no = base64_decode((string) $this->input->get('filter_receipt_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_bank_no = base64_decode((string) $this->input->get('filter_bank_no'));
+        $filter_receipt_by = base64_decode((string) $this->input->get('filter_receipt_by'));
 
         //Config
         $this->db->select('*');
@@ -1586,9 +1586,9 @@ class Ar_receipts extends CI_Controller
                                 <td>' . $detail['sales_invoice'] . '</td>
                                 <td>' . $detail['description'] . '</td>
                                 <td>' . $detail['currency'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['amount'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($detail['balance'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($detail['receipt'], 2, ",", ".")  . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['amount'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['balance'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['receipt'], 2, ",", ".")  . '</td>
                                 <td>' . $detail['remarks'] . '</td>
                                 <td>' . $detail['account_number'] . '</td>
                                 <td>' . $detail['account_type'] . '</td>
@@ -1625,14 +1625,14 @@ class Ar_receipts extends CI_Controller
             header("Content-Disposition: attachment; filename=ar_receipt_detail_$format.xls");
         }
 
-        $filter_receipt_type  = base64_decode($this->input->get('filter_receipt_type'));
-        $filter_receipt_date_from = base64_decode($this->input->get('filter_receipt_date_from'));
-        $filter_receipt_date_to = base64_decode($this->input->get('filter_receipt_date_to'));
-        $filter_receipt_no = base64_decode($this->input->get('filter_receipt_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_bank_no = base64_decode($this->input->get('filter_bank_no'));
-        $filter_receipt_by = base64_decode($this->input->get('filter_receipt_by'));
+        $filter_receipt_type  = base64_decode((string) $this->input->get('filter_receipt_type'));
+        $filter_receipt_date_from = base64_decode((string) $this->input->get('filter_receipt_date_from'));
+        $filter_receipt_date_to = base64_decode((string) $this->input->get('filter_receipt_date_to'));
+        $filter_receipt_no = base64_decode((string) $this->input->get('filter_receipt_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_bank_no = base64_decode((string) $this->input->get('filter_bank_no'));
+        $filter_receipt_by = base64_decode((string) $this->input->get('filter_receipt_by'));
 
         //Config
         $this->db->select('*');
@@ -1750,14 +1750,14 @@ class Ar_receipts extends CI_Controller
             header("Content-Disposition: attachment; filename=ar_receipt_journal_$format.xls");
         }
 
-        $filter_receipt_type  = base64_decode($this->input->get('filter_receipt_type'));
-        $filter_receipt_date_from = base64_decode($this->input->get('filter_receipt_date_from'));
-        $filter_receipt_date_to = base64_decode($this->input->get('filter_receipt_date_to'));
-        $filter_receipt_no = base64_decode($this->input->get('filter_receipt_no'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_bank_no = base64_decode($this->input->get('filter_bank_no'));
-        $filter_receipt_by = base64_decode($this->input->get('filter_receipt_by'));
+        $filter_receipt_type  = base64_decode((string) $this->input->get('filter_receipt_type'));
+        $filter_receipt_date_from = base64_decode((string) $this->input->get('filter_receipt_date_from'));
+        $filter_receipt_date_to = base64_decode((string) $this->input->get('filter_receipt_date_to'));
+        $filter_receipt_no = base64_decode((string) $this->input->get('filter_receipt_no'));
+        $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_bank_no = base64_decode((string) $this->input->get('filter_bank_no'));
+        $filter_receipt_by = base64_decode((string) $this->input->get('filter_receipt_by'));
 
         //Config
         $this->db->select('*');
@@ -1954,7 +1954,7 @@ class Ar_receipts extends CI_Controller
             //Exchange Rate
             $receipt_date = $records[0]['receipt_date'];
             $currency = $records[0]['currency'];
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $receipt_date)));
             $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
             if ($exchange) {
@@ -1965,7 +1965,7 @@ class Ar_receipts extends CI_Controller
                 $hide = "hidden";
             }
             // <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $receipt_no . '.png') . '" width="60"/></td>
-            $exchangeName = "Rp. " . number_format($amount, 2);
+            $exchangeName = "Rp. " . number_format((float) $amount, 2);
 
             $html .= '  <table style="width:100%;">
                             <tr>
@@ -2084,7 +2084,7 @@ class Ar_receipts extends CI_Controller
             if (($i + 1) == $page) {
                 $html_grand_total = '<tr>
                                         <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-                                        <th style="text-align:right;">' . @number_format($subtotal, 2) . '</th>
+                                        <th style="text-align:right;">' . @number_format((float) $subtotal, 2) . '</th>
                                         <td></td>
                                     </tr>';
             } else {
@@ -2093,7 +2093,7 @@ class Ar_receipts extends CI_Controller
 
             $html .= '  <tr>
                             <th style="text-align:right" colspan="6">SUB TOTAL</th>
-                            <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+                            <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
                             <td></td>
                         </tr>';
 
@@ -2148,19 +2148,19 @@ class Ar_receipts extends CI_Controller
                             <td>' . $journal->account_number . '</td>
                             <td>' . $journal->account_name . '</td>
                             <td>' . $journal->description . '</td>
-                            <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($journal->local_debit, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($journal->local_credit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal->debit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal->credit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal->local_debit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $journal->local_credit, 2) . '</td>
                         </tr>';
         }
 
         $html .= '      <tr>
                             <td colspan="3"><b>BALANCE TOTAL</b></td>
-                            <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($local_total_debit, 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($local_total_credit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $total_debit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $total_credit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $local_total_debit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format((float) $local_total_credit, 2) . '</td>
                         </tr>
                     </table>
                 </div>';
@@ -2212,7 +2212,7 @@ class Ar_receipts extends CI_Controller
     }
 
     function formatIDR($number, $decimal_places = 2) {
-        $formatted_number = number_format($number, $decimal_places, ',', '.');
+        $formatted_number = number_format((float) $number, $decimal_places, ',', '.');
         return $formatted_number;
     }
 

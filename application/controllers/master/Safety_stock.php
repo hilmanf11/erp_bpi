@@ -48,7 +48,7 @@ class Safety_stock extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));//filter langsung di datagrid
+            $filters = json_decode((string) $this->input->post('filterRules'));//filter langsung di datagrid
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -116,7 +116,7 @@ class Safety_stock extends CI_Controller
     {
         if ($this->input->post()) {
             
-            $id = base64_decode($this->input->get('id'));
+            $id = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $existing_data = $this->crud->read('safety_stocks', [], ["id" => $id]); // Membaca data yang ada
 

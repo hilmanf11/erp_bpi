@@ -38,7 +38,7 @@ class Categories extends CI_Controller
     //GET DATATABLES
     public function datatables()
     {
-        $filters = json_decode($this->input->post('filterRules'));
+        $filters = json_decode((string) $this->input->post('filterRules'));
         $id = $_POST['id'];
         if ($id === "0") {
             $this->db->select('a.*, b.name as journal_type_name');
@@ -83,7 +83,7 @@ class Categories extends CI_Controller
 
     public function datatable_updates()
     {
-        $number = base64_decode($this->input->get('number'));
+        $number = base64_decode((string) $this->input->get('number'));
         $records = $this->crud->query("SELECT * FROM asset_categories WHERE number = '$number' ORDER BY flag asc");
         echo json_encode($records);
     }

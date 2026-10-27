@@ -119,7 +119,7 @@ class new_barcode extends CI_Controller
                 echo json_encode(array("title" => "Available", "message" => "Item Id has Been Created in Period ", "theme" => "error"));
             }else{
                 $qty_label = $post['qty_label'];
-                $datenow = date('Ymd', strtotime($post['cut_off_date']));
+                $datenow = date('Ymd', strtotime((string) $post['cut_off_date']));
                 $sqlGetID   = $this->db->query("SELECT max(label_no) as kode FROM new_barcode WHERE label_no like '%$datenow%'");
                 $rowID      = $sqlGetID->row();
                 $kode       = $rowID->kode;
@@ -177,8 +177,8 @@ class new_barcode extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $item_rm_id = base64_decode($this->input->get('item_rm_id'));
-        $cut_off_date = base64_decode($this->input->get('cut_off_date'));
+        $item_rm_id = base64_decode((string) $this->input->get('item_rm_id'));
+        $cut_off_date = base64_decode((string) $this->input->get('cut_off_date'));
 
         $date = new DateTime($cut_off_date);
         $p_month = $date->format('m'); 
@@ -236,7 +236,7 @@ class new_barcode extends CI_Controller
                                 </tr>
                                 <tr>
                                     <th style="text-align:left">
-                                        <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                        <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
                                         <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                         </th>
                                     <th style="text-align:left">

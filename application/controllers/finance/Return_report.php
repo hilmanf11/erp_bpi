@@ -151,7 +151,7 @@ class Return_report extends CI_Controller
             $totalAmountIDR = 0;
             foreach ($records as $record) {
                 $currency = $record->currency;
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record->delivery_note_date)));
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $record->delivery_note_date)));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                 if ($currency != "IDR") {
@@ -178,12 +178,12 @@ class Return_report extends CI_Controller
                                 <td>' . $record->sales_order_no . '</td>
                                 <td>' . $record->customer_order_no . '</td>
                                 <td>' . $record->uom . '</td>
-                                <td style="text-align:right">' . number_format($record->qty, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->qty, 2, ',', '.') . '</td>
                                 <td>' . $record->currency . '</td>
-                                <td style="text-align:right">' . number_format($record->price, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . number_format($amount, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format((float) $record->price, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format((float) $amount, 2, ',', '.') . '</td>
                                 <td style="text-align:right">' . $exchange_rate . '</td>
-                                <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format((float) $amountIDR, 2, ',', '.') . '</td>
                             </tr>';
                 $no++;
                 $totalAmount += $amount;
@@ -192,9 +192,9 @@ class Return_report extends CI_Controller
 
             $html .= '<tr>
                 <td colspan="13" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                <td style="text-align:right">' . number_format($totalAmount, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format((float) $totalAmount, 2, ',', '.') . '</td>
                 <td style="text-align:right;">-</td>
-                <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format((float) $totalAmountIDR, 2, ',', '.') . '</td>
             </tr>';
 
             $html .= '</table></body></html>';
@@ -270,7 +270,7 @@ class Return_report extends CI_Controller
             $totalAmountIDR = 0;
             foreach ($records as $record) {
                 $currency = $record->currency;
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record->delivery_note_date)));
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $record->delivery_note_date)));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
                 if ($currency != "IDR") {
@@ -288,7 +288,7 @@ class Return_report extends CI_Controller
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record->customer_name . '</td>
-                                <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format((float) $amountIDR, 2, ',', '.') . '</td>
                             </tr>';
                 $no++;
                 $totalAmountIDR += $amountIDR;
@@ -297,7 +297,7 @@ class Return_report extends CI_Controller
             $html .= '<tr>
                 <td colspan="2" style="text-align:right;"><b>GRAND TOTAL</b></td>
                 
-                <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format((float) $totalAmountIDR, 2, ',', '.') . '</td>
             </tr>';
 
             $html .= '</table></body></html>';

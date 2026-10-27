@@ -64,9 +64,9 @@ class Disposeds extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
 
-            $filter_from = base64_decode($this->input->get('filter_from'));
-            $filter_to = base64_decode($this->input->get('filter_to'));
-            $filter_number = base64_decode($this->input->get('filter_number'));
+            $filter_from = base64_decode((string) $this->input->get('filter_from'));
+            $filter_to = base64_decode((string) $this->input->get('filter_to'));
+            $filter_number = base64_decode((string) $this->input->get('filter_number'));
 
             //Select Query
             $this->db->select('a.*, b.number, b.name, b.cost, b.residual, c.name as asset_category_name, c.type as asset_category_type');
@@ -110,7 +110,7 @@ class Disposeds extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('asset_disposals', ["id" => $id], $post);
             echo $send;
@@ -140,9 +140,9 @@ class Disposeds extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $filter_from = base64_decode($this->input->get('filter_from'));
-        $filter_to = base64_decode($this->input->get('filter_to'));
-        $filter_number = base64_decode($this->input->get('filter_number'));
+        $filter_from = base64_decode((string) $this->input->get('filter_from'));
+        $filter_to = base64_decode((string) $this->input->get('filter_to'));
+        $filter_number = base64_decode((string) $this->input->get('filter_number'));
 
         //Select Query
         $this->db->select('a.*, b.number, b.name, b.cost, b.residual, c.name as asset_category_name, c.type as asset_category_type');

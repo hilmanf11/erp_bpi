@@ -309,7 +309,7 @@ class Material_costs extends CI_Controller
             echo json_encode([
                 'success' => true, 
                 'message' => 'Data processed successfully',
-                'total_cost' => number_format($total_all_rows, 2)
+                'total_cost' => number_format((float) $total_all_rows, 2)
             ]);
         }
     }

@@ -58,14 +58,14 @@ class Forecast_moving_avg extends CI_Controller
         $p_month = $this->input->post('p_month');
         $p_year = $this->input->post('p_year');
         $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);
@@ -79,19 +79,19 @@ class Forecast_moving_avg extends CI_Controller
             header("Content-Disposition: attachment; filename=forecast_moving_avg_$format.xls");
         }
 
-        $filter_period_year = base64_decode($this->input->get("filter_period_year"));
-        $filter_period_month = base64_decode($this->input->get("filter_period_month"));
+        $filter_period_year = base64_decode((string) $this->input->get("filter_period_year"));
+        $filter_period_month = base64_decode((string) $this->input->get("filter_period_month"));
         $filter_customer_name = $this->input->get("filter_customer_name");
         $filter_item_fg = $this->input->get("filter_item_fg");
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         //Config
@@ -251,73 +251,73 @@ class Forecast_moving_avg extends CI_Controller
                 $no++;
                 $html .= '<tr>
                         <td>' . $dates[0]['name'] . '</td>
-                        <td>' . number_format($data['month_1']) . '</td>
+                        <td>' . number_format((float) $data['month_1']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[1]['name'] . '</td>
-                        <td>' . number_format($data['month_2']) . '</td>
+                        <td>' . number_format((float) $data['month_2']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[2]['name'] . '</td>
-                        <td>' . number_format($data['month_3']) . '</td>
+                        <td>' . number_format((float) $data['month_3']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[3]['name'] . '</td>
-                        <td>' . number_format($data['month_4']) . '</td>
+                        <td>' . number_format((float) $data['month_4']) . '</td>
                         <td>' . number_format(round($f_4_month_4)) . '</td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[4]['name'] . '</td>
-                        <td>' . number_format($data['month_5']) . '</td>
+                        <td>' . number_format((float) $data['month_5']) . '</td>
                         <td>' . number_format(round($f_4_month_5)) . '</td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[5]['name'] . '</td>
-                        <td>' . number_format($data['month_6']) . '</td>
+                        <td>' . number_format((float) $data['month_6']) . '</td>
                         <td>' . number_format(round($f_4_month_6)) . '</td>
                         <td>' . number_format(round($f_6_month_6)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[6]['name'] . '</td>
-                        <td>' . number_format($data['month_7']) . '</td>
+                        <td>' . number_format((float) $data['month_7']) . '</td>
                         <td>' . number_format(round($f_4_month_7)) . '</td>
                         <td>' . number_format(round($f_6_month_7)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[7]['name'] . '</td>
-                        <td>' . number_format($data['month_8']) . '</td>
+                        <td>' . number_format((float) $data['month_8']) . '</td>
                         <td>' . number_format(round($f_4_month_8)) . '</td>
                         <td>' . number_format(round($f_6_month_8)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[8]['name'] . '</td>
-                        <td>' . number_format($data['month_9']) . '</td>
+                        <td>' . number_format((float) $data['month_9']) . '</td>
                         <td>' . number_format(round($f_4_month_9)) . '</td>
                         <td>' . number_format(round($f_6_month_9)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[9]['name'] . '</td>
-                        <td>' . number_format($data['month_10']) . '</td>
+                        <td>' . number_format((float) $data['month_10']) . '</td>
                         <td>' . number_format(round($f_4_month_10)) . '</td>
                         <td>' . number_format(round($f_6_month_10)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[10]['name'] . '</td>
-                        <td>' . number_format($data['month_11']) . '</td>
+                        <td>' . number_format((float) $data['month_11']) . '</td>
                         <td>' . number_format(round($f_4_month_11)) . '</td>
                         <td>' . number_format(round($f_6_month_11)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[11]['name'] . '</td>
-                        <td>' . number_format($data['month_12']) . '</td>
+                        <td>' . number_format((float) $data['month_12']) . '</td>
                         <td>' . number_format(round($f_4_month_12)) . '</td>
                         <td>' . number_format(round($f_6_month_12)) . '</td>
                         <td>' . number_format(round($f_12_month_12)) . '</td>';
@@ -435,73 +435,73 @@ class Forecast_moving_avg extends CI_Controller
                 $no++;
                 $html .= '<tr>
                         <td>' . $dates[0]['name'] . '</td>
-                        <td>' . number_format($data['month_1']) . '</td>
+                        <td>' . number_format((float) $data['month_1']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[1]['name'] . '</td>
-                        <td>' . number_format($data['month_2']) . '</td>
+                        <td>' . number_format((float) $data['month_2']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[2]['name'] . '</td>
-                        <td>' . number_format($data['month_3']) . '</td>
+                        <td>' . number_format((float) $data['month_3']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[3]['name'] . '</td>
-                        <td>' . number_format($data['month_4']) . '</td>
+                        <td>' . number_format((float) $data['month_4']) . '</td>
                         <td>' . number_format(round($f_4_month_4)) . '</td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[4]['name'] . '</td>
-                        <td>' . number_format($data['month_5']) . '</td>
+                        <td>' . number_format((float) $data['month_5']) . '</td>
                         <td>' . number_format(round($f_4_month_5)) . '</td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[5]['name'] . '</td>
-                        <td>' . number_format($data['month_6']) . '</td>
+                        <td>' . number_format((float) $data['month_6']) . '</td>
                         <td>' . number_format(round($f_4_month_6)) . '</td>
                         <td>' . number_format(round($f_6_month_6)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[6]['name'] . '</td>
-                        <td>' . number_format($data['month_7']) . '</td>
+                        <td>' . number_format((float) $data['month_7']) . '</td>
                         <td>' . number_format(round($f_4_month_7)) . '</td>
                         <td>' . number_format(round($f_6_month_7)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[7]['name'] . '</td>
-                        <td>' . number_format($data['month_8']) . '</td>
+                        <td>' . number_format((float) $data['month_8']) . '</td>
                         <td>' . number_format(round($f_4_month_8)) . '</td>
                         <td>' . number_format(round($f_6_month_8)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[8]['name'] . '</td>
-                        <td>' . number_format($data['month_9']) . '</td>
+                        <td>' . number_format((float) $data['month_9']) . '</td>
                         <td>' . number_format(round($f_4_month_9)) . '</td>
                         <td>' . number_format(round($f_6_month_9)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[9]['name'] . '</td>
-                        <td>' . number_format($data['month_10']) . '</td>
+                        <td>' . number_format((float) $data['month_10']) . '</td>
                         <td>' . number_format(round($f_4_month_10)) . '</td>
                         <td>' . number_format(round($f_6_month_10)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[10]['name'] . '</td>
-                        <td>' . number_format($data['month_11']) . '</td>
+                        <td>' . number_format((float) $data['month_11']) . '</td>
                         <td>' . number_format(round($f_4_month_11)) . '</td>
                         <td>' . number_format(round($f_6_month_11)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[11]['name'] . '</td>
-                        <td>' . number_format($data['month_12']) . '</td>
+                        <td>' . number_format((float) $data['month_12']) . '</td>
                         <td>' . number_format(round($f_4_month_12)) . '</td>
                         <td>' . number_format(round($f_6_month_12)) . '</td>
                         <td>' . number_format(round($f_12_month_12)) . '</td>';
@@ -620,73 +620,73 @@ class Forecast_moving_avg extends CI_Controller
                 $no++;
                 $html .= '<tr>
                         <td>' . $dates[0]['name'] . '</td>
-                        <td>' . number_format($data['month_1']) . '</td>
+                        <td>' . number_format((float) $data['month_1']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[1]['name'] . '</td>
-                        <td>' . number_format($data['month_2']) . '</td>
+                        <td>' . number_format((float) $data['month_2']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[2]['name'] . '</td>
-                        <td>' . number_format($data['month_3']) . '</td>
+                        <td>' . number_format((float) $data['month_3']) . '</td>
                         <td></td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[3]['name'] . '</td>
-                        <td>' . number_format($data['month_4']) . '</td>
+                        <td>' . number_format((float) $data['month_4']) . '</td>
                         <td>' . number_format(round($f_4_month_4)) . '</td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[4]['name'] . '</td>
-                        <td>' . number_format($data['month_5']) . '</td>
+                        <td>' . number_format((float) $data['month_5']) . '</td>
                         <td>' . number_format(round($f_4_month_5)) . '</td>
                         <td></td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[5]['name'] . '</td>
-                        <td>' . number_format($data['month_6']) . '</td>
+                        <td>' . number_format((float) $data['month_6']) . '</td>
                         <td>' . number_format(round($f_4_month_6)) . '</td>
                         <td>' . number_format(round($f_6_month_6)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[6]['name'] . '</td>
-                        <td>' . number_format($data['month_7']) . '</td>
+                        <td>' . number_format((float) $data['month_7']) . '</td>
                         <td>' . number_format(round($f_4_month_7)) . '</td>
                         <td>' . number_format(round($f_6_month_7)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[7]['name'] . '</td>
-                        <td>' . number_format($data['month_8']) . '</td>
+                        <td>' . number_format((float) $data['month_8']) . '</td>
                         <td>' . number_format(round($f_4_month_8)) . '</td>
                         <td>' . number_format(round($f_6_month_8)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[8]['name'] . '</td>
-                        <td>' . number_format($data['month_9']) . '</td>
+                        <td>' . number_format((float) $data['month_9']) . '</td>
                         <td>' . number_format(round($f_4_month_9)) . '</td>
                         <td>' . number_format(round($f_6_month_9)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[9]['name'] . '</td>
-                        <td>' . number_format($data['month_10']) . '</td>
+                        <td>' . number_format((float) $data['month_10']) . '</td>
                         <td>' . number_format(round($f_4_month_10)) . '</td>
                         <td>' . number_format(round($f_6_month_10)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[10]['name'] . '</td>
-                        <td>' . number_format($data['month_11']) . '</td>
+                        <td>' . number_format((float) $data['month_11']) . '</td>
                         <td>' . number_format(round($f_4_month_11)) . '</td>
                         <td>' . number_format(round($f_6_month_11)) . '</td>
                         <td></td>';
                 $html .= '<tr>
                         <td>' . $dates[11]['name'] . '</td>
-                        <td>' . number_format($data['month_12']) . '</td>
+                        <td>' . number_format((float) $data['month_12']) . '</td>
                         <td>' . number_format(round($f_4_month_12)) . '</td>
                         <td>' . number_format(round($f_6_month_12)) . '</td>
                         <td>' . number_format(round($f_12_month_12)) . '</td>';

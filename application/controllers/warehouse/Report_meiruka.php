@@ -69,15 +69,15 @@ class Report_meiruka extends CI_Controller
         $filter_division = $this->input->get('filter_division');
         $filter_status = $this->input->get('filter_status');
 
-        $month = date('m', strtotime($filter_to));
-        $year = date('Y', strtotime($filter_to));
+        $month = date('m', strtotime((string) $filter_to));
+        $year = date('Y', strtotime((string) $filter_to));
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_to)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_to)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_to)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_to)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime((string) $filter_to)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime((string) $filter_to)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime((string) $filter_to)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime((string) $filter_to)));
 
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
@@ -410,7 +410,7 @@ class Report_meiruka extends CI_Controller
                 <td>' . $record->prodfam . '</td>
                 <td>' . $record->supplier_name . '</td>
                 <td>' . $record->plan_supply . '</td>
-                <td>' . number_format($record->qty_issued, 2) . '</td>
+                <td>' . number_format((float) $record->qty_issued, 2) . '</td>
                 <td>' . number_format($record->plan_supply - $record->qty_issued, 2) . '</td>
                 <td>' . number_format($supplyperday[0]->total_qty ?? 0, 2) . '</td>
                 <td>' . $record->min . '</td>
@@ -422,25 +422,25 @@ class Report_meiruka extends CI_Controller
                 <td style="' . $style . '">' . $status . '</td>
                 <td>' . $status_supply . '</td>
                 <td>' . $record->rack . '</td>
-                <td>' . number_format($record->in_week1, 2) . '</td>
-                <td>' . number_format($record->in_week2, 2) . '</td>
-                <td>' . number_format($record->in_week3, 2) . '</td>
-                <td>' . number_format($record->in_week4, 2) . '</td>
-                <td>' . number_format($record->out_week1, 2) . '</td>
-                <td>' . number_format($record->out_week2, 2) . '</td>
-                <td>' . number_format($record->out_week3, 2) . '</td>
-                <td>' . number_format($record->out_week4, 2) . '</td>
+                <td>' . number_format((float) $record->in_week1, 2) . '</td>
+                <td>' . number_format((float) $record->in_week2, 2) . '</td>
+                <td>' . number_format((float) $record->in_week3, 2) . '</td>
+                <td>' . number_format((float) $record->in_week4, 2) . '</td>
+                <td>' . number_format((float) $record->out_week1, 2) . '</td>
+                <td>' . number_format((float) $record->out_week2, 2) . '</td>
+                <td>' . number_format((float) $record->out_week3, 2) . '</td>
+                <td>' . number_format((float) $record->out_week4, 2) . '</td>
             </tr>';
             $no++;
         }
 
         // $html .= '<tr>
         //     <td colspan="10" style="text-align:right;"><b>GRAND TOTAL</b></td>
-        //     <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalIto, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalBeginStock, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalIn, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalOut, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalEndingStock, 2) . '</td>
+        //     <td style="text-align:right;">' . number_format((float) $totalIto, 2) . '</td>
         // </tr>';
       
         $html .= '</table></body></html>';

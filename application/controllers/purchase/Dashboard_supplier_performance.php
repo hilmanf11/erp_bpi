@@ -40,7 +40,7 @@ class Dashboard_supplier_performance extends CI_Controller
     private function get_supplier_calc_data($month, $year)
     {
         $filter_from = "$year-$month-01";
-        $filter_to   = date('Y-m-t', strtotime($filter_from));
+        $filter_to   = date('Y-m-t', strtotime((string) $filter_from));
 
         // 1. Plan (request_materials) grouped by supplier_id
         $sqlPo = "SELECT supplier_id, SUM(qty) as qty
@@ -149,8 +149,8 @@ class Dashboard_supplier_performance extends CI_Controller
 
     public function get_dashboard_data()
     {
-        $month = @base64_decode($this->input->get('month'));
-        $year  = @base64_decode($this->input->get('year'));
+        $month = @base64_decode((string) $this->input->get('month'));
+        $year  = @base64_decode((string) $this->input->get('year'));
 
         if (empty($month) || empty($year)) {
             $month = date('m');
@@ -169,8 +169,8 @@ class Dashboard_supplier_performance extends CI_Controller
 
     public function export_excel()
     {
-        $month = @base64_decode($this->input->get('month'));
-        $year  = @base64_decode($this->input->get('year'));
+        $month = @base64_decode((string) $this->input->get('month'));
+        $year  = @base64_decode((string) $this->input->get('year'));
 
         if (empty($month) || empty($year)) {
             $month = date('m');

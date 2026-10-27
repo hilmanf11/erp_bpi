@@ -32,7 +32,7 @@ class Report_income_statements extends CI_Controller
     }
 
     function getData($filter_from, $filter_to, $category, $modul, $name){
-        $period = date("Ym", strtotime($filter_from));
+        $period = date("Ym", strtotime((string) $filter_from));
 
         $this->db->select('b.account_number, b.account_name, b.local_debit, b.local_kredit');
         $this->db->from('account_statements a');
@@ -51,8 +51,8 @@ class Report_income_statements extends CI_Controller
             $trial_balances = $this->crud->query("SELECT * FROM trial_balances WHERE account_number = '$account_number' and `period` = '$period'");
             
             foreach ($trial_balances as $trial_balance) {
-                $ending += ($trial_balance->ending_debit - abs($trial_balance->ending_credit));
-                // -- $ending += ($trial_balance->local_debit - abs($trial_balance->local_credit));
+                $ending += ($trial_balance->ending_debit - abs($trial_balance->ending_credit ?? 0));
+                // -- $ending += ($trial_balance->local_debit - abs($trial_balance->local_credit ?? 0));
             }
         }
 
@@ -61,8 +61,8 @@ class Report_income_statements extends CI_Controller
 
     function getDataAcc($filter_from, $filter_to, $name) 
     {
-        $month = date("m", strtotime($filter_from));
-        $year_current = date("Y", strtotime($filter_from));
+        $month = date("m", strtotime((string) $filter_from));
+        $year_current = date("Y", strtotime((string) $filter_from));
 
         if ($month == "01") {
             $period = $year_current . "01";
@@ -73,7 +73,7 @@ class Report_income_statements extends CI_Controller
         if ($month == "01") {
             $period_to = $year_current . "01";
         } else {
-            $period_to = date("Ym", strtotime("-1 month", strtotime($filter_from)));
+            $period_to = date("Ym", strtotime("-1 month", strtotime((string) $filter_from)));
         }
 
         $income = 0;
@@ -92,8 +92,8 @@ class Report_income_statements extends CI_Controller
     }
 
     function getDataCustom($filter_from, $filter_to, $account, $category){
-        $period = date("Ym", strtotime($filter_from));
-        $period_to = date("Ym", strtotime($filter_to));
+        $period = date("Ym", strtotime((string) $filter_from));
+        $period_to = date("Ym", strtotime((string) $filter_to));
 
         $trial_balances = $this->crud->query("SELECT * FROM trial_balances WHERE account_number = '$account' and `period` BETWEEN '$period' and '$period_to'");
         $ending = 0;
@@ -120,20 +120,20 @@ class Report_income_statements extends CI_Controller
         }
 
         if ($amount >= 0) {
-            return number_format($amount, 2, ",", ".");
+            return number_format((float) $amount, 2, ",", ".");
         } else {
-            return "(".number_format(abs($amount), 2, ",", ".").")";
+            return "(".number_format(abs($amount ?? 0), 2, ",", ".").")";
         }
     }
 
     public function generateData() 
     {
         $filter_date   = $this->input->post('filter_date');
-        $filter_from = date("Y-m-01", strtotime($filter_date));
-        $filter_to = date("Y-m-t", strtotime($filter_date));
-        $period = date("Ym", strtotime($filter_date));
+        $filter_from = date("Y-m-01", strtotime((string) $filter_date));
+        $filter_to = date("Y-m-t", strtotime((string) $filter_date));
+        $period = date("Ym", strtotime((string) $filter_date));
 
-        $filter_from_bf = date("Y-01-01", strtotime($filter_date));
+        $filter_from_bf = date("Y-01-01", strtotime((string) $filter_date));
 
         //Manufacturing
         // $raw_material_begin = $this->getData($filter_from, $filter_to, "Manufacturing", "Income Statement", "Raw Material, Begining");
@@ -273,7 +273,7 @@ class Report_income_statements extends CI_Controller
     
     public function generateData2(){
         $filter_date = $this->input->post('filter_date');
-        $period = date("Ym", strtotime($filter_date));
+        $period = date("Ym", strtotime((string) $filter_date));
         $income_statements = $this->crud->reads("income_statements", [], ["index" => 1, "period" => $period]);
 
         $datas = array();
@@ -343,19 +343,19 @@ class Report_income_statements extends CI_Controller
 
     public function datatableDetails($periodNow, $name){
         $filter_from = date("Y-m-01", strtotime(substr($periodNow, 0, 4) . "-" . substr($periodNow, 4) . "-01"));
-        $month = date("m", strtotime($filter_from));
-        $year_min = date("Y", strtotime("-1 year", strtotime($filter_from)));
-        $year = date("Y", strtotime($filter_from));
+        $month = date("m", strtotime((string) $filter_from));
+        $year_min = date("Y", strtotime("-1 year", strtotime((string) $filter_from)));
+        $year = date("Y", strtotime((string) $filter_from));
 
         if($month == "11"){
             $period = $year."11";
-            $period_to = date("Ym", strtotime($filter_from));
+            $period_to = date("Ym", strtotime((string) $filter_from));
         }elseif($month == "12"){
             $period = $year."11";
-            $period_to = date("Ym", strtotime($filter_from));
+            $period_to = date("Ym", strtotime((string) $filter_from));
         }else{
             $period = $year_min."11";
-            $period_to = date("Ym", strtotime($filter_from));
+            $period_to = date("Ym", strtotime((string) $filter_from));
         }
 
         $account_statements = $this->crud->query("SELECT account_number, account_name, SUM(amount) as amount, SUM(amount) as accumulated
@@ -377,19 +377,19 @@ class Report_income_statements extends CI_Controller
     }
 
     function datatablesAcc($filter_from, $filter_to, $name){
-        $month = date("m", strtotime($filter_from));
-        $year_min = date("Y", strtotime("-1 year", strtotime($filter_from)));
-        $year = date("Y", strtotime($filter_from));
+        $month = date("m", strtotime((string) $filter_from));
+        $year_min = date("Y", strtotime("-1 year", strtotime((string) $filter_from)));
+        $year = date("Y", strtotime((string) $filter_from));
 
         if($month == "11"){
             $period = $year."11";
-            $period_to = date("Ym", strtotime($filter_from));
+            $period_to = date("Ym", strtotime((string) $filter_from));
         }elseif($month == "12"){
             $period = $year."11";
-            $period_to = date("Ym", strtotime($filter_from));
+            $period_to = date("Ym", strtotime((string) $filter_from));
         }else{
             $period = $year_min."11";
-            $period_to = date("Ym", strtotime($filter_from));
+            $period_to = date("Ym", strtotime((string) $filter_from));
         }
 
         // $income = $this->crud->query("SELECT name, SUM(amount) as amount FROM income_statements WHERE name = '$name' and `period` between '$period' and '$period_to' and `index` = 1");
@@ -399,8 +399,8 @@ class Report_income_statements extends CI_Controller
     }
 
     function datatableYear($account_number, $filter_date, $header = ""){
-        $filter_year = date('Y', strtotime($filter_date));
-        $filter_month = date('m', strtotime($filter_date));
+        $filter_year = date('Y', strtotime((string) $filter_date));
+        $filter_month = date('m', strtotime((string) $filter_date));
 
         $months = [];
 
@@ -490,13 +490,13 @@ class Report_income_statements extends CI_Controller
             header("Content-Disposition: attachment; filename=income_statements_$format.xls");
         }
 
-        $filter_date = base64_decode($this->input->get("filter_date"));
-        $filter_display = base64_decode($this->input->get("filter_display"));
+        $filter_date = base64_decode((string) $this->input->get("filter_date"));
+        $filter_display = base64_decode((string) $this->input->get("filter_display"));
 
-        $period = date("Ym", strtotime($filter_date));
-        $filter_from = date("Y-01-01", strtotime($filter_date));
-        // $filter_from = date("Y-m-01", strtotime($filter_date));
-        $filter_to = date("Y-m-t", strtotime($filter_date));
+        $period = date("Ym", strtotime((string) $filter_date));
+        $filter_from = date("Y-01-01", strtotime((string) $filter_date));
+        // $filter_from = date("Y-m-01", strtotime((string) $filter_date));
+        $filter_to = date("Y-m-t", strtotime((string) $filter_date));
 
         //Config
         $this->db->select('*');

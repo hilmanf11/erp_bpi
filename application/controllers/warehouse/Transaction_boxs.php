@@ -87,7 +87,7 @@ class Transaction_boxs extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime($trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM transaction_boxs WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -124,7 +124,7 @@ class Transaction_boxs extends CI_Controller
     {
         if ($this->input->post()) {
             $filter_request_no = $this->input->get('filter_request_no');
-            $filter_box_name = base64_decode($this->input->get('filter_box_name'));
+            $filter_box_name = base64_decode((string) $this->input->get('filter_box_name'));
             $filter_from = $this->input->get('filter_from');
             $filter_to = $this->input->get('filter_to');
             $filter_transaction_type = $this->input->get('filter_transaction_type');
@@ -277,7 +277,7 @@ class Transaction_boxs extends CI_Controller
             header("Content-Disposition: attachment; filename=transaction_boxs_$format.xls");
         }
         $filter_request_no = $this->input->get('filter_request_no');
-        $filter_box_name = base64_decode($this->input->get('filter_box_name'));
+        $filter_box_name = base64_decode((string) $this->input->get('filter_box_name'));
         $filter_from  = $this->input->get('filter_from');
         $filter_to = $this->input->get('filter_to');
         $filter_transaction_type = $this->input->get('filter_transaction_type');

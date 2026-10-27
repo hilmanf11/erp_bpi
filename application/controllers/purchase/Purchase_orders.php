@@ -175,7 +175,7 @@ class Purchase_orders extends CI_Controller
 
     public function checkPassword()
     {
-        $inputPassword = base64_decode($this->input->post('password'));
+        $inputPassword = base64_decode((string) $this->input->post('password'));
         $sessionPassword = $this->session->password;
 
         if ($inputPassword === $sessionPassword) {
@@ -188,9 +188,9 @@ class Purchase_orders extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $po_no = base64_decode($this->input->get('po_no'));
-            $item_rm_id = base64_decode($this->input->get('item_rm_id'));
-            $specification = base64_decode($this->input->get('specification'));
+            $po_no = base64_decode((string) $this->input->get('po_no'));
+            $item_rm_id = base64_decode((string) $this->input->get('item_rm_id'));
+            $specification = base64_decode((string) $this->input->get('specification'));
 
             $this->db->select('a.*, b.number as part_number');
             $this->db->from('purchase_order_histories a');
@@ -461,7 +461,7 @@ class Purchase_orders extends CI_Controller
 
     public function datatable_updates()
     {
-        $po_no = base64_decode($this->input->get('po_no'));
+        $po_no = base64_decode((string) $this->input->get('po_no'));
         $this->db->select('  
             a.po_no,
             a.length,
@@ -852,7 +852,7 @@ class Purchase_orders extends CI_Controller
             'item_rm_id' => $item->id
         ];
         if (isset($post['specification'])) {
-            $spec = trim($post['specification']);
+            $spec = trim((string) $post['specification']);
             
             $spec = preg_replace('/\s*[xX]\s*/', ' x ', $spec);
 
@@ -913,7 +913,7 @@ class Purchase_orders extends CI_Controller
         // =======================================================
         $isPendingApproval = false;
         
-        if (isset($existing->approved_to) && trim($existing->approved_to) !== '' && trim($existing->approved_to) !== '0') {
+        if (isset($existing->approved_to) && trim((string) $existing->approved_to) !== '' && trim((string) $existing->approved_to) !== '0') {
             $isPendingApproval = true;
         }
 
@@ -970,7 +970,7 @@ class Purchase_orders extends CI_Controller
 
         $isHeaderChanged = false;
         if ($old_inc_tax != $post_inc_tax) { $isHeaderChanged = true; }
-        if (isset($post['po_date']) && date('Y-m-d', strtotime(@$existing->po_date)) != date('Y-m-d', strtotime($post['po_date']))) { 
+        if (isset($post['po_date']) && date('Y-m-d', strtotime(@$existing->po_date)) != date('Y-m-d', strtotime((string) $post['po_date']))) { 
             $isHeaderChanged = true; 
         }
 
@@ -1097,14 +1097,14 @@ class Purchase_orders extends CI_Controller
     {
         $po_date = $this->input->post('po_date');
         $p_date_start = date("Y-m-d", strtotime($po_date . "+1 month"));
-        $p_date_to = date('Y-m-d', strtotime('+4 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+4 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);
@@ -1122,7 +1122,7 @@ class Purchase_orders extends CI_Controller
         $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
 
         $po_period = $purchase_orders->po_date;
-        $month = date('m', strtotime($po_period));
+        $month = date('m', strtotime((string) $po_period));
 
         $currentYear = date("y");
         $currentMonth = (int)$month;
@@ -1332,9 +1332,9 @@ class Purchase_orders extends CI_Controller
                                         <td width="30%"><b>' . @$supplier->name . '</b></td>
                                         <td style="text-align:right; padding-right: 20px;" rowspan="7">
                                             Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
-                                            PO Date:<br><b>' . date("d F Y", strtotime($purchase_orders->po_date)) . '</b><br>
+                                            PO Date:<br><b>' . date("d F Y", strtotime((string) $purchase_orders->po_date)) . '</b><br>
                                             Revision:<br><b>' . $purchase_orders->revision . '</b><br>
-                                            Revision Date:<br><b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
+                                            Revision Date:<br><b>' . date("d F Y", strtotime((string) $revision_date)) . '</b><br>
                                             Payment Terms:<br><b>' . $supplier->payment_term . ' Days</b>
                                         </td>
                                     </tr>
@@ -1438,23 +1438,23 @@ class Purchase_orders extends CI_Controller
                         <td>' . $number . '</td>
                         <td><span style="font-size:10px;">' . $name . '</span></td>
                         <td style="text-align:center;">' . $specification . '</td>
-                        <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $record['qty'], 2) . '</td>
                         <td style="text-align:center;">' . $record['uom'] . '</td>';
 
                     // kolom yang bisa disembunyikan
                     // if (!$hide_qty) {
                     //     $html .= '
-                    //     <td style="text-align:right;">' . number_format($qty_inventory, 2) . '</td>
+                    //     <td style="text-align:right;">' . number_format((float) $qty_inventory, 2) . '</td>
                     //     <td style="text-align:center;">' . $record['uom_inventory'] . '</td>';
                     // }
 
 
                     // kolom yang selalu ditampilkan
                     $html .= '
-                        <td style="text-align:right;">' . number_format($record['price'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $record['price'], 2) . '</td>
                         <td style="text-align:center;">' . $record['currency'] . '</td>
                         <td style="text-align:center;">' . $record['discount_nominal'] . '</td>
-                        <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
+                        <td style="text-align:right;">' . number_format((float) $record['total'], 2) . '</td>
                         <td style="text-align:center;">' . $record['delivery_date'] . '</td>
                         <td style="text-align:center;">' . $record['month_1'] . '</td>
                         <td style="text-align:center;">' . $record['month_2'] . '</td>
@@ -1516,31 +1516,31 @@ class Purchase_orders extends CI_Controller
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Sub Total</th>
-                                <th style="text-align:right;">' . number_format($record['total_sub'], 2) . '</th>
+                                <th style="text-align:right;">' . number_format((float) $record['total_sub'], 2) . '</th>
                             </tr>
                              <tr>
                                 <th style="text-align:left" colspan="2">Disc % (' . $record['disc_pr'] . '%)</th>
-                                <th style="text-align:right;">' . number_format($record['discount_total'], 2) . '</th>
+                                <th style="text-align:right;">' . number_format((float) $record['discount_total'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">DPP</th>
-                                <th style="text-align:right;">' . number_format($record['total_dpp'], 2) . '</th>
+                                <th style="text-align:right;">' . number_format((float) $record['total_dpp'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">VAT (' . $tax . '%)</th>
-                                <th style="text-align:right;">' . number_format($record['total_vat'], 2) . '</th>
+                                <th style="text-align:right;">' . number_format((float) $record['total_vat'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Income Tax % (' . $record['income_tax'] . '%)</th>
-                                <th style="text-align:right;">' . number_format($record['income_total'], 2) . '</th>
+                                <th style="text-align:right;">' . number_format((float) $record['income_total'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Down Payment</th>
-                                <th style="text-align:right;">' . number_format($record['total_dp'], 2) . '</th>
+                                <th style="text-align:right;">' . number_format((float) $record['total_dp'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Total Amount</th>
-                                <th style="text-align:right;">' . number_format($record['total_grand'], 2) . '</th>
+                                <th style="text-align:right;">' . number_format((float) $record['total_grand'], 2) . '</th>
                             </tr>
                         </table>';
                         
@@ -1759,10 +1759,10 @@ class Purchase_orders extends CI_Controller
                         <td>' . $data['item_number'] . '</td>
                         <td>' . $data['item_name'] . '</td>
                         <td>' . $data['category_code'] . '</td>
-                        <td>' . number_format($data['mpq'], 2) . '</td>
-                        <td>' . number_format($data['moq'], 2) . '</td>
-                        <td>' . number_format($data['qty'], 2, ",", ".") . '</td>
-                        <td>' . number_format($data['price'], 4, ',', '.') . '</td>
+                        <td>' . number_format((float) $data['mpq'], 2) . '</td>
+                        <td>' . number_format((float) $data['moq'], 2) . '</td>
+                        <td>' . number_format((float) $data['qty'], 2, ",", ".") . '</td>
+                        <td>' . number_format((float) $data['price'], 4, ',', '.') . '</td>
                         <td>' . number_format(($data['qty'] * $data['price']), 2, ",", ".") . '</td>
                         <td>' . $data['currency'] . '</td>
                         <td>' . $data['uom'] . '</td>

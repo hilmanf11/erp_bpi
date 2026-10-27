@@ -57,14 +57,14 @@ class Summary_forecasts extends CI_Controller
         $p_month = $this->input->post('p_month');
         $p_year = $this->input->post('p_year');
         $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);
@@ -78,19 +78,19 @@ class Summary_forecasts extends CI_Controller
     //         header("Content-Disposition: attachment; filename=summary_forecasts_$format.xls");
     //     }
 
-    //     $filter_period_year = base64_decode($this->input->get("filter_period_year"));
-    //     $filter_month_from = base64_decode($this->input->get("filter_month_from"));
-    //     $filter_month_to = base64_decode($this->input->get("filter_month_to"));
+    //     $filter_period_year = base64_decode((string) $this->input->get("filter_period_year"));
+    //     $filter_month_from = base64_decode((string) $this->input->get("filter_month_from"));
+    //     $filter_month_to = base64_decode((string) $this->input->get("filter_month_to"));
     //     $filter_item_fg = $this->input->get("filter_item_fg");
 
     //     $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
-    //     $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
-    //     while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+    //     $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
+    //     while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
     //         $dates[] = array(
-    //             "name" => date("M-y", strtotime($p_date_start))
+    //             "name" => date("M-y", strtotime((string) $p_date_start))
     //         );
 
-    //         $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+    //         $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
     //     }
 
     //     //Config
@@ -267,34 +267,34 @@ class Summary_forecasts extends CI_Controller
     //                     <td>' . $no . '</td>
     //                     <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
     //                     <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
-    //                     <td>' . number_format($data['month_1']) . '</td>
-    //                     <td>' . number_format($data['month_2']) . '</td>
-    //                     <td>' . number_format($data['month_3']) . '</td>
-    //                     <td>' . number_format($data['month_4']) . '</td>
-    //                     <td>' . number_format($data['month_5']) . '</td>
-    //                     <td>' . number_format($data['month_6']) . '</td>
-    //                     <td>' . number_format($data['month_7']) . '</td>
-    //                     <td>' . number_format($data['month_8']) . '</td>
-    //                     <td>' . number_format($data['month_9']) . '</td>
-    //                     <td>' . number_format($data['month_10']) . '</td>
-    //                     <td>' . number_format($data['month_11']) . '</td>
-    //                     <td>' . number_format($data['month_12']) . '</td>';
+    //                     <td>' . number_format((float) $data['month_1']) . '</td>
+    //                     <td>' . number_format((float) $data['month_2']) . '</td>
+    //                     <td>' . number_format((float) $data['month_3']) . '</td>
+    //                     <td>' . number_format((float) $data['month_4']) . '</td>
+    //                     <td>' . number_format((float) $data['month_5']) . '</td>
+    //                     <td>' . number_format((float) $data['month_6']) . '</td>
+    //                     <td>' . number_format((float) $data['month_7']) . '</td>
+    //                     <td>' . number_format((float) $data['month_8']) . '</td>
+    //                     <td>' . number_format((float) $data['month_9']) . '</td>
+    //                     <td>' . number_format((float) $data['month_10']) . '</td>
+    //                     <td>' . number_format((float) $data['month_11']) . '</td>
+    //                     <td>' . number_format((float) $data['month_12']) . '</td>';
     //             $no++;
     //         }
     //         $html .= '<tr>
     //                         <th colspan="3">Grand Total</th>
-    //                         <th>' . number_format($gt_1) . '</th>
-    //                         <th>' . number_format($gt_2) . '</th>
-    //                         <th>' . number_format($gt_3) . '</th>
-    //                         <th>' . number_format($gt_4) . '</th>
-    //                         <th>' . number_format($gt_5) . '</th>
-    //                         <th>' . number_format($gt_6) . '</th>
-    //                         <th>' . number_format($gt_7) . '</th>
-    //                         <th>' . number_format($gt_8) . '</th>
-    //                         <th>' . number_format($gt_9) . '</th>
-    //                         <th>' . number_format($gt_10) . '</th>
-    //                         <th>' . number_format($gt_11) . '</th>
-    //                         <th>' . number_format($gt_12) . '</th>';
+    //                         <th>' . number_format((float) $gt_1) . '</th>
+    //                         <th>' . number_format((float) $gt_2) . '</th>
+    //                         <th>' . number_format((float) $gt_3) . '</th>
+    //                         <th>' . number_format((float) $gt_4) . '</th>
+    //                         <th>' . number_format((float) $gt_5) . '</th>
+    //                         <th>' . number_format((float) $gt_6) . '</th>
+    //                         <th>' . number_format((float) $gt_7) . '</th>
+    //                         <th>' . number_format((float) $gt_8) . '</th>
+    //                         <th>' . number_format((float) $gt_9) . '</th>
+    //                         <th>' . number_format((float) $gt_10) . '</th>
+    //                         <th>' . number_format((float) $gt_11) . '</th>
+    //                         <th>' . number_format((float) $gt_12) . '</th>';
     //         $html .= '</table></body></html>';
     //         echo $html;
     //     } elseif ($filter_item_fg != "") {
@@ -404,34 +404,34 @@ class Summary_forecasts extends CI_Controller
     //                     <td>' . $no . '</td>
     //                     <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
     //                     <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
-    //                     <td>' . number_format($data['month_1']) . '</td>
-    //                     <td>' . number_format($data['month_2']) . '</td>
-    //                     <td>' . number_format($data['month_3']) . '</td>
-    //                     <td>' . number_format($data['month_4']) . '</td>
-    //                     <td>' . number_format($data['month_5']) . '</td>
-    //                     <td>' . number_format($data['month_6']) . '</td>
-    //                     <td>' . number_format($data['month_7']) . '</td>
-    //                     <td>' . number_format($data['month_8']) . '</td>
-    //                     <td>' . number_format($data['month_9']) . '</td>
-    //                     <td>' . number_format($data['month_10']) . '</td>
-    //                     <td>' . number_format($data['month_11']) . '</td>
-    //                     <td>' . number_format($data['month_12']) . '</td>';
+    //                     <td>' . number_format((float) $data['month_1']) . '</td>
+    //                     <td>' . number_format((float) $data['month_2']) . '</td>
+    //                     <td>' . number_format((float) $data['month_3']) . '</td>
+    //                     <td>' . number_format((float) $data['month_4']) . '</td>
+    //                     <td>' . number_format((float) $data['month_5']) . '</td>
+    //                     <td>' . number_format((float) $data['month_6']) . '</td>
+    //                     <td>' . number_format((float) $data['month_7']) . '</td>
+    //                     <td>' . number_format((float) $data['month_8']) . '</td>
+    //                     <td>' . number_format((float) $data['month_9']) . '</td>
+    //                     <td>' . number_format((float) $data['month_10']) . '</td>
+    //                     <td>' . number_format((float) $data['month_11']) . '</td>
+    //                     <td>' . number_format((float) $data['month_12']) . '</td>';
     //             $no++;
     //         }
     //         $html .= '<tr>
     //                     <th colspan="3">Grand Total</th>
-    //                     <th>' . number_format($gt_1) . '</th>
-    //                     <th>' . number_format($gt_2) . '</th>
-    //                     <th>' . number_format($gt_3) . '</th>
-    //                     <th>' . number_format($gt_4) . '</th>
-    //                     <th>' . number_format($gt_5) . '</th>
-    //                     <th>' . number_format($gt_6) . '</th>
-    //                     <th>' . number_format($gt_7) . '</th>
-    //                     <th>' . number_format($gt_8) . '</th>
-    //                     <th>' . number_format($gt_9) . '</th>
-    //                     <th>' . number_format($gt_10) . '</th>
-    //                     <th>' . number_format($gt_11) . '</th>
-    //                     <th>' . number_format($gt_12) . '</th>';
+    //                     <th>' . number_format((float) $gt_1) . '</th>
+    //                     <th>' . number_format((float) $gt_2) . '</th>
+    //                     <th>' . number_format((float) $gt_3) . '</th>
+    //                     <th>' . number_format((float) $gt_4) . '</th>
+    //                     <th>' . number_format((float) $gt_5) . '</th>
+    //                     <th>' . number_format((float) $gt_6) . '</th>
+    //                     <th>' . number_format((float) $gt_7) . '</th>
+    //                     <th>' . number_format((float) $gt_8) . '</th>
+    //                     <th>' . number_format((float) $gt_9) . '</th>
+    //                     <th>' . number_format((float) $gt_10) . '</th>
+    //                     <th>' . number_format((float) $gt_11) . '</th>
+    //                     <th>' . number_format((float) $gt_12) . '</th>';
     //         $html .= '</table></body></html>';
     //         echo $html;
     //     }
@@ -446,14 +446,14 @@ class Summary_forecasts extends CI_Controller
         }
 
         // ==================== FILTER ====================
-        $filter_period_year_from = (int) base64_decode($this->input->get("filter_period_year_from"));
-        $filter_period_year_to   = (int) base64_decode($this->input->get("filter_period_year_to"));
+        $filter_period_year_from = (int) base64_decode((string) $this->input->get("filter_period_year_from"));
+        $filter_period_year_to   = (int) base64_decode((string) $this->input->get("filter_period_year_to"));
         $filter_item_fg       = $this->input->get("filter_item_fg");
         $filter_division      = $this->input->get("filter_division");
 
         // Month Range (default 1-12 jika kosong)
-        $filter_month_from = (int)base64_decode($this->input->get("filter_month_from"));
-        $filter_month_to   = (int)base64_decode($this->input->get("filter_month_to"));
+        $filter_month_from = (int)base64_decode((string) $this->input->get("filter_month_from"));
+        $filter_month_to   = (int)base64_decode((string) $this->input->get("filter_month_to"));
 
         // ==================== GENERATE MONTH COLUMNS ====================
         $dates = [];
@@ -771,7 +771,7 @@ class Summary_forecasts extends CI_Controller
                 // RECORDS now store:  months["YYYY-MM"] => value
                 $qty = $data['months'][$key] ?? 0;
 
-                $html .= "<td style='text-align:right;'>" . number_format($qty,2) . "</td>";
+                $html .= "<td style='text-align:right;'>" . number_format((float) $qty,2) . "</td>";
 
                 $grand[$key] += $qty;
             }
@@ -785,7 +785,7 @@ class Summary_forecasts extends CI_Controller
 
         foreach ($dates as $d) {
             $key = $d['year'] . '-' . sprintf("%02d", $d['num']);
-            $html .= '<th style="text-align:right;">'.number_format($grand[$key],2).'</th>';
+            $html .= '<th style="text-align:right;">'.number_format((float) $grand[$key],2).'</th>';
         }
 
         $html .= '

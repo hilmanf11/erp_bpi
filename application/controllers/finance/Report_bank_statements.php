@@ -49,11 +49,11 @@ class Report_bank_statements extends CI_Controller
             header("Content-Disposition: attachment; filename=bank_statements_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_from_1 = date("Y-m-d", strtotime("-1 day", strtotime($filter_from)));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_account = base64_decode($this->input->get("filter_account"));
-        $filter_currency = base64_decode($this->input->get("filter_currency"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_from_1 = date("Y-m-d", strtotime("-1 day", strtotime((string) $filter_from)));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
+        $filter_account = base64_decode((string) $this->input->get("filter_account"));
+        $filter_currency = base64_decode((string) $this->input->get("filter_currency"));
 
         $where_currency = !empty($filter_currency) ? "AND b.currency = '" . $filter_currency . "'" : "";
         $where_currency_journal = !empty($filter_currency) ? "AND a.currency = '" . $filter_currency . "'" : "";
@@ -295,11 +295,11 @@ class Report_bank_statements extends CI_Controller
                             <td></td>
                             <td style="text-align:right;font-weight:bold;"></td>
                             <td style="text-align:right;font-weight:bold;"></td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($opening_balance_original, 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $opening_balance_original, 2, ",", ".") . '</td>
                             <td style="text-align:right;font-weight:bold;"></td>
                             <td style="text-align:right;font-weight:bold;"></td>
                             <td style="text-align:right;font-weight:bold;"></td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($opening_balance_local, 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $opening_balance_local, 2, ",", ".") . '</td>
                         </tr>';
 
         $no = 1;
@@ -315,13 +315,13 @@ class Report_bank_statements extends CI_Controller
                             <td>' . $data['gl_no'] . '</td>
                             <td>' . $data['description'] . '</td>
                             <td style="text-align:center;">' . $data['currency'] . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_debit'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_credit'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_balance'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['rate'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_debit'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_credit'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_balance'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['original_debit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['original_credit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['original_balance'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['rate'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['local_debit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['local_credit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['local_balance'], 2, ",", ".") . '</td>
                         </tr>';
             $no++;
             $grand_total_debit_original += $data['original_debit'];
@@ -336,8 +336,8 @@ class Report_bank_statements extends CI_Controller
                         <td style="text-align:right;"><b>' . number_format(@$grand_total_credit_original, 2, ",", ".") . '</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                         <td style="text-align:right;"><b>-</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_debit_local, 2, ",", ".") . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_credit_local, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_total_debit_local, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_total_credit_local, 2, ",", ".") . '</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                     </tr>';
 
@@ -371,10 +371,10 @@ class Report_bank_statements extends CI_Controller
         // Tentukan starting point (Sesuai logika fungsi print)
         $starting_point = (!empty($account->starting_date)) 
                         ? $account->starting_date 
-                        : date("Y-01-01", strtotime($filter_from));
+                        : date("Y-01-01", strtotime((string) $filter_from));
 
         // 2. Hitung Mutasi Jurnal LOKAL (Hanya dari starting_point s/d H-1)
-        $last_day_prev = date("Y-m-d", strtotime("-1 day", strtotime($filter_from)));
+        $last_day_prev = date("Y-m-d", strtotime("-1 day", strtotime((string) $filter_from)));
         
         $query = "
             SELECT SUM(local_debit - local_credit) as total_mutation_local
@@ -643,10 +643,10 @@ class Report_bank_statements extends CI_Controller
             header("Content-Disposition: attachment; filename=bank_statements_$format.xls");
         }
 
-        $filter_from     = base64_decode($this->input->get("filter_from"));
-        $filter_to       = base64_decode($this->input->get("filter_to"));
-        $filter_account  = base64_decode($this->input->get("filter_account"));
-        $filter_currency = base64_decode($this->input->get("filter_currency"));
+        $filter_from     = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to       = base64_decode((string) $this->input->get("filter_to"));
+        $filter_account  = base64_decode((string) $this->input->get("filter_account"));
+        $filter_currency = base64_decode((string) $this->input->get("filter_currency"));
 
         // Validasi filter mata uang
         $where_currency_journal = "";
@@ -824,11 +824,11 @@ class Report_bank_statements extends CI_Controller
                     <td></td>
                     <td style="text-align:right;font-weight:bold;"></td>
                     <td style="text-align:right;font-weight:bold;"></td>
-                    <td style="text-align:right;font-weight:bold;">' . number_format($opening_balance_original, 2, ",", ".") . '</td>
+                    <td style="text-align:right;font-weight:bold;">' . number_format((float) $opening_balance_original, 2, ",", ".") . '</td>
                     <td style="text-align:right;font-weight:bold;"></td>
                     <td style="text-align:right;font-weight:bold;"></td>
                     <td style="text-align:right;font-weight:bold;"></td>
-                    <td style="text-align:right;font-weight:bold;">' . number_format($opening_balance_local, 2, ",", ".") . '</td>
+                    <td style="text-align:right;font-weight:bold;">' . number_format((float) $opening_balance_local, 2, ",", ".") . '</td>
                 </tr>';
 
         $no = 1;
@@ -844,13 +844,13 @@ class Report_bank_statements extends CI_Controller
                             <td>' . $data['gl_no'] . '</td>
                             <td>' . $data['description'] . '</td>
                             <td style="text-align:center;">' . $data['currency'] . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_debit'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_credit'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_balance'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['rate'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_debit'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_credit'], 2, ",", ".") . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_balance'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['original_debit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['original_credit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['original_balance'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['rate'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['local_debit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['local_credit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format((float) $data['local_balance'], 2, ",", ".") . '</td>
                         </tr>';
             $no++;
             $grand_total_debit_original += $data['original_debit'];
@@ -861,12 +861,12 @@ class Report_bank_statements extends CI_Controller
 
         $html .= '  <tr style="background:#EBEBEB;">
                         <td colspan="6"><b>GRAND TOTAL</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_debit_original, 2, ",", ".") . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_credit_original, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_total_debit_original, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_total_credit_original, 2, ",", ".") . '</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                         <td style="text-align:right;"><b>-</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_debit_local, 2, ",", ".") . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_credit_local, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_total_debit_local, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_total_credit_local, 2, ",", ".") . '</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                     </tr>';
 
@@ -878,11 +878,11 @@ class Report_bank_statements extends CI_Controller
                         <td colspan="6"><b>ENDING BALANCE</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                         <td style="text-align:right;"><b>-</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_ending_balance_original, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_ending_balance_original, 2, ",", ".") . '</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                         <td style="text-align:right;"><b>-</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_ending_balance_local, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format((float) $grand_ending_balance_local, 2, ",", ".") . '</b></td>
                     </tr>';
 
         $html .= '</table></body></html>';

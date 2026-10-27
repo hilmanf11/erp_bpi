@@ -84,17 +84,17 @@ class Generate_mps extends CI_Controller
     //     if ($this->input->get()) {
     //         file_put_contents('failed/generate_mps.txt', '');
     //         //Filter Data
-    //         $filter_month = base64_decode($this->input->get('filter_month'));
-    //         $filter_year = base64_decode($this->input->get('filter_year'));
-    //         $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-    //         $filter_customer = base64_decode($this->input->get('filter_customer'));
-    //         $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-    //         $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //         $filter_month = base64_decode((string) $this->input->get('filter_month'));
+    //         $filter_year = base64_decode((string) $this->input->get('filter_year'));
+    //         $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+    //         $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+    //         $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+    //         $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
     //         $monthBack = date('F Y', strtotime('-1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
     //         $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
     //         $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
-    //         $period = date("Y-m-t", strtotime("-1 month", strtotime($filter_cutoff)));
+    //         $period = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_cutoff)));
     //         $period2 = $filter_year.$filter_month;
 
     //         $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
@@ -104,8 +104,8 @@ class Generate_mps extends CI_Controller
     //         $monthName_4 = date("Y-m", strtotime("+3 month", $monthStart));
     //         $monthName_5 = date("Y-m", strtotime("+4 month", $monthStart));
     //         $monthName_6 = date("Y-m", strtotime("+5 month", $monthStart));
-    //         $cutoff_start = date("Y-m-d", strtotime("+1 day", strtotime($filter_cutoff)));
-    //         $cutoff_end = date("Y-m-t", strtotime($filter_cutoff));
+    //         $cutoff_start = date("Y-m-d", strtotime("+1 day", strtotime((string) $filter_cutoff)));
+    //         $cutoff_end = date("Y-m-t", strtotime((string) $filter_cutoff));
     //         $lastDatePrevMonth = date("Y-m-t", strtotime("-1 month", $monthStart));
 
     //         //Configuration Planning
@@ -402,17 +402,17 @@ class Generate_mps extends CI_Controller
         if ($this->input->get()) {
             file_put_contents('failed/generate_mps.txt', '');
             //Filter Data
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-            $filter_customer = base64_decode($this->input->get('filter_customer'));
-            $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-            $filter_revision = base64_decode($this->input->get('filter_revision'));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+            $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+            $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+            $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
             $monthBack = date('F Y', strtotime('-1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
             $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
             $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
-            $period = date("Y-m-t", strtotime("-1 month", strtotime($filter_cutoff)));
+            $period = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_cutoff)));
             $period2 = $filter_year.$filter_month;
 
             $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
@@ -422,8 +422,8 @@ class Generate_mps extends CI_Controller
             $monthName_4 = date("Y-m", strtotime("+3 month", $monthStart));
             $monthName_5 = date("Y-m", strtotime("+4 month", $monthStart));
             $monthName_6 = date("Y-m", strtotime("+5 month", $monthStart));
-            $cutoff_start = date("Y-m-d", strtotime("+1 day", strtotime($filter_cutoff)));
-            $cutoff_end = date("Y-m-t", strtotime($filter_cutoff));
+            $cutoff_start = date("Y-m-d", strtotime("+1 day", strtotime((string) $filter_cutoff)));
+            $cutoff_end = date("Y-m-t", strtotime((string) $filter_cutoff));
             $lastDatePrevMonth = date("Y-m-t", strtotime("-1 month", $monthStart));
 
             //Configuration Planning
@@ -652,9 +652,9 @@ class Generate_mps extends CI_Controller
 
     public function checkForecast()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         //Select Query
         $this->db->select('*');
@@ -676,9 +676,9 @@ class Generate_mps extends CI_Controller
 
     public function checkFg()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         //Select Query
         // $this->db->select('*');
@@ -700,9 +700,9 @@ class Generate_mps extends CI_Controller
 
     public function checkOs()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
         $period = $filter_year . "-" . $filter_month;
 
         //Select Query
@@ -721,9 +721,9 @@ class Generate_mps extends CI_Controller
 
     public function checkOstSo()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         // //Select Query
         // $this->db->select('*');
@@ -760,9 +760,9 @@ class Generate_mps extends CI_Controller
 
     public function checkStockWip()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         //Select Query
         $this->db->select('*');
@@ -784,9 +784,9 @@ class Generate_mps extends CI_Controller
 
     public function checkOstMpp()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         // Select Query
         $this->db->select('*');
@@ -808,8 +808,8 @@ class Generate_mps extends CI_Controller
 
     public function checkCalendar()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
 
         $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
         $monthEnd = strtotime(date('Y-m-d', strtotime('+6 month', $monthStart)));
@@ -1073,7 +1073,7 @@ class Generate_mps extends CI_Controller
                     $safetyStock = @round($post['month_2'] * (@$post['safety_stock'] / 100));//perubahan : perhitungan safetyStock : forecast next month
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
-                    $need = ($need < 0) ? abs($need) : 0;
+                    $need = ($need < 0) ? abs($need ?? 0) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } else if ($i == 2) {
@@ -1086,7 +1086,7 @@ class Generate_mps extends CI_Controller
                     $safetyStock = @round($post['month_3'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
-                    $need = ($need < 0) ? abs($need) : 0;
+                    $need = ($need < 0) ? abs($need ?? 0) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 3) {
@@ -1099,7 +1099,7 @@ class Generate_mps extends CI_Controller
                     $safetyStock = @round($post['month_4'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
-                    $need = ($need < 0) ? abs($need) : 0;
+                    $need = ($need < 0) ? abs($need ?? 0) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 4) {
@@ -1112,7 +1112,7 @@ class Generate_mps extends CI_Controller
                     $safetyStock = @round($post['month_5'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
-                    $need = ($need < 0) ? abs($need) : 0;
+                    $need = ($need < 0) ? abs($need ?? 0) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 5) {
@@ -1125,7 +1125,7 @@ class Generate_mps extends CI_Controller
                     $safetyStock = @round($post['month_6'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
-                    $need = ($need < 0) ? abs($need) : 0;
+                    $need = ($need < 0) ? abs($need ?? 0) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 6) {
@@ -1138,7 +1138,7 @@ class Generate_mps extends CI_Controller
                     $safetyStock = @round($post['month_7'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
-                    $need = ($need < 0) ? abs($need) : 0;
+                    $need = ($need < 0) ? abs($need ?? 0) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 }
@@ -1463,9 +1463,9 @@ class Generate_mps extends CI_Controller
 
     // public function push_data_check(){
     // 	//Filter Data
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //     $filter_month = base64_decode((string) $this->input->get('filter_month'));
+    //     $filter_year = base64_decode((string) $this->input->get('filter_year'));
+    //     $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
     //     //Select Line No
     //     $this->db->select('*');
@@ -1490,9 +1490,9 @@ class Generate_mps extends CI_Controller
 
     //     if($this->input->get()){
     //         //Filter Data
-    //         $filter_month = base64_decode($this->input->get('filter_month'));
-    //         $filter_year = base64_decode($this->input->get('filter_year'));
-    //         $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //         $filter_month = base64_decode((string) $this->input->get('filter_month'));
+    //         $filter_year = base64_decode((string) $this->input->get('filter_year'));
+    //         $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
     //         //Perhitungan HKW
     //         $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
@@ -1584,12 +1584,12 @@ class Generate_mps extends CI_Controller
         $config = $this->db->get()->row();
 
         //Filter Data
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        // $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-        $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        // $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+        $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
         $period = $filter_year . "-" . $filter_month;
 
         $cutoff = $this->crud->read("generate_mps", [], ["p_month" => $filter_month, "p_year" => $filter_year,"revision" => $filter_revision]);
@@ -1663,7 +1663,7 @@ class Generate_mps extends CI_Controller
         <p style="font-size:12px; margin:0;">PERIOD ' . $this->monthName($filter_month) . ' ' . $filter_year . '</p>
         <p style="font-size:12px; margin:0;">REVISION ' . $filter_revision . '</p>
         <p style="font-size:12px; margin:0;">CUTOFF ' . @$cutoff->cutoff . '</p>
-        <p style="font-size:12px; margin:0;">GENERATE DATE ' . date('Y-m-d', strtotime($cutoff->created_date)) . '</p>
+        <p style="font-size:12px; margin:0;">GENERATE DATE ' . date('Y-m-d', strtotime((string) $cutoff->created_date)) . '</p>
         <p style="font-size:12px; margin:0;">PRINT DATE ' . date("d M Y H:m:s") . '</p>
         <p style="font-size:12px; margin:0;">PRINT BY ' . $this->session->username . '</p>
         <br>

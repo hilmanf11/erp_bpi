@@ -296,7 +296,7 @@ class Return_materials extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small>Quantity</small><br><b style="font-size:24px;">' . number_format($record->qty, 2, ",", ".") . '</b>
+                                            <small>Quantity</small><br><b style="font-size:24px;">' . number_format((float) $record->qty, 2, ",", ".") . '</b>
                                         </th>
                                         <th style="text-align:left">
                                             <small>Location</small><br><b style="font-size:24px;">' . $record->location . '</b>
@@ -402,7 +402,7 @@ class Return_materials extends CI_Controller
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record['item_rm_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['qty'], 0, ",", ".") . '</td>
                                 <td>' . $record['uom'] . '</tdstyle=>
                                 <td>' . $record['remarks'] . '</td>
                             </tr>';
@@ -513,7 +513,7 @@ class Return_materials extends CI_Controller
                         <td>' . $data['return_name'] . '</td>
                         <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
-                        <td>' . number_format($data['qty'], 2) . '</td>
+                        <td>' . number_format((float) $data['qty'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $status . '</td>
                         <td>' . $data['remarks'] . '</td>

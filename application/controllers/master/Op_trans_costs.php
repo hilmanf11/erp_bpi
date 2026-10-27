@@ -61,7 +61,7 @@ class Op_trans_costs extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -131,7 +131,7 @@ class Op_trans_costs extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('op_trans_costs', ["id" => $id], $post);
             echo $send;
@@ -309,11 +309,11 @@ class Op_trans_costs extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['year'] . '</td>
-                    <td>' . number_format($data['rent_monthly'],2) . '</td>
-                    <td>' . number_format($data['rent_daily'],2) . '</td>
-                    <td>' . number_format($data['mp_cost_daily'],2) . '</td>
-                    <td>' . number_format($data['fuel_consumption_per_km'],2) . '</td>
-                    <td>' . number_format($data['bbm_price'],2) . '</td>
+                    <td>' . number_format((float) $data['rent_monthly'],2) . '</td>
+                    <td>' . number_format((float) $data['rent_daily'],2) . '</td>
+                    <td>' . number_format((float) $data['mp_cost_daily'],2) . '</td>
+                    <td>' . number_format((float) $data['fuel_consumption_per_km'],2) . '</td>
+                    <td>' . number_format((float) $data['bbm_price'],2) . '</td>
                     <td>' . $status . '</td>';
             $no++;
         }

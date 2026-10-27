@@ -200,7 +200,7 @@ class Repair_of_goods extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $document_no = base64_decode($this->input->get('document_no'));
+            $document_no = base64_decode((string) $this->input->get('document_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, b.uom, c.qty as qty_scan');
             $this->db->from('repair_of_goods a');
@@ -220,7 +220,7 @@ class Repair_of_goods extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $document_no = base64_decode($this->input->get('document_no'));
+            $document_no = base64_decode((string) $this->input->get('document_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, b.uom');
             $this->db->from('repair_of_goods a');
@@ -519,7 +519,7 @@ class Repair_of_goods extends CI_Controller
                                 <td>' . $record['item_fg_number'] . '</td>
                                 <td>' . $record['item_fg_name'] . '</td>
                                 <td>' . $record['uom'] . '</td>
-                                <td style="text-align:right">' . number_format($record['qty'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['qty'], 2, ",", ".") . '</td>
                                 <td>' . $record['remarks'] . '</td>
                             </tr>';
                 $no++;

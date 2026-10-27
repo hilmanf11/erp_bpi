@@ -39,9 +39,9 @@ class Delivery_customer_dashboard extends CI_Controller
 
     public function get_dashboard_data()
     {
-        $month          = @base64_decode($this->input->get('month'));
-        $year           = @base64_decode($this->input->get('year'));
-        $filter_display = @base64_decode($this->input->get('display'));
+        $month          = @base64_decode((string) $this->input->get('month'));
+        $year           = @base64_decode((string) $this->input->get('year'));
+        $filter_display = @base64_decode((string) $this->input->get('display'));
 
         if (empty($month) || empty($year)) {
             $month = date('m');
@@ -164,9 +164,9 @@ class Delivery_customer_dashboard extends CI_Controller
 
     public function export_excel()
     {
-        $month          = @base64_decode($this->input->get('month'));
-        $year           = @base64_decode($this->input->get('year'));
-        $filter_display = @base64_decode($this->input->get('display'));
+        $month          = @base64_decode((string) $this->input->get('month'));
+        $year           = @base64_decode((string) $this->input->get('year'));
+        $filter_display = @base64_decode((string) $this->input->get('display'));
 
         if (empty($month) || empty($year)) {
             $month = date('m');

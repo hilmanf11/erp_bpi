@@ -821,7 +821,7 @@ class Purchase_order_receipts extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -963,7 +963,7 @@ class Purchase_order_receipts extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -1210,14 +1210,14 @@ class Purchase_order_receipts extends CI_Controller
                         <td>' . $record['specification'] . '</td>
                         <td>' . $record['item_familys_name'] . '</td>
                         <td>' . $record['location'] . '</td>
-                        <td style="text-align:right">' . number_format($record['mpq'], 2) . '</td>
-                        <td style="text-align:right">' . number_format($record['qty_receipt2'], 2) . '</td>
+                        <td style="text-align:right">' . number_format((float) $record['mpq'], 2) . '</td>
+                        <td style="text-align:right">' . number_format((float) $record['qty_receipt2'], 2) . '</td>
                         <td>' . $record['uom_default'] . '</td>
                     ';
 
                     if (!$hide_qty) {
                         $html .= '
-                            <td style="text-align:right;">' . number_format($record['qty_receipt'], 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record['qty_receipt'], 2) . '</td>
                             <td style="text-align:center;">' . $record['uom_inventory'] . '</td>
                         </tr>';
                     }
@@ -1432,10 +1432,10 @@ class Purchase_order_receipts extends CI_Controller
                         <td>' . $data['supplier_name'] . '</td>
                         <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
-                        <td>' . number_format($data['qty_receipt'], 2) . '</td>
+                        <td>' . number_format((float) $data['qty_receipt'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['currency'] . '</td>
-                        <td>' . number_format($data['qty_label']) . '</td>
+                        <td>' . number_format((float) $data['qty_label']) . '</td>
                         <td style="mso-number-format:\@;">' . $data['lotno'] . '</td>
                     </tr>';
             $no++;

@@ -44,7 +44,7 @@ class Machine_prices extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -114,7 +114,7 @@ class Machine_prices extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('machine_prices', ["id" => $id], $post);
             echo $send;
@@ -288,7 +288,7 @@ class Machine_prices extends CI_Controller
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['toonage'] . '</td>
                     <td>' . $data['division'] . '</td>
-                    <td>' . number_format($data['price'],2) . '</td>
+                    <td>' . number_format((float) $data['price'],2) . '</td>
                     <td>' . $data['depretiation'] . '</td>
                     <td>' . $data['interest'] . '</td>
                     <td>' . $data['manpower'] . '</td>

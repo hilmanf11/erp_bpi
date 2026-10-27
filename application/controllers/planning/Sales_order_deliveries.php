@@ -96,7 +96,7 @@ class Sales_order_deliveries extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $sales_order_no = base64_decode((string) $this->input->get('sales_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, COALESCE(c.qty_del, 0) as qty_del, (a.qty - COALESCE(c.qty_del, 0)) as qty_os');
             $this->db->from('sales_orders a');

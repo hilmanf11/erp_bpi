@@ -169,8 +169,8 @@ class Output_productions extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_item_fg_id = base64_decode($this->input->get('item_fg_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
 
             $this->db->select("a.*, b.number as item_fg_number, b.name as item_fg_name, a.machine_number");
             $this->db->from('output_productions a');
@@ -190,7 +190,7 @@ class Output_productions extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
+            $number = base64_decode((string) $this->input->get('number'));
             $this->db->select("a.*, b.number as item_fg_number, b.name as item_fg_name");
             $this->db->from('output_productions a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');

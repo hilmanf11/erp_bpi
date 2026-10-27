@@ -43,8 +43,8 @@ class Report_outstanding_po extends CI_Controller
     public function readPurchaseOrder()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $supplier_id = $this->input->get("supplier_id");
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $sales_orders = $this->crud->query("SELECT `po_no`
@@ -71,8 +71,8 @@ class Report_outstanding_po extends CI_Controller
     public function readPurchaseOrderItems()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $supplier_id = $this->input->get("supplier_id");
         $po_no = $this->input->get("po_no");
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -94,8 +94,8 @@ class Report_outstanding_po extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=report_outstanding_po_$format.xls");
         }
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $filter_display = $this->input->get("filter_display");
         $filter_supplier = $this->input->get("filter_supplier");
         $filter_item_category = $this->input->get("filter_item_category");
@@ -103,7 +103,7 @@ class Report_outstanding_po extends CI_Controller
         $filter_product_family = $this->input->get("filter_product_family");
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_status = $this->input->get("filter_status");
-        $filter_purchase_order = base64_decode($this->input->get("filter_purchase_order"));
+        $filter_purchase_order = base64_decode((string) $this->input->get("filter_purchase_order"));
 
         //Config
         $this->db->select('*');
@@ -206,10 +206,10 @@ class Report_outstanding_po extends CI_Controller
                 <td>' . $data['supplier_number'] . '</td>
                 <td>' . $data['supplier_name'] . '</td>
                  <td>' . $data['item_number'] . '</td>
-                <td style="text-align:right">' . number_format($data['qty_po'], 2) . '</td>
+                <td style="text-align:right">' . number_format((float) $data['qty_po'], 2) . '</td>
                 <td style="text-align:right">' . $data['uom'] . '</td>
                 <td style="text-align:right">' . number_format(@$data['qty_receipt'], 2) . '</td>
-                <td style="text-align:right">' . number_format($os_qty, 2) . '</td>
+                <td style="text-align:right">' . number_format((float) $os_qty, 2) . '</td>
                 <td colspan="2">' . $status . '</td>
             </tr>';
             $no++;
@@ -253,8 +253,8 @@ class Report_outstanding_po extends CI_Controller
                                         <td></td>
                                         <td>' . $detail['item_number'] . '</td>
                                         <td>' . $detail['item_name'] . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty_po'], 2) . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty_receipt'], 2) . '</td>
+                                        <td style="text-align:right">' . number_format((float) $detail['qty_po'], 2) . '</td>
+                                        <td style="text-align:right">' . number_format((float) $detail['qty_receipt'], 2) . '</td>
                                         <td style="text-align:right">' . number_format(($detail['qty_po'] - $detail['qty_receipt']), 2) . '</td>
                                     </tr>';
                         
@@ -287,9 +287,9 @@ class Report_outstanding_po extends CI_Controller
                                             <td>' . $detail2->bc_date . '</td>
                                             <td>' . $detail2->receipt_no . '</td>
                                             <td>' . $detail2->receipt_date . '</td>
-                                            <td style="text-align:right">' . number_format($detail2->qty_po, 2) . '</td>
-                                            <td style="text-align:right">' . number_format($detail2->qty_receipt2, 2) . '</td>
-                                            <td style="text-align:right">' . number_format($os_qty, 2) . '</td>
+                                            <td style="text-align:right">' . number_format((float) $detail2->qty_po, 2) . '</td>
+                                            <td style="text-align:right">' . number_format((float) $detail2->qty_receipt2, 2) . '</td>
+                                            <td style="text-align:right">' . number_format((float) $os_qty, 2) . '</td>
                                             <td>' . $detail2->created_by . '</td>
                                         </tr>';   
                         }

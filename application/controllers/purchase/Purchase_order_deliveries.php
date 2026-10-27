@@ -95,7 +95,7 @@ class Purchase_order_deliveries extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $po_no = base64_decode($this->input->get('po_no'));
+            $po_no = base64_decode((string) $this->input->get('po_no'));
 
             $this->db->select('a.*, b.number as item_rm_number, b.name as item_rm_name, COALESCE(c.qty_del, 0) as qty_del, (a.qty - COALESCE(c.qty_del, 0)) as qty_os , b.uom , d.currency, d.name as supplier_name');
             $this->db->from('purchase_orders a');

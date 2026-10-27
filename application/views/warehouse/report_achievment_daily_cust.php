@@ -17,10 +17,10 @@
         <th rowspan="2" data-options="field:'type',width:80,halign:'center'">Type</th>
             <?php 
                 if ($this->input->get('filter_from') && $this->input->get('filter_to')) {
-                    $filter_from = base64_decode($this->input->get('filter_from'));
-                    $filter_to = base64_decode($this->input->get('filter_to'));
-                    $filter_customer = base64_decode($this->input->get('filter_customer'));
-                    $filter_item_fg = base64_decode($this->input->get('filter_item_fg'));
+                    $filter_from = base64_decode((string) $this->input->get('filter_from'));
+                    $filter_to = base64_decode((string) $this->input->get('filter_to'));
+                    $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+                    $filter_item_fg = base64_decode((string) $this->input->get('filter_item_fg'));
                 } else {
                     $filter_from = date("Y-m-01");
                     $filter_to = date("Y-m-t");
@@ -30,10 +30,10 @@
             
                 $currentDate = $filter_from;
                 $tgl = 1;
-                while (strtotime($currentDate) <= strtotime($filter_to)) {
-                    $working_date = date('d M', strtotime($currentDate));
+                while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+                    $working_date = date('d M', strtotime((string) $currentDate));
             
-                    if (date('w', strtotime($currentDate)) !== '0') {
+                    if (date('w', strtotime((string) $currentDate)) !== '0') {
                         $hstyle = "";
                     } else {
                         $hstyle = "background-color:#FFB0B0";
@@ -43,10 +43,10 @@
             <!-- <th rowspan="2" data-options="field:'sales_order_qty_<?= $tgl ?>',width:80,halign:'center', align:'right',hstyler: function(value, row, index) { return '<?= $hstyle ?>'; }"><?= $working_date ?></th> -->
             <?php
                     // $tgl++;
-                    // $firstDate = date("Y-m-d", strtotime("+1 day", strtotime($firstDate)));
+                    // $firstDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $firstDate)));
 
                     $tgl++;
-                    $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+                    $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
                 }
             ?>
             <th colspan="2" data-options="field:'',width:100,align:'center'">Created</th>
@@ -68,8 +68,8 @@
             <div style="width: 30%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
-                    <!-- <input style="width:30%;" name="filter_month" id="filter_month" value="<?= $filter_month ?>" class="easyui-combobox" data-options="prompt:'Month'">
-                    <input style="width:30%;" name="filter_year" id="filter_year" value="<?= $filter_year ?>" class="easyui-combobox" data-options="prompt:'Year'"> -->
+                    <!-- <input style="width:30%;" name="filter_month" id="filter_month" value="<?= $filter_month ?? '' ?>" class="easyui-combobox" data-options="prompt:'Month'">
+                    <input style="width:30%;" name="filter_year" id="filter_year" value="<?= $filter_year ?? '' ?>" class="easyui-combobox" data-options="prompt:'Year'"> -->
                     <input style="width:28%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
                     <input style="width:29%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>

@@ -51,8 +51,8 @@ class Forecast_suppliers extends CI_Controller
     }
 
     public function readRevisions() {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
 
         $this->db->select('revision, DATE(cutoff) as cutoff', FALSE);
         $this->db->from('generate_mrp_finals');
@@ -73,14 +73,14 @@ class Forecast_suppliers extends CI_Controller
         $p_month = $this->input->post('p_month');
         $p_year = $this->input->post('p_year');
         $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);
@@ -177,7 +177,7 @@ class Forecast_suppliers extends CI_Controller
         $p_month  = $this->input->post('p_month');
         $p_year   = $this->input->post('p_year');
         $revision = $this->input->post('revision');
-        $rows     = json_decode($this->input->post('forecast_data'), true);
+        $rows     = json_decode((string) $this->input->post('forecast_data'), true);
 
         if (empty($rows) || $p_month == "" || $p_year == "" || $revision == "") {
             echo json_encode(['success' => false, 'message' => 'Data or filter incomplete']);
@@ -252,7 +252,7 @@ class Forecast_suppliers extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
 
             $dataFinal = array(
@@ -464,10 +464,10 @@ class Forecast_suppliers extends CI_Controller
         
         if (!empty($filter_month) && !empty($filter_year)) {
             $base_date = $filter_year . "-" . $filter_month . "-01";
-            $period_1 = strtoupper(date("M", strtotime("+1 month", strtotime($base_date))));
-            $period_2 = strtoupper(date("M", strtotime("+2 months", strtotime($base_date))));
-            $period_3 = strtoupper(date("M", strtotime("+3 months", strtotime($base_date))));
-            $title_period = strtoupper(date("F Y", strtotime($base_date)));
+            $period_1 = strtoupper(date("M", strtotime("+1 month", strtotime((string) $base_date))));
+            $period_2 = strtoupper(date("M", strtotime("+2 months", strtotime((string) $base_date))));
+            $period_3 = strtoupper(date("M", strtotime("+3 months", strtotime((string) $base_date))));
+            $title_period = strtoupper(date("F Y", strtotime((string) $base_date)));
         }
 
         $forecast_supplier = $this->crud->read('forecast_suppliers', [], ["p_month" => $filter_month,"p_year" => $filter_year,"supplier_id" => $filter_supplier_id,"revision" => $filter_revision,]);
@@ -626,9 +626,9 @@ class Forecast_suppliers extends CI_Controller
                 $class_abc   = isset($data['class_abc']) ? $data['class_abc'] : '-';
                 $uom         = isset($data['uom']) ? $data['uom'] : '-';
                 
-                $qty_1 = isset($data['month1_fc']) ? number_format($data['month1_fc'], 2, '.', '') : '0.00';
-                $qty_2 = isset($data['month2_fc']) ? number_format($data['month2_fc'], 2, '.', '') : '0.00';
-                $qty_3 = isset($data['month3_fc']) ? number_format($data['month3_fc'], 2, '.', '') : '0.00';
+                $qty_1 = isset($data['month1_fc']) ? number_format((float) $data['month1_fc'], 2, '.', '') : '0.00';
+                $qty_2 = isset($data['month2_fc']) ? number_format((float) $data['month2_fc'], 2, '.', '') : '0.00';
+                $qty_3 = isset($data['month3_fc']) ? number_format((float) $data['month3_fc'], 2, '.', '') : '0.00';
 
                 $html .= '<tr>
                             <td class="text-center">' . $no . '</td>

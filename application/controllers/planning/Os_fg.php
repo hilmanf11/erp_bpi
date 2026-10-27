@@ -79,8 +79,8 @@ class Os_fg extends CI_Controller
     public function os_fg_number($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow = date("Y-m-d", strtotime($trans_date));
-        $datenow2 = date("Ymd", strtotime($trans_date));
+        $datenow = date("Y-m-d", strtotime((string) $trans_date));
+        $datenow2 = date("Ymd", strtotime((string) $trans_date));
 
         $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM os_fg WHERE DATE(trans_date) = '$datenow'");
         $rowID = $sqlGetID->row();
@@ -218,7 +218,7 @@ class Os_fg extends CI_Controller
 
         if ($this->input->post()) {
 
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
 
             $post = $this->input->post();
 
@@ -501,7 +501,7 @@ class Os_fg extends CI_Controller
                             <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
                             <td>' . $data['location'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
                             <td>' . $data['created_by'] . '</td>
                             <td>' . $data['created_date'] . '</td>
                         </tr>';

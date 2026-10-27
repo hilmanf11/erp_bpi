@@ -183,7 +183,7 @@ class Breakdown_prices extends CI_Controller
     public function get_quotation_number()
     {
         $date = $this->input->post('date');
-        $time = strtotime($date);
+        $time = strtotime((string) $date);
         $shortYear = date('y', $time);
         $monthRomawi = $this->get_romawi(date('n', $time));
 
@@ -408,7 +408,7 @@ class Breakdown_prices extends CI_Controller
                 echo json_encode([
                     'status'  => true,
                     'theme'   => 'success',
-                    'message' => 'Data Save Successfully. Selling Price: ' . number_format($selling_price, 2),
+                    'message' => 'Data Save Successfully. Selling Price: ' . number_format((float) $selling_price, 2),
                     'data'    => $send
                 ]);
             } else {
@@ -428,7 +428,7 @@ class Breakdown_prices extends CI_Controller
     // public function update()
     // {
     //     if ($this->input->post()) {
-    //         $id = base64_decode($this->input->get('id'));
+    //         $id = base64_decode((string) $this->input->get('id'));
     //         $post = $this->input->post();
 
     //         $old = $this->db->get_where('breakdown_prices', ['id' => $id])->row();
@@ -449,7 +449,7 @@ class Breakdown_prices extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id = base64_decode($this->input->get('id'));
+            $id = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
 
             // 1. Dapatkan data lama sebagai patokan
@@ -526,7 +526,7 @@ class Breakdown_prices extends CI_Controller
                     'status'  => true,
                     'theme'   => 'success',
                     'title'   => 'Success',
-                    'message' => 'New revision created successfully! Selling Price: ' . number_format($selling_price, 2),
+                    'message' => 'New revision created successfully! Selling Price: ' . number_format((float) $selling_price, 2),
                     'data'    => $send
                 ]);
             } else {
@@ -676,7 +676,7 @@ class Breakdown_prices extends CI_Controller
             } else {
 
                 $excel_date = $data['quotation_date']; 
-                $time = strtotime($excel_date);
+                $time = strtotime((string) $excel_date);
                 
                 if (!$time) {
                     $time = time(); 
@@ -1039,7 +1039,7 @@ class Breakdown_prices extends CI_Controller
                     </tr>
                     <tr>
                         <td class="bg-blue">Part Number</td><td>'.$header->item_fg_number.'</td>
-                        <td class="bg-blue">Quotation date</td><td>'.date("d-M-y", strtotime($header->quotation_date)).'</td>
+                        <td class="bg-blue">Quotation date</td><td>'.date("d-M-y", strtotime((string) $header->quotation_date)).'</td>
                     </tr>
                     <tr>
                         <td class="bg-blue">Part Name</td><td>'.$header->item_fg_name.'</td>
@@ -1065,7 +1065,7 @@ class Breakdown_prices extends CI_Controller
                     </tr>
                     <tr>
                         <td class="bg-blue">Order Estimation</td>
-                        <td>'.number_format($header->order_estimation).' pcs/bulan</td>
+                        <td>'.number_format((float) $header->order_estimation).' pcs/bulan</td>
                     </tr>
                     <tr>
                         <td class="bg-blue">Model Life Time</td>
@@ -1130,11 +1130,11 @@ class Breakdown_prices extends CI_Controller
                                 <td align="left">'.$d->name_vg.'</td> 
                                 <td>'.($maker).'</td> 
                                 <td>'.$d->color_vg.'</td>
-                                <td align="right">'.number_format($gross_vg, 3).'</td> 
-                                <td align="right">'.number_format($nett_vg, 3).'</td>   
+                                <td align="right">'.number_format((float) $gross_vg, 3).'</td> 
+                                <td align="right">'.number_format((float) $nett_vg, 3).'</td>   
                                 <td align="center">gr</td>
-                                <td align="right">'.number_format($header->price_vg, 2).'</td>
-                                <td align="right">'.number_format($d->virgin_cost, 2).'</td>
+                                <td align="right">'.number_format((float) $header->price_vg, 2).'</td>
+                                <td align="right">'.number_format((float) $d->virgin_cost, 2).'</td>
                             </tr>';
                         }
 
@@ -1149,11 +1149,11 @@ class Breakdown_prices extends CI_Controller
                                 <td align="left">'.$d->name_mb.'</td>
                                 <td>'.($d->maker_mb ?: '-').'</td>
                                 <td>'.$d->color_mb.'</td>
-                                <td align="right">'.number_format($gross_mb, 3).'</td>
-                                <td align="right">'.number_format($d->weight, 3).'</td>
+                                <td align="right">'.number_format((float) $gross_mb, 3).'</td>
+                                <td align="right">'.number_format((float) $d->weight, 3).'</td>
                                 <td align="center">gr</td>
-                                <td align="right">'.number_format($d->price_mb, 2).'</td>
-                                <td align="right">'.number_format($d->mb_cost, 2).'</td>
+                                <td align="right">'.number_format((float) $d->price_mb, 2).'</td>
+                                <td align="right">'.number_format((float) $d->mb_cost, 2).'</td>
                             </tr>';
                         }
 
@@ -1168,11 +1168,11 @@ class Breakdown_prices extends CI_Controller
                                 <td align="left">'.$d->part_no_cp.'</td>
                                 <td>'.($d->maker_cp ?: '-').'</td>
                                 <td>'.$d->color_cp.'</td>
-                                <td align="right">'.number_format($gross_cp, 3).'</td>
-                                <td align="right">'.number_format($d->weight, 3).'</td>
+                                <td align="right">'.number_format((float) $gross_cp, 3).'</td>
+                                <td align="right">'.number_format((float) $d->weight, 3).'</td>
                                 <td align="center">'.($d->maker_cp ?: '-').'</td>
-                                <td align="right">'.number_format($d->price_cp, 2).'</td>
-                                <td align="right">'.number_format($d->child_part_cost, 2).'</td>
+                                <td align="right">'.number_format((float) $d->price_cp, 2).'</td>
+                                <td align="right">'.number_format((float) $d->child_part_cost, 2).'</td>
                             </tr>';
                         }
                     }
@@ -1252,7 +1252,7 @@ class Breakdown_prices extends CI_Controller
                     }
 
         $html .= '
-                    <tr class="bg-gray"><td colspan="7" class="text-right">Sub. Total 1</td><td class="text-right">'.number_format($sub_total_1, 2).'</td></tr>
+                    <tr class="bg-gray"><td colspan="7" class="text-right">Sub. Total 1</td><td class="text-right">'.number_format((float) $sub_total_1, 2).'</td></tr>
                 </table>
 
                 <div style="font-weight:bold; margin-top:5px;">PROCESS COST</div>
@@ -1268,23 +1268,23 @@ class Breakdown_prices extends CI_Controller
                     
                     <tr>
                         <td align="left">INJECTION</td>
-                        <td>'.number_format($header->toonage).' T</td>
-                        <td>'.number_format($header->cavity_standard).'</td>
-                        <td>'.number_format($header->cycle_time, 2).' sec</td>
-                        <td class="text-right">'.number_format($header->plain_rate_sec, 4).'</td>
-                        <td class="text-right">'.number_format($inj_cost, 2).'</td>
+                        <td>'.number_format((float) $header->toonage).' T</td>
+                        <td>'.number_format((float) $header->cavity_standard).'</td>
+                        <td>'.number_format((float) $header->cycle_time, 2).' sec</td>
+                        <td class="text-right">'.number_format((float) $header->plain_rate_sec, 4).'</td>
+                        <td class="text-right">'.number_format((float) $inj_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td align="left" class="bg-blue">SECOND PROCESS</td>
-                        <td>'.number_format($tonage).' T</td>
-                        <td>'.number_format($cavity_standard).'</td>
-                        <td>'.number_format($header->cycle_time_process, 2).' sec</td>
-                        <td class="text-right">'.number_format($header->labour_cost, 4).'</td>
-                        <td class="text-right">'.number_format($sec_process_cost, 2).'</td>
+                        <td>'.number_format((float) $tonage).' T</td>
+                        <td>'.number_format((float) $cavity_standard).'</td>
+                        <td>'.number_format((float) $header->cycle_time_process, 2).' sec</td>
+                        <td class="text-right">'.number_format((float) $header->labour_cost, 4).'</td>
+                        <td class="text-right">'.number_format((float) $sec_process_cost, 2).'</td>
                     </tr>
                     <tr class="bg-gray">
                         <td colspan="5" class="text-right">Sub. Total 2</td>
-                        <td class="text-right">'.number_format($sub_total_2, 2).'</td>
+                        <td class="text-right">'.number_format((float) $sub_total_2, 2).'</td>
                     </tr>
                 </table>
 
@@ -1306,51 +1306,51 @@ class Breakdown_prices extends CI_Controller
                     <tr>
                         <td align="left">'.$mold_name.'</td>
                         <td>-</td>
-                        <td>'.number_format($mold_unit).'</td>
-                        <td align="right">'.number_format($mold_price, 2).'</td>
-                        <td align="right">'.number_format($mold_amount, 2).'</td>
-                        <td align="right">'.number_format($volume).'</td>
-                        <td align="right">'.number_format($mold_amortization, 2).'</td>
+                        <td>'.number_format((float) $mold_unit).'</td>
+                        <td align="right">'.number_format((float) $mold_price, 2).'</td>
+                        <td align="right">'.number_format((float) $mold_amount, 2).'</td>
+                        <td align="right">'.number_format((float) $volume).'</td>
+                        <td align="right">'.number_format((float) $mold_amortization, 2).'</td>
                     </tr>
                     <tr>
                         <td align="left">Dies</td>
                         <td>-</td>
-                        <td>'.number_format($dies_unit).'</td>
-                        <td align="right">'.number_format($dies_price, 2).'</td>
-                        <td align="right">'.number_format($dies_amount, 2).'</td>
-                        <td align="right">'.number_format($volume).'</td>
-                        <td align="right">'.number_format($dies_amortization, 2).'</td>
+                        <td>'.number_format((float) $dies_unit).'</td>
+                        <td align="right">'.number_format((float) $dies_price, 2).'</td>
+                        <td align="right">'.number_format((float) $dies_amount, 2).'</td>
+                        <td align="right">'.number_format((float) $volume).'</td>
+                        <td align="right">'.number_format((float) $dies_amortization, 2).'</td>
                     </tr>
                     <tr>
                         <td align="left">Jig</td>
                         <td>-</td>
-                        <td>'.number_format($jig_unit).'</td>
-                        <td align="right">'.number_format($jig_price, 2).'</td>
-                        <td align="right">'.number_format($jig_amount, 2).'</td>
-                        <td align="right">'.number_format($volume).'</td>
-                        <td align="right">'.number_format($jig_amortization, 2).'</td>
+                        <td>'.number_format((float) $jig_unit).'</td>
+                        <td align="right">'.number_format((float) $jig_price, 2).'</td>
+                        <td align="right">'.number_format((float) $jig_amount, 2).'</td>
+                        <td align="right">'.number_format((float) $volume).'</td>
+                        <td align="right">'.number_format((float) $jig_amortization, 2).'</td>
                     </tr>
                     <tr>
                         <td align="left">Tooling</td>
                         <td>-</td>
-                        <td>'.number_format($tooling_unit).'</td>
-                        <td align="right">'.number_format($tooling_price, 2).'</td>
-                        <td align="right">'.number_format($tooling_amount, 2).'</td>
-                        <td align="right">'.number_format($volume).'</td>
-                        <td align="right">'.number_format($tooling_amortization, 2).'</td>
+                        <td>'.number_format((float) $tooling_unit).'</td>
+                        <td align="right">'.number_format((float) $tooling_price, 2).'</td>
+                        <td align="right">'.number_format((float) $tooling_amount, 2).'</td>
+                        <td align="right">'.number_format((float) $volume).'</td>
+                        <td align="right">'.number_format((float) $tooling_amortization, 2).'</td>
                     </tr>
                     <tr>
                         <td align="left">Fixture Cost</td>
                         <td>-</td>
-                        <td>'.number_format($fixture_cost_unit).'</td>
-                        <td align="right">'.number_format($fixture_cost_price, 2).'</td>
-                        <td align="right">'.number_format($fixture_amount, 2).'</td>
-                        <td align="right">'.number_format($volume).'</td>
-                        <td align="right">'.number_format($fixture_amortization, 2).'</td>
+                        <td>'.number_format((float) $fixture_cost_unit).'</td>
+                        <td align="right">'.number_format((float) $fixture_cost_price, 2).'</td>
+                        <td align="right">'.number_format((float) $fixture_amount, 2).'</td>
+                        <td align="right">'.number_format((float) $volume).'</td>
+                        <td align="right">'.number_format((float) $fixture_amortization, 2).'</td>
                     </tr>
                     <tr class="bg-gray">
                         <td colspan="6" class="text-right">Sub. Total 3</td>
-                        <td class="text-right">'.number_format($sub_total_3, 2).'</td>
+                        <td class="text-right">'.number_format((float) $sub_total_3, 2).'</td>
                     </tr>
                 </table>
 
@@ -1364,13 +1364,13 @@ class Breakdown_prices extends CI_Controller
                         <td width="5%">1.</td>
                         <td>Material & parts</td>
                         <td class="text-center">Sub total 1</td>
-                        <td class="text-right">'.number_format($sub_total_1, 2).'</td>
+                        <td class="text-right">'.number_format((float) $sub_total_1, 2).'</td>
                     </tr>
                     <tr>
                         <td>2.</td>
                         <td>Process</td>
                         <td class="text-center">Sub total 2</td>
-                        <td class="text-right">'.number_format($sub_total_2, 2).'</td>
+                        <td class="text-right">'.number_format((float) $sub_total_2, 2).'</td>
                     </tr>
                     <tr class="bg-gray">
                         <td colspan="2" class="text-right">Sub. Total Manufacturing Cost</td>
@@ -1380,57 +1380,57 @@ class Breakdown_prices extends CI_Controller
                     <tr>
                         <td>3.</td><td>Dies/Jig/Tools/Fixture</td>
                         <td class="text-center">Sub Total 3</td>
-                        <td class="text-right">'.number_format($sub_total_3, 2).'</td>
+                        <td class="text-right">'.number_format((float) $sub_total_3, 2).'</td>
                     </tr>
                     <tr>
                         <td>4.</td>
                         <td>FOH and Administration</td>
                         <td class="text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($header->adm_foh_cost, 2).'</td>
+                        <td class="text-right">'.number_format((float) $header->adm_foh_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>5.</td>
                         <td>NG</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($header->ng_ratio_cost, 2).'</td>
+                        <td class="text-right">'.number_format((float) $header->ng_ratio_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>6.</td>
                         <td>Maintenance</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($header->mtn_cost, 2).'</td>
+                        <td class="text-right">'.number_format((float) $header->mtn_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>7.</td>
                         <td>Packaging</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($header->total_packing_cost, 2).'</td>
+                        <td class="text-right">'.number_format((float) $header->total_packing_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>8.</td>
                         <td>Transport</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($header->transportasion_cost_pcs, 2).'</td>
+                        <td class="text-right">'.number_format((float) $header->transportasion_cost_pcs, 2).'</td>
                     </tr>
                     <tr>
                         <td>9.</td>
                         <td>Purging</td>
                         <td class=" text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($header->purging_cost, 2).'</td>
+                        <td class="text-right">'.number_format((float) $header->purging_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td>10.</td>
                         <td>Profit</td>
                         <td class="text-center" style="font-size:9px;">-</td>
-                        <td class="text-right">'.number_format($header->profit_nominal, 2).'</td>
+                        <td class="text-right">'.number_format((float) $header->profit_nominal, 2).'</td>
                     </tr>
                     <tr>
                         <td colspan="3" class="text-right">Total Cost</td>
-                        <td class="text-right">'.number_format($total_cost, 2).'</td>
+                        <td class="text-right">'.number_format((float) $total_cost, 2).'</td>
                     </tr>
                     <tr>
                         <td colspan="3" class="text-right" style="font-size:20px; font-weight:bold;">Selling Price</td>
-                        <td class="text-right">'.number_format($selling_price, 2).'</td>
+                        <td class="text-right">'.number_format((float) $selling_price, 2).'</td>
                     </tr>
                 </table>
             </div>

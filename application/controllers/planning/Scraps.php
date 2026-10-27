@@ -125,9 +125,9 @@ class Scraps extends CI_Controller
 
         $trans_date = base64_decode($trans_date);
 
-        $year       = date("Y", strtotime($trans_date));
+        $year       = date("Y", strtotime((string) $trans_date));
 
-        $datenow    = date("ymd", strtotime($trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
 
         $sqlGetID   = $this->db->query("SELECT max(document) as kode FROM scraps WHERE trans_date like '%$year%'");
 
@@ -252,7 +252,7 @@ class Scraps extends CI_Controller
 
         if ($this->input->post()) {
 
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
 
             $post = $this->input->post();
 
@@ -606,9 +606,9 @@ class Scraps extends CI_Controller
 
                             <td style="text-align:right">' . number_format($data->begin_in - $data->begin_out, 2) . '</td>
 
-                            <td style="text-align:right">' . number_format($data->qty_in, 2) . '</td>
+                            <td style="text-align:right">' . number_format((float) $data->qty_in, 2) . '</td>
 
-                            <td style="text-align:right">' . number_format($data->qty_out, 2) . '</td>
+                            <td style="text-align:right">' . number_format((float) $data->qty_out, 2) . '</td>
 
                             <td style="text-align:right">' . number_format(($data->begin_in - $data->begin_out) + ($data->qty_in - $data->qty_out), 2) . '</td>
 
@@ -682,13 +682,13 @@ class Scraps extends CI_Controller
 
                                 <td style="text-align:center">' . $detail->uom . '</td>
 
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
 
-                                <td style="text-align:right;">' . number_format($in, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $in, 2) . '</td>
 
-                                <td style="text-align:right;">' . number_format($out, 2)  . '</td>
+                                <td style="text-align:right;">' . number_format((float) $out, 2)  . '</td>
 
-                                <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
 
                             </tr>';
 

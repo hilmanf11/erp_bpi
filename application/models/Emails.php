@@ -14,7 +14,7 @@ class Emails extends CI_Model
         show_404();
     }
 
-    public function emailRegistration($email, $name = "USER", $username, $password)
+    public function emailRegistration($email, $name = "USER", $username = "", $password = "")
     {
         $config = array(
             'protocol' => 'smtp', // 'mail', 'sendmail', or 'smtp'

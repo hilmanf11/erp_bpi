@@ -229,7 +229,7 @@ class Report_sto_raw_materials extends CI_Controller
         $no = 1;
         foreach ($records as $record) {
             $deviation = $record->deviation;
-            $formatted_deviation = $deviation < 0 ? '(' . abs($deviation) . ')' : $deviation;
+            $formatted_deviation = $deviation < 0 ? '(' . abs($deviation ?? 0) . ')' : $deviation;
             
             if ($deviation < 0) {
                 $description = 'Deviation -';

@@ -236,7 +236,7 @@ class Sales_order_rm extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $sales_order_no = base64_decode((string) $this->input->get('sales_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, COALESCE(c.qty,0) as delivery, a.qty - COALESCE(c.qty, 0) as outstanding');
             $this->db->from('sales_order_rm a');
@@ -258,7 +258,7 @@ class Sales_order_rm extends CI_Controller
 
         if ($this->input->get()) {
 
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $sales_order_no = base64_decode((string) $this->input->get('sales_order_no'));
 
 
 
@@ -459,7 +459,7 @@ class Sales_order_rm extends CI_Controller
 
 
 
-        $datenow    = "SO" . $customer_id . date("ymd", strtotime($sales_order_date));
+        $datenow    = "SO" . $customer_id . date("ymd", strtotime((string) $sales_order_date));
 
         $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_order_rm WHERE `sales_order_no` like '%$datenow%'");
 

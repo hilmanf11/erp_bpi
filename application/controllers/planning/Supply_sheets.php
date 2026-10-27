@@ -199,8 +199,8 @@ class Supply_sheets extends CI_Controller
 
     // public function readWp()
     // {
-    //     $period = base64_decode($this->input->get('period'));
-    //     $wp = base64_decode($this->input->get('wp'));
+    //     $period = base64_decode((string) $this->input->get('period'));
+    //     $wp = base64_decode((string) $this->input->get('wp'));
 
     //     $send = $this->crud->query("SELECT a.wp
     //     FROM production_schedules a 
@@ -228,7 +228,7 @@ class Supply_sheets extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime($trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM supply_sheets WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -601,7 +601,7 @@ class Supply_sheets extends CI_Controller
     public function datatablesTemp()
     {
         // $this->bpi = $this->load->database('bpi', TRUE);
-        $workorder = base64_decode($this->input->get('workorder'));
+        $workorder = base64_decode((string) $this->input->get('workorder'));
         $item_fg_id = $this->input->get('item_fg_id');
         $item_fg_number = $this->input->get('item_fg_number');
         // $operation = $this->input->get('operation');
@@ -1079,7 +1079,7 @@ class Supply_sheets extends CI_Controller
                                         <tr>
                                             <td width="50">Doc. Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime($kanban->request_date)) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime((string) $kanban->request_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Created By</td>
@@ -1173,11 +1173,11 @@ class Supply_sheets extends CI_Controller
                                 <td>' . $record['item_rm_name'] . '</td>
                                 <td style="text-align:right;">' . $record['composition'] . '</td>
                                 <td>' . $record['uom'] . '</td>
-                                <td style="text-align:right;">' . @number_format($record['mpq'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['need'], 4) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['req_qty_purging'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['qty_req'], 4) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['qty_issueds'], 4) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['mpq'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['need'], 4) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['req_qty_purging'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['qty_req'], 4) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['qty_issueds'], 4) . '</td>
                                 <td style="text-align:right;">' . @$record['lotnos'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($wip_balances->balance), 4) . '</td>
                                 <td style="text-align:right;">' . @number_format(($ending_stock), 4) . '</td>
@@ -1375,7 +1375,7 @@ class Supply_sheets extends CI_Controller
         //                         <td style="text-align:center">' ."Material ". $no . '</td>
         //                         <td>' . $record['item_rm_no'] . '</td>
         //                         <td>' . $record['item_rm_name'] . '</td>
-        //                         <td style="text-align:right;">' . number_format($qty_final, 2) . '</td>
+        //                         <td style="text-align:right;">' . number_format((float) $qty_final, 2) . '</td>
         //                         <td style="text-align:right;">' . $record['uom'] . '</td>
         //                         <td style="text-align:right;">' . $record['lotno'] . '</td>
         //                     </tr>';
@@ -1466,7 +1466,7 @@ class Supply_sheets extends CI_Controller
                                 <td style="text-align:center">' . "Material " .'</td>
                                 <td>' . $record['item_rm_no'] . '</td>
                                 <td>' . $record['item_rm_name'] . '</td>
-                                <td style="text-align:right;">' . number_format($qty_final, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $qty_final, 2) . '</td>
                                 <td style="text-align:right;">' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . $record['lotno'] . '</td>
                               </tr>';

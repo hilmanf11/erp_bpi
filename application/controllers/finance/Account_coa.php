@@ -52,7 +52,7 @@ class Account_coa extends CI_Controller
         header('Content-Type: application/json');
 
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'), true); // Jadikan array asosiatif
+            $filters = json_decode((string) $this->input->post('filterRules'), true); // Jadikan array asosiatif
             $page = (int)$this->input->post('page');
             $rows = (int)$this->input->post('rows');
             $offset = ($page > 0) ? ($page - 1) * $rows : 0;
@@ -145,7 +145,7 @@ class Account_coa extends CI_Controller
     public function datatables_backup()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -208,7 +208,7 @@ class Account_coa extends CI_Controller
     public function datatablesOld()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -324,7 +324,7 @@ class Account_coa extends CI_Controller
         header('Content-Type: application/json');
         if ($this->input->post()) 
         {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             unset($post['account_group_detail_name']);
 
@@ -602,11 +602,11 @@ class Account_coa extends CI_Controller
                 <td style="text-align:left;">' . $data['account_number'] . '</td>
                 <td style="text-align:left;">' . $data['account_name'] . '</td>
                 <td style="text-align:center;">' . $data['original_currency'] . '</td>
-                <td style="text-align:right;">' . number_format($data['original_debit'], 2, ',', '.') . '</td>
-                <td style="text-align:right;">' . number_format($data['original_kredit'], 2, ',', '.') . '</td>
+                <td style="text-align:right;">' . number_format((float) $data['original_debit'], 2, ',', '.') . '</td>
+                <td style="text-align:right;">' . number_format((float) $data['original_kredit'], 2, ',', '.') . '</td>
                 <td style="text-align:center;">' . $data['local_currency'] . '</td>
-                <td style="text-align:right;">' . number_format($data['local_debit'], 2, ',', '.') . '</td>
-                <td style="text-align:right;">' . number_format($data['local_kredit'], 2, ',', '.') . '</td>
+                <td style="text-align:right;">' . number_format((float) $data['local_debit'], 2, ',', '.') . '</td>
+                <td style="text-align:right;">' . number_format((float) $data['local_kredit'], 2, ',', '.') . '</td>
             </tr>';
             
             $no++;
@@ -619,11 +619,11 @@ class Account_coa extends CI_Controller
 
         $html .= '<tr style="background-color:#FFFF00;">
                 <td colspan="5" style="text-align:right; padding-right:30px;"><b>Grand Total</b></td>
-                <td style="text-align:right">' . number_format($total_original_debit, 2, ',', '.') . '</td>
-                <td style="text-align:right">' . number_format($total_original_kredit, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format((float) $total_original_debit, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format((float) $total_original_kredit, 2, ',', '.') . '</td>
                 <td style="text-align:center;">-</td>
-                <td style="text-align:right">' . number_format($total_local_debit, 2, ',', '.') . '</td>
-                <td style="text-align:right">' . number_format($total_local_kredit, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format((float) $total_local_debit, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format((float) $total_local_kredit, 2, ',', '.') . '</td>
             </tr>';
 
         $html .= '</table></body></html>';

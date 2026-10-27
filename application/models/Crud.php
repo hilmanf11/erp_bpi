@@ -28,11 +28,11 @@ class Crud extends CI_Model
     {
         $date = date("Ymd");
         $sql = $this->db->query("SELECT max(`id`) as kode FROM $table WHERE id like '%$date%'");
-        $row = $sql->row();
-        $kode = $row->kode;
+        $row = is_object($sql) ? $sql->row() : null;
+        $kode = $row ? $row->kode : null;
 
         if ($kode == NULL) {
-            $autoid        = $date . sprintf("%06s", $kode + 1);
+            $autoid        = $date . sprintf("%06s", 1);
         } else {
             $autoid        = (int) $kode + 1;
         }
@@ -42,19 +42,21 @@ class Crud extends CI_Model
 
     function query($query)
     {
-        $query = $this->db->query($query);
-        $records = $query->result_object();
-        return $records;
+        $res = $this->db->query($query);
+        if (is_object($res)) {
+            return $res->result_object();
+        }
+        return [];
     }
 
     function read($table, $like = [], $where = [], $limit = "", $orderfield = "", $orderby = "", $groupby = [])
     {
         $this->db->select('*');
         $this->db->from($table);
-        if ($where != []) {
+        if (!empty($where)) {
             $this->db->where($where);
         }
-        if ($like != []) {
+        if (!empty($like)) {
             $this->db->like($like);
         }
         if ($limit != "") {
@@ -63,21 +65,21 @@ class Crud extends CI_Model
         if ($orderby != "") {
             $this->db->order_by($orderfield, $orderby);
         }
-        if ($groupby != []) {
+        if (!empty($groupby)) {
             $this->db->group_by($groupby);
         }
-        $records = $this->db->get()->row();
-        return $records;
+        $res = $this->db->get();
+        return is_object($res) ? $res->row() : null;
     }
 
     function reads($table, $like = [], $where = [], $limit = "", $orderfield = "", $orderby = "", $groupby = [])
     {
         $this->db->select('*');
         $this->db->from($table);
-        if ($where != []) {
+        if (!empty($where)) {
             $this->db->where($where);
         }
-        if ($like != []) {
+        if (!empty($like)) {
             $this->db->like($like);
         }
         if ($limit != "") {
@@ -86,11 +88,11 @@ class Crud extends CI_Model
         if ($orderby != "") {
             $this->db->order_by($orderfield, $orderby);
         }
-        if ($groupby != []) {
+        if (!empty($groupby)) {
             $this->db->group_by($groupby);
         }
-        $records = $this->db->get()->result_object();
-        return $records;
+        $res = $this->db->get();
+        return is_object($res) ? $res->result_object() : [];
     }
 
     function create($table, $values)
@@ -296,11 +298,11 @@ class Crud extends CI_Model
     function upload($filename, $extension, $path, $id = [], $table = "", $field = "")
     {
         //Setting Upload Image
-        $file = $_FILES[$filename]["name"];
+        $file = isset($_FILES[$filename]["name"]) ? $_FILES[$filename]["name"] : "";
         $extension_explode = explode('.', $file);
         $extension_final = strtolower(end($extension_explode));
-        $size = $_FILES[$filename]['size'];
-        $temporary = $_FILES[$filename]['tmp_name'];
+        $size = isset($_FILES[$filename]['size']) ? $_FILES[$filename]['size'] : 0;
+        $temporary = isset($_FILES[$filename]['tmp_name']) ? $_FILES[$filename]['tmp_name'] : "";
         $newname  = round(microtime(true)) . '.' . $extension_final;
         $fileSave  = base_url($path) . round(microtime(true)) . '.' . $extension_final;
 

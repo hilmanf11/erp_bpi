@@ -163,7 +163,7 @@ class Sales_order_delivery_rm extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $sales_order_no = base64_decode((string) $this->input->get('sales_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, COALESCE(c.qty_del, 0) as qty_del, (a.qty - COALESCE(c.qty_del, 0)) as qty_os');
             $this->db->from('sales_order_rm a');
@@ -263,7 +263,7 @@ class Sales_order_delivery_rm extends CI_Controller
     // public function update()
     // {
     //     if ($this->input->post()) {
-    //         $id   = base64_decode($this->input->get('id'));
+    //         $id   = base64_decode((string) $this->input->get('id'));
     //         $post = $this->input->post();
     //         $send = $this->crud->update('sales_order_delivery_rm', ["id" => $id], $post);
     //         echo $send;
@@ -275,7 +275,7 @@ class Sales_order_delivery_rm extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $sales_order_no =  $post['sales_order_no'];
             $item_fg_id =  $post['item_fg_id'];

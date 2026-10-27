@@ -64,7 +64,7 @@ class Scan_dn_crusher extends CI_Controller
     public function saveTransfer()
     {
         $header  = $this->input->post('header'); 
-        $details = json_decode($this->input->post('details'), true);
+        $details = json_decode((string) $this->input->post('details'), true);
 
         if (empty($header) || empty($details)) {
             echo json_encode([
@@ -76,8 +76,8 @@ class Scan_dn_crusher extends CI_Controller
 
         $trans_date = $header['transaction_date'];
         $div = $header['division'];
-        $year       = date("Y", strtotime($trans_date));
-        $monthYear  = date("my", strtotime($trans_date));
+        $year       = date("Y", strtotime((string) $trans_date));
+        $monthYear  = date("my", strtotime((string) $trans_date));
                     
         $sqlGetID = $this->db->query("SELECT MAX(LEFT(document_no,3)) as kode FROM scan_dn_crusher WHERE YEAR(transaction_date) = '$year'");
         $rowID = $sqlGetID->row();

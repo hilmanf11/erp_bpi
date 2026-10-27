@@ -33,14 +33,14 @@ class Report_outstanding_wo extends CI_Controller
     }
     public function readWp()
     {
-        $period = base64_decode($this->input->get('period'));
+        $period = base64_decode((string) $this->input->get('period'));
         $send = $this->crud->query("SELECT DISTINCT wp, workorder, so_number FROM production_schedules WHERE `period` = '$period' ORDER BY `wp` DESC");
         echo json_encode($send);
     }
     public function readCustomer()
     {
-        $period = base64_decode($this->input->get('period'));
-        $wp = base64_decode($this->input->get('wp'));
+        $period = base64_decode((string) $this->input->get('period'));
+        $wp = base64_decode((string) $this->input->get('wp'));
         $send = $this->crud->query("SELECT a.customer_id, b.number as customer_number, b.name as customer_name 
             FROM production_schedules a
             JOIN customers b on a.customer_id = b.id
@@ -49,8 +49,8 @@ class Report_outstanding_wo extends CI_Controller
     }
     public function readItems()
     {
-        $period = base64_decode($this->input->get('period'));
-        $wp = base64_decode($this->input->get('wp'));
+        $period = base64_decode((string) $this->input->get('period'));
+        $wp = base64_decode((string) $this->input->get('wp'));
         $customer_id = $this->input->get('customer_id');
         $send = $this->crud->query("SELECT a.workorder, b.id as item_fg_id, b.number as item_number, b.name as item_name, c.name as customer_name  
             FROM production_schedules a
@@ -66,11 +66,11 @@ class Report_outstanding_wo extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
         }
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $filter_display = $this->input->get("filter_display");
         $filter_period = $this->input->get("filter_period");
-        $filter_wp = base64_decode($this->input->get("filter_wp"));
+        $filter_wp = base64_decode((string) $this->input->get("filter_wp"));
         $filter_customer = $this->input->get("filter_customer");
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_status = $this->input->get("filter_status");
@@ -141,7 +141,7 @@ class Report_outstanding_wo extends CI_Controller
                             <td>' . $data['workorder'] . '</td>
                             <td>' . $data['period'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
-                            <td>' . number_format($data['qty'], 2) . '</td>
+                            <td>' . number_format((float) $data['qty'], 2) . '</td>
                             <td>' . $status . '</td>
                             <td>' . $data['created_by'] . '</td>
                         </tr>';
@@ -173,7 +173,7 @@ class Report_outstanding_wo extends CI_Controller
             //                             <td>' . $detail['item_name'] . '</td>
             //                             <td>' . $detail['receipt_no'] . '</td>
             //                             <td>' . $detail['receipt_date'] . '</td>
-            //                             <td>' . number_format($detail['qty_receipt']) . '</td>
+            //                             <td>' . number_format((float) $detail['qty_receipt']) . '</td>
             //                             <td>' . $detail['created_by'] . '</td>
             //                         </tr>';
             //         }

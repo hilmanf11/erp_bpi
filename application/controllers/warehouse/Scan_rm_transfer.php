@@ -188,7 +188,7 @@ class Scan_rm_transfer extends CI_Controller
     public function saveTransfer()
     {
         $header  = $this->input->post('header'); 
-        $details = json_decode($this->input->post('details'), true);
+        $details = json_decode((string) $this->input->post('details'), true);
 
         if (empty($header) || empty($details)) {
             echo json_encode(["status" => "error", "message" => "Data header or detail is empty!"]);
@@ -201,8 +201,8 @@ class Scan_rm_transfer extends CI_Controller
         try {
             // === generate autonumber ===
             $trans_date = $header['transaction_date'];
-            $year       = date("Y", strtotime($trans_date));
-            $datenow    = date("ymd", strtotime($trans_date));
+            $year       = date("Y", strtotime((string) $trans_date));
+            $datenow    = date("ymd", strtotime((string) $trans_date));
 
             // Gunakan FOR UPDATE untuk mengunci baris terakhir agar tidak ada ID ganda di waktu bersamaan
             $sqlGetID   = $this->db->query("SELECT MAX(RIGHT(document_no,4)) as kode FROM scan_rm_transfer WHERE YEAR(transaction_date) = '$year' FOR UPDATE");

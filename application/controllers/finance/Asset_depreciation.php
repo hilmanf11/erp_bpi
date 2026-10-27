@@ -96,10 +96,10 @@ class Asset_depreciation extends CI_Controller
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
 
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_family = base64_decode($this->input->get('filter_family'));
-            $filter_asset_no = base64_decode($this->input->get('filter_asset_no'));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $filter_family = base64_decode((string) $this->input->get('filter_family'));
+            $filter_asset_no = base64_decode((string) $this->input->get('filter_asset_no'));
 
             $filter_period = $filter_year . "-" . $filter_month;
 
@@ -362,10 +362,10 @@ class Asset_depreciation extends CI_Controller
             header("Content-Disposition: attachment; filename=asset_depreciation_$format.xls");
         }
 
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_family = base64_decode($this->input->get('filter_family'));
-        $filter_asset_no = base64_decode($this->input->get('filter_asset_no'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_family = base64_decode((string) $this->input->get('filter_family'));
+        $filter_asset_no = base64_decode((string) $this->input->get('filter_asset_no'));
 
         $filter_period = $filter_year . "-" . $filter_month;
 
@@ -472,9 +472,9 @@ class Asset_depreciation extends CI_Controller
         }
         
         if (!empty($option) && $option == "excel") {
-            return number_format($value, $decimal, ".", ""); // tanpa separator
+            return number_format((float) $value, $decimal, ".", ""); // tanpa separator
         } else {
-            return number_format($value, $decimal, ",", ".");
+            return number_format((float) $value, $decimal, ",", ".");
         }
     }
 

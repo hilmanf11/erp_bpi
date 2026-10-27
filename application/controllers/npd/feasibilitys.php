@@ -140,7 +140,7 @@ class Feasibilitys extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $attachment = $this->crud->upload('attachment', ["pdf", "png", "jpg", "jpeg"], 'assets/documents/feasibilitys/', ["id" => $id], "feasibilitys", "attachment");
             $postFinal = array_merge($post, ["attachment" => $attachment]);

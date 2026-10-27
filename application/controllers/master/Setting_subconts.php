@@ -76,8 +76,8 @@ class Setting_subconts extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_subcont_id = base64_decode($this->input->get('filter_subcont_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_subcont_id = base64_decode((string) $this->input->get('filter_subcont_id'));
 
             $this->db->select('a.*, b.number as subcont_number, b.name as subcont_name, b.status, c.number as item_fg_number, c.name as item_fg_name');
             $this->db->from('setting_subconts a');
@@ -97,7 +97,7 @@ class Setting_subconts extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $subcont_id = base64_decode($this->input->get('subcont_id'));
+            $subcont_id = base64_decode((string) $this->input->get('subcont_id'));
 
             $this->db->select('a.*, b.number as subcont_number, b.name as subcont_name, b.status, c.number as item_fg_number, c.name as item_fg_name');
             $this->db->from('setting_subconts a');
@@ -115,8 +115,8 @@ class Setting_subconts extends CI_Controller
     // public function datatableHistories()
     // {
     //     if ($this->input->get()) {
-    //         $subcont_id = base64_decode($this->input->get('subcont_id'));
-    //         $item_fg_id = base64_decode($this->input->get('item_fg_id'));
+    //         $subcont_id = base64_decode((string) $this->input->get('subcont_id'));
+    //         $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
 
     //         $this->db->select('*');
     //         $this->db->from('subcont_item_histories');

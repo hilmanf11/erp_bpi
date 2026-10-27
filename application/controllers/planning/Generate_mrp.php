@@ -53,8 +53,8 @@ class Generate_mrp extends CI_Controller
     }
 
     public function readRevisions() {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
 
         $this->db->select('revision, DATE(cutoff) as cutoff', FALSE);
         $this->db->from('generate_mrp_finals');
@@ -71,9 +71,9 @@ class Generate_mrp extends CI_Controller
 
     public function checkMps()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        // $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        // $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         //Select Query
         $this->db->select('*');
@@ -93,10 +93,10 @@ class Generate_mrp extends CI_Controller
 
     public function checkOspo()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        // $filter_revision = base64_decode($this->input->get('filter_revision'));
-        // $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        // $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
+        // $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
 
         //Select Query
         // $this->db->select('*');
@@ -124,10 +124,10 @@ class Generate_mrp extends CI_Controller
 
     public function checkWip()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        // $filter_revision = base64_decode($this->input->get('filter_revision'));
-        // $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        // $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
+        // $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
 
         //Select Query
         // $sql = $this->db->query("SELECT a.item_rm_id, COALESCE(SUM(a.qty_act) - SUM(c.qty), 0) AS qty
@@ -148,10 +148,10 @@ class Generate_mrp extends CI_Controller
 
     public function checkMpp()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        // $filter_revision = base64_decode($this->input->get('filter_revision'));
-        // $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        // $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
+        // $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
 
         //Select Query
         // $this->db->select('*');
@@ -177,10 +177,10 @@ class Generate_mrp extends CI_Controller
 
     public function checkRm()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        // $filter_revision = base64_decode($this->input->get('filter_revision'));
-        // $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        // $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
+        // $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
         $filter_cutoff = $filter_year."-".$filter_month."-01";
 
         //Select Query
@@ -221,10 +221,10 @@ class Generate_mrp extends CI_Controller
 
     public function checkSupply()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
-        $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
+        $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
 
         //Select Query
         // $sql = $this->db->query("SELECT a.item_rm_id, COALESCE(SUM(a.qty_act) - SUM(c.qty), 0) AS qty
@@ -362,11 +362,11 @@ class Generate_mrp extends CI_Controller
     {
         if ($this->input->get()) {
             //Filter Data
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_revision = base64_decode($this->input->get('filter_revision'));
-            $filter_part_no = base64_decode($this->input->get('filter_part_no'));
-            $filter_product_family = base64_decode($this->input->get('filter_product_family'));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
+            $filter_part_no = base64_decode((string) $this->input->get('filter_part_no'));
+            $filter_product_family = base64_decode((string) $this->input->get('filter_product_family'));
             $filter_trans_date = $filter_year . "-" . $filter_month. "-01";
 
             $this->db->select('max(revision) as revision');
@@ -440,13 +440,13 @@ class Generate_mrp extends CI_Controller
     {
         if ($this->input->get()) {
             //Filter Data
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $revision = base64_decode($this->input->get('filter_revision'));
-            $filter_product_family = base64_decode($this->input->get('filter_product_family'));
-            $filter_part_no = base64_decode($this->input->get('filter_part_no'));
-            $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-            $month1_1 = date("Y-m-01", strtotime($filter_cutoff));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $revision = base64_decode((string) $this->input->get('filter_revision'));
+            $filter_product_family = base64_decode((string) $this->input->get('filter_product_family'));
+            $filter_part_no = base64_decode((string) $this->input->get('filter_part_no'));
+            $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+            $month1_1 = date("Y-m-01", strtotime((string) $filter_cutoff));
             $month1 = date("Y-m-01", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01"))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 1
             $month1_end = date("Y-m-t", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01")));
             $month2 = date("Y-m-01", strtotime("-2 month", strtotime($filter_year."-".$filter_month."-01"))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 2
@@ -461,7 +461,7 @@ class Generate_mrp extends CI_Controller
             $month_1 = date("m", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01"))); //
             $year_1 = date("Y", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01")));  //
 
-            $cutoffDate = date("j", strtotime($filter_cutoff));
+            $cutoffDate = date("j", strtotime((string) $filter_cutoff));
 
             $this->db->select('max(revision) as revision');
             $this->db->from('generate_mrp_finals');
@@ -674,7 +674,7 @@ class Generate_mrp extends CI_Controller
                         $qty_supply = 0;
                     }else{
                         $qty_wip = 0;
-                        $qty_supply = abs($generate['qty_wip']);
+                        $qty_supply = abs($generate['qty_wip'] ?? 0);
                     }
 
 
@@ -757,7 +757,7 @@ class Generate_mrp extends CI_Controller
                 if($balance_1 > 0){
                     $total_need = 0;
                 }else{
-                    $total_need = abs($balance_1);
+                    $total_need = abs($balance_1 ?? 0);
                 }
                 
                 //Dokumentasi : dikomen dahulu tidak menggunkan supplier type Local atau export 
@@ -766,13 +766,13 @@ class Generate_mrp extends CI_Controller
                     //         if($balance_1 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_1);
+                    //             $total_need = abs($balance_1 ?? 0);
                     //         }
                     //     }else{
                     //         if($balance_2 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_2);
+                    //             $total_need = abs($balance_2 ?? 0);
                     //         }
                     //     }
                     // }elseif(($generate['leadtime'] + $cutoffDate - 1) > 30 && ($generate['leadtime'] + $cutoffDate - 1) <= 60){
@@ -780,13 +780,13 @@ class Generate_mrp extends CI_Controller
                     //         if($balance_2 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_2);
+                    //             $total_need = abs($balance_2 ?? 0);
                     //         }
                     //     }else{
                     //         if($balance_3 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_3);
+                    //             $total_need = abs($balance_3 ?? 0);
                     //         }
                     //     }
                     // }elseif(($generate['leadtime'] + $cutoffDate - 1) > 60 && ($generate['leadtime'] + $cutoffDate - 1) <= 90){
@@ -794,13 +794,13 @@ class Generate_mrp extends CI_Controller
                     //         if($balance_3 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_3);
+                    //             $total_need = abs($balance_3 ?? 0);
                     //         }
                     //     }else{
                     //         if($balance_4 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_4);
+                    //             $total_need = abs($balance_4 ?? 0);
                     //         }
                     //     }
                     // }elseif(($generate['leadtime'] + $cutoffDate - 1) > 90 && ($generate['leadtime'] + $cutoffDate - 1) <= 120){
@@ -808,13 +808,13 @@ class Generate_mrp extends CI_Controller
                     //         if($balance_4 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_4);
+                    //             $total_need = abs($balance_4 ?? 0);
                     //         }
                     //     }else{
                     //         if($balance_5 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_5);
+                    //             $total_need = abs($balance_5 ?? 0);
                     //         }
                     //     }
                     // }elseif(($generate['leadtime'] + $cutoffDate - 1) > 120 and ($generate['leadtime'] + $cutoffDate - 1) <= 150){
@@ -822,20 +822,20 @@ class Generate_mrp extends CI_Controller
                     //         if($balance_5 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_5);
+                    //             $total_need = abs($balance_5 ?? 0);
                     //         }
                     //     }else{
                     //         if($balance_6 > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($balance_6);
+                    //             $total_need = abs($balance_6 ?? 0);
                     //         }
                     //     }
                     // }else{
                     //     if($balance_6 > 0){
                     //         $total_need = 0;
                     //     }else{
-                    //         $total_need = abs($balance_6);
+                    //         $total_need = abs($balance_6 ?? 0);
                     //     }
                     // }
                 //
@@ -850,7 +850,7 @@ class Generate_mrp extends CI_Controller
                     //         if($avg_balance > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($avg_balance);
+                    //             $total_need = abs($avg_balance ?? 0);
                     //         }
                     //     break;
                     //     case 7:
@@ -859,7 +859,7 @@ class Generate_mrp extends CI_Controller
                     //         if($avg_balance > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($avg_balance);
+                    //             $total_need = abs($avg_balance ?? 0);
                     //         }
                     //     break;
                     //     case 8:
@@ -868,7 +868,7 @@ class Generate_mrp extends CI_Controller
                     //         if($avg_balance > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($avg_balance);
+                    //             $total_need = abs($avg_balance ?? 0);
                     //         }
                     //     break;
                     //     case 9:
@@ -877,7 +877,7 @@ class Generate_mrp extends CI_Controller
                     //         if($avg_balance > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($avg_balance);
+                    //             $total_need = abs($avg_balance ?? 0);
                     //         }
                     //     break;
                     //     case 10:
@@ -886,7 +886,7 @@ class Generate_mrp extends CI_Controller
                     //         if($avg_balance > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($avg_balance);
+                    //             $total_need = abs($avg_balance ?? 0);
                     //         }
                     //     break;
                     //     case 11:
@@ -895,7 +895,7 @@ class Generate_mrp extends CI_Controller
                     //         if($avg_balance > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($avg_balance);
+                    //             $total_need = abs($avg_balance ?? 0);
                     //         }
                     //     break;
                     //     case 12:
@@ -904,7 +904,7 @@ class Generate_mrp extends CI_Controller
                     //         if($avg_balance > 0){
                     //             $total_need = 0;
                     //         }else{
-                    //             $total_need = abs($avg_balance);
+                    //             $total_need = abs($avg_balance ?? 0);
                     //         }
                     //     break;
                     //     default:
@@ -985,11 +985,11 @@ class Generate_mrp extends CI_Controller
     public function getDataMrpFinals(){
         if ($this->input->get()) {
             //Filter Data
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $revision = base64_decode($this->input->get('filter_revision'));
-            $filter_product_family = base64_decode($this->input->get('filter_product_family'));
-            $filter_part_no = base64_decode($this->input->get('filter_part_no'));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $revision = base64_decode((string) $this->input->get('filter_revision'));
+            $filter_product_family = base64_decode((string) $this->input->get('filter_product_family'));
+            $filter_part_no = base64_decode((string) $this->input->get('filter_part_no'));
 
             $this->db->select('max(revision) as revision');
             $this->db->from('generate_mrp_finals');
@@ -1072,11 +1072,11 @@ class Generate_mrp extends CI_Controller
                 if($generate['item_family_id'] != $product_family){
                     $total_need_amount = 0;
                     $kumulative_need = $generate['total_need_amount'] / $g_total_need_amount[$generate['item_family_id']] * 100;
-                    $composition = number_format($total_need_amount, 2 );
+                    $composition = number_format((float) $total_need_amount, 2 );
                     $total_need_amount += $kumulative_need;
                 }else{
                     $kumulative_need = $generate['total_need_amount'] / $g_total_need_amount[$generate['item_family_id']] * 100;
-                    $composition = number_format($total_need_amount, 2 );
+                    $composition = number_format((float) $total_need_amount, 2 );
                     $total_need_amount += $kumulative_need;
                 }
 
@@ -1496,11 +1496,11 @@ class Generate_mrp extends CI_Controller
             $this->db->from('config');
             $config = $this->db->get()->row();
 
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_revision = base64_decode($this->input->get('filter_revision'));
-            $filter_product_family = base64_decode($this->input->get('filter_product_family'));
-            $filter_part_no = trim(base64_decode($this->input->get('filter_part_no')));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
+            $filter_product_family = base64_decode((string) $this->input->get('filter_product_family'));
+            $filter_part_no = trim(base64_decode((string) $this->input->get('filter_part_no')));
 
             $period_1 = date("F Y", strtotime($filter_year."-".$filter_month."-01"));
             $period_2 = date("F Y",  strtotime("1 month", strtotime($filter_year."-".$filter_month."-01")));
@@ -1575,7 +1575,7 @@ class Generate_mrp extends CI_Controller
                                     <b>' . $config->name . '</b><br>
                                     <small>GENERATE MRP</small><br>
                                     <small>CUTOFF DATE : '.@$records[0]['cutoff'].'</small>
-                                    <small>GENERATE DATE : '.date('Y-m-d', strtotime($records[0]['created_date'])).'</small>
+                                    <small>GENERATE DATE : '.date('Y-m-d', strtotime((string) $records[0]['created_date'])).'</small>
                                 </td>
                             </tr>
                         </table>
@@ -1694,7 +1694,7 @@ class Generate_mrp extends CI_Controller
 
                         $html .= "  <tr>
                                         <td>".$no."</td>
-                                        <td style='mso-number-format:\@;'>".trim($record['item_rm_number'])."</td>
+                                        <td style='mso-number-format:\@;'>".trim((string) $record['item_rm_number'])."</td>
                                         <td style='mso-number-format:\@;'>".$record['item_rm_name']."</td>
                                         <td>".$record['product_family']."</td>
                                         <td>".$record['supplier_name']."</td>
@@ -1702,8 +1702,8 @@ class Generate_mrp extends CI_Controller
                                         <td>".$record['leadtime']."</td>
                                         <td>".$record['mpq']."</td>
                                         <td>".$record['moq']."</td>
-                                        <td style='text-align:right;'>".number_format($record['qty_rm'],2)."</td>
-                                        <td style='text-align:right;'>".number_format($record['qty_wip'],2)."</td>
+                                        <td style='text-align:right;'>".number_format((float) $record['qty_rm'],2)."</td>
+                                        <td style='text-align:right;'>".number_format((float) $record['qty_wip'],2)."</td>
                                         <td style='text-align:right;'>".number_format($record['qty_rm'] + $record['qty_wip'],2)."</td>
                                         <td style='text-align:right;'>".round($record['used_1'])."</td>
                                         <td style='text-align:right;'>".round($record['used_2'])."</td>
@@ -1712,17 +1712,17 @@ class Generate_mrp extends CI_Controller
                                         <td style='text-align:right;'>".round($record['os_po'])."</td>
                                         <td style='text-align:right;'>".round($record['qty_supply'])."</td>
                                         <td style='text-align:right;'>".round($record['qty_wo'])."</td>
-                                        <td style='text-align:right;'>".number_format($record['need_1'],2)."</td>
+                                        <td style='text-align:right;'>".number_format((float) $record['need_1'],2)."</td>
                                         <td style='text-align:right;$style_1'>".round($record['balance_1'])."</td>
-                                        <td style='text-align:right;'>".number_format($record['need_2'],2)."</td>
+                                        <td style='text-align:right;'>".number_format((float) $record['need_2'],2)."</td>
                                         <td style='text-align:right;$style_2'>".round($record['balance_2'])."</td>
-                                        <td style='text-align:right;'>".number_format($record['need_3'],2)."</td>
+                                        <td style='text-align:right;'>".number_format((float) $record['need_3'],2)."</td>
                                         <td style='text-align:right;$style_3'>".round($record['balance_3'])."</td>
-                                        <td style='text-align:right;'>".number_format($record['need_4'],2)."</td>
+                                        <td style='text-align:right;'>".number_format((float) $record['need_4'],2)."</td>
                                         <td style='text-align:right;$style_4'>".round($record['balance_4'])."</td>
-                                        <td style='text-align:right;'>".number_format($record['need_5'],2)."</td>
+                                        <td style='text-align:right;'>".number_format((float) $record['need_5'],2)."</td>
                                         <td style='text-align:right;$style_5'>".round($record['balance_5'])."</td>
-                                        <td style='text-align:right;'>".number_format($record['need_6'],2)."</td>
+                                        <td style='text-align:right;'>".number_format((float) $record['need_6'],2)."</td>
                                         <td style='text-align:right;$style_6'>".round($record['balance_6'])."</td>
                                         <td style='text-align:center;'>".$record['ito']."</td>
                                         <td style='text-align:center;'>".$record['share_order']."</td>

@@ -133,7 +133,7 @@ class Os_mpp extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('os_mpp', ["id" => $id], $post);
             echo $send;
@@ -411,7 +411,7 @@ class Os_mpp extends CI_Controller
                         <td>' . $data['customer_name'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
-                        <td>' . number_format($data['qty']) . '</td>
+                        <td>' . number_format((float) $data['qty']) . '</td>
                         <td>' . $data['revision'] . '</td>
                     </tr>';
             $no++;

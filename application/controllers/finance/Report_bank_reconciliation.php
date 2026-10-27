@@ -57,7 +57,7 @@ class Report_bank_reconciliation extends CI_Controller
         if (strlen($value) <= 5 && strpos($value, '/') !== false) {
             $year = $defaultYear ?? date('Y'); // Gunakan tahun dari parameter atau tahun sekarang
             $cleanDate = str_replace('/', '-', $value . '/' . $year);
-            return date('Y-m-d', strtotime($cleanDate));
+            return date('Y-m-d', strtotime((string) $cleanDate));
         }
 
         // Default strtotime untuk format string lainnya
@@ -81,7 +81,7 @@ class Report_bank_reconciliation extends CI_Controller
         $cleanDate = str_replace($bulan_indo, $bulan_eng, $rawDate);
         
         // Pastikan hasil akhirnya YYYY-MM-DD HH:mm:ss
-        $timestamp = strtotime($cleanDate);
+        $timestamp = strtotime((string) $cleanDate);
         
         return ($timestamp) ? date('Y-m-d H:i:s', $timestamp) : date('Y-m-d H:i:s');
     }
@@ -154,8 +154,8 @@ class Report_bank_reconciliation extends CI_Controller
             }
 
             // VALIDASI: Cocokkan Excel dengan Filter
-            if (strtotime($filter_from) !== strtotime($dataBank['start_date']) || 
-                strtotime($filter_to) !== strtotime($dataBank['end_date'])) {
+            if (strtotime((string) $filter_from) !== strtotime((string) $dataBank['start_date']) || 
+                strtotime((string) $filter_to) !== strtotime((string) $dataBank['end_date'])) {
                 echo json_encode(["title" => "Not Matched", "message" => "Failed! Period in Excel ({$dataBank['start_date']} to {$dataBank['end_date']}) does not match selection.", "theme" => "error"]);
                 return;
             }
@@ -305,7 +305,7 @@ class Report_bank_reconciliation extends CI_Controller
                 throw new Exception("Account in Excel ({$fileBankAccount}) does not match selection ({$filter_bank_account})!");
             }
 
-            if (strtotime($filter_from) !== strtotime($fileStart) || strtotime($filter_to) !== strtotime($fileEnd)) {
+            if (strtotime((string) $filter_from) !== strtotime((string) $fileStart) || strtotime((string) $filter_to) !== strtotime((string) $fileEnd)) {
                 throw new Exception("Period in Excel ({$fileStart} to {$fileEnd}) does not match selection!");
             }
 
@@ -558,7 +558,7 @@ class Report_bank_reconciliation extends CI_Controller
 
 
         // CHECK Date Period same as excel
-        if (strtotime($filter_from) !== strtotime($dataBank['start_date']) && strtotime($filter_to) !== strtotime($dataBank['end_date']) ) {
+        if (strtotime((string) $filter_from) !== strtotime((string) $dataBank['start_date']) && strtotime((string) $filter_to) !== strtotime((string) $dataBank['end_date']) ) {
             echo json_encode(["title" => "Not Matched", "message" => "Failed! Period in Excel Is Not Match with the selected Date", "theme" => "error"]);
             return;
         }
@@ -694,11 +694,11 @@ class Report_bank_reconciliation extends CI_Controller
 
     public function getJournal($filter_from, $filter_to, $filter_account_number)
     {
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
+        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
         
-        $start_date = date("Y-m-d", strtotime($filter_from));
-        $end_date   = date("Y-m-d", strtotime($filter_to));
+        $start_date = date("Y-m-d", strtotime((string) $filter_from));
+        $end_date   = date("Y-m-d", strtotime((string) $filter_to));
 
         $summary = [];
         
@@ -833,12 +833,12 @@ class Report_bank_reconciliation extends CI_Controller
             $last_transaction = $journal;
         }
 
-        $summary['ending_ori_balance'] = abs($ori_balance);
-        $summary['ending_local_balance'] = abs($local_balance);
-        $summary['grand_ori_debit'] = abs($ori_debit);
-        $summary['grand_ori_credit'] = abs($ori_credit);
-        $summary['grand_local_debit'] = abs($local_debit);
-        $summary['grand_local_credit'] = abs($local_credit);
+        $summary['ending_ori_balance'] = abs($ori_balance ?? 0);
+        $summary['ending_local_balance'] = abs($local_balance ?? 0);
+        $summary['grand_ori_debit'] = abs($ori_debit ?? 0);
+        $summary['grand_ori_credit'] = abs($ori_credit ?? 0);
+        $summary['grand_local_debit'] = abs($local_debit ?? 0);
+        $summary['grand_local_credit'] = abs($local_credit ?? 0);
 
         $result = [
             'journal_summary' => $summary,
@@ -849,11 +849,11 @@ class Report_bank_reconciliation extends CI_Controller
 
     public function getBankMutation($filter_from, $filter_to, $filter_account_number)
     {
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
+        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
         
-        $start_date = date("Y-m-d", strtotime($filter_from));
-        $end_date   = date("Y-m-d", strtotime($filter_to));
+        $start_date = date("Y-m-d", strtotime((string) $filter_from));
+        $end_date   = date("Y-m-d", strtotime((string) $filter_to));
 
         $summary = [];
         
@@ -952,9 +952,9 @@ class Report_bank_reconciliation extends CI_Controller
             $last_transaction = $bank;
         }
 
-        $summary['ending_ori_balance'] = abs($ori_balance);
-        $summary['grand_ori_debit'] = abs($ori_debit);
-        $summary['grand_ori_credit'] = abs($ori_credit);
+        $summary['ending_ori_balance'] = abs($ori_balance ?? 0);
+        $summary['grand_ori_debit'] = abs($ori_debit ?? 0);
+        $summary['grand_ori_credit'] = abs($ori_credit ?? 0);
 
         $result = [
             'bank_summary'   => $summary,
@@ -1006,8 +1006,8 @@ class Report_bank_reconciliation extends CI_Controller
                 
                 if (in_array($journal_entry['id'], $matched_journal_ids)) continue;
 
-                $j_date = date("Y-m-d", strtotime($journal_entry['trans_date']));
-                $b_date = date("Y-m-d", strtotime($bank_entry['posting_date']));
+                $j_date = date("Y-m-d", strtotime((string) $journal_entry['trans_date']));
+                $b_date = date("Y-m-d", strtotime((string) $bank_entry['posting_date']));
 
                 // Ambil nominal absolut untuk perbandingan
                 $b_debit  = (float)$bank_entry['debit'];
@@ -1058,15 +1058,15 @@ class Report_bank_reconciliation extends CI_Controller
             header("Content-Disposition: attachment; filename=bank_reconciliation_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to   = base64_decode($this->input->get("filter_to"));
-        $filter_account_number   = base64_decode($this->input->get("filter_account_number"));       
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to   = base64_decode((string) $this->input->get("filter_to"));
+        $filter_account_number   = base64_decode((string) $this->input->get("filter_account_number"));       
 
-        if (empty($filter_from) || !strtotime($filter_from)) {
+        if (empty($filter_from) || !strtotime((string) $filter_from)) {
             show_error('Invalid "filter_from" date parameter.');
             return;
         }
-        if (empty($filter_to) || !strtotime($filter_to)) {
+        if (empty($filter_to) || !strtotime((string) $filter_to)) {
             show_error('Invalid "filter_to" date parameter.');
             return;
         }
@@ -1102,7 +1102,7 @@ class Report_bank_reconciliation extends CI_Controller
                 foreach ($dataJournal['journal_transactions'] as $journal) {
                     // Cocokkan berdasarkan kriteria yang sama dengan fungsi reconcile (Tanggal & Nominal)
                     if ($journal['result'] == 'matched' && 
-                        date("Y-m-d", strtotime($journal['trans_date'])) == date("Y-m-d", strtotime($bank['posting_date'])) &&
+                        date("Y-m-d", strtotime((string) $journal['trans_date'])) == date("Y-m-d", strtotime((string) $bank['posting_date'])) &&
                         (abs((float)$journal['original_debit'] - (float)$bank['debit']) < 0.01) &&
                         (abs((float)$journal['original_credit'] - (float)$bank['credit']) < 0.01)
                     ) {
@@ -1119,13 +1119,13 @@ class Report_bank_reconciliation extends CI_Controller
                         'bank_data' => $bank,
                         'journal_data' => $journal_pair
                     ],
-                    'sort_date' => date("Y-m-d", strtotime($bank['posting_date']))
+                    'sort_date' => date("Y-m-d", strtotime((string) $bank['posting_date']))
                 ];
             } elseif ($type == 'unmatched_bank') {
                 $all_transactions[] = [
                     'type' => 'unmatched_bank',
                     'data' => $bank,
-                    'sort_date' => date("Y-m-d", strtotime($bank['posting_date']))
+                    'sort_date' => date("Y-m-d", strtotime((string) $bank['posting_date']))
                 ];
             }
         }
@@ -1136,14 +1136,14 @@ class Report_bank_reconciliation extends CI_Controller
                 $all_transactions[] = [
                     'type' => 'unmatched_journal',
                     'data' => $journal,
-                    'sort_date' => date("Y-m-d", strtotime($journal['trans_date']))
+                    'sort_date' => date("Y-m-d", strtotime((string) $journal['trans_date']))
                 ];
             }
         }
 
         // Sortir berdasarkan sort_date
         usort($all_transactions, function($a, $b) {
-            return strtotime($a['sort_date']) - strtotime($b['sort_date']);
+            return strtotime((string) $a['sort_date']) - strtotime((string) $b['sort_date']);
         });
 
         
@@ -1151,7 +1151,7 @@ class Report_bank_reconciliation extends CI_Controller
         $html = "";
         $html .= '<html>
                 <head>
-                <title>Bank Reconciliation - '. date("F Y", strtotime($filter_to)).'</title>';
+                <title>Bank Reconciliation - '. date("F Y", strtotime((string) $filter_to)).'</title>';
         $html .= $this->customTable();
         $html .= '</head><body>';
 
@@ -1199,7 +1199,7 @@ class Report_bank_reconciliation extends CI_Controller
                                     <tr>
                                         <td>&nbsp;</td>
                                         <td width="50%">Cut off Date</td>
-                                        <td><b>' . htmlspecialchars(date("d M Y", strtotime($filter_from))) . '</b> to <b> ' . htmlspecialchars(date("d M Y", strtotime($filter_to))) . ' </b></td>
+                                        <td><b>' . htmlspecialchars(date("d M Y", strtotime((string) $filter_from))) . '</b> to <b> ' . htmlspecialchars(date("d M Y", strtotime((string) $filter_to))) . ' </b></td>
                                     </tr>
                                     <tr>
                                         <td>&nbsp;</td>
@@ -1360,15 +1360,15 @@ class Report_bank_reconciliation extends CI_Controller
             header("Content-Disposition: attachment; filename=bank_reconciliation_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to   = base64_decode($this->input->get("filter_to"));
-        $filter_account_number   = base64_decode($this->input->get("filter_account_number"));       
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to   = base64_decode((string) $this->input->get("filter_to"));
+        $filter_account_number   = base64_decode((string) $this->input->get("filter_account_number"));       
 
-        if (empty($filter_from) || !strtotime($filter_from)) {
+        if (empty($filter_from) || !strtotime((string) $filter_from)) {
             show_error('Invalid "filter_from" date parameter.');
             return;
         }
-        if (empty($filter_to) || !strtotime($filter_to)) {
+        if (empty($filter_to) || !strtotime((string) $filter_to)) {
             show_error('Invalid "filter_to" date parameter.');
             return;
         }
@@ -1413,8 +1413,8 @@ class Report_bank_reconciliation extends CI_Controller
                 }
                 
                 // Matching criteria
-                $j_date = date("Y-m-d", strtotime($journal_entry['trans_date']));
-                $b_date = date("Y-m-d", strtotime($bank_entry['posting_date']));
+                $j_date = date("Y-m-d", strtotime((string) $journal_entry['trans_date']));
+                $b_date = date("Y-m-d", strtotime((string) $bank_entry['posting_date']));
                 
                 $journal_amount_debit = (float)$journal_entry['original_debit'];
                 $journal_amount_credit = (float)$journal_entry['original_credit'];
@@ -1446,7 +1446,7 @@ class Report_bank_reconciliation extends CI_Controller
 
             if (!$is_matched) {
                 $bank_entry['result'] = "Not Matched";
-                $bank_entry['posting_date'] = date("Y-m-d", strtotime($bank_entry['posting_date'])); // Tambahkan posting_date
+                $bank_entry['posting_date'] = date("Y-m-d", strtotime((string) $bank_entry['posting_date'])); // Tambahkan posting_date
                 $unmatched_bank[] = $bank_entry;
             }
         }
@@ -1455,7 +1455,7 @@ class Report_bank_reconciliation extends CI_Controller
         foreach ($dataJournal['journal_transactions'] as $journal_entry) {
             if (!in_array($journal_entry['id'], $matched_journal_ids)) {
                 $journal_entry['result'] = "Not Matched";
-                $journal_entry['posting_date'] = date("Y-m-d", strtotime($journal_entry['trans_date'])); // Tambahkan posting_date
+                $journal_entry['posting_date'] = date("Y-m-d", strtotime((string) $journal_entry['trans_date'])); // Tambahkan posting_date
                 $unmatched_journal[] = $journal_entry;
             }
         }
@@ -1486,14 +1486,14 @@ class Report_bank_reconciliation extends CI_Controller
 
         // Mengurutkan array berdasarkan 'sort_date' secara ascending (ASC)
         usort($all_transactions, function($a, $b) {
-            return strtotime($a['sort_date']) - strtotime($b['sort_date']);
+            return strtotime((string) $a['sort_date']) - strtotime((string) $b['sort_date']);
         });
         
         // PRINT
         $html = "";
         $html .= '<html>
                 <head>
-                <title>Bank Reconciliation - '. date("F Y", strtotime($filter_to)).'</title>';
+                <title>Bank Reconciliation - '. date("F Y", strtotime((string) $filter_to)).'</title>';
         $html .= $this->customTable();
         $html .= '</head><body>';
 
@@ -1541,7 +1541,7 @@ class Report_bank_reconciliation extends CI_Controller
                                     <tr>
                                         <td>&nbsp;</td>
                                         <td width="50%">Cut off Date</td>
-                                        <td><b>' . htmlspecialchars(date("d M Y", strtotime($filter_from))) . '</b> to <b> ' . htmlspecialchars(date("d M Y", strtotime($filter_to))) . ' </b></td>
+                                        <td><b>' . htmlspecialchars(date("d M Y", strtotime((string) $filter_from))) . '</b> to <b> ' . htmlspecialchars(date("d M Y", strtotime((string) $filter_to))) . ' </b></td>
                                     </tr>
                                     <tr>
                                         <td>&nbsp;</td>
@@ -1709,15 +1709,15 @@ class Report_bank_reconciliation extends CI_Controller
             header("Content-Disposition: attachment; filename=bank_reconciliation_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_account_number = base64_decode($this->input->get("filter_account_number"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
+        $filter_account_number = base64_decode((string) $this->input->get("filter_account_number"));
 
-        if (empty($filter_from) || !strtotime($filter_from)) {
+        if (empty($filter_from) || !strtotime((string) $filter_from)) {
             show_error('Invalid "filter_from" date parameter.');
             return;
         }
-        if (empty($filter_to) || !strtotime($filter_to)) {
+        if (empty($filter_to) || !strtotime((string) $filter_to)) {
             show_error('Invalid "filter_to" date parameter.');
             return;
         }
@@ -1755,7 +1755,7 @@ class Report_bank_reconciliation extends CI_Controller
         // Group "Biaya Admin" transactions by date
         $grouped_unmatched_bank = [];
         foreach ($dataMutation['bank_mutations'] as $bank_entry) {
-            $date = date("Y-m-d", strtotime($bank_entry['posting_date']));
+            $date = date("Y-m-d", strtotime((string) $bank_entry['posting_date']));
             if (!isset($grouped_unmatched_bank[$date])) {
                 $grouped_unmatched_bank[$date] = [
                     'transactions' => [],
@@ -1789,7 +1789,7 @@ class Report_bank_reconciliation extends CI_Controller
                     continue; // Skip if already matched
                 }
 
-                $j_date = date("Y-m-d", strtotime($journal_entry['trans_date']));
+                $j_date = date("Y-m-d", strtotime((string) $journal_entry['trans_date']));
                 $journal_amount_debit = (float)$journal_entry['original_debit'];
                 $journal_amount_credit = (float)$journal_entry['original_credit'];
                 
@@ -1846,7 +1846,7 @@ class Report_bank_reconciliation extends CI_Controller
         $html = "";
         $html .= '<html>
                 <head>
-                <title>Bank Reconciliation - <?php echo date("F Y", strtotime($filter_to)); ?></title>';
+                <title>Bank Reconciliation - <?php echo date("F Y", strtotime((string) $filter_to)); ?></title>';
         $html .= $this->customTable();
         $html .= '</head><body>';
 
@@ -1896,7 +1896,7 @@ class Report_bank_reconciliation extends CI_Controller
                                     <tr>
                                         <td>&nbsp;</td>
                                         <td width="50%">Cut off Date</td>
-                                        <td><b>' . htmlspecialchars(date("d M Y", strtotime($filter_from))) . '</b> to <b> ' . htmlspecialchars(date("d M Y", strtotime($filter_to))) . ' </b></td>
+                                        <td><b>' . htmlspecialchars(date("d M Y", strtotime((string) $filter_from))) . '</b> to <b> ' . htmlspecialchars(date("d M Y", strtotime((string) $filter_to))) . ' </b></td>
                                     </tr>
                                     <tr>
                                         <td>&nbsp;</td>
@@ -1999,7 +1999,7 @@ class Report_bank_reconciliation extends CI_Controller
                         $html .= '<tr>
                                     <td rowspan="' . (count($bank_entries_for_journal) + 1) . '">' . $no . '</td>
                                     <td> Bank </td>
-                                    <td>' . date("d M Y", strtotime($first_bank['bank_data']['posting_date'])) . '</td>
+                                    <td>' . date("d M Y", strtotime((string) $first_bank['bank_data']['posting_date'])) . '</td>
                                     <td>' . htmlspecialchars($first_bank['bank_data']['remark']) . '</td>
                                     <td class="text-right">' . $this->formatIDR($first_bank['bank_data']['debit']) . '</td>
                                     <td class="text-right">' . $this->formatIDR($first_bank['bank_data']['credit']) . '</td>
@@ -2013,7 +2013,7 @@ class Report_bank_reconciliation extends CI_Controller
                             $bank_entry = $bank_entries_for_journal[$i];
                             $html .= '<tr>
                                         <td> Bank </td>
-                                        <td>' . date("d M Y", strtotime($bank_entry['bank_data']['posting_date'])) . '</td>
+                                        <td>' . date("d M Y", strtotime((string) $bank_entry['bank_data']['posting_date'])) . '</td>
                                         <td>' . htmlspecialchars($bank_entry['bank_data']['remark']) . '</td>
                                         <td class="text-right">' . $this->formatIDR($bank_entry['bank_data']['debit']) . '</td>
                                         <td class="text-right">' . $this->formatIDR($bank_entry['bank_data']['credit']) . '</td>
@@ -2024,7 +2024,7 @@ class Report_bank_reconciliation extends CI_Controller
                         // Print journal entry
                         $html .= '<tr>
                                     <td> ERP </td>
-                                    <td>' . date("d M Y", strtotime($first_bank['journal_data']['trans_date'])) . '</td>
+                                    <td>' . date("d M Y", strtotime((string) $first_bank['journal_data']['trans_date'])) . '</td>
                                     <td>' . htmlspecialchars($first_bank['journal_data']['description']) . '</td>
                                     <td class="text-right">' . $this->formatIDR($first_bank['journal_data']['original_debit']) . '</td>
                                     <td class="text-right">' . $this->formatIDR($first_bank['journal_data']['original_credit']) . '</td>
@@ -2048,7 +2048,7 @@ class Report_bank_reconciliation extends CI_Controller
                 $html .= '<tr>
                             <td rowspan="' . (count($bank_entries_for_journal) + 1) . '">' . $no . '</td>
                             <td> Bank </td>
-                            <td>' . date("d M Y", strtotime($first_bank['bank_data']['posting_date'])) . '</td>
+                            <td>' . date("d M Y", strtotime((string) $first_bank['bank_data']['posting_date'])) . '</td>
                             <td>' . htmlspecialchars($first_bank['bank_data']['remark']) . '</td>
                             <td class="text-right">' . $this->formatIDR($first_bank['bank_data']['debit']) . '</td>
                             <td class="text-right">' . $this->formatIDR($first_bank['bank_data']['credit']) . '</td>
@@ -2061,7 +2061,7 @@ class Report_bank_reconciliation extends CI_Controller
                     $bank_entry = $bank_entries_for_journal[$i];
                     $html .= '<tr>
                                 <td> Bank </td>
-                                <td>' . date("d M Y", strtotime($bank_entry['bank_data']['posting_date'])) . '</td>
+                                <td>' . date("d M Y", strtotime((string) $bank_entry['bank_data']['posting_date'])) . '</td>
                                 <td>' . htmlspecialchars($bank_entry['bank_data']['remark']) . '</td>
                                 <td class="text-right">' . $this->formatIDR($bank_entry['bank_data']['debit']) . '</td>
                                 <td class="text-right">' . $this->formatIDR($bank_entry['bank_data']['credit']) . '</td>
@@ -2071,7 +2071,7 @@ class Report_bank_reconciliation extends CI_Controller
 
                 $html .= '<tr>
                             <td> ERP </td>
-                            <td>' . date("d M Y", strtotime($first_bank['journal_data']['trans_date'])) . '</td>
+                            <td>' . date("d M Y", strtotime((string) $first_bank['journal_data']['trans_date'])) . '</td>
                             <td>' . htmlspecialchars($first_bank['journal_data']['description']) . '</td>
                             <td class="text-right">' . $this->formatIDR($first_bank['journal_data']['original_debit']) . '</td>
                             <td class="text-right">' . $this->formatIDR($first_bank['journal_data']['original_credit']) . '</td>
@@ -2086,7 +2086,7 @@ class Report_bank_reconciliation extends CI_Controller
         if (!empty($result['unmatched_bank_transactions'])) {
             $grouped_unmatched_bank = [];
             foreach ($result['unmatched_bank_transactions'] as $rowBank) {
-                $date = date("Y-m-d", strtotime($rowBank['posting_date']));
+                $date = date("Y-m-d", strtotime((string) $rowBank['posting_date']));
                 if (!isset($grouped_unmatched_bank[$date])) {
                     $grouped_unmatched_bank[$date] = [];
                 }
@@ -2103,7 +2103,7 @@ class Report_bank_reconciliation extends CI_Controller
                         $html .= '<td rowspan="' . $rowspan_count . '">' . $no . '</td>';
                     }
                     $html .= '<td> Bank </td>
-                            <td>' . date("d M Y", strtotime($rowBank['posting_date'])) . '</td>
+                            <td>' . date("d M Y", strtotime((string) $rowBank['posting_date'])) . '</td>
                             <td>' . htmlspecialchars($rowBank['remark']) . '</td>
                             <td class="text-right">' . $this->formatIDR($rowBank['debit']) . '</td>
                             <td class="text-right">' . $this->formatIDR($rowBank['credit']) . '</td>
@@ -2148,7 +2148,7 @@ class Report_bank_reconciliation extends CI_Controller
                 // ERP
                 $html .= '<tr>
                             <td> ERP </td>
-                            <td>' . date("d M Y", strtotime($rowJournal['trans_date'])) . '</td>
+                            <td>' . date("d M Y", strtotime((string) $rowJournal['trans_date'])) . '</td>
                             <td>' . htmlspecialchars($rowJournal['description']) . '</td>
                             <td class="text-right">' . $this->formatIDR($rowJournal['original_debit']) . '</td>
                             <td class="text-right">' . $this->formatIDR($rowJournal['original_credit']) . '</td>
@@ -2165,16 +2165,16 @@ class Report_bank_reconciliation extends CI_Controller
     }
 
     function formatIDR($number) {
-        $formatted_number = number_format($number, 2, ',', '.');
+        $formatted_number = number_format((float) $number, 2, ',', '.');
         return $formatted_number;
     }
 
     function balanceDiff($bank, $erp) {
         $calc = abs($erp - $bank);
         if ($calc > 0) {
-            return '<td style="color:red; font-weight:bold; text-align:right;"> ' . number_format($calc, 2, ",", ".") . '</td>';
+            return '<td style="color:red; font-weight:bold; text-align:right;"> ' . number_format((float) $calc, 2, ",", ".") . '</td>';
         } else {
-            return '<td style="color:green; font-weight:bold; text-align:right;"> ' . number_format($calc, 2, ",", ".") . '</td>';
+            return '<td style="color:green; font-weight:bold; text-align:right;"> ' . number_format((float) $calc, 2, ",", ".") . '</td>';
         }
     }
 

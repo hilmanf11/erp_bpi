@@ -42,7 +42,7 @@ class Abc_class extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -91,7 +91,7 @@ class Abc_class extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('abc_class', ["id" => $id], $post);
             echo $send;
@@ -156,7 +156,7 @@ class Abc_class extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
-            $safety_stock_percent = number_format($data['safety_stock'],) . ' %';
+            $safety_stock_percent = number_format((float) $data['safety_stock'],) . ' %';
             $formula = htmlspecialchars($data['formula']); // Hindari tanda < dianggap sebagai tag HTML
             $html .= '<tr>
                     <td>' . $no . '</td>

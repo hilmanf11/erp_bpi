@@ -61,7 +61,7 @@ class Quotations extends CI_Controller
     public function get_quotation_number()
     {
         $date = $this->input->post('date');
-        $time = strtotime($date);
+        $time = strtotime((string) $date);
         
         $dateString = date('ymd', $time); 
         $prefix = "QUOT-" . $dateString;
@@ -248,8 +248,8 @@ class Quotations extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_item_fg_id = base64_decode($this->input->get('filter_item_fg_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_item_fg_id = base64_decode((string) $this->input->get('filter_item_fg_id'));
 
             $this->db->select('a.*');
             $this->db->from('quotations a');
@@ -267,7 +267,7 @@ class Quotations extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $quotation_number = base64_decode($this->input->get('quotation_number'));
+            $quotation_number = base64_decode((string) $this->input->get('quotation_number'));
 
             $this->db->select('a.*');
             $this->db->from('quotations a');
@@ -621,7 +621,7 @@ class Quotations extends CI_Controller
                         <table class="info-table">
                             <tr>
                                 <td width="12%">To</td><td width="40%">: <b>' . $header->quotation_to . '</b></td>
-                                <td width="10%">Date</td><td>: ' . date("d F Y", strtotime($header->quotation_date)) . '</td>
+                                <td width="10%">Date</td><td>: ' . date("d F Y", strtotime((string) $header->quotation_date)) . '</td>
                             </tr>
                             <tr>
                                 <td>Attn</td><td>: ' . $header->quotation_attn . '</td>
@@ -671,17 +671,17 @@ class Quotations extends CI_Controller
                                         
                                         $html .= '<td rowspan="' . $rowspan . '">
                                                     <div style="float:left">Rp</div>
-                                                    <div style="float:right">' . number_format($item->price, 2, ',', '.') . '</div>
+                                                    <div style="float:right">' . number_format((float) $item->price, 2, ',', '.') . '</div>
                                                     <div style="clear:both"></div>
                                                 </td>';
 
                                         if ($show_mold) {
-                                            $mold_val = ($item->depreciation == "YES") ? number_format($item->mold_price, 2, ',', '.') : "0";
+                                            $mold_val = ($item->depreciation == "YES") ? number_format((float) $item->mold_price, 2, ',', '.') : "0";
                                             $html .= '<td align="right" rowspan="' . $rowspan . '">' . $mold_val . '</td>';
                                         }
 
-                                        $html .= '<td align="right" rowspan="' . $rowspan . '">' . number_format($item->moq, 0, ',', '.') . '</td>';
-                                        $html .= '<td align="right" rowspan="' . $rowspan . '">' . number_format($item->mpq, 0, ',', '.') . '</td>';
+                                        $html .= '<td align="right" rowspan="' . $rowspan . '">' . number_format((float) $item->moq, 0, ',', '.') . '</td>';
+                                        $html .= '<td align="right" rowspan="' . $rowspan . '">' . number_format((float) $item->mpq, 0, ',', '.') . '</td>';
                                         $html .= '<td rowspan="' . $rowspan . '">' . $item->remark . '</td>';
                                     } else {
                                         $html .= '<td align="center">' . $mat_name . '</td>';

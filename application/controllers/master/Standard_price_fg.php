@@ -49,7 +49,7 @@ class Standard_price_fg extends CI_Controller
         $query = $this->db->get('standard_price_fg')->row();
 
         if ($query && $query->end_date) {
-            $maxYear = date('Y', strtotime($query->end_date));
+            $maxYear = date('Y', strtotime((string) $query->end_date));
             $currentYear = date('Y');
 
             if ($maxYear != $currentYear) {
@@ -68,7 +68,7 @@ class Standard_price_fg extends CI_Controller
     public function number($date)
     {
         $decodedDate = base64_decode($date);
-        $yearShort = date("y", strtotime($decodedDate)); // ambil 2 digit tahun
+        $yearShort = date("y", strtotime((string) $decodedDate)); // ambil 2 digit tahun
         $prefix = "SP-FG" . $yearShort;
 
         // Ambil nomor terbesar berdasarkan prefix & divisi
@@ -151,8 +151,8 @@ class Standard_price_fg extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_item_fg_id = base64_decode($this->input->get('filter_item_fg_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_item_fg_id = base64_decode((string) $this->input->get('filter_item_fg_id'));
 
             $this->db->select('a.*, b.number as division, "Finished Good" as category');
             $this->db->from('standard_price_fg a');
@@ -170,7 +170,7 @@ class Standard_price_fg extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
 
             $this->db->select('*');
             $this->db->from('standard_price_fg_histories');
@@ -185,7 +185,7 @@ class Standard_price_fg extends CI_Controller
     // UPDATE DATA
     public function datatableUpdates()
     {
-        $number = base64_decode($this->input->get('number'));
+        $number = base64_decode((string) $this->input->get('number'));
 
         if ($this->input->get()) {
             // $this->db->select('a.*,c.number as item_rm_number, c.name as item_rm_name, c.uom, d.name as item_family_name');

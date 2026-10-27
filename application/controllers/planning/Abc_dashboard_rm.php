@@ -39,8 +39,8 @@ class Abc_dashboard_rm extends CI_Controller
 
     public function get_abc_data()
     {
-        $filter_month       = @base64_decode($this->input->get('month'));
-        $filter_year        = @base64_decode($this->input->get('year'));
+        $filter_month       = @base64_decode((string) $this->input->get('month'));
+        $filter_year        = @base64_decode((string) $this->input->get('year'));
         $currency_date_from = $filter_year . '-01-01';
         $currency_date_to   = $filter_year . '-12-31';
 

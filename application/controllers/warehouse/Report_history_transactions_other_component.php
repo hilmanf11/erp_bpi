@@ -135,15 +135,15 @@ class Report_history_transactions_other_component extends CI_Controller
         $filter_division = $this->input->get('filter_division');
         $filter_trans_type = $this->input->get('filter_trans_type');
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime((string) $filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime((string) $filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime((string) $filter_from)));
 
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
@@ -470,11 +470,11 @@ class Report_history_transactions_other_component extends CI_Controller
                             <td>' . $record->prodfam . '</td>
                             <td>' . $record->prodfam_sub_name . '</td>
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_bpi, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_plant1, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_bpi, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_plant1, 2) . '</td>
                         </tr>';
 
             if ($filter_display == "DETAIL") {
@@ -853,7 +853,7 @@ class Report_history_transactions_other_component extends CI_Controller
                         }
 
                         usort($all_data, function ($a, $b) {
-                            return strtotime($a['date']) - strtotime($b['date']);
+                            return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                         });
 
                         foreach ($all_data as $data) {
@@ -864,16 +864,16 @@ class Report_history_transactions_other_component extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td>' . $data['type'] . '</td>
                                 <td>' . $data['username'] . '</td>
-                                <td colspan="2">' . date("Y-m-d", strtotime($data['date'])) . '</td>
+                                <td colspan="2">' . date("Y-m-d", strtotime((string) $data['date'])) . '</td>
                                 <td>' . $data['doc1'] . '</td>
                                 <td>' . $data['doc2'] . '</td>
                                 <td>' . $data['lotno'] . '</td>
                                 <td>' . $data['doc3'] . '</td>
                                 <td>' . $data['doc4'] . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_in'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $data['qty_out'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                             </tr>';
                         
                             $begin = $balance;
@@ -909,10 +909,10 @@ class Report_history_transactions_other_component extends CI_Controller
                     //                         <td>' . $scan_item_crusher->lot_no . '</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
-                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                         <td style="text-align:right;">' . number_format($scan_item_crusher->qty, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $scan_item_crusher->qty, 2) . '</td>
                     //                         <td style="text-align:right;">' . number_format(0)  . '</td>
-                    //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                     //                     </tr>';
                     //         $begin += $scan_item_crusher->qty;
                     //         $nod++;
@@ -943,16 +943,16 @@ class Report_history_transactions_other_component extends CI_Controller
                     //                         <td style="text-align:center">' . $nod . '</td>
                     //                         <td>ADJ IN STO</td>
                     //                         <td>' . $transaction->username . '</td>
-                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>' . $transaction->request_no . '</td>
                     //                         <td>-</td>
-                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                     //                     </tr>';
                         
                     //         // Update balance
@@ -990,16 +990,16 @@ class Report_history_transactions_other_component extends CI_Controller
                     //                         <td style="text-align:center">' . $nod . '</td>
                     //                         <td>BPM</td>
                     //                         <td>' . $transaction->username . '</td>
-                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>' . $transaction->request_no . '</td>
                     //                         <td>-</td>
-                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                     //                     </tr>';
                         
                     //         // Update balance
@@ -1024,16 +1024,16 @@ class Report_history_transactions_other_component extends CI_Controller
                     //                             <td style="text-align:center">' . $nod . '</td>
                     //                             <td>BPM</td>
                     //                             <td>' . $user->name . '</td>
-                    //                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                             <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                     //                             <td>-</td>
                     //                             <td>-</td>
                     //                             <td>' . $transaction->label . '</td>
                     //                             <td>' . $transaction->request_id . '</td>
                     //                             <td>' . $transaction->request_date . '</td>
-                    //                             <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                             <td style="text-align:right;">' . number_format($transaction->qty, 2)  . '</td>
+                    //                             <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                             <td style="text-align:right;">' . number_format((float) $transaction->qty, 2)  . '</td>
                     //                             <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                             <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                             <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                     //                         </tr>';
                     //             $begin += $transaction->qty;
                     //             $nod++;
@@ -1065,16 +1065,16 @@ class Report_history_transactions_other_component extends CI_Controller
                     //                         <td style="text-align:center">' . $nod . '</td>
                     //                         <td>ADJ OUT STO</td>
                     //                         <td>' . $transaction->username . '</td>
-                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>' . $transaction->request_no . '</td>
                     //                         <td>-</td>
-                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                     //                     </tr>';
                         
                     //         // Update balance
@@ -1112,16 +1112,16 @@ class Report_history_transactions_other_component extends CI_Controller
                     //                         <td style="text-align:center">' . $nod . '</td>
                     //                         <td>BPB</td>
                     //                         <td>' . $transaction->username . '</td>
-                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>' . $transaction->request_no . '</td>
                     //                         <td>-</td>
-                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                     //                     </tr>';
                         
                     //         // Update balance
@@ -1159,16 +1159,16 @@ class Report_history_transactions_other_component extends CI_Controller
                     //                         <td style="text-align:center">' . $nod . '</td>
                     //                         <td>KANBAN WO</td>
                     //                         <td>' . $transaction->username . '</td>
-                    //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>-</td>
                     //                         <td>' . $transaction->request_no . '</td>
                     //                         <td>-</td>
-                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                     //                     </tr>';
                         
                     //         // Update balance
@@ -1251,16 +1251,16 @@ class Report_history_transactions_other_component extends CI_Controller
                     //                         <td style="text-align:center">' . $nod . '</td>
                     //                         <td>ISSUED</td>
                     //                         <td>' . $user->name . '</td>
-                    //                         <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                    //                         <td>' . date("Y-m-d", strtotime((string) $issued->created_date)) . '</td>
                     //                         <td>-</td>
                     //                         <td>' . $issued->label_no . '</td>
                     //                         <td>' . $issued->lotno . '</td>
                     //                         <td>' . $issued->request_no . '</td>
                     //                         <td>-</td>
-                    //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                     //                         <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                         <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                    //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $issued->qty, 2)  . '</td>
+                    //                         <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                     //                     </tr>';
                     //         $begin -= $issued->qty;
                     //         $nod++;
@@ -1273,10 +1273,10 @@ class Report_history_transactions_other_component extends CI_Controller
 
         $html .= '<tr>
             <td colspan="11" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalBeginStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalEndingStock, 2) . '</td>
         </tr>
         </tbody>';
       

@@ -41,8 +41,8 @@ class Report_history_wip_fg extends CI_Controller
         $filter_display = $this->input->get("filter_display");
         $filter_trans_type = $this->input->get("filter_trans_type");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Config
         $this->db->select('*');
@@ -221,8 +221,8 @@ class Report_history_wip_fg extends CI_Controller
                             <td>' . $record->uom . '</td>
                             <td>FINISH GOOD</td>
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in - $record->qty_out), 2) . '</td>
                         </tr>';
 
@@ -295,7 +295,7 @@ class Report_history_wip_fg extends CI_Controller
 
                     // Urutkan data berdasarkan tanggal
                     usort($all_data, function ($a, $b) {
-                    // return strtotime($a['date']) - strtotime($b['date']);
+                    // return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                     return strcmp($a['type'], $b['type']);
                     });
 
@@ -312,10 +312,10 @@ class Report_history_wip_fg extends CI_Controller
                                     <td>' . $data['date'] . '</td>
                                     <td>' . $data['wo_no'] . '</td>
                                     <td>' . $data['label'] . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_in'], 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_out'], 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                                 </tr>';
 
                     $begin = $balance;
@@ -360,10 +360,10 @@ class Report_history_wip_fg extends CI_Controller
                 //                         <td>' . $receipt->trans_date . '</td>
                 //                         <td>' . $receipt->wo_no . '</td>
                 //                         <td>' . $receipt->checksheet_label . '</td>
-                //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                //                         <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $receipt->qty, 2) . '</td>
                 //                         <td style="text-align:right;">' . number_format(0)  . '</td>
-                //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                 //                     </tr>';
                 //         $begin += $receipt->qty;
                 //         $nod++;
@@ -396,10 +396,10 @@ class Report_history_wip_fg extends CI_Controller
                 //                         <td>' . $receipt->trans_date . '</td>
                 //                         <td>' . $receipt->wo_no . '</td>
                 //                         <td>' . $receipt->checksheet_label . '</td>
-                //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                //                         <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $receipt->qty, 2) . '</td>
                 //                         <td style="text-align:right;">' . number_format(0)  . '</td>
-                //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                 //                     </tr>';
                 //         $begin += $receipt->qty;
                 //         $nod++;
@@ -425,10 +425,10 @@ class Report_history_wip_fg extends CI_Controller
                 //                         <td>' . $return->delivery_note_date . '</td>
                 //                         <td>' . $return->delivery_order_no  . '</td>
                 //                         <td>' . $return->delivery_note_no . '</td>
-                //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                 //                         <td style="text-align:right;">' . number_format(0) . '</td>
-                //                         <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
-                //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $return->qty, 2)  . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                 //                     </tr>';
                 //         $begin -= $return->qty;
                 //         $nod++;
@@ -460,10 +460,10 @@ class Report_history_wip_fg extends CI_Controller
                 //                         <td>' . $repair->trans_date . '</td>
                 //                         <td>' . $repair->wo_no  . '</td>
                 //                         <td>' . $repair->checksheet_label . '</td>
-                //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
                 //                         <td style="text-align:right;">' . number_format(0) . '</td>
-                //                         <td style="text-align:right;">' . number_format($repair->qty, 2)  . '</td>
-                //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $repair->qty, 2)  . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $balance, 2)  . '</td>
                 //                     </tr>';
                 //         $begin -= $repair->qty;
                 //         $nod++;
@@ -493,13 +493,13 @@ class Report_history_wip_fg extends CI_Controller
                 //                         <td style="text-align:center">' . $nod . '</td>
                 //                         <td>ADJ IN STO</td>
                 //                         <td>' . $transaction->username . '</td>
-                //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                //                         <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                 //                         <td>-</td>
                 //                         <td>' . $transaction->request_no . '</td>
-                //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                 //                     </tr>';
                     
                 //         // Update balance
@@ -536,13 +536,13 @@ class Report_history_wip_fg extends CI_Controller
                 //                         <td style="text-align:center">' . $nod . '</td>
                 //                         <td>ADJ OUT STO</td>
                 //                         <td>' . $transaction->username . '</td>
-                //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                //                         <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                 //                         <td>-</td>
                 //                         <td>' . $transaction->request_no . '</td>
-                //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                 //                     </tr>';
                     
                 //         // Update balance
@@ -579,13 +579,13 @@ class Report_history_wip_fg extends CI_Controller
                 //                         <td style="text-align:center">' . $nod . '</td>
                 //                         <td>BPB</td>
                 //                         <td>' . $transaction->username . '</td>
-                //                         <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                //                         <td>' . date("Y-m-d", strtotime((string) $transaction->request_date)) . '</td>
                 //                         <td>-</td>
                 //                         <td>' . $transaction->request_no . '</td>
-                //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                //                         <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $begin, 2) . '</td>
+                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                //                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format((float) $transaction->qty, 2) : number_format(0)) . '</td>
+                //                         <td style="text-align:right;">' . number_format((float) $balance, 2) . '</td>
                 //                     </tr>';
                     
                 //         // Update balance

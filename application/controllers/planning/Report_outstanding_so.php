@@ -31,8 +31,8 @@ class Report_outstanding_so extends CI_Controller
 
     public function readCustomerOrder()
     {
-        $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
-        $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
+        $filter_so_date_from = base64_decode((string) $this->input->get("filter_so_date_from"));
+        $filter_so_date_to = base64_decode((string) $this->input->get("filter_so_date_to"));
         $customer_id = $this->input->get("customer_id");
 
         $customer_orders = $this->crud->query("SELECT customer_order_no, sales_order_no
@@ -46,9 +46,9 @@ class Report_outstanding_so extends CI_Controller
 
     public function readItems()
     {
-        $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
-        $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
-        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
+        $filter_so_date_from = base64_decode((string) $this->input->get("filter_so_date_from"));
+        $filter_so_date_to = base64_decode((string) $this->input->get("filter_so_date_to"));
+        $filter_sales_order_no = base64_decode((string) $this->input->get("filter_sales_order_no"));
         $customer_id = $this->input->get("customer_id");
 
         $customer_orders = $this->crud->query("SELECT b.id, b.number, b.name
@@ -68,14 +68,14 @@ class Report_outstanding_so extends CI_Controller
             header("Content-Disposition: attachment; filename=report_outstanding_so_$format.xls");
         }
 
-        $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
-        $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
-        $filter_customer_name = base64_decode($this->input->get("filter_customer_name"));
-        $filter_customer_order_no = base64_decode($this->input->get("filter_customer_order_no"));
-        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
-        $filter_item_fg = base64_decode($this->input->get("filter_item_fg"));
-        $filter_division = base64_decode($this->input->get("filter_division"));
-        $filter_display = base64_decode($this->input->get("filter_display"));
+        $filter_so_date_from = base64_decode((string) $this->input->get("filter_so_date_from"));
+        $filter_so_date_to = base64_decode((string) $this->input->get("filter_so_date_to"));
+        $filter_customer_name = base64_decode((string) $this->input->get("filter_customer_name"));
+        $filter_customer_order_no = base64_decode((string) $this->input->get("filter_customer_order_no"));
+        $filter_sales_order_no = base64_decode((string) $this->input->get("filter_sales_order_no"));
+        $filter_item_fg = base64_decode((string) $this->input->get("filter_item_fg"));
+        $filter_division = base64_decode((string) $this->input->get("filter_division"));
+        $filter_display = base64_decode((string) $this->input->get("filter_display"));
 
         $customer = $this->crud->read("customers", [], ["id" => $filter_customer_name]);
         $item_fg = $this->crud->read("item_fg", [], ["id" => $filter_item_fg]);
@@ -186,9 +186,9 @@ class Report_outstanding_so extends CI_Controller
                             <td>' . $data['customer_order_no'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
-                            <td>' . number_format($data['qty_order']) . '</td>
-                            <td>' . number_format($data['qty_delivery']) . '</td>
-                            <td>' . number_format($data['qty_outstanding']) . '</td>
+                            <td>' . number_format((float) $data['qty_order']) . '</td>
+                            <td>' . number_format((float) $data['qty_delivery']) . '</td>
+                            <td>' . number_format((float) $data['qty_outstanding']) . '</td>
                             <td>' . $status . '</td>
                         </tr>';
                 $no++;
@@ -196,9 +196,9 @@ class Report_outstanding_so extends CI_Controller
 
             $html .= '<tr>
                         <th colspan="5" style="text-align:right;">TOTAL</th>
-                        <th>' . number_format($qty_order) . '</th>
-                        <th>' . number_format($qty_delivery) . '</th>
-                        <th>' . number_format($qty_outstanding) . '</th>
+                        <th>' . number_format((float) $qty_order) . '</th>
+                        <th>' . number_format((float) $qty_delivery) . '</th>
+                        <th>' . number_format((float) $qty_outstanding) . '</th>
                         <th>' . $status . '</th>
                     </tr>';
         } else {
@@ -253,18 +253,18 @@ class Report_outstanding_so extends CI_Controller
                             <td>' . $data['customer_order_no'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                            <td>' . number_format($data['delivery']) . '</td>
-                            <td>' . number_format($data['outstanding']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
+                            <td>' . number_format((float) $data['delivery']) . '</td>
+                            <td>' . number_format((float) $data['outstanding']) . '</td>
                         </tr>';
                 $no++;
             }
 
             $html .= '<tr>
                         <th colspan="7" style="text-align:right;">TOTAL</th>
-                        <th>' . number_format($qty_order) . '</th>
-                        <th>' . number_format($qty_delivery) . '</th>
-                        <th>' . number_format($qty_outstanding) . '</th>
+                        <th>' . number_format((float) $qty_order) . '</th>
+                        <th>' . number_format((float) $qty_delivery) . '</th>
+                        <th>' . number_format((float) $qty_outstanding) . '</th>
                     </tr>';
         }
 

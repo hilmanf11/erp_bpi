@@ -47,7 +47,7 @@ class Upload_stock_whs_tf extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $item_rm_id = base64_decode($this->input->get('item_rm_id'));
+            $item_rm_id = base64_decode((string) $this->input->get('item_rm_id'));
 
             $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name');
             $this->db->from('upload_stock_whs_tf_histories a');
@@ -178,7 +178,7 @@ class Upload_stock_whs_tf extends CI_Controller
     // public function update()
     // {
     //     if ($this->input->post()) {
-    //         $id   = base64_decode($this->input->get('id'));
+    //         $id   = base64_decode((string) $this->input->get('id'));
     //         $post = $this->input->post();
     //         $send = $this->crud->update('upload_stock_whs_tf', ["id" => $id], $post);
     //         echo $send;
@@ -446,8 +446,8 @@ class Upload_stock_whs_tf extends CI_Controller
                             <td>' . $data['cutoff'] . '</td>
                             <td>' . $data['transfer_from'] . '</td>
                             <td>' . $data['transfer_to'] . '</td>
-                            <td>' . number_format($data['qty_from'],2) . '</td>
-                            <td>' . number_format($data['qty_to'],2) . '</td>
+                            <td>' . number_format((float) $data['qty_from'],2) . '</td>
+                            <td>' . number_format((float) $data['qty_to'],2) . '</td>
                         </tr>';
                 $no++;
             }

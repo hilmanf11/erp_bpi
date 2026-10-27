@@ -64,7 +64,7 @@ class Users extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page   = $this->input->post('page');
             $rows   = $this->input->post('rows');
             //Pagination 1-10
@@ -117,7 +117,7 @@ class Users extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id = base64_decode($this->input->get('id'));
+            $id = base64_decode((string) $this->input->get('id'));
             $upload = $this->crud->upload('avatar', ["jpg", "png", "jpeg"], 'assets/image/users/', ["id" => $id], "users", "avatar");
             $postFinal   = array_merge($this->input->post(), ["api_key" => $this->generate_api(), "avatar" => $upload]);
             $users = $this->crud->update('users', ["id" => $id], $postFinal);

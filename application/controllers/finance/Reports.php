@@ -36,8 +36,8 @@ class Reports extends CI_Controller
             header("Content-Disposition: attachment; filename=report_assets_summary_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
         $filter_category = $this->input->get("filter_category");
 
         //Config
@@ -100,11 +100,11 @@ class Reports extends CI_Controller
                 $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $record['asset_category_name'] . '</td>
-                            <td>' . number_format($record['asset_cost']) . '</td>
+                            <td>' . number_format((float) $record['asset_cost']) . '</td>
                             <td>' . $record['estimate_month'] . '</td>
                             <td>' . number_format($record['asset_cost'] / $record['estimate_month']) . '</td>
                             <td>' . number_format($record['asset_cost'] / ($record['estimate_month'] / 12)) . '</td>
-                            <td>' . number_format($record['book_value']) . '</td>
+                            <td>' . number_format((float) $record['book_value']) . '</td>
                         </tr>';
                 $no++;
             }
@@ -176,11 +176,11 @@ class Reports extends CI_Controller
                         <td>' . $record['purchase_invoice_number'] . '</td>
                         <td>' . $record['trans_date'] . '</td>
                         <td>' . $record['estimate_month'] . '</td>
-                        <td>' . number_format($record['cost']) . '</td>
+                        <td>' . number_format((float) $record['cost']) . '</td>
                         <td>' . number_format($record['cost'] / $record['estimate_month']) . '</td>
                         <td>' . number_format($record['cost'] / ($record['estimate_month'] / 12)) . '</td>
                         <td></td>
-                        <td>' . number_format($record['book_value']) . '</td>
+                        <td>' . number_format((float) $record['book_value']) . '</td>
                     </tr>';
                 $no++;
             }

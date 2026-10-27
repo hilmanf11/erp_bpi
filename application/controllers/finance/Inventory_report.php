@@ -46,8 +46,8 @@ class Inventory_report extends CI_Controller
         $filter_item_family = $this->input->get("filter_item_family");
         $filter_report_category = $this->input->get("filter_report_category");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         $div_id = null;
         $div_number = null;
@@ -80,8 +80,8 @@ class Inventory_report extends CI_Controller
             $fg  = $this->getSummaryFG($filter_from, $filter_to, $filter_division);
 
             $summary = [];
-            $current = strtotime(date("Y-m-01", strtotime($filter_from)));
-            $end     = strtotime(date("Y-m-01", strtotime($filter_to)));
+            $current = strtotime(date("Y-m-01", strtotime((string) $filter_from)));
+            $end     = strtotime(date("Y-m-01", strtotime((string) $filter_to)));
 
             while ($current <= $end) {
                 $month_from = date("Y-m-01", $current); // awal bulan
@@ -201,14 +201,14 @@ class Inventory_report extends CI_Controller
                 }
 
                 $html .= '<td style="text-align:center; ' . $style . '">' . $record['category'] . '</td>
-                        <td style="text-align:right; ' . $style . '">' . number_format($record['totalBegin'], 2) . '</td>
-                        <td style="text-align:right; ' . $style . '">' . number_format($record['totalBeginAmount'], 2) . '</td>
-                        <td style="text-align:right; ' . $style . '">' . number_format($record['totalIn'], 2) . '</td>
-                        <td style="text-align:right; ' . $style . '">' . number_format($record['totalAmountIn'], 2) . '</td>
-                        <td style="text-align:right; ' . $style . '">' . number_format($record['totalOut'], 2) . '</td>
-                        <td style="text-align:right; ' . $style . '">' . number_format($record['totalAmountOut'], 2) . '</td>
-                        <td style="text-align:right; ' . $style . '">' . number_format($record['totalEndingStock'], 2) . '</td>
-                        <td style="text-align:right; ' . $style . '">' . number_format($record['totalAmountEndingStock'], 2) . '</td>
+                        <td style="text-align:right; ' . $style . '">' . number_format((float) $record['totalBegin'], 2) . '</td>
+                        <td style="text-align:right; ' . $style . '">' . number_format((float) $record['totalBeginAmount'], 2) . '</td>
+                        <td style="text-align:right; ' . $style . '">' . number_format((float) $record['totalIn'], 2) . '</td>
+                        <td style="text-align:right; ' . $style . '">' . number_format((float) $record['totalAmountIn'], 2) . '</td>
+                        <td style="text-align:right; ' . $style . '">' . number_format((float) $record['totalOut'], 2) . '</td>
+                        <td style="text-align:right; ' . $style . '">' . number_format((float) $record['totalAmountOut'], 2) . '</td>
+                        <td style="text-align:right; ' . $style . '">' . number_format((float) $record['totalEndingStock'], 2) . '</td>
+                        <td style="text-align:right; ' . $style . '">' . number_format((float) $record['totalAmountEndingStock'], 2) . '</td>
                     </tr>';
             }
 
@@ -227,7 +227,7 @@ class Inventory_report extends CI_Controller
             $config_iso = $this->db->get()->row();
             $formHistoricalRM = !empty($config_iso->form_historical_rm) ? $config_iso->form_historical_rm : 'DOC';
 
-            $current = strtotime(date("Y-m-01", strtotime($filter_from)));
+            $current = strtotime(date("Y-m-01", strtotime((string) $filter_from)));
 
             $query_main = "SELECT 
             a.id,
@@ -392,7 +392,7 @@ class Inventory_report extends CI_Controller
 
                     // 3. Logika Rowspan: Hanya muncul di baris pertama ($no == 1)
                     if ($no == 1) {
-                        $html .= '<td style="text-align:center" rowspan="' . $rowCount . '">' . date("M Y", strtotime($filter_from)) . '</td>';
+                        $html .= '<td style="text-align:center" rowspan="' . $rowCount . '">' . date("M Y", strtotime((string) $filter_from)) . '</td>';
                         $html .= '<td style="text-align:center" rowspan="' . $rowCount . '">Raw Material</td>';
                     }
 
@@ -400,9 +400,9 @@ class Inventory_report extends CI_Controller
                                     <td colspan="2">' . $record->name . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->price * $rate * @$record->begin_stock, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->price * $rate * @$record->qty_in, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->price * $rate * @$record->qty_out, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@(@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->price * $rate * ((@$record->begin_stock + $record->qty_in) - $record->qty_out), 2) . '</td>
@@ -412,10 +412,10 @@ class Inventory_report extends CI_Controller
 
             $html .= '<tr>
                 <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-                <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-                <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-                <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalBeginStock, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalIn, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalOut, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalEndingStock, 2) . '</td>
             </tr>
             </tbody>';
         
@@ -581,18 +581,18 @@ class Inventory_report extends CI_Controller
                 $html .= '<tr>
                             <td class="text-center">'.$no.'</td>';
                 if ($no == 1) {
-                    $html .= '<td class="text-center" rowspan="'.count($records).'">'.date("M Y", strtotime($filter_from)).'</td>';
+                    $html .= '<td class="text-center" rowspan="'.count($records).'">'.date("M Y", strtotime((string) $filter_from)).'</td>';
                 }
                 $html .= '<td>'.$num.'</td>
                             <td>'.$record->name.'</td>
-                            <td class="text-right">'.number_format($begin, 2).'</td>
-                            <td class="text-right">'.number_format($amtB, 2).'</td>
-                            <td class="text-right">'.number_format($qty_in, 2).'</td>
-                            <td class="text-right">'.number_format($amtI, 2).'</td>
-                            <td class="text-right">'.number_format($qty_out, 2).'</td>
-                            <td class="text-right">'.number_format($amtO, 2).'</td>
-                            <td class="text-right">'.number_format($ending, 2).'</td>
-                            <td class="text-right">'.number_format($amtE, 2).'</td>
+                            <td class="text-right">'.number_format((float) $begin, 2).'</td>
+                            <td class="text-right">'.number_format((float) $amtB, 2).'</td>
+                            <td class="text-right">'.number_format((float) $qty_in, 2).'</td>
+                            <td class="text-right">'.number_format((float) $amtI, 2).'</td>
+                            <td class="text-right">'.number_format((float) $qty_out, 2).'</td>
+                            <td class="text-right">'.number_format((float) $amtO, 2).'</td>
+                            <td class="text-right">'.number_format((float) $ending, 2).'</td>
+                            <td class="text-right">'.number_format((float) $amtE, 2).'</td>
                         </tr>';
                 $no++;
             }
@@ -601,14 +601,14 @@ class Inventory_report extends CI_Controller
             $html .= '</tbody><tfoot>
                         <tr style="background:#f9f9f9; font-weight:bold;">
                             <td colspan="4" class="text-right">GRAND TOTAL</td>
-                            <td class="text-right">'.number_format($t['bQ'], 2).'</td>
-                            <td class="text-right">'.number_format($t['bA'], 2).'</td>
-                            <td class="text-right">'.number_format($t['iQ'], 2).'</td>
-                            <td class="text-right">'.number_format($t['iA'], 2).'</td>
-                            <td class="text-right">'.number_format($t['oQ'], 2).'</td>
-                            <td class="text-right">'.number_format($t['oA'], 2).'</td>
-                            <td class="text-right">'.number_format($t['eQ'], 2).'</td>
-                            <td class="text-right">'.number_format($t['eA'], 2).'</td>
+                            <td class="text-right">'.number_format((float) $t['bQ'], 2).'</td>
+                            <td class="text-right">'.number_format((float) $t['bA'], 2).'</td>
+                            <td class="text-right">'.number_format((float) $t['iQ'], 2).'</td>
+                            <td class="text-right">'.number_format((float) $t['iA'], 2).'</td>
+                            <td class="text-right">'.number_format((float) $t['oQ'], 2).'</td>
+                            <td class="text-right">'.number_format((float) $t['oA'], 2).'</td>
+                            <td class="text-right">'.number_format((float) $t['eQ'], 2).'</td>
+                            <td class="text-right">'.number_format((float) $t['eA'], 2).'</td>
                         </tr>
                     </tfoot></table>';
 
@@ -627,7 +627,7 @@ class Inventory_report extends CI_Controller
             $this->db->from('config');
             $config = $this->db->get()->row();
 
-            $current = strtotime(date("Y-m-01", strtotime($filter_from)));
+            $current = strtotime(date("Y-m-01", strtotime((string) $filter_from)));
 
             $query_qty_in_checksheet = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_checksheet
             FROM scan_item_receipts_fg f
@@ -901,7 +901,7 @@ class Inventory_report extends CI_Controller
 
                     // 3. Logika Rowspan: Hanya muncul di baris pertama ($no == 1)
                     if ($no == 1) {
-                        $html .= '<td style="text-align:center" rowspan="' . $rowCount . '">' . date("M Y", strtotime($filter_from)) . '</td>';
+                        $html .= '<td style="text-align:center" rowspan="' . $rowCount . '">' . date("M Y", strtotime((string) $filter_from)) . '</td>';
                         $html .= '<td style="text-align:center" rowspan="' . $rowCount . '">Finish Good</td>';
                     }
 
@@ -909,9 +909,9 @@ class Inventory_report extends CI_Controller
                                     <td colspan="2">' . $record->name . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->price * $rate * @$record->begin_stock, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $record->qty_in, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->price * $rate * @$record->qty_in, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $record->qty_out, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->price * $rate * @$record->qty_out, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@(@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(@$record->price * $rate * ((@$record->begin_stock + $record->qty_in) - $record->qty_out), 2) . '</td>
@@ -921,10 +921,10 @@ class Inventory_report extends CI_Controller
 
             $html .= '<tr>
                 <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-                <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-                <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-                <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalBeginStock, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalIn, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalOut, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $totalEndingStock, 2) . '</td>
             </tr>
             </tbody>';
         
@@ -1685,7 +1685,7 @@ class Inventory_report extends CI_Controller
     //     $result = $this->db->query($query)->result_array();
     //     $map = [];
     //     foreach ($result as $row) {
-    //         $map[$row[$keyField]] = (float)$row[$valueField];
+    //         $map[(string) $row[$keyField]] = (float)$row[$valueField];
     //     }
     //     return $map;
     // }
@@ -1847,7 +1847,7 @@ class Inventory_report extends CI_Controller
     //     $result = $this->db->query($query)->result_array();
     //     $map = [];
     //     foreach ($result as $row) {
-    //         $map[$row[$keyField]] = (float)$row[$valueField];
+    //         $map[(string) $row[$keyField]] = (float)$row[$valueField];
     //     }
     //     return $map;
     // }
@@ -2175,7 +2175,7 @@ class Inventory_report extends CI_Controller
     //     $result = $this->db->query($query)->result_array();
     //     $map = [];
     //     foreach ($result as $row) {
-    //         $map[$row[$keyField]] = (float)$row[$valueField];
+    //         $map[(string) $row[$keyField]] = (float)$row[$valueField];
     //     }
     //     return $map;
     // }

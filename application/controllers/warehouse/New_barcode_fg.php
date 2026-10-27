@@ -140,7 +140,7 @@ class new_barcode_fg extends CI_Controller
                 echo json_encode(array("title" => "Available", "message" => "Item Id has Been Created in Period ", "theme" => "error"));
             } else {
                 $qty_label = $post['qty_label'];
-                $datenow = date('Ymd', strtotime($post['cut_off_date']));
+                $datenow = date('Ymd', strtotime((string) $post['cut_off_date']));
                 $sqlGetID   = $this->db->query("SELECT max(label_no) as kode FROM new_barcode_fg WHERE label_no like '%$datenow%'");
                 $rowID      = $sqlGetID->row();
                 $kode       = $rowID->kode;
@@ -251,10 +251,10 @@ class new_barcode_fg extends CI_Controller
         $this->db->from('new_barcode_fg');
         $nbfg = $this->db->get()->row();
 
-        $item_fg_id = base64_decode($this->input->get('item_fg_id'));
-        $cut_off_date = base64_decode($this->input->get('cut_off_date'));
-        $number = base64_decode($this->input->get('number'));
-        $label_no = $this->input->get('label_no') ? base64_decode($this->input->get('label_no')) : null;
+        $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
+        $cut_off_date = base64_decode((string) $this->input->get('cut_off_date'));
+        $number = base64_decode((string) $this->input->get('number'));
+        $label_no = $this->input->get('label_no') ? base64_decode((string) $this->input->get('label_no')) : null;
 
         $config_iso = $this->db->get('config_iso')->row();
 
@@ -368,7 +368,7 @@ class new_barcode_fg extends CI_Controller
                                         </tr>
                                         <tr>
                                             <td style="text-align:left; border: 1px solid black;">
-                                                    <small style="font-size:10px;">Qty</small><br><b style="font-size:16px;">' . number_format($record->qty, 2) . '</b>
+                                                    <small style="font-size:10px;">Qty</small><br><b style="font-size:16px;">' . number_format((float) $record->qty, 2) . '</b>
                                             </td>
 
                                             <td style="text-align:left; border: 1px solid black;">
@@ -481,7 +481,7 @@ class new_barcode_fg extends CI_Controller
                                         </tr>
                                         <tr>
                                             <td style="text-align:left; border: 1px solid black;">
-                                                    <small style="font-size:10px;">Qty</small><br><b style="font-size:16px;">' . number_format($record->qty, 2) . '</b>
+                                                    <small style="font-size:10px;">Qty</small><br><b style="font-size:16px;">' . number_format((float) $record->qty, 2) . '</b>
                                             </td>
 
                                             <td style="text-align:left; border: 1px solid black;">

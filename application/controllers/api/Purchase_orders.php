@@ -37,7 +37,7 @@ class Purchase_orders extends CI_Controller
             $filter_supplier = $this->input->get('supplier');
             $filter_product_family = $this->input->get('prodfam');
             $filter_po_no = $this->input->get('pono');
-            $filter_part_no = base64_decode($this->input->get('partno'));
+            $filter_part_no = base64_decode((string) $this->input->get('partno'));
 
             //Select Query
             $this->db->select('a.approved_by, a.approved_date, a.approved_to, a.purchase_order_no, a.purchase_order_date, a.product_family, 

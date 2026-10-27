@@ -292,7 +292,7 @@ class Barcode_divides_fg extends CI_Controller
         $config = $this->db->get()->row();
         $config_iso = $this->db->get('config_iso')->row();
 
-        $label_no = base64_decode($this->input->get('label_no'));
+        $label_no = base64_decode((string) $this->input->get('label_no'));
 
         $this->db->select('d.number_customer as item_number_customer, d.number as item_number, d.name as item_name, d.alias, a.qty, a.label_divided, 
             b.trans_date, b.prod_date, b.shift, d.control_id, d.logo, d.uom, 
@@ -469,7 +469,7 @@ class Barcode_divides_fg extends CI_Controller
                                 </tr>
                             <tr style="height: 5px;">
                                     <td style="width:15mm; height: 5mm; style="text-align:left; border: 1px solid black;">
-                                        <small style="font-size:10px;">Qty</small><br><b style="font-size:10px;">' . number_format($record->qty, 2) . '</b>
+                                        <small style="font-size:10px;">Qty</small><br><b style="font-size:10px;">' . number_format((float) $record->qty, 2) . '</b>
                                     </td>
 
                                     <td style="text-align:left; border: 1px solid black;">

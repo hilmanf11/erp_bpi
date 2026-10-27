@@ -48,8 +48,8 @@ class Item_ng extends CI_Controller
     public function item_ng_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $year       = date("Y", strtotime($trans_date));
-        $datenow    = date("ymd", strtotime($trans_date));
+        $year       = date("Y", strtotime((string) $trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
         $sqlGetID   = $this->db->query("SELECT MAX(SUBSTR(document, -4, 4)) as kode FROM item_ng WHERE trans_date like '%$year%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -155,10 +155,10 @@ class Item_ng extends CI_Controller
 
     public function datatablesTemp()
     {
-        $workorder = base64_decode($this->input->get('workorder'));
+        $workorder = base64_decode((string) $this->input->get('workorder'));
         $qty_product = $this->input->get('qty_product');
         $qty_sh = $this->input->get('qty_sh');
-        $item_fg_id = base64_decode($this->input->get('item_fg_id'));
+        $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
 
         //var_dump($workorder);
 
@@ -267,7 +267,7 @@ class Item_ng extends CI_Controller
      public function datatableDetails()
      {
          if ($this->input->get()) {
-            $document = base64_decode($this->input->get('document'));
+            $document = base64_decode((string) $this->input->get('document'));
 
             $this->db->select('a.*, b.number as item_number, b.name as item_name');
             $this->db->from('item_ng a');
@@ -376,7 +376,7 @@ class Item_ng extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
 
             $itemNg = $this->crud->read("item_ng", [], ["id" => $id]);
@@ -599,8 +599,8 @@ class Item_ng extends CI_Controller
 
                 // generate autonumber (satu nomor untuk semua row dalam upload ini)
                 $trans_date = $data['trans_date'];
-                $year       = date("Y", strtotime($trans_date));
-                $datenow    = date("ymd", strtotime($trans_date));
+                $year       = date("Y", strtotime((string) $trans_date));
+                $datenow    = date("ymd", strtotime((string) $trans_date));
                 $sqlGetID   = $this->db->query("
                     SELECT MAX(RIGHT(document,4)) as kode 
                     FROM item_ng 
@@ -736,7 +736,7 @@ class Item_ng extends CI_Controller
                             <td>' . $data['qty_product'] . '</td>
                             <td>' . $data['item_rm_number'] . '</td>
                             <td>' . $data['item_rm_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
+                            <td>' . number_format((float) $data['qty']) . '</td>
                             <td style="text-align:center;">' . $data['uom'] . '</td>
                             <td>' . $data['remarks'] . '</td>
                             <td style="text-align:center;">' . $data['created_by'] . '</td>

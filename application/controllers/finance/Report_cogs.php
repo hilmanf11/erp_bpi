@@ -273,34 +273,34 @@ class Report_cogs extends CI_Controller
         $total_cogs = 0;
         foreach ($invoices as $invoice) {
             $amount = ($invoice['total'] * $invoice['rates']);
-            $cogs = abs($invoice['amount_out']);
+            $cogs = abs($invoice['amount_out'] ?? 0);
             $gainloss = ($amount - $cogs);
             $gainlossPersen = (($gainloss / $amount) * 100);
 
             $total_gainloss += $gainloss;
 
             if($gainloss > 0){
-                $gainloss = number_format($gainloss, 2);
+                $gainloss = number_format((float) $gainloss, 2);
                 $style = "";
             }else{
-                $gainloss = "(".number_format(abs($gainloss), 2).")";
+                $gainloss = "(".number_format(abs($gainloss ?? 0), 2).")";
                 $style = "color:red;";
             }
 
             if($gainlossPersen > 0){
-                $gainlossPersen = number_format($gainlossPersen, 2);
+                $gainlossPersen = number_format((float) $gainlossPersen, 2);
                 $style2 = "";
             }else{
-                $gainlossPersen = "(".number_format(abs($gainlossPersen), 2).")";
+                $gainlossPersen = "(".number_format(abs($gainlossPersen ?? 0), 2).")";
                 $style2 = "color:red;";
             }
 
             $total_qty += $invoice['qty'];
             $total_original += $invoice['total'];
             $total_amount += $amount;
-            $total_material += abs($invoice['direct_material']);
-            $total_labor += abs($invoice['direct_labor']);
-            $total_foh += abs($invoice['direct_foh']);
+            $total_material += abs($invoice['direct_material'] ?? 0);
+            $total_labor += abs($invoice['direct_labor'] ?? 0);
+            $total_foh += abs($invoice['direct_foh'] ?? 0);
             $total_cogs += $cogs;
             $html .= '  <tr>
                             <td style="text-align:center">'.$no.'</td>
@@ -312,17 +312,17 @@ class Report_cogs extends CI_Controller
                             <td>'.$invoice['product_no'].'</td>
                             <td>'.$invoice['product_name'].'</td>
                             <td style="text-align:center;">' . $invoice['uom'] . '</td>
-                            <td style="text-align:right;">' . number_format($invoice['qty']) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $invoice['qty']) . '</td>
                             <td style="text-align:center;">' . $invoice['currency'] . '</td>
                             <td style="text-align:right;">' . number_format(($invoice['total'] / $invoice['qty']), 4) . '</td>
-                            <td style="text-align:right;">' . number_format($invoice['total'], 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $invoice['total'], 2) . '</td>
                             <td style="text-align:center;">IDR</td>
-                            <td style="text-align:right;">' . number_format($invoice['rates'], 2) . '</td>
-                            <td style="text-align:right;">' . number_format($amount, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(abs($invoice['direct_material']), 2) . '</td>
-                            <td style="text-align:right;">' . number_format(abs($invoice['direct_labor']), 2) . '</td>
-                            <td style="text-align:right;">' . number_format(abs($invoice['direct_foh']), 2) . '</td>
-                            <td style="text-align:right;">' . number_format($cogs, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $invoice['rates'], 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $amount, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(abs($invoice['direct_material'] ?? 0), 2) . '</td>
+                            <td style="text-align:right;">' . number_format(abs($invoice['direct_labor'] ?? 0), 2) . '</td>
+                            <td style="text-align:right;">' . number_format(abs($invoice['direct_foh'] ?? 0), 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $cogs, 2) . '</td>
                             <td style="text-align:right;'.$style.'">' . $gainloss . '</td>
                             <td style="text-align:right;'.$style2.'">' . $gainlossPersen . '</td>
                             <td>'.$invoice['account_number'].'</td>
@@ -340,24 +340,24 @@ class Report_cogs extends CI_Controller
         if($filter_month == "07"){
             $total_cogs_html = number_format(abs($total_cogs - 0.01), 2);
         }else{
-            $total_cogs_html = number_format(abs($total_cogs), 2);
+            $total_cogs_html = number_format(abs($total_cogs ?? 0), 2);
         }
 
         $html .= '  <tr>
                         <td style="text-align:right;" colspan="9"><b>GRAND TOTAL</b></td>
-                        <td style="text-align:right; font-weight:bold;">'.number_format($total_qty).'</td>
+                        <td style="text-align:right; font-weight:bold;">'.number_format((float) $total_qty).'</td>
                         <td style="text-align:right; font-weight:bold;">-</td>
                         <td style="text-align:right; font-weight:bold;">-</td>
-                        <td style="text-align:right; font-weight:bold;">'.number_format($total_original, 2).'</td>
+                        <td style="text-align:right; font-weight:bold;">'.number_format((float) $total_original, 2).'</td>
                         <td style="text-align:right; font-weight:bold;">-</td>
                         <td style="text-align:right; font-weight:bold;">-</td>
-                        <td style="text-align:right; font-weight:bold;">' . number_format($total_amount, 2) . '</td>
-                        <td style="text-align:right; font-weight:bold;">' . number_format($total_material, 2) . '</td>
-                        <td style="text-align:right; font-weight:bold;">' . number_format($total_labor, 2) . '</td>
-                        <td style="text-align:right; font-weight:bold;">' . number_format($total_foh, 2) . '</td>
+                        <td style="text-align:right; font-weight:bold;">' . number_format((float) $total_amount, 2) . '</td>
+                        <td style="text-align:right; font-weight:bold;">' . number_format((float) $total_material, 2) . '</td>
+                        <td style="text-align:right; font-weight:bold;">' . number_format((float) $total_labor, 2) . '</td>
+                        <td style="text-align:right; font-weight:bold;">' . number_format((float) $total_foh, 2) . '</td>
                         <td style="text-align:right; font-weight:bold;">' . $total_cogs_html . '</td>
-                        <td style="text-align:right; font-weight:bold;">'.number_format($total_gainloss, 2).'</td>
-                        <td style="text-align:right; font-weight:bold;">'.number_format($total_gainlosspersen, 2).'</td>
+                        <td style="text-align:right; font-weight:bold;">'.number_format((float) $total_gainloss, 2).'</td>
+                        <td style="text-align:right; font-weight:bold;">'.number_format((float) $total_gainlosspersen, 2).'</td>
                         <td style="text-align:right;" colspan="2"></td>
                     </tr>';
 

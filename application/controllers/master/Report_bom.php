@@ -32,7 +32,7 @@ class Report_bom extends CI_Controller
     {
         $filter_from = $this->input->post('filter_from');
         $filter_to   = $this->input->post('filter_to');
-        $period      = date('Ym', strtotime($filter_from));
+        $period      = date('Ym', strtotime((string) $filter_from));
 
         $this->db->where("('$filter_from' BETWEEN lock_from AND lock_to OR 
                         '$filter_to' BETWEEN lock_from AND lock_to OR 
@@ -172,7 +172,7 @@ class Report_bom extends CI_Controller
 
         $groups = [];
         foreach ($records as $r) {
-            $key = trim($r->item_fg_number) . '||' . trim($r->item_fg_name). '||' . trim($r->item_fg_id);
+            $key = trim((string) $r->item_fg_number) . '||' . trim((string) $r->item_fg_name). '||' . trim((string) $r->item_fg_id);
             if (!isset($groups[$key])) $groups[$key] = [];
             $groups[$key][] = $r;
         }

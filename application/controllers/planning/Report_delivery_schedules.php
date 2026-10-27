@@ -31,8 +31,8 @@ class Report_delivery_schedules extends CI_Controller
 
     public function readCustomerOrder()
     {
-        $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
-        $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
+        $filter_so_date_from = base64_decode((string) $this->input->get("filter_so_date_from"));
+        $filter_so_date_to = base64_decode((string) $this->input->get("filter_so_date_to"));
         $customer_id = $this->input->get("customer_id");
 
         $customer_orders = $this->crud->query("SELECT customer_order_no, sales_order_no
@@ -46,9 +46,9 @@ class Report_delivery_schedules extends CI_Controller
 
     public function readItems()
     {
-        $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
-        $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
-        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
+        $filter_so_date_from = base64_decode((string) $this->input->get("filter_so_date_from"));
+        $filter_so_date_to = base64_decode((string) $this->input->get("filter_so_date_to"));
+        $filter_sales_order_no = base64_decode((string) $this->input->get("filter_sales_order_no"));
         $customer_id = $this->input->get("customer_id");
 
         $customer_orders = $this->crud->query("SELECT b.id, b.number, b.name
@@ -68,14 +68,14 @@ class Report_delivery_schedules extends CI_Controller
             header("Content-Disposition: attachment; filename=report_outstanding_so_$format.xls");
         }
 
-        $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
-        $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
-        $filter_customer_name = base64_decode($this->input->get("filter_customer_name"));
-        $filter_customer_order_no = base64_decode($this->input->get("filter_customer_order_no"));
-        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
-        $filter_item_fg = base64_decode($this->input->get("filter_item_fg"));
-        $filter_item_fg_name = base64_decode($this->input->get("filter_item_fg_name"));
-        $filter_display = base64_decode($this->input->get("filter_display"));
+        $filter_so_date_from = base64_decode((string) $this->input->get("filter_so_date_from"));
+        $filter_so_date_to = base64_decode((string) $this->input->get("filter_so_date_to"));
+        $filter_customer_name = base64_decode((string) $this->input->get("filter_customer_name"));
+        $filter_customer_order_no = base64_decode((string) $this->input->get("filter_customer_order_no"));
+        $filter_sales_order_no = base64_decode((string) $this->input->get("filter_sales_order_no"));
+        $filter_item_fg = base64_decode((string) $this->input->get("filter_item_fg"));
+        $filter_item_fg_name = base64_decode((string) $this->input->get("filter_item_fg_name"));
+        $filter_display = base64_decode((string) $this->input->get("filter_display"));
 
         $customer = $this->crud->read("customers", [], ["id" => $filter_customer_name]);
 
@@ -203,17 +203,17 @@ class Report_delivery_schedules extends CI_Controller
             $this->db->order_by('a.status', 'ASC');
             $records = $this->db->get()->result_array();
 
-            $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
-            $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
+            $p_date_start = date("Y-m-d", strtotime((string) $filter_so_date_from));
+            $p_date_to = date('Y-m-d', strtotime((string) $filter_so_date_to));
 
             $colspan = 1;
-            while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+            while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
                 $colspan += 1;
-                $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+                $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime((string) $p_date_start)));
             }
 
-            $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
-            $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
+            $p_date_start = date("Y-m-d", strtotime((string) $filter_so_date_from));
+            $p_date_to = date('Y-m-d', strtotime((string) $filter_so_date_to));
 
     $html .= '<table id="customers" border="1">
         <tr>
@@ -226,18 +226,18 @@ class Report_delivery_schedules extends CI_Controller
             <th align="center" colspan="'.$colspan.'">Delivery Date</th>
         </tr>
         <tr>';
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
-            $start_date = date("d", strtotime($p_date_start));
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
+            $start_date = date("d", strtotime((string) $p_date_start));
             $html .='<th>'.$start_date.'</th>';
-            $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime((string) $p_date_start)));
         }
         $html .= '</tr>';
 
         $no = 1;
 
         foreach ($records as $data) {
-            $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
-            $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
+            $p_date_start = date("Y-m-d", strtotime((string) $filter_so_date_from));
+            $p_date_to = date('Y-m-d', strtotime((string) $filter_so_date_to));
 
             $html .= '<tr>
                         <td rowspan="4">' . $no . '</td>
@@ -248,8 +248,8 @@ class Report_delivery_schedules extends CI_Controller
                     </tr>
             <tr>
                 <td>Plan</td>';
-                while (strtotime($p_date_start) <= strtotime($p_date_to)) {
-                    $trans_date = date("Y-m-d", strtotime($p_date_start));
+                while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
+                    $trans_date = date("Y-m-d", strtotime((string) $p_date_start));
                     $delivery = $this->crud->read('sales_order_deliveries', [], ["trans_date" => $trans_date,"item_fg_id" => $data['item_fg_id']]);
 
                     if(@$delivery->qty > 0){
@@ -258,31 +258,31 @@ class Report_delivery_schedules extends CI_Controller
                         $html.='<td>0</td>';
                     }
                     
-                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime((string) $p_date_start)));
                 }
 
-            $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
-            $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
+            $p_date_start = date("Y-m-d", strtotime((string) $filter_so_date_from));
+            $p_date_to = date('Y-m-d', strtotime((string) $filter_so_date_to));
             
             $html .= '</tr>
 
             <tr>
                 <td>Actual</td>';
-                while (strtotime($p_date_start) <= strtotime($p_date_to)) {
-                    $trans_date = date("Y-m-d", strtotime($p_date_start));
+                while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
+                    $trans_date = date("Y-m-d", strtotime((string) $p_date_start));
                         $html.='<td>0</td>';
                     
-                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime((string) $p_date_start)));
                 }
             $html .= '</tr>
             
             <tr>
                 <td>Balance</td>';
-                while (strtotime($p_date_start) <= strtotime($p_date_to)) {
-                    $trans_date = date("Y-m-d", strtotime($p_date_start));
+                while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
+                    $trans_date = date("Y-m-d", strtotime((string) $p_date_start));
                         $html.='<td>0</td>';
                     
-                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime((string) $p_date_start)));
                 }
             $html .= '</tr>
 

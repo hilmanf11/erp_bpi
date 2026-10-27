@@ -573,7 +573,7 @@ class Purchase_invoices extends CI_Controller
 
     public function check_faktur_no()
     {
-        $faktur_no = base64_decode($this->input->get('faktur_no'));
+        $faktur_no = base64_decode((string) $this->input->get('faktur_no'));
         
         // Menggunakan query builder CodeIgniter
         $this->db->select('faktur_no');
@@ -617,8 +617,8 @@ class Purchase_invoices extends CI_Controller
 
     public function datatablesTemp() 
     {
-        $por_no = base64_decode($this->input->get('por_no'));
-        $trans_date = base64_decode($this->input->get('trans_date'));
+        $por_no = base64_decode((string) $this->input->get('por_no'));
+        $trans_date = base64_decode((string) $this->input->get('trans_date'));
         $por_no_ex = explode(",", $por_no);
 
         // --- Subquery untuk purchase_invoices ---
@@ -727,8 +727,8 @@ class Purchase_invoices extends CI_Controller
     // Dokumentasi: Bug price sama atau 0 ketika item Specification berbeda dari purchase_orders
     public function datatablesTemp_existing()//berubah req Bu Nina 01-12-2025
     {
-        $por_no = base64_decode($this->input->get('por_no'));
-        $trans_date = base64_decode($this->input->get('trans_date'));
+        $por_no = base64_decode((string) $this->input->get('por_no'));
+        $trans_date = base64_decode((string) $this->input->get('trans_date'));
         $por_no_ex = explode(",", $por_no);
 
         $this->db->select("a.id");
@@ -825,7 +825,7 @@ class Purchase_invoices extends CI_Controller
 
     public function datatablesTemp2()//berubah : penambahan COALESCE(g. middle,1) as middle
     {
-        $po_no = base64_decode($this->input->get('po_no'));
+        $po_no = base64_decode((string) $this->input->get('po_no'));
 
         $this->db->select("a.po_no, a.po_date, a.po_name, a.item_rm_id, b.number as item_number, b.name as item_name, a.qty, b.uom, d.item_supplier as supplier_product,
             e.currency, 'IDR' as currency_local, a.price, f.account_number, i.account_name,
@@ -877,19 +877,19 @@ class Purchase_invoices extends CI_Controller
 
     public function datatables($details = "")
     {
-        $filter_type  = base64_decode($this->input->get('filter_type'));
-        $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-        $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-        $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-        $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-        $filter_category_id = base64_decode($this->input->get('filter_category_id'));
-        $filter_purchase_invoice = base64_decode($this->input->get('filter_purchase_invoice'));
-        $filter_purchase_receipt = base64_decode($this->input->get('filter_purchase_receipt'));
-        $filter_purchase_order = base64_decode($this->input->get('filter_purchase_order'));
-        $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-        $filter_status_supplier = base64_decode($this->input->get('filter_status_supplier'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_status = base64_decode($this->input->get('filter_status'));
+        $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+        $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+        $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+        $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+        $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+        $filter_category_id = base64_decode((string) $this->input->get('filter_category_id'));
+        $filter_purchase_invoice = base64_decode((string) $this->input->get('filter_purchase_invoice'));
+        $filter_purchase_receipt = base64_decode((string) $this->input->get('filter_purchase_receipt'));
+        $filter_purchase_order = base64_decode((string) $this->input->get('filter_purchase_order'));
+        $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+        $filter_status_supplier = base64_decode((string) $this->input->get('filter_status_supplier'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
         $date_from = date("Y-m-01");
         $date_to = date("Y-m-t");
@@ -941,7 +941,7 @@ class Purchase_invoices extends CI_Controller
             //Get Data Array
             $records = $this->db->get()->result_array();
         } else {
-            $number = base64_decode($this->input->get('number'));
+            $number = base64_decode((string) $this->input->get('number'));
 
             $this->db->select("a.*, 'datatbles' as origin");
             $this->db->select("'view' as details");
@@ -1045,7 +1045,7 @@ class Purchase_invoices extends CI_Controller
                         } else {
 
                             $estimate_month = $estimate_year * 12;
-                            $expired_date   = date("Y-m-d", strtotime("+" . $estimate_month . ' months', strtotime($item['trans_date'])));
+                            $expired_date   = date("Y-m-d", strtotime("+" . $estimate_month . ' months', strtotime((string) $item['trans_date'])));
                             $cost_local     = $item['price'] * $rate;
                             $total_local    = $item['total'] * $rate;
                             
@@ -1233,7 +1233,7 @@ class Purchase_invoices extends CI_Controller
             $cost_local     = $item['price'] * $rate;
             $total_local    = $item['total'] * $rate;
             $depreciation   = ($life_month > 0) ? ($cost_local / $life_month) : 0;
-            $expired_date   = date("Y-m-d", strtotime("+$life_month months", strtotime($item['trans_date'])));
+            $expired_date   = date("Y-m-d", strtotime("+$life_month months", strtotime((string) $item['trans_date'])));
 
             // Check Existing
             $existing = $this->db->get_where('asset_fixeds', [
@@ -1701,7 +1701,7 @@ class Purchase_invoices extends CI_Controller
             } else {
                 // Get PI number
                 if (empty($data["number"]) || $data["number"] == "-") {
-                    $datenow = "PI-" . date("Ymd", strtotime($data["trans_date"]));
+                    $datenow = "PI-" . date("Ymd", strtotime((string) $data["trans_date"]));
                     $sqlGetID = $this->db->select_max('number', 'kode')->like('number', $datenow, 'after')->get('purchase_invoices')->row();
                     $urutan = ($sqlGetID && $sqlGetID->kode) ? (int) substr($sqlGetID->kode, -4) : 0;
                     $urutan++;
@@ -1720,7 +1720,7 @@ class Purchase_invoices extends CI_Controller
                 
                 // Get Rate
                 $currency = $data['currency'];
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($data["trans_date"])));
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $data["trans_date"])));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
                 if ($currency != "IDR") {
                     if ($exchange) {
@@ -1740,7 +1740,7 @@ class Purchase_invoices extends CI_Controller
                 $trans_date     = $data['trans_date'];
                 $payment_term   = $supplier->payment_term ?? $data["payment_term"];
                 $vat_rate       = $supplier->vat ?? 0;
-                $due_date       = date('Y-m-d', strtotime('+' . $supplier->payment_term . ' days', strtotime($data['trans_date'])));
+                $due_date       = date('Y-m-d', strtotime('+' . $supplier->payment_term . ' days', strtotime((string) $data['trans_date'])));
                 $price          = (float)($data['price'] ?? $supplier_product->price ?? 0);
                 $qty            = (float)($data['qty'] ?? 0);
                 $discount_rate  = (float)($data['discount'] ?? 0);
@@ -2180,7 +2180,7 @@ for ($i = 0; $i < $page; $i++) {
     foreach ($records as $record) {
         $currency = $record['currency'];
 
-        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record['trans_date'])));
+        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $record['trans_date'])));
         $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
         if ($currency != "IDR") {
@@ -2214,19 +2214,19 @@ for ($i = 0; $i < $page; $i++) {
         <td>' . $record['uom'] . '</td>
         <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
         <td>' . $record['currency'] . '</td>
-        <td style="text-align:right;">' . @number_format($record['price'], 2) . '</td>
-        <td style="text-align:right;">' . @number_format($record['total'], 2) . '</td>
+        <td style="text-align:right;">' . @number_format((float) $record['price'], 2) . '</td>
+        <td style="text-align:right;">' . @number_format((float) $record['total'], 2) . '</td>
         <td>IDR</td>
-        <td style="text-align:right;">' . @number_format($amount, 2) . '</td>
+        <td style="text-align:right;">' . @number_format((float) $amount, 2) . '</td>
         </tr>';
         $no++;
     }
 
     $html .= '  <tr>
     <th colspan="10" style="text-align:right">TOTAL</th>
-    <th style="text-align:right">'.number_format($grand_total, 2).'</th>
+    <th style="text-align:right">'.number_format((float) $grand_total, 2).'</th>
     <th></th>
-    <th style="text-align:right">'.number_format($grand_total_local, 2).'</th>
+    <th style="text-align:right">'.number_format((float) $grand_total_local, 2).'</th>
     </tr>
     </table>
     </div>
@@ -2263,15 +2263,15 @@ foreach ($journals as $journal) {
     $html .= '  <tr>
     <td>' . $journal->account_number . '</td>
     <td>' . $journal->account_name . '</td>
-    <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
-    <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
+    <td style="text-align:right;">' . number_format((float) $journal->debit, 2) . '</td>
+    <td style="text-align:right;">' . number_format((float) $journal->credit, 2) . '</td>
     </tr>';
 }
 
 $html .= '      <tr>
 <td colspan="2">Balance</td>
-<td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
-<td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
+<td style="text-align:right;">' . @number_format((float) $total_debit, 2) . '</td>
+<td style="text-align:right;">' . @number_format((float) $total_credit, 2) . '</td>
 </tr>
 </table>
 </div>
@@ -2282,7 +2282,7 @@ $html .= '      <tr>
 <table id="customers" style="width:100%; font-size:12px;">
 <tr>
 <td style="font-weight:bold;">Sub Total</td>
-<td style="font-weight:bold; text-align:right;">' . @number_format($grand_total_all, 2) . '</td>
+<td style="font-weight:bold; text-align:right;">' . @number_format((float) $grand_total_all, 2) . '</td>
 </tr>
 <tr>
 <td style="font-weight:bold;">DPP</td>
@@ -2342,19 +2342,19 @@ public function print($option = "")
         header("Content-Disposition: attachment; filename=purchase_invoices_$format.xls");
     }
 
-    $filter_type  = base64_decode($this->input->get('filter_type'));
-    $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-    $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-    $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-    $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-    $filter_category_id = base64_decode($this->input->get('filter_category_id'));
-    $filter_purchase_invoice = base64_decode($this->input->get('filter_purchase_invoice'));
-    $filter_purchase_receipt = base64_decode($this->input->get('filter_purchase_receipt'));
-    $filter_purchase_order = base64_decode($this->input->get('filter_purchase_order'));
-    $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-    $filter_status_supplier = base64_decode($this->input->get('filter_status_supplier'));
-    $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-    $filter_status = base64_decode($this->input->get('filter_status'));
+    $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+    $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+    $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+    $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+    $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+    $filter_category_id = base64_decode((string) $this->input->get('filter_category_id'));
+    $filter_purchase_invoice = base64_decode((string) $this->input->get('filter_purchase_invoice'));
+    $filter_purchase_receipt = base64_decode((string) $this->input->get('filter_purchase_receipt'));
+    $filter_purchase_order = base64_decode((string) $this->input->get('filter_purchase_order'));
+    $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+    $filter_status_supplier = base64_decode((string) $this->input->get('filter_status_supplier'));
+    $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+    $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
     $date_from = date("Y-m-01");
     $date_to = date("Y-m-t");
@@ -2456,10 +2456,10 @@ public function print($option = "")
         <td>' . $data['trans_date'] . '</td>
         <td>' . $data['due_date'] . '</td>
         <td>' . $data['payment_term'] . '</td>
-        <td style="text-align:right;">' . number_format($data['total_sub'], 2, ",", ".") . '</td>
-        <td style="text-align:right;">' . number_format($data['total_vat'], 2, ",", ".") . '</td>
-        <td style="text-align:right;">' . number_format($data['total_pph'], 2, ",", ".") . '</td>
-        <td colspan="2" style="text-align:right;">' . number_format($data['total_grand'], 2, ",", ".") . '</td>
+        <td style="text-align:right;">' . number_format((float) $data['total_sub'], 2, ",", ".") . '</td>
+        <td style="text-align:right;">' . number_format((float) $data['total_vat'], 2, ",", ".") . '</td>
+        <td style="text-align:right;">' . number_format((float) $data['total_pph'], 2, ",", ".") . '</td>
+        <td colspan="2" style="text-align:right;">' . number_format((float) $data['total_grand'], 2, ",", ".") . '</td>
         </tr>';
         $html .= '  <tr>
         <td colspan="12" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
@@ -2487,11 +2487,11 @@ public function print($option = "")
             <td >' . $detail['created_by'] . '</td>
             <td>' . $detail['item_no'] . '</td>
             <td>' . $detail['item_name'] . '</td>
-            <td style="text-align:right">' . number_format($detail['qty'], 2, ",", ".") . '</td>
+            <td style="text-align:right">' . number_format((float) $detail['qty'], 2, ",", ".") . '</td>
             <td>' . $detail['uom'] . '</td>
             <td>' . $detail['currency'] . '</td>
-            <td style="text-align:right">' . number_format($detail['price'], 2, ",", ".") . '</td>
-            <td style="text-align:right">' . number_format($detail['total'], 2, ",", ".")  . '</td>
+            <td style="text-align:right">' . number_format((float) $detail['price'], 2, ",", ".") . '</td>
+            <td style="text-align:right">' . number_format((float) $detail['total'], 2, ",", ".")  . '</td>
             <td style="text-align:center">' . $detail['account_type'] . '</td>
             </tr>';
         }
@@ -2531,19 +2531,19 @@ public function print_backup($option = "")
         header("Content-Disposition: attachment; filename=purchase_invoices_$format.xls");
     }
 
-    $filter_type  = base64_decode($this->input->get('filter_type'));
-    $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-    $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-    $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-    $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-    $filter_category_id = base64_decode($this->input->get('filter_category_id'));
-    $filter_purchase_invoice = base64_decode($this->input->get('filter_purchase_invoice'));
-    $filter_purchase_receipt = base64_decode($this->input->get('filter_purchase_receipt'));
-    $filter_purchase_order = base64_decode($this->input->get('filter_purchase_order'));
-    $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-    $filter_status_supplier = base64_decode($this->input->get('filter_status_supplier'));
-    $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-    $filter_status = base64_decode($this->input->get('filter_status'));
+    $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+    $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+    $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+    $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+    $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+    $filter_category_id = base64_decode((string) $this->input->get('filter_category_id'));
+    $filter_purchase_invoice = base64_decode((string) $this->input->get('filter_purchase_invoice'));
+    $filter_purchase_receipt = base64_decode((string) $this->input->get('filter_purchase_receipt'));
+    $filter_purchase_order = base64_decode((string) $this->input->get('filter_purchase_order'));
+    $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+    $filter_status_supplier = base64_decode((string) $this->input->get('filter_status_supplier'));
+    $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+    $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
         //Config
     $this->db->select('*');
@@ -2629,10 +2629,10 @@ public function print_backup($option = "")
         <td>' . $data['trans_date'] . '</td>
         <td>' . $data['due_date'] . '</td>
         <td>' . $data['payment_term'] . '</td>
-        <td style="text-align:right;">' . number_format($data['total_sub'], 4) . '</td>
-        <td style="text-align:right;">' . number_format($data['total_vat'], 4) . '</td>
-        <td style="text-align:right;">' . number_format($data['total_pph'], 4) . '</td>
-        <td style="text-align:right;">' . number_format($data['total_grand'], 4) . '</td>
+        <td style="text-align:right;">' . number_format((float) $data['total_sub'], 4) . '</td>
+        <td style="text-align:right;">' . number_format((float) $data['total_vat'], 4) . '</td>
+        <td style="text-align:right;">' . number_format((float) $data['total_pph'], 4) . '</td>
+        <td style="text-align:right;">' . number_format((float) $data['total_grand'], 4) . '</td>
         </tr>';
         $html .= '  <tr>
         <td colspan="11" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
@@ -2658,11 +2658,11 @@ public function print_backup($option = "")
             <td >' . $detail['created_by'] . '</td>
             <td>' . $detail['item_no'] . '</td>
             <td>' . $detail['item_name'] . '</td>
-            <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
+            <td style="text-align:right">' . number_format((float) $detail['qty'], 2) . '</td>
             <td>' . $detail['uom'] . '</td>
             <td>' . $detail['currency'] . '</td>
-            <td style="text-align:right">' . number_format($detail['price'], 2) . '</td>
-            <td style="text-align:right">' . number_format($detail['total'], 4)  . '</td>
+            <td style="text-align:right">' . number_format((float) $detail['price'], 2) . '</td>
+            <td style="text-align:right">' . number_format((float) $detail['total'], 4)  . '</td>
             </tr>';
         }
         $no++;
@@ -2696,19 +2696,19 @@ public function printDetail($option)
         header("Content-Disposition: attachment; filename=purchase_invoices_details_$format.xls");
     }
 
-    $filter_type  = base64_decode($this->input->get('filter_type'));
-    $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-    $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-    $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-    $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-    $filter_category_id = base64_decode($this->input->get('filter_category_id'));
-    $filter_purchase_invoice = base64_decode($this->input->get('filter_purchase_invoice'));
-    $filter_purchase_receipt = base64_decode($this->input->get('filter_purchase_receipt'));
-    $filter_purchase_order = base64_decode($this->input->get('filter_purchase_order'));
-    $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-    $filter_status_supplier = base64_decode($this->input->get('filter_status_supplier'));
-    $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-    $filter_status = base64_decode($this->input->get('filter_status'));
+    $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+    $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+    $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+    $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+    $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+    $filter_category_id = base64_decode((string) $this->input->get('filter_category_id'));
+    $filter_purchase_invoice = base64_decode((string) $this->input->get('filter_purchase_invoice'));
+    $filter_purchase_receipt = base64_decode((string) $this->input->get('filter_purchase_receipt'));
+    $filter_purchase_order = base64_decode((string) $this->input->get('filter_purchase_order'));
+    $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+    $filter_status_supplier = base64_decode((string) $this->input->get('filter_status_supplier'));
+    $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+    $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
     if ($filter_type == "PID") {
         $periode =  $filter_trans_date_from . ' to ' . $filter_trans_date_to;
@@ -2854,19 +2854,19 @@ public function printJournal($option)
         header("Content-Disposition: attachment; filename=purchase_invoices_journals_$format.xls");
     }
 
-    $filter_type  = base64_decode($this->input->get('filter_type'));
-    $filter_trans_date_from = base64_decode($this->input->get('filter_trans_date_from'));
-    $filter_trans_date_to = base64_decode($this->input->get('filter_trans_date_to'));
-    $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
-    $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
-    $filter_category_id = base64_decode($this->input->get('filter_category_id'));
-    $filter_purchase_invoice = base64_decode($this->input->get('filter_purchase_invoice'));
-    $filter_purchase_receipt = base64_decode($this->input->get('filter_purchase_receipt'));
-    $filter_purchase_order = base64_decode($this->input->get('filter_purchase_order'));
-    $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-    $filter_status_supplier = base64_decode($this->input->get('filter_status_supplier'));
-    $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-    $filter_status = base64_decode($this->input->get('filter_status'));
+    $filter_type  = base64_decode((string) $this->input->get('filter_type'));
+    $filter_trans_date_from = base64_decode((string) $this->input->get('filter_trans_date_from'));
+    $filter_trans_date_to = base64_decode((string) $this->input->get('filter_trans_date_to'));
+    $filter_due_date_from = base64_decode((string) $this->input->get('filter_due_date_from'));
+    $filter_due_date_to = base64_decode((string) $this->input->get('filter_due_date_to'));
+    $filter_category_id = base64_decode((string) $this->input->get('filter_category_id'));
+    $filter_purchase_invoice = base64_decode((string) $this->input->get('filter_purchase_invoice'));
+    $filter_purchase_receipt = base64_decode((string) $this->input->get('filter_purchase_receipt'));
+    $filter_purchase_order = base64_decode((string) $this->input->get('filter_purchase_order'));
+    $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+    $filter_status_supplier = base64_decode((string) $this->input->get('filter_status_supplier'));
+    $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+    $filter_status = base64_decode((string) $this->input->get('filter_status'));
 
     if ($filter_type == "PID") {
         $periode =  $filter_trans_date_from . ' to ' . $filter_trans_date_to;
@@ -3035,7 +3035,7 @@ function exportAccurate($id) {
 
             // HEADER row
             fputcsv($output, [
-                'HEADER', $invoice['invoice_number'], $invoice['faktur_no'], date('d/m/Y', strtotime($invoice['trans_date'])), $invoice['supp_id'], $invoice['address'], $ppn,'Tidak', $invoice['faktur_no'], 'Ya', 
+                'HEADER', $invoice['invoice_number'], $invoice['faktur_no'], date('d/m/Y', strtotime((string) $invoice['trans_date'])), $invoice['supp_id'], $invoice['address'], $ppn,'Tidak', $invoice['faktur_no'], 'Ya', 
                 '', '', $invoice['invoice_no'], '', '', '', '', '', '', '', 
                 '', '', '', '', '', '', '', '', '', '', 
                 '', '', '', '', ''

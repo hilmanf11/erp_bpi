@@ -16,10 +16,10 @@
             <th rowspan="2" data-options="field:'type',width:80,halign:'center'">Type</th>
             <?php 
                 if ($this->input->get('filter_from') && $this->input->get('filter_to')) {
-                    $filter_from = base64_decode($this->input->get('filter_from'));
-                    $filter_to = base64_decode($this->input->get('filter_to'));
-                    $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-                    $filter_item_rm = base64_decode($this->input->get('filter_item_rm'));
+                    $filter_from = base64_decode((string) $this->input->get('filter_from'));
+                    $filter_to = base64_decode((string) $this->input->get('filter_to'));
+                    $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+                    $filter_item_rm = base64_decode((string) $this->input->get('filter_item_rm'));
                 } else {
                     $filter_from = date("Y-m-01");
                     $filter_to = date("Y-m-t");
@@ -29,10 +29,10 @@
             
                 $currentDate = $filter_from;
                 $tgl = 1;
-                while (strtotime($currentDate) <= strtotime($filter_to)) {
-                    $working_date = date('d M', strtotime($currentDate));
+                while (strtotime((string) $currentDate) <= strtotime((string) $filter_to)) {
+                    $working_date = date('d M', strtotime((string) $currentDate));
             
-                    if (date('w', strtotime($currentDate)) !== '0') {
+                    if (date('w', strtotime((string) $currentDate)) !== '0') {
                         $hstyle = "";
                     } else {
                         $hstyle = "background-color:#FFB0B0";
@@ -41,7 +41,7 @@
             <th rowspan="2" data-options="field:'qty_<?= $tgl ?>',width:80,halign:'center', align:'right',hstyler: function(value, row, index) { return '<?= $hstyle ?>'; }"><?= $working_date ?></th>
             <?php
                     $tgl++;
-                    $currentDate = date("Y-m-d", strtotime("+1 day", strtotime($currentDate)));
+                    $currentDate = date("Y-m-d", strtotime("+1 day", strtotime((string) $currentDate)));
                 }
             ?>
         </tr>

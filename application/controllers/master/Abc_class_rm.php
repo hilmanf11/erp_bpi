@@ -42,7 +42,7 @@ class Abc_class_rm extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -91,7 +91,7 @@ class Abc_class_rm extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('safety_stock_abc', ["id" => $id], $post);
             echo $send;
@@ -156,8 +156,8 @@ class Abc_class_rm extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
-            $start = number_format($data['start'], 2);
-            $ending = number_format($data['ending'], 2);
+            $start = number_format((float) $data['start'], 2);
+            $ending = number_format((float) $data['ending'], 2);
 
             $html .= '<tr>
                     <td>' . $no . '</td>

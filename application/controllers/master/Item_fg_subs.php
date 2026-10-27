@@ -162,9 +162,9 @@ class Item_fg_subs extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
-            $process_assembly_id = base64_decode($this->input->get('process_assembly_id'));
-            $filter_item_fg_sa_id = base64_decode($this->input->get('filter_item_fg_sa_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
+            $process_assembly_id = base64_decode((string) $this->input->get('process_assembly_id'));
+            $filter_item_fg_sa_id = base64_decode((string) $this->input->get('filter_item_fg_sa_id'));
 
             $this->db->select("a.*, b.number as item_fg_sa_number, b.name as item_fg_sa_name, b.type, 'FINISHED GOOD' as item_category_name");
             $this->db->from('item_fg_subs a');
@@ -184,8 +184,8 @@ class Item_fg_subs extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
-            $process_assembly_id = base64_decode($this->input->get('process_assembly_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
+            $process_assembly_id = base64_decode((string) $this->input->get('process_assembly_id'));
             $this->db->select("a.*, b.number as item_fg_sa_number, b.name as item_fg_sa_name, b.type");
             $this->db->from('item_fg_subs a');
             $this->db->join('item_fg b', 'a.item_fg_sa_id = b.id', 'left');

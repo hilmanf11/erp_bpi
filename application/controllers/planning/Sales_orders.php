@@ -129,7 +129,7 @@ class Sales_orders extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $sales_order_no = base64_decode((string) $this->input->get('sales_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('sales_orders a');
@@ -146,7 +146,7 @@ class Sales_orders extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $sales_order_no = base64_decode((string) $this->input->get('sales_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('sales_orders a');

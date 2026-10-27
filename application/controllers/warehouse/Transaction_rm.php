@@ -211,7 +211,7 @@ class Transaction_rm extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime($trans_date));
+        $datenow    = date("ymd", strtotime((string) $trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM transaction_rm WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -258,7 +258,7 @@ class Transaction_rm extends CI_Controller
             // $filter_period = $this->input->get('filter_period');
             // $filter_workorder   = $this->input->get('filter_workorder');
             $filter_request_no = $this->input->get('filter_request_no');
-            $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+            $filter_product_no = base64_decode((string) $this->input->get('filter_product_no'));
             $filter_product_family = $this->input->get('filter_product_family');
             // $filter_kanban_date = $this->input->get('filter_kanban_date');
             $filter_from = $this->input->get('filter_from');
@@ -703,7 +703,7 @@ class Transaction_rm extends CI_Controller
         // $filter_period = $this->input->get('filter_period');
         // $filter_workorder   = $this->input->get('filter_workorder');
         $filter_request_no = $this->input->get('filter_request_no');
-        $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+        $filter_product_no = base64_decode((string) $this->input->get('filter_product_no'));
         $filter_product_family = $this->input->get('filter_product_family');
         // $filter_kanban_date = $this->input->get('filter_kanban_date');
         $filter_from  = $this->input->get('filter_from');
@@ -927,7 +927,7 @@ class Transaction_rm extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -1074,7 +1074,7 @@ class Transaction_rm extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                         </th>
                                         <th style="text-align:left">

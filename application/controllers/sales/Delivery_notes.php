@@ -30,7 +30,7 @@ class Delivery_notes extends CI_Controller
 
     public function reads()
     {
-        $dn_number = base64_decode($this->input->get('delivery_note_no'));
+        $dn_number = base64_decode((string) $this->input->get('delivery_note_no'));
 
         $this->db->select('a.*, b.id as item_fg_id, b.name as item_name, b.number as item_number, b.uom, b.weight');
         $this->db->select('b.hs_code');
@@ -322,7 +322,7 @@ class Delivery_notes extends CI_Controller
     public function number($delivery_note_date, $divison_number)
     {
         $divison_number = base64_decode($divison_number);
-        $customer_number = base64_decode($this->input->post('customer_number'));
+        $customer_number = base64_decode((string) $this->input->post('customer_number'));
 
         $numberCust = $customer_number;
         $divisions  = "DN". $divison_number;
@@ -349,7 +349,7 @@ class Delivery_notes extends CI_Controller
         // var_dump($delivery_note_dates);
         $numberCust = $customer_numbers;
         $divisions  = "DN". $divison_numbers;
-        $datenow    = date("my", strtotime($delivery_note_dates));
+        $datenow    = date("my", strtotime((string) $delivery_note_dates));
         // var_dump($datenow);
         $dn_no      = $numberCust . "-" . $datenow;
         $sqlGetID   = $this->db->query("SELECT MAX(SUBSTR(delivery_note_no, 7, 4)) as kode FROM delivery_notes WHERE `delivery_note_no` like '%$dn_no%'");
@@ -574,7 +574,7 @@ class Delivery_notes extends CI_Controller
         $old_qty = (float) $this->input->post('old_qty', TRUE);
         $new_qty = (float) $this->input->post('new_qty', TRUE);
         
-        $labels_to_delete = json_decode($this->input->post('labels_to_delete', TRUE), TRUE);
+        $labels_to_delete = json_decode((string) $this->input->post('labels_to_delete', TRUE), TRUE);
 
         if (empty($new_so)) {
             $new_so = $old_so;
@@ -879,7 +879,7 @@ class Delivery_notes extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
+            $delivery_note_no = base64_decode((string) $this->input->get('delivery_note_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name ,
             COALESCE(a.sales_order_no, a.sales_order_no_rm) as sales_order_number, 
@@ -907,7 +907,7 @@ class Delivery_notes extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
+            $delivery_note_no = base64_decode((string) $this->input->get('delivery_note_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, a.address_id');
             $this->db->select('b.hs_code');
@@ -1326,7 +1326,7 @@ class Delivery_notes extends CI_Controller
                                 <td>' . $record['hs_code'] . '</td>
                                 <td>' . $record['item_fg_name'] . '</td>
                                 <td>' . $record['uom'] . '</td>
-                                <td style="text-align:right">' . number_format($record['qty'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['qty'], 2, ",", ".") . '</td>
                                 <td>' . $record['customer_order_no'] . '</td>
                                 <td>' . $record['remarks'] . '</td>
                             </tr>';
@@ -1335,7 +1335,7 @@ class Delivery_notes extends CI_Controller
             }
             $html .= '<tr>
             <td colspan="5" style="text-align:right; font-weight:bold;">Total</td>
-            <td style="text-align:right; font-weight:bold;">' . number_format($total_qty, 2, ",", ".") . '</td>
+            <td style="text-align:right; font-weight:bold;">' . number_format((float) $total_qty, 2, ",", ".") . '</td>
             <td colspan="2"></td>
           </tr>';
 

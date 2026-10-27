@@ -251,7 +251,7 @@ class Purchase_dashboard extends CI_Controller
         // Label formatting
         if (empty($trend_labels)) {
             $trend_labels = array_map(function($l) use ($filter_period_type) {
-                if ($filter_period_type == 'daily') return date('d M Y', strtotime($l));
+                if ($filter_period_type == 'daily') return date('d M Y', strtotime((string) $l));
                 if ($filter_period_type == 'monthly') return date('M Y', strtotime($l . "-01"));
                 return $l; // Yearly
             }, $labels);
@@ -283,7 +283,7 @@ class Purchase_dashboard extends CI_Controller
 
         // --- PREPARE FINAL RESPONSE ---
         $trend_values = array_values($mapped_trend);
-        // $trend_labels = array_map(function($l) { return date('d M Y', strtotime($l)); }, $labels); // comment: bug labels yearly
+        // $trend_labels = array_map(function($l) { return date('d M Y', strtotime((string) $l)); }, $labels); // comment: bug labels yearly
         
         $average = count($trend_values) > 0 ? (array_sum($trend_values) / count($trend_values)) : 0;
         $avg_values = array_fill(0, count($trend_values), round($average, 2));
@@ -294,9 +294,9 @@ class Purchase_dashboard extends CI_Controller
         if ($filter_period_type == 'yearly') {
             $period_text = "Period: " . $start_year . " to " . $year;
         } elseif ($filter_period_type == 'weekly') {
-            $period_text = "Period: " . $start->format('d M') . " - " . date('d M Y', strtotime($period_end_date)) . " (6 Weeks)";
+            $period_text = "Period: " . $start->format('d M') . " - " . date('d M Y', strtotime((string) $period_end_date)) . " (6 Weeks)";
         } else {
-            $period_text = "Period: " . date($label_format, strtotime($period_start_date)) . " to " . date($label_format, strtotime($period_end_date));
+            $period_text = "Period: " . date($label_format, strtotime((string) $period_start_date)) . " to " . date($label_format, strtotime((string) $period_end_date));
         }
 
         $result = [
@@ -498,13 +498,13 @@ class Purchase_dashboard extends CI_Controller
             $date = $row['date_ref'];
             
             if ($filter_period_type == "daily") {
-                $key = date('Y-m-d', strtotime($date));
+                $key = date('Y-m-d', strtotime((string) $date));
             } elseif ($filter_period_type == "weekly") {
-                $key = date('oW', strtotime($date)); // ISO-8601 week year + week number
+                $key = date('oW', strtotime((string) $date)); // ISO-8601 week year + week number
             } elseif ($filter_period_type == "monthly") {
-                $key = date('Y-m', strtotime($date));
+                $key = date('Y-m', strtotime((string) $date));
             } elseif ($filter_period_type == "yearly") {
-                $key = date('Y', strtotime($date));
+                $key = date('Y', strtotime((string) $date));
             }
 
             if (isset($mapped_plan[$key])) {
@@ -522,13 +522,13 @@ class Purchase_dashboard extends CI_Controller
             $date = $row['date_ref'];
 
             if ($filter_period_type == "daily") {
-                $key = date('Y-m-d', strtotime($date));
+                $key = date('Y-m-d', strtotime((string) $date));
             } elseif ($filter_period_type == "weekly") {
-                $key = date('oW', strtotime($date));
+                $key = date('oW', strtotime((string) $date));
             } elseif ($filter_period_type == "monthly") {
-                $key = date('Y-m', strtotime($date));
+                $key = date('Y-m', strtotime((string) $date));
             } elseif ($filter_period_type == "yearly") {
-                $key = date('Y', strtotime($date));
+                $key = date('Y', strtotime((string) $date));
             }
 
             if (isset($mapped_actual[$key])) {
@@ -546,14 +546,14 @@ class Purchase_dashboard extends CI_Controller
         if ($filter_period_type == "weekly") {
             $display_labels = $trend_labels;
         } elseif ($filter_period_type == "daily") {
-            $display_labels = array_map(function($l) { return date('d M Y', strtotime($l)); }, $labels);
+            $display_labels = array_map(function($l) { return date('d M Y', strtotime((string) $l)); }, $labels);
         } elseif ($filter_period_type == "monthly") {
             $display_labels = array_map(function($l) { return date('M Y', strtotime($l . "-01")); }, $labels);
         }
 
         $division_text = !empty($filter_division) ? strtoupper($filter_division) : "ALL Division";
         $title = "Purchase Amount (IDR) Plan VS Actual - " . $division_text;
-        $period_text = "Period: " . date('d M Y', strtotime($period_start_date)) . " to " . date('d M Y', strtotime($period_end_date));
+        $period_text = "Period: " . date('d M Y', strtotime((string) $period_start_date)) . " to " . date('d M Y', strtotime((string) $period_end_date));
 
         echo json_encode([
             'title'         => $title, 
@@ -750,10 +750,10 @@ class Purchase_dashboard extends CI_Controller
 
         // Key by Period Type
         $period_type = function($date) use ($filter_period_type) {
-            if ($filter_period_type == "daily") return date('Y-m-d', strtotime($date));
-            if ($filter_period_type == "weekly") return date('oW', strtotime($date));
-            if ($filter_period_type == "monthly") return date('Y-m', strtotime($date));
-            if ($filter_period_type == "yearly") return date('Y', strtotime($date));
+            if ($filter_period_type == "daily") return date('Y-m-d', strtotime((string) $date));
+            if ($filter_period_type == "weekly") return date('oW', strtotime((string) $date));
+            if ($filter_period_type == "monthly") return date('Y-m', strtotime((string) $date));
+            if ($filter_period_type == "yearly") return date('Y', strtotime((string) $date));
             return "";
         };
 
@@ -809,7 +809,7 @@ class Purchase_dashboard extends CI_Controller
         if ($filter_period_type == "weekly") {
             $display_labels = $trend_labels;
         } elseif ($filter_period_type == "daily") {
-            $display_labels = array_map(function($l) { return date('d M Y', strtotime($l)); }, $labels);
+            $display_labels = array_map(function($l) { return date('d M Y', strtotime((string) $l)); }, $labels);
         } elseif ($filter_period_type == "monthly") {
             $display_labels = array_map(function($l) { return date('M Y', strtotime($l . "-01")); }, $labels);
         }
@@ -819,7 +819,7 @@ class Purchase_dashboard extends CI_Controller
         // Bangun array response dasar
         $final_res = [
             'title'  => "Purchase Amount (IDR) by Product Family - " . $division_text,
-            'period' => "Period: " . date('d M Y', strtotime($period_start_date)) . " to " . date('d M Y', strtotime($period_end_date)),
+            'period' => "Period: " . date('d M Y', strtotime((string) $period_start_date)) . " to " . date('d M Y', strtotime((string) $period_end_date)),
             'labels' => $display_labels,
         ];
 
@@ -837,7 +837,7 @@ class Purchase_dashboard extends CI_Controller
     private function _find_rate_in_cache($date, $currency) {
         if ($currency == "IDR" || empty($currency)) return 1.0;
         
-        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($date)));
+        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $date)));
         foreach ($this->_get_rates as $r) {
             if ($r['currency_from'] == $currency && $r['start_date'] == $monthBf) {
                 return (float)$r['middle'];

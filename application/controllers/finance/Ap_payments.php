@@ -83,12 +83,12 @@ class Ap_payments extends CI_Controller
     //     $payment_date = $this->input->post('payment_date');
     //     $currency = $this->input->post('currency');
         
-    //     $search_date = date("d", strtotime($payment_date));
+    //     $search_date = date("d", strtotime((string) $payment_date));
     //     if($search_date == "31"){
-    //       $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+    //       $payment_date = date("Y-m-d", strtotime('-1 days', strtotime((string) $payment_date)));
     //     }
         
-    //     $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+    //     $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $payment_date)));
     //     $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
     //     if ($exchange) {
@@ -97,7 +97,7 @@ class Ap_payments extends CI_Controller
     //         $amount = 0;
     //     }
 
-    //     echo "Rp. " . number_format($amount, 2);
+    //     echo "Rp. " . number_format((float) $amount, 2);
     // }
 
     function readExchangeRate()
@@ -125,7 +125,7 @@ class Ap_payments extends CI_Controller
 
         echo json_encode([
             'amount' => $amount,
-            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format($amount, 2)
+            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format((float) $amount, 2)
         ]);
     }
 
@@ -191,8 +191,8 @@ class Ap_payments extends CI_Controller
                 "description"    => $description,
                 "currency"       => $currency,
                 "exchange_rate"  => $exchange_trans_date,
-                "debit"          => number_format($debit_original, 2, '.', ''),
-                "credit"         => number_format($credit_original, 2, '.', ''),
+                "debit"          => number_format((float) $debit_original, 2, '.', ''),
+                "credit"         => number_format((float) $credit_original, 2, '.', ''),
                 "local_debit"    => $local_debit,
                 "local_credit"   => $local_credit,
                 "flag"           => $flag
@@ -209,15 +209,15 @@ class Ap_payments extends CI_Controller
         }
 
         if($grand_total < 0){
-            $debit = abs($grand_total);
+            $debit = abs($grand_total ?? 0);
             $credit = 0;
-            $local_debit = abs($grand_total_local);
+            $local_debit = abs($grand_total_local ?? 0);
             $local_credit = 0;
         }else{
             $debit = 0;
-            $credit = abs($grand_total);
+            $credit = abs($grand_total ?? 0);
             $local_debit = 0;
-            $local_credit = abs($grand_total_local);
+            $local_credit = abs($grand_total_local ?? 0);
         }
         
         // --- Akun Bank ---
@@ -242,10 +242,10 @@ class Ap_payments extends CI_Controller
         $final_local_credit = array_sum(array_column($arr, 'local_credit'));
         $difference = round($final_local_debit - $final_local_credit, 2);
 
-        if ($currency !== "IDR" && abs($difference) > 0.01) {
+        if ($currency !== "IDR" && abs($difference ?? 0) > 0.01) {
             $isLoss = ($difference < 0);
-            $gainLossDebit  = $isLoss ? abs($difference) : 0;
-            $gainLossCredit = !$isLoss ? abs($difference) : 0;
+            $gainLossDebit  = $isLoss ? abs($difference ?? 0) : 0;
+            $gainLossCredit = !$isLoss ? abs($difference ?? 0) : 0;
 
             $arr[] = [
                 "account_number" => "810.150.00",
@@ -377,11 +377,11 @@ class Ap_payments extends CI_Controller
         $gainLossCredit = 0;
 
         if ($currency !== "IDR") {
-            if (abs($difference) > 0.01) {
+            if (abs($difference ?? 0) > 0.01) {
                 if ($difference > 0) {
-                    $gainLossCredit = abs($difference);
+                    $gainLossCredit = abs($difference ?? 0);
                 } else {
-                    $gainLossDebit = abs($difference);
+                    $gainLossDebit = abs($difference ?? 0);
                 }
 
                 $account_gain_loss = $this->db->select('*')->from('account_coa')->where('account_number', '810.150.00')->get()->row();
@@ -427,12 +427,12 @@ class Ap_payments extends CI_Controller
             $currency = $jsonData['currency'];
             $payment_date = $jsonData['payment_date'];
 
-            // $search_date = date("d", strtotime($payment_date));
+            // $search_date = date("d", strtotime((string) $payment_date));
             // if($search_date == "31"){
-            //   $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+            //   $payment_date = date("Y-m-d", strtotime('-1 days', strtotime((string) $payment_date)));
             // }
 
-            // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+            // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $payment_date)));
             // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
             $this->db->select('middle');
@@ -728,8 +728,8 @@ class Ap_payments extends CI_Controller
     {
         if (!empty($trans_date) && !empty($bank_code)) {
             $decoded_date = base64_decode($trans_date);
-            $year = date("y", strtotime($decoded_date));
-            $month = date("m", strtotime($decoded_date));
+            $year = date("y", strtotime((string) $decoded_date));
+            $month = date("m", strtotime((string) $decoded_date));
             // $bank_code = base64_decode($bank_code);
             $datenow    = $bank_code."/".$month."-".$year."/"."K";
             $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
@@ -750,7 +750,7 @@ class Ap_payments extends CI_Controller
     // Bug PI tidak tampil dan tanpa PI status
     public function datatablesTemp1()
     {
-        $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
+        $purchase_invoice = base64_decode((string) $this->input->get('purchase_invoice'));
         $purchase_invoice_ex = explode(",", $purchase_invoice);
 
         $this->db->select("number, journal_type_id, invoice_no, currency, (SUM(CASE WHEN account_type = 'DEBIT' THEN total ELSE -total END) + total_vat - total_pph) as total");
@@ -852,7 +852,7 @@ class Ap_payments extends CI_Controller
 
     public function datatablesTemp()
     {
-        $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
+        $purchase_invoice = base64_decode((string) $this->input->get('purchase_invoice'));
         $purchase_invoice_ex = explode(",", $purchase_invoice);
         $formMode = $this->input->get('formMode') ?? 'add';
 
@@ -980,7 +980,7 @@ class Ap_payments extends CI_Controller
 
     public function datatablesTemp_existing()
     {
-        $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
+        $purchase_invoice = base64_decode((string) $this->input->get('purchase_invoice'));
         $purchase_invoice_ex = explode(",", $purchase_invoice);
 
         // var_dump($purchase_invoice_ex);
@@ -1031,14 +1031,14 @@ class Ap_payments extends CI_Controller
 
     public function datatables($details = "")
     {
-        $filter_payment_type  = base64_decode($this->input->get('filter_payment_type'));
-        $filter_payment_date_from = base64_decode($this->input->get('filter_payment_date_from'));
-        $filter_payment_date_to = base64_decode($this->input->get('filter_payment_date_to'));
-        $filter_payment_no = base64_decode($this->input->get('filter_payment_no'));
-        $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_bank_no = base64_decode($this->input->get('filter_bank_no'));
-        $filter_payment_by = base64_decode($this->input->get('filter_payment_by'));
+        $filter_payment_type  = base64_decode((string) $this->input->get('filter_payment_type'));
+        $filter_payment_date_from = base64_decode((string) $this->input->get('filter_payment_date_from'));
+        $filter_payment_date_to = base64_decode((string) $this->input->get('filter_payment_date_to'));
+        $filter_payment_no = base64_decode((string) $this->input->get('filter_payment_no'));
+        $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_bank_no = base64_decode((string) $this->input->get('filter_bank_no'));
+        $filter_payment_by = base64_decode((string) $this->input->get('filter_payment_by'));
 
         $date_from = date("Y-m-01");
         $date_to = date("Y-m-t");
@@ -1080,7 +1080,7 @@ class Ap_payments extends CI_Controller
             //Get Data Array
             $records = $this->db->get()->result_array();
         } else {
-            $payment_no = base64_decode($this->input->get('payment_no'));
+            $payment_no = base64_decode((string) $this->input->get('payment_no'));
 
             $this->db->select('*');
             $this->db->select("'view' as details");
@@ -1280,7 +1280,7 @@ class Ap_payments extends CI_Controller
             $post = $this->input->post();
 
             // check journal_type_id
-            $input_value = trim($post['journal_type_id']) ?? '';
+            $input_value = trim((string) $post['journal_type_id']) ?? '';
             if (!is_numeric($input_value) || empty($input_value)) {
                 $this->db->select('id');
                 $this->db->from('journal_types');
@@ -1417,8 +1417,8 @@ class Ap_payments extends CI_Controller
             $voucher_no = "";
         }else{
             $number = @$row_menu->number;
-            $yearnow = date("y", strtotime($row_menu->start_date));
-            $yearend = date("y", strtotime($row_menu->end_date));
+            $yearnow = date("y", strtotime((string) $row_menu->start_date));
+            $yearend = date("y", strtotime((string) $row_menu->end_date));
 
             $whereDate = $number.$yearnow.$yearend."1";
 
@@ -1800,7 +1800,7 @@ class Ap_payments extends CI_Controller
         $account_coa   = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
         $journal_types = $this->crud->read('journal_types', ["number" => $data['journal_number']]);
         $purchase_data = $this->crud->read('purchase_invoices', [], ["number" => $data['purchase_invoice'], "account_number" => $data['account_number']]);
-        $account_banks = $this->db->select('*')->from('account_banks')->like('bank_account', trim($data['bank_account']), 'both')->get()->row();
+        $account_banks = $this->db->select('*')->from('account_banks')->like('bank_account', trim((string) $data['bank_account']), 'both')->get()->row();
         
         // Tambahkan validasi jika Payment No. sudah ada dari insert via Form bukan via upload (Bu Nina)
         $this->db->select('*');
@@ -1862,8 +1862,8 @@ class Ap_payments extends CI_Controller
             if (empty($payment_no_from_excel) || $payment_no_from_excel === '-') {
                 // KONDISI 1: Jika data dari excel kosong atau '-', buat nomor baru.
                 $trans_date = $data['payment_date'];
-                $year = date("y", strtotime($trans_date));
-                $month = date("m", strtotime($trans_date));
+                $year = date("y", strtotime((string) $trans_date));
+                $month = date("m", strtotime((string) $trans_date));
                 $bank_code  = $account_banks->bank_code ?? $data['bank_account'];
 
                 $datenow    = $bank_code."/".$month."-".$year."/"."K";
@@ -1891,7 +1891,7 @@ class Ap_payments extends CI_Controller
             // Get Rate
             $currency  = $data['currency'];
             $date_rate = $data['payment_date'];
-            $monthBf   = date('Y-m-01', strtotime('-1 month', strtotime($date_rate)));
+            $monthBf   = date('Y-m-01', strtotime('-1 month', strtotime((string) $date_rate)));
             $exchange  = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
             if ($currency != "IDR") {
                 if ($exchange) {
@@ -2122,7 +2122,7 @@ class Ap_payments extends CI_Controller
                 if (count($ap_payment_no) > 0) {
                     $payment_no = $ap_payment_no[0]->payment_no;
                 } else {
-                    $datenow    = "AP-" . date("Ymd", strtotime($data['payment_date']));
+                    $datenow    = "AP-" . date("Ymd", strtotime((string) $data['payment_date']));
                     $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
                     $rowID      = $sqlGetID->row();
                     $kode       = $rowID->kode;
@@ -2292,12 +2292,12 @@ class Ap_payments extends CI_Controller
             $payment_date = $records[0]['payment_date'];
             $currency = $records[0]['currency'];
 
-            $search_date = date("d", strtotime($payment_date));
+            $search_date = date("d", strtotime((string) $payment_date));
             if($search_date == "31"){
-              $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+              $payment_date = date("Y-m-d", strtotime('-1 days', strtotime((string) $payment_date)));
             }
 
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $payment_date)));
             $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
             if ($exchange) {
@@ -2308,7 +2308,7 @@ class Ap_payments extends CI_Controller
                 $hide = "hidden";
             }
             // <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $payment_no . '.png') . '" width="60"/></td>
-            $exchangeName = "Rp. " . number_format($amount, 2);
+            $exchangeName = "Rp. " . number_format((float) $amount, 2);
 
             $html .= '<table style="width:100%;">
                             <tr>
@@ -2372,7 +2372,7 @@ class Ap_payments extends CI_Controller
                                         <tr>
                                             <td width="80">Payment Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime($records[0]['payment_date'])) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime((string) $records[0]['payment_date'])) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Bank Account</td>
@@ -2415,8 +2415,8 @@ class Ap_payments extends CI_Controller
                                 <td>' . $record['supplier_invoice'] . '</td>
                                 <td>' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($record['amount']), 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['balance'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['payment'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['balance'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['payment'], 2) . '</td>
                             </tr>';
                 $no++;
             }
@@ -2424,7 +2424,7 @@ class Ap_payments extends CI_Controller
             // if (($i + 1) == $page) {
             //     $html_grand_total = '<tr>
             //                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-            //                 <th style="text-align:right;">' . @number_format($subtotal, 2) . '</th>
+            //                 <th style="text-align:right;">' . @number_format((float) $subtotal, 2) . '</th>
             //             </tr>';
             // }else{
             //     $html_grand_total = "";
@@ -2432,21 +2432,21 @@ class Ap_payments extends CI_Controller
 
             // $html .= '  <tr>
             //                 <th style="text-align:right" colspan="6">SUB TOTAL</th>
-            //                 <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+            //                 <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
             //             </tr>
             //             '.$html_grand_total.'
             //         </table>';
 
             // $html .= '  <tr>
             //                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-            //                 <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+            //                 <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
             //             </tr>
             //         </table>';
 
             if (($i + 1) == $page) { 
                 $html .= '  <tr>
                                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-                                <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+                                <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
                             </tr>';
             }
             
@@ -2505,19 +2505,19 @@ class Ap_payments extends CI_Controller
                                 <td>' . $journal->account_number . '</td>
                                 <td>' . $journal->account_name . '</td>
                                 <td>' . $journal->description . '</td>
-                                <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->local_debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->local_credit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->credit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->local_debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->local_credit, 2) . '</td>
                             </tr>';
             }
 
             $html .= '      <tr>
                                 <td colspan="3"><b>BALANCE TOTAL</b></td>
-                                <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($local_total_debit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($local_total_credit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $total_debit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $total_credit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $local_total_debit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $local_total_credit, 2) . '</td>
                             </tr>
                         </table>
                     </div>';
@@ -2582,7 +2582,7 @@ class Ap_payments extends CI_Controller
         $header_supplier = !empty($payment_total) ? $payment_total[0]['supplier_name'] : '-';
         $header_pay_by   = !empty($payment_total) ? $payment_total[0]['payment_by'] : '-';
         $header_pay_no   = !empty($payment_total) ? $payment_total[0]['payment_no'] : $payment_no;
-        $header_date     = !empty($payment_total) ? date("d F Y", strtotime($payment_total[0]['payment_date'])) : date("d F Y");
+        $header_date     = !empty($payment_total) ? date("d F Y", strtotime((string) $payment_total[0]['payment_date'])) : date("d F Y");
         $header_bank_acc = !empty($payment_total) ? $payment_total[0]['bank_account'] : '-';
         $header_bank_nm  = !empty($payment_total) ? $payment_total[0]['bank_name'] : '-';
         $header_curr     = !empty($payment_total) ? $payment_total[0]['currency'] : 'IDR';
@@ -2660,12 +2660,12 @@ class Ap_payments extends CI_Controller
             $payment_date = $records[0]['payment_date'];
             $currency = $records[0]['currency'];
 
-            $search_date = date("d", strtotime($payment_date));
+            $search_date = date("d", strtotime((string) $payment_date));
             if($search_date == "31"){
-              $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+              $payment_date = date("Y-m-d", strtotime('-1 days', strtotime((string) $payment_date)));
             }
 
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $payment_date)));
             $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
             if ($exchange) {
@@ -2676,7 +2676,7 @@ class Ap_payments extends CI_Controller
                 $hide = "hidden";
             }
             // <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $payment_no . '.png') . '" width="60"/></td>
-            $exchangeName = "Rp. " . number_format($amount, 2);
+            $exchangeName = "Rp. " . number_format((float) $amount, 2);
 
             $html .= '<table style="width:100%;">
                             <tr>
@@ -2778,9 +2778,9 @@ class Ap_payments extends CI_Controller
                 }
 
                 if($record['account_type'] == "CREDIT"){
-                    $payment = "(".@number_format($record['payment'], 2).")";
+                    $payment = "(".@number_format((float) $record['payment'], 2).")";
                 }else{
-                    $payment = @number_format($record['payment'], 2);
+                    $payment = @number_format((float) $record['payment'], 2);
                 }
 
                 $html .= '  <tr>
@@ -2789,7 +2789,7 @@ class Ap_payments extends CI_Controller
                                 <td>' . $record['supplier_invoice'] . '</td>
                                 <td>' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($record['amount']), 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['balance'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $record['balance'], 2) . '</td>
                                 <td style="text-align:right;">' . $payment . '</td>
                             </tr>';
                 $no++;
@@ -2798,7 +2798,7 @@ class Ap_payments extends CI_Controller
             // if (($i + 1) == $page) {
             //     $html_grand_total = '<tr>
             //                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-            //                 <th style="text-align:right;">' . @number_format($subtotal, 2) . '</th>
+            //                 <th style="text-align:right;">' . @number_format((float) $subtotal, 2) . '</th>
             //             </tr>';
             // }else{
             //     $html_grand_total = "";
@@ -2806,21 +2806,21 @@ class Ap_payments extends CI_Controller
 
             // $html .= '  <tr>
             //                 <th style="text-align:right" colspan="6">SUB TOTAL</th>
-            //                 <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+            //                 <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
             //             </tr>
             //             '.$html_grand_total.'
             //         </table>';
 
             // $html .= '  <tr>
             //                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-            //                 <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+            //                 <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
             //             </tr>
             //         </table>';
 
             if (($i + 1) == $page) { 
                 $html .= '  <tr>
                                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-                                <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+                                <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
                             </tr>';
             }
             
@@ -2882,19 +2882,19 @@ class Ap_payments extends CI_Controller
                                 <td>' . $journal->account_number . '</td>
                                 <td>' . $journal->account_name . '</td>
                                 <td>' . $journal->description . '</td>
-                                <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->local_debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->local_credit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->credit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->local_debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->local_credit, 2) . '</td>
                             </tr>';
             }
 
             $html .= '      <tr>
                                 <td colspan="3"><b>BALANCE TOTAL</b></td>
-                                <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($local_total_debit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($local_total_credit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $total_debit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $total_credit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $local_total_debit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $local_total_credit, 2) . '</td>
                             </tr>
                         </table>
                     </div>';
@@ -2941,14 +2941,14 @@ class Ap_payments extends CI_Controller
             echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />';
         }
 
-        $filter_payment_type  = base64_decode($this->input->get('filter_payment_type'));
-        $filter_payment_date_from = base64_decode($this->input->get('filter_payment_date_from'));
-        $filter_payment_date_to = base64_decode($this->input->get('filter_payment_date_to'));
-        $filter_payment_no = base64_decode($this->input->get('filter_payment_no'));
-        $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_bank_no = base64_decode($this->input->get('filter_bank_no'));
-        $filter_payment_by = base64_decode($this->input->get('filter_payment_by'));
+        $filter_payment_type  = base64_decode((string) $this->input->get('filter_payment_type'));
+        $filter_payment_date_from = base64_decode((string) $this->input->get('filter_payment_date_from'));
+        $filter_payment_date_to = base64_decode((string) $this->input->get('filter_payment_date_to'));
+        $filter_payment_no = base64_decode((string) $this->input->get('filter_payment_no'));
+        $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_bank_no = base64_decode((string) $this->input->get('filter_bank_no'));
+        $filter_payment_by = base64_decode((string) $this->input->get('filter_payment_by'));
 
         //Config
         $this->db->select('*');
@@ -3048,9 +3048,9 @@ class Ap_payments extends CI_Controller
                                 <td>' . $detail['purchase_invoice'] . '</td>
                                 <td>' . $detail['supplier_invoice'] . '</td>
                                 <td>' . $detail['currency'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['amount'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($detail['balance'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($detail['payment'], 2, ",", ".")  . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['amount'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['balance'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $detail['payment'], 2, ",", ".")  . '</td>
                                 <td>' . $detail['remarks'] . '</td>
                                 <td>' . $detail['account_number'] . '</td>
                                 <td>' . $detail['account_type'] . '</td>
@@ -3087,14 +3087,14 @@ class Ap_payments extends CI_Controller
             header("Content-Disposition: attachment; filename=ap_payment_detail_$format.xls");
         }
 
-        $filter_payment_type  = base64_decode($this->input->get('filter_payment_type'));
-        $filter_payment_date_from = base64_decode($this->input->get('filter_payment_date_from'));
-        $filter_payment_date_to = base64_decode($this->input->get('filter_payment_date_to'));
-        $filter_payment_no = base64_decode($this->input->get('filter_payment_no'));
-        $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_bank_no = base64_decode($this->input->get('filter_bank_no'));
-        $filter_payment_by = base64_decode($this->input->get('filter_payment_by'));
+        $filter_payment_type  = base64_decode((string) $this->input->get('filter_payment_type'));
+        $filter_payment_date_from = base64_decode((string) $this->input->get('filter_payment_date_from'));
+        $filter_payment_date_to = base64_decode((string) $this->input->get('filter_payment_date_to'));
+        $filter_payment_no = base64_decode((string) $this->input->get('filter_payment_no'));
+        $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_bank_no = base64_decode((string) $this->input->get('filter_bank_no'));
+        $filter_payment_by = base64_decode((string) $this->input->get('filter_payment_by'));
 
         //Config
         $this->db->select('*');
@@ -3213,14 +3213,14 @@ class Ap_payments extends CI_Controller
             header("Content-Disposition: attachment; filename=ap_payment_journal_$format.xls");
         }
 
-        $filter_payment_type  = base64_decode($this->input->get('filter_payment_type'));
-        $filter_payment_date_from = base64_decode($this->input->get('filter_payment_date_from'));
-        $filter_payment_date_to = base64_decode($this->input->get('filter_payment_date_to'));
-        $filter_payment_no = base64_decode($this->input->get('filter_payment_no'));
-        $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-        $filter_invoice_no = base64_decode($this->input->get('filter_invoice_no'));
-        $filter_bank_no = base64_decode($this->input->get('filter_bank_no'));
-        $filter_payment_by = base64_decode($this->input->get('filter_payment_by'));
+        $filter_payment_type  = base64_decode((string) $this->input->get('filter_payment_type'));
+        $filter_payment_date_from = base64_decode((string) $this->input->get('filter_payment_date_from'));
+        $filter_payment_date_to = base64_decode((string) $this->input->get('filter_payment_date_to'));
+        $filter_payment_no = base64_decode((string) $this->input->get('filter_payment_no'));
+        $filter_supplier = base64_decode((string) $this->input->get('filter_supplier'));
+        $filter_invoice_no = base64_decode((string) $this->input->get('filter_invoice_no'));
+        $filter_bank_no = base64_decode((string) $this->input->get('filter_bank_no'));
+        $filter_payment_by = base64_decode((string) $this->input->get('filter_payment_by'));
 
         //Config
         $this->db->select('*');
@@ -3414,12 +3414,12 @@ class Ap_payments extends CI_Controller
             $payment_date = $records[0]['payment_date'];
             $currency = $records[0]['currency'];
 
-            $search_date = date("d", strtotime($payment_date));
+            $search_date = date("d", strtotime((string) $payment_date));
             if($search_date == "31"){
-              $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+              $payment_date = date("Y-m-d", strtotime('-1 days', strtotime((string) $payment_date)));
             }
 
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $payment_date)));
             $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
             if ($exchange) {
@@ -3430,7 +3430,7 @@ class Ap_payments extends CI_Controller
                 $hide = "hidden";
             }
             
-            $exchangeName = "Rp. " . number_format($amount, 2);
+            $exchangeName = "Rp. " . number_format((float) $amount, 2);
 
             $html .= '<table style="width:100%;">
                             <tr>
@@ -3494,7 +3494,7 @@ class Ap_payments extends CI_Controller
                                         <tr>
                                             <td width="80">Payment Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime($records[0]['payment_date'])) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime((string) $records[0]['payment_date'])) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Bank Account</td>
@@ -3551,7 +3551,7 @@ class Ap_payments extends CI_Controller
             if (($i + 1) == $page) { 
                 $html .= '  <tr>
                                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
-                                <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+                                <th style="text-align:right;">' . @number_format((float) $grand_total, 2) . '</th>
                             </tr>';
             }
             
@@ -3610,19 +3610,19 @@ class Ap_payments extends CI_Controller
                                 <td>' . $journal->account_number . '</td>
                                 <td>' . $journal->account_name . '</td>
                                 <td>' . $journal->description . '</td>
-                                <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->local_debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->local_credit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->credit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->local_debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format((float) $journal->local_credit, 2) . '</td>
                             </tr>';
             }
 
             $html .= '      <tr>
                                 <td colspan="3"><b>BALANCE TOTAL</b></td>
-                                <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($local_total_debit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($local_total_credit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $total_debit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $total_credit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $local_total_debit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format((float) $local_total_credit, 2) . '</td>
                             </tr>
                         </table>
                     </div>';
@@ -3674,7 +3674,7 @@ class Ap_payments extends CI_Controller
     }
 
     function formatIDR($number, $decimal_places = 2) {
-        $formatted_number = number_format($number, $decimal_places, ',', '.');
+        $formatted_number = number_format((float) $number, $decimal_places, ',', '.');
         return $formatted_number;
     }
 }

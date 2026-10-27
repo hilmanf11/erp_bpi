@@ -183,8 +183,8 @@ class Fixed_assets extends CI_Controller
     public function readProductDepartment()
     {
         if (!empty($this->input->get())) {
-            $purchase_invoice_no = base64_decode($this->input->get('number'));
-            $item_rm_id = base64_decode($this->input->get('item'));
+            $purchase_invoice_no = base64_decode((string) $this->input->get('number'));
+            $item_rm_id = base64_decode((string) $this->input->get('item'));
             
             $this->db->select('c.number, a.request_no, a.po_no, b.item_rm_id, b.department');
             $this->db->from('purchase_orders a');
@@ -203,7 +203,7 @@ class Fixed_assets extends CI_Controller
 
     public function readExchangeRates()
     {
-        $trans_date = date("Y-m-01", strtotime("-1 month", strtotime($this->input->post('trans_date'))));
+        $trans_date = date("Y-m-01", strtotime("-1 month", strtotime((string) $this->input->post('trans_date'))));
         $currency = $this->input->post('currency');
 
         $records = $this->crud->query("SELECT middle
@@ -216,7 +216,7 @@ class Fixed_assets extends CI_Controller
 
     public function readExpired($month, $trans_date){
         $trans_date = base64_decode($trans_date);
-        echo date("Y-m-d", strtotime("+" . $month . ' months', strtotime($trans_date)));
+        echo date("Y-m-d", strtotime("+" . $month . ' months', strtotime((string) $trans_date)));
     }
 
     //GET FILTER DATA
@@ -264,7 +264,7 @@ class Fixed_assets extends CI_Controller
         $filter_purchase_invoice_number = $filter_list["filter_purchase_invoice_number"];
         $filter_supplier    = $filter_list["filter_supplier"];
 
-        $period_expired = !empty($filter_to) ? date("Y-m", strtotime($filter_to))  : date('Y-m');
+        $period_expired = !empty($filter_to) ? date("Y-m", strtotime((string) $filter_to))  : date('Y-m');
 
         // Jika tidak ada filter tanggal, default tampil penambahan asset per bulan berjalan (Bu Nina)
         $filter_from = !empty($filter_from) ? $filter_from : date('Y-m-01');
@@ -403,16 +403,16 @@ class Fixed_assets extends CI_Controller
         $rows = $this->input->post('rows') ?? 10;
         $offset = ($page - 1) * $rows;
 
-        $filters = json_decode($this->input->post('filterRules'), true); // Filter keyword per kolom dari tabel datagrid view 
-        $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
-        $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
-        $filter_financial_period_from = base64_decode($this->input->get('filter_financial_period_from')) ?? null;
-        $filter_financial_period_to = base64_decode($this->input->get('filter_financial_period_to')) ?? null;
-        $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
-        $filter_category = base64_decode($this->input->get('filter_category')) ?? null;
-        $filter_estimate = base64_decode($this->input->get('filter_estimate')) ?? null;
-        $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
-        $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
+        $filters = json_decode((string) $this->input->post('filterRules'), true); // Filter keyword per kolom dari tabel datagrid view 
+        $filter_from = base64_decode((string) $this->input->get('filter_from')) ?? null;
+        $filter_to = base64_decode((string) $this->input->get('filter_to')) ?? null;
+        $filter_financial_period_from = base64_decode((string) $this->input->get('filter_financial_period_from')) ?? null;
+        $filter_financial_period_to = base64_decode((string) $this->input->get('filter_financial_period_to')) ?? null;
+        $filter_number = base64_decode((string) $this->input->get('filter_number')) ?? null;
+        $filter_category = base64_decode((string) $this->input->get('filter_category')) ?? null;
+        $filter_estimate = base64_decode((string) $this->input->get('filter_estimate')) ?? null;
+        $filter_purchase_invoice_number = base64_decode((string) $this->input->get('filter_purchase_invoice_number')) ?? null;
+        $filter_supplier = base64_decode((string) $this->input->get('filter_supplier')) ?? null;
 
         $filter_list = [
             "filters"                        => $filters,
@@ -749,7 +749,7 @@ class Fixed_assets extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
             unset($post['asset_category_name']);
             unset($post['asset_family_name']);
@@ -934,7 +934,7 @@ class Fixed_assets extends CI_Controller
                     "cost"                    => $cost,
                     "estimate_month"          => ($data['estimate_year'] * 12),
                     "estimate_year"           => $data['estimate_year'],
-                    "expired_date"            => date("Y-m-d", strtotime("+" . ($data['estimate_year'] * 12) . ' months', strtotime($data['trans_date']))),
+                    "expired_date"            => date("Y-m-d", strtotime("+" . ($data['estimate_year'] * 12) . ' months', strtotime((string) $data['trans_date']))),
                     "depreciation"            => ($cost / $estimate_month),
                     "depreciation_accumulate" => $data['depreciation_accumulate'], 
                     "remarks"                 => $data['remarks'],
@@ -967,16 +967,16 @@ class Fixed_assets extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $filters = json_decode($this->input->post('filterRules'), true); // Filter keyword per kolom dari tabel datagrid view 
-        $filter_financial_period_from = base64_decode($this->input->get('filter_financial_period_from')) ?? null;
-        $filter_financial_period_to = base64_decode($this->input->get('filter_financial_period_to')) ?? null;
-        $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
-        $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
-        $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
-        $filter_category = base64_decode($this->input->get('filter_category')) ?? null;
-        $filter_estimate = base64_decode($this->input->get('filter_estimate')) ?? null;
-        $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
-        $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
+        $filters = json_decode((string) $this->input->post('filterRules'), true); // Filter keyword per kolom dari tabel datagrid view 
+        $filter_financial_period_from = base64_decode((string) $this->input->get('filter_financial_period_from')) ?? null;
+        $filter_financial_period_to = base64_decode((string) $this->input->get('filter_financial_period_to')) ?? null;
+        $filter_from = base64_decode((string) $this->input->get('filter_from')) ?? null;
+        $filter_to = base64_decode((string) $this->input->get('filter_to')) ?? null;
+        $filter_number = base64_decode((string) $this->input->get('filter_number')) ?? null;
+        $filter_category = base64_decode((string) $this->input->get('filter_category')) ?? null;
+        $filter_estimate = base64_decode((string) $this->input->get('filter_estimate')) ?? null;
+        $filter_purchase_invoice_number = base64_decode((string) $this->input->get('filter_purchase_invoice_number')) ?? null;
+        $filter_supplier = base64_decode((string) $this->input->get('filter_supplier')) ?? null;
 
         $filter_list = [
             "filters"                        => $filters,

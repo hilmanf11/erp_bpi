@@ -35,7 +35,7 @@ class Report_check_serialno extends CI_Controller
     public function readItems()
     {
         $supplier = $this->input->get('supplier');
-        $receipt_no = base64_decode($this->input->get('receipt_no'));
+        $receipt_no = base64_decode((string) $this->input->get('receipt_no'));
         $send = $this->crud->query("SELECT b.id as item_rm_id, b.number as item_number, b.name as item_name
             FROM purchase_order_receipts a
             JOIN item_rm b on a.item_rm_id = b.id
@@ -52,11 +52,11 @@ class Report_check_serialno extends CI_Controller
             header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
         }
         
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_serial_no = base64_decode($this->input->get("filter_serial_no"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
+        $filter_serial_no = base64_decode((string) $this->input->get("filter_serial_no"));
         $filter_supplier = $this->input->get("filter_supplier");
-        $filter_receipt = base64_decode($this->input->get("filter_receipt"));
+        $filter_receipt = base64_decode((string) $this->input->get("filter_receipt"));
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_status = $this->input->get("filter_status");
         
@@ -169,7 +169,7 @@ class Report_check_serialno extends CI_Controller
                                 <td>' . $data['label_no'] . '</td>
                                 <td>' . $data['item_number'] . '</td>
                                 <td>' . $data['item_name'] . '</td>
-                                <td style="text-align:right">' . number_format($data['qty'], 2) . '</td>
+                                <td style="text-align:right">' . number_format((float) $data['qty'], 2) . '</td>
                                 <td>' . $status . '</td>
                                 <td>' . $issued_status . '</td>
                                 <td>' . $data['created_by'] . '</td>

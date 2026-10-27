@@ -470,8 +470,8 @@ class Shipping_orders extends CI_Controller
             $success_message = "Shipping order created";
 
             if ($oldest_stok) {
-                $oldest_time = strtotime($oldest_stok->packing_date);
-                $scan_time   = strtotime($current_packing_date);
+                $oldest_time = strtotime((string) $oldest_stok->packing_date);
+                $scan_time   = strtotime((string) $current_packing_date);
 
                 $oldest_ym = date('Y-m', $oldest_time);
                 $scan_ym   = date('Y-m', $scan_time);

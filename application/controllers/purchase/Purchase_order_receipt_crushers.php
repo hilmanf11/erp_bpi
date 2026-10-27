@@ -168,7 +168,7 @@ class Purchase_order_receipt_crushers extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $receipt_nos = base64_decode($this->input->get('receipt_no'));
+            $receipt_nos = base64_decode((string) $this->input->get('receipt_no'));
         
             $this->db->select('a.*, b.id as item_rm_id, b.number as item_rm_number, b.name as item_rm_name, b.uom, a.receipt_no as id');
             $this->db->from('purchase_order_receipt_crushers a');
@@ -186,7 +186,7 @@ class Purchase_order_receipt_crushers extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $receipt_no = base64_decode($this->input->get('receipt_no'));
+            $receipt_no = base64_decode((string) $this->input->get('receipt_no'));
 
             $this->db->select('a.*, b.id as item_rm_id, b.number as item_rm_number, b.name as item_rm_name, b.uom');
             $this->db->from('purchase_order_receipt_crushers a');
@@ -335,7 +335,7 @@ class Purchase_order_receipt_crushers extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -445,7 +445,7 @@ class Purchase_order_receipt_crushers extends CI_Controller
                     <td>' . $data['trans_date'] . '</td>
                     <td>' . $data['item_rm_number'] . '</td>
                     <td>' . $data['item_rm_name'] . '</td>
-                    <td>' . number_format($data['qty'], 2) . '</td>
+                    <td>' . number_format((float) $data['qty'], 2) . '</td>
                     <td>' . $data['uom'] . '</td>';
             $no++;
         }

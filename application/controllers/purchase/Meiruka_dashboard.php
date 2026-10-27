@@ -49,28 +49,28 @@ class Meiruka_dashboard extends CI_Controller
         }
 
         if ($filter_display == 'WEEKLY') {
-            $filter_from = date('Y-m-d', strtotime('monday this week', strtotime($filter_date)));
-            $filter_to   = date('Y-m-d', strtotime('sunday this week', strtotime($filter_date)));
+            $filter_from = date('Y-m-d', strtotime('monday this week', strtotime((string) $filter_date)));
+            $filter_to   = date('Y-m-d', strtotime('sunday this week', strtotime((string) $filter_date)));
 
-            $filter_from_minus1 = date('Y-m-d', strtotime('-1 week', strtotime($filter_from)));
-            $filter_to_minus1   = date('Y-m-d', strtotime('-1 day', strtotime($filter_from)));
+            $filter_from_minus1 = date('Y-m-d', strtotime('-1 week', strtotime((string) $filter_from)));
+            $filter_to_minus1   = date('Y-m-d', strtotime('-1 day', strtotime((string) $filter_from)));
         } elseif ($filter_display == 'YEARLY') {
-            $filter_from = date('Y-01-01', strtotime($filter_date));
-            $filter_to   = date('Y-12-31', strtotime($filter_date));
+            $filter_from = date('Y-01-01', strtotime((string) $filter_date));
+            $filter_to   = date('Y-12-31', strtotime((string) $filter_date));
 
-            $filter_from_minus1 = date('Y-01-01', strtotime('-1 year', strtotime($filter_from)));
-            $filter_to_minus1   = date('Y-12-31', strtotime('-1 year', strtotime($filter_from)));
+            $filter_from_minus1 = date('Y-01-01', strtotime('-1 year', strtotime((string) $filter_from)));
+            $filter_to_minus1   = date('Y-12-31', strtotime('-1 year', strtotime((string) $filter_from)));
         } else {
             // MONTHLY default
-            $filter_from = date('Y-m-01', strtotime($filter_date));
-            $filter_to   = date('Y-m-t', strtotime($filter_date));
+            $filter_from = date('Y-m-01', strtotime((string) $filter_date));
+            $filter_to   = date('Y-m-t', strtotime((string) $filter_date));
 
-            $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-            $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
+            $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime((string) $filter_from)));
+            $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime((string) $filter_from)));
         }
 
-        $month = date('m', strtotime($filter_to));
-        $year  = date('Y', strtotime($filter_to));
+        $month = date('m', strtotime((string) $filter_to));
+        $year  = date('Y', strtotime((string) $filter_to));
 
         $query_main = "SELECT 
             a.id,
@@ -184,7 +184,7 @@ class Meiruka_dashboard extends CI_Controller
 
         foreach ($records as $record) {
             $item_rm_id = $record->id;
-            $supplier_name = trim($record->supplier_name);
+            $supplier_name = trim((string) $record->supplier_name);
             if (empty($supplier_name)) {
                 $supplier_name = '-';
             }

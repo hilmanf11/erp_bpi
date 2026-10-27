@@ -79,8 +79,8 @@ class Mold_details extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
+            $number = base64_decode((string) $this->input->get('number'));
+            $filter_customer_id = base64_decode((string) $this->input->get('filter_customer_id'));
 
             $this->db->select('a.*, c.number as item_number, c.name as item_name, d.name as mold_name, d.type as mold_type, d.model as mold_model, d.standard as standard_cavity, d.project_year as project_year');
             $this->db->from('mold_details a');
@@ -103,7 +103,7 @@ class Mold_details extends CI_Controller
      public function datatableUpdates()
      {
          if ($this->input->get()) {
-             $customer_id = base64_decode($this->input->get('customer_id'));
+             $customer_id = base64_decode((string) $this->input->get('customer_id'));
 
             $this->db->select('a.*,  c.number as item_number, c.name as item_name');
             $this->db->from('mold_details a');
@@ -429,7 +429,7 @@ class Mold_details extends CI_Controller
                          <td>' . $data['mold_model'] . '</td>
                          <td>' . $data['standard_cavity'] . '</td>
                          <td>' . $data['project_year'] . '</td>
-                         <td>'. number_format($data['price']) . '</td>
+                         <td>'. number_format((float) $data['price']) . '</td>
                          <td>' . $data['depreciation'] . '</td>
                          <td>' . $data['qty_depreciation'] . '</td>
                          <td>' . $data['total_delivery'] . '</td>

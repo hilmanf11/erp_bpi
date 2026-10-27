@@ -124,7 +124,7 @@ class Mold_items extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id = base64_decode($this->input->get('id'));
+            $id = base64_decode((string) $this->input->get('id'));
             if (empty($id)) {
                 echo json_encode(array("title" => "Error", "message" => "ID not Found", "theme" => "error"));
                 return;

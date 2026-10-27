@@ -72,22 +72,22 @@ class Currency_revaluation extends CI_Controller
 
     function readExchangeRate($currency, $payment_date, $type = "")
     {
-        $search_date = date("d", strtotime($payment_date));
+        $search_date = date("d", strtotime((string) $payment_date));
         if($search_date == "31"){
-          $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+          $payment_date = date("Y-m-d", strtotime('-1 days', strtotime((string) $payment_date)));
         }
         
-        if(date("m", strtotime($payment_date)) == "10"){
+        if(date("m", strtotime((string) $payment_date)) == "10"){
             if($type != ""){
-                $monthNow = date('Y-m-t', strtotime($payment_date));
-                $monthBf = date('Y-m-01', strtotime($payment_date));
+                $monthNow = date('Y-m-t', strtotime((string) $payment_date));
+                $monthBf = date('Y-m-01', strtotime((string) $payment_date));
             }else{
-                $monthNow = date('Y-m-t', strtotime($payment_date));
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+                $monthNow = date('Y-m-t', strtotime((string) $payment_date));
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $payment_date)));
             }
         }else{
-            $monthNow = date('Y-m-01', strtotime($payment_date));
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+            $monthNow = date('Y-m-01', strtotime((string) $payment_date));
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $payment_date)));
         }
 
         $exchangeNow = $this->crud->read('exchange_rates', [], ["start_date" => $monthNow, "currency_from" => $currency, "currency_to" => "IDR"]);
@@ -118,10 +118,10 @@ class Currency_revaluation extends CI_Controller
             $type = $this->input->post('double');
 
             $periode = $year . '-' . $month;
-            $filter_from = date("Y-m-01", strtotime($periode));
-            $filter_exchange = date("Y-m-10", strtotime($periode));
-            $filter_to = date("Y-m-t", strtotime($periode));
-            $date = date("Y-m-t", strtotime($periode));
+            $filter_from = date("Y-m-01", strtotime((string) $periode));
+            $filter_exchange = date("Y-m-10", strtotime((string) $periode));
+            $filter_to = date("Y-m-t", strtotime((string) $periode));
+            $date = date("Y-m-t", strtotime((string) $periode));
 
             if ($modul == "PURCHASE INVOICING") {
                 $this->db->select('b.*, a.currency, a.trans_date, c.payment, (abs(b.debit - b.credit) - COALESCE(c.payment, 0)) as total');
@@ -228,7 +228,7 @@ class Currency_revaluation extends CI_Controller
                         $invoice_ap = $this->db->get()->row();
 
                         $account_name = $record['account_name'];
-                        $original_currency = abs(abs($record['total']) - abs(@$invoice_ap->total_ori_ap));
+                        $original_currency = abs(abs($record['total'] ?? 0) - abs(@$invoice_ap->total_ori_ap));
                     } elseif($modul == "SALES INVOICING") {
                         //Sales Return
                         $this->db->select('sales_invoice, SUM(receipt) as total');
@@ -248,11 +248,11 @@ class Currency_revaluation extends CI_Controller
                             $this->db->group_by('sales_invoice');
                             $dataSub = $this->db->get()->row();
                             $account_name = $record['account_name'];
-                            $original_currency = abs(abs($record['total']) - abs(@$dataSub->total));
+                            $original_currency = abs(abs($record['total'] ?? 0) - abs(@$dataSub->total));
                             $tsales = "";
                         }else{
                             $account_name = $record['account_name'];
-                            $original_currency = abs(abs($record['total']) - abs(@$dataSub2->total));
+                            $original_currency = abs(abs($record['total'] ?? 0) - abs(@$dataSub2->total));
                             $tsales = "YES";
                         }
                     } else {
@@ -280,10 +280,10 @@ class Currency_revaluation extends CI_Controller
                         
                         if($modul == "PURCHASE INVOICING"){
                             if ($deviation > 0) {
-                                $debit_now = abs($deviation);
+                                $debit_now = abs($deviation ?? 0);
                                 $debit_bf = 0;
                                 $credit_now = 0;
-                                $credit_bf = abs($deviation);
+                                $credit_bf = abs($deviation ?? 0);
                                 $journal_type = "20240926000002";
                                 $flag_1 = 1;
                                 $flag_2 = 2;
@@ -297,8 +297,8 @@ class Currency_revaluation extends CI_Controller
                                 $account_name_loss = "GAIN ON FOREIGN EXCHANGE";
                             } else {
                                 $debit_now = 0;
-                                $debit_bf = abs($deviation);
-                                $credit_now = abs($deviation);
+                                $debit_bf = abs($deviation ?? 0);
+                                $credit_now = abs($deviation ?? 0);
                                 $credit_bf = 0;
                                 $journal_type = "20240926000001";
                                 $flag_1 = 2;
@@ -315,10 +315,10 @@ class Currency_revaluation extends CI_Controller
                         }elseif($modul == "SALES INVOICING"){
                             if($tsales == "YES"){
                                 if ($deviation > 0) {
-                                    $debit_now = abs($deviation);
+                                    $debit_now = abs($deviation ?? 0);
                                     $debit_bf = 0;
                                     $credit_now = 0;
-                                    $credit_bf = abs($deviation);
+                                    $credit_bf = abs($deviation ?? 0);
                                     $journal_type = "20240926000004";
                                     $flag_1 = 1;
                                     $flag_2 = 2;
@@ -332,8 +332,8 @@ class Currency_revaluation extends CI_Controller
                                     $account_name_loss = "GAIN ON FOREIGN EXCHANGE";
                                 } else {
                                     $debit_now = 0;
-                                    $debit_bf = abs($deviation);
-                                    $credit_now = abs($deviation);
+                                    $debit_bf = abs($deviation ?? 0);
+                                    $credit_now = abs($deviation ?? 0);
                                     $credit_bf = 0;
                                     $journal_type = "20240926000003";
                                     $flag_1 = 2;
@@ -350,8 +350,8 @@ class Currency_revaluation extends CI_Controller
                             }else{
                                 if ($deviation > 0) {
                                     $debit_now = 0;
-                                    $debit_bf = abs($deviation);
-                                    $credit_now = abs($deviation);
+                                    $debit_bf = abs($deviation ?? 0);
+                                    $credit_now = abs($deviation ?? 0);
                                     $credit_bf = 0;
                                     $journal_type = "20240926000003";
                                     $flag_1 = 2;
@@ -365,10 +365,10 @@ class Currency_revaluation extends CI_Controller
                                     $account_number_loss = "9-0010";
                                     $account_name_loss = "LOSS ON FOREIGN EXCHANGE";
                                 } else {
-                                    $debit_now = abs($deviation);
+                                    $debit_now = abs($deviation ?? 0);
                                     $debit_bf = 0;
                                     $credit_now = 0;
-                                    $credit_bf = abs($deviation);
+                                    $credit_bf = abs($deviation ?? 0);
                                     $journal_type = "20240926000004";
                                     $flag_1 = 1;
                                     $flag_2 = 2;
@@ -385,8 +385,8 @@ class Currency_revaluation extends CI_Controller
                         }else{
                             if ($deviation > 0) {
                                 $debit_now = 0;
-                                $debit_bf = abs($deviation);
-                                $credit_now = abs($deviation);
+                                $debit_bf = abs($deviation ?? 0);
+                                $credit_now = abs($deviation ?? 0);
                                 $credit_bf = 0;
                                 $journal_type = "20240926000006";
                                 $flag_1 = 2;
@@ -400,10 +400,10 @@ class Currency_revaluation extends CI_Controller
                                 $account_number_loss = "8-0006";
                                 $account_name_loss = "GAIN ON FOREIGN EXCHANGE";
                             } else {
-                                $debit_now = abs($deviation);
+                                $debit_now = abs($deviation ?? 0);
                                 $debit_bf = 0;
                                 $credit_now = 0;
-                                $credit_bf = abs($deviation);
+                                $credit_bf = abs($deviation ?? 0);
                                 $journal_type = "20240926000005";
                                 $flag_1 = 1;
                                 $flag_2 = 2;
@@ -425,7 +425,7 @@ class Currency_revaluation extends CI_Controller
                             "modul" => $modul,
                             "document_no" => $record['number'] . $unique,
                             "trans_date" => $trans_date_1,
-                            "qty" => abs($original_currency),
+                            "qty" => abs($original_currency ?? 0),
                             "rate" => $rate_1,
                             "revaluation" => $revaluation_now,
                             "account_number" => $record['account_number'],
@@ -442,7 +442,7 @@ class Currency_revaluation extends CI_Controller
                             "modul" => $modul,
                             "document_no" => $record['number'] . $unique,
                             "trans_date" => $trans_date_2,
-                            "qty" => abs($original_currency),
+                            "qty" => abs($original_currency ?? 0),
                             "rate" => $rate_2,
                             "revaluation" => $revaluation_bf,
                             "account_number" => $account_number_loss,
@@ -466,10 +466,10 @@ class Currency_revaluation extends CI_Controller
     {
         if ($this->input->get()) {
 
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_journal_type = base64_decode($this->input->get('filter_journal_type'));
-            $filter_modul = base64_decode($this->input->get('filter_modul'));
+            $filter_month = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year = base64_decode((string) $this->input->get('filter_year'));
+            $filter_journal_type = base64_decode((string) $this->input->get('filter_journal_type'));
+            $filter_modul = base64_decode((string) $this->input->get('filter_modul'));
 
             $filter_period = $filter_year . "-" . $filter_month;
 
@@ -560,10 +560,10 @@ class Currency_revaluation extends CI_Controller
             header("Content-Disposition: attachment; filename=journal_revaluations_$format.xls");
         }
 
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_journal_type = base64_decode($this->input->get('filter_journal_type'));
-        $filter_modul = base64_decode($this->input->get('filter_modul'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_journal_type = base64_decode((string) $this->input->get('filter_journal_type'));
+        $filter_modul = base64_decode((string) $this->input->get('filter_modul'));
 
         $filter_period = $filter_year . "-" . $filter_month;
 
@@ -629,15 +629,15 @@ class Currency_revaluation extends CI_Controller
                             <td>' . $no . '</td>
                             <td>' . $data['period'] . '</td>
                             <td>' . $data['document_no'] . '</td>
-                            <td>' . number_format($data['qty'], 2) . '</td>
-                            <td>' . number_format($data['rate'], 2) . '</td>
+                            <td>' . number_format((float) $data['qty'], 2) . '</td>
+                            <td>' . number_format((float) $data['rate'], 2) . '</td>
                             <td>' . $data['trans_date'] . '</td>
-                            <td>' . number_format($data['revaluation'], 2) . '</td>
+                            <td>' . number_format((float) $data['revaluation'], 2) . '</td>
                             <td>' . $data['journal_type_name'] . '</td>
                             <td>' . $data['account_number'] . '</td>
                             <td>' . $data['account_name'] . '</td>
-                            <td>' . number_format($data['debit'], 2) . '</td>
-                            <td>' . number_format($data['credit'], 2) . '</td>
+                            <td>' . number_format((float) $data['debit'], 2) . '</td>
+                            <td>' . number_format((float) $data['credit'], 2) . '</td>
                         </tr>';
             $no++;
         }

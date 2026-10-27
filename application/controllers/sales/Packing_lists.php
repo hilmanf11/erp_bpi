@@ -146,7 +146,7 @@ class Packing_lists extends CI_Controller
 
     public function datatableUpdate()
     {
-        $number = base64_decode($this->input->get('number'));
+        $number = base64_decode((string) $this->input->get('number'));
         $this->db->select('a.*, b.number as item_number, b.name as item_name, c.name as uom');
         $this->db->from('packing_lists a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
@@ -397,24 +397,24 @@ class Packing_lists extends CI_Controller
                                 <td style="font-size:10px;">' . $record['item_number'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
                                 <td><span style="font-size:10px;">' . $record['uom'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['qty'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($record['pallet_no'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($record['carton'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($record['net_weight'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($record['gross_weight'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format($record['measure'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['qty'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['pallet_no'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['carton'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['net_weight'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['gross_weight'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['measure'], 2, ",", ".") . '</td>
                             </tr>';
                 $no++;
             }
 
             $html .= '  <tr>
                             <td colspan="4">TOTAL</td>
-                            <td style="text-align:right"><b>' . number_format($qty, 2, ",", ".") . '</b></td>
-                            <td style="text-align:right"><b>' . number_format($pallet_no, 2, ",", ".") . '</b></td>
-                            <td style="text-align:right"><b>' . number_format($carton, 2, ",", ".") . '</b></td>
-                            <td style="text-align:right"><b>' . number_format($net_weight, 2, ",", ".") . '</b></td>
-                            <td style="text-align:right"><b>' . number_format($gross_weight, 2, ",", ".") . '</b></td>
-                            <td style="text-align:right"><b>' . number_format($measure, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $qty, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $pallet_no, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $carton, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $net_weight, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $gross_weight, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format((float) $measure, 2, ",", ".") . '</b></td>
                         </tr>';
 
             $html .= '</table>';
@@ -531,10 +531,10 @@ class Packing_lists extends CI_Controller
                         <td>' . $data['dn_number'] . '</td>
                         <td>' . $data['item_number'] . '</td>
                         <td>' . $data['item_name'] . '</td>
-                        <td>' . number_format($data['qty'], 2) . '</td>
-                        <td>' . number_format($data['net_weight'], 2) . '</td>
-                        <td>' . number_format($data['gross_weight'], 2) . '</td>
-                        <td>' . number_format($data['measure'], 2) . '</td>
+                        <td>' . number_format((float) $data['qty'], 2) . '</td>
+                        <td>' . number_format((float) $data['net_weight'], 2) . '</td>
+                        <td>' . number_format((float) $data['gross_weight'], 2) . '</td>
+                        <td>' . number_format((float) $data['measure'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
                     </tr>';
             $no++;

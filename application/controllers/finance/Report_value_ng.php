@@ -51,8 +51,8 @@ class Report_value_ng extends CI_Controller
         $filter_customer = $this->input->get("filter_customer");
         $filter_division = $this->input->get("filter_division");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Config
         $this->db->select('*');
@@ -172,12 +172,12 @@ class Report_value_ng extends CI_Controller
                             <td style="mso-number-format:\@;">' . $record->number . '</td>
                             <td style="mso-number-format:\@;">' . $record->name . '</td>
                             <td colspan="2">' . $record->customer_name . '</td>
-                            <td colspan ="2"; style="text-align:right;">' . number_format($total, 2) . '</td>
+                            <td colspan ="2"; style="text-align:right;">' . number_format((float) $total, 2) . '</td>
                             <td colspan ="2"; style="text-align:right;">' . number_format($record->qty_actual + $record->qty_wip, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_ng, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_ng, 2) . '</td>
                             <td style="text-align:right;">' . $ng_percent . '</td>
-                            <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($amountTotalProduction, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $amountTotalProduction, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->qty_actual + $record->qty_wip) * $record->price, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_ng * $record->price, 2) . '</td>
                         </tr>';
@@ -241,7 +241,7 @@ class Report_value_ng extends CI_Controller
 
                 // Urutkan data berdasarkan tanggal
                 usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
+                    return strtotime((string) $a['date']) - strtotime((string) $b['date']);
                 });
              
                 // Generate HTML
@@ -256,10 +256,10 @@ class Report_value_ng extends CI_Controller
                                     <td>' . $data['type']  . '</td>
                                     <td>' . $data['date']  . '</td>
                                     <td>' . $data['wo_no']  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['actual_production'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_wip'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['ng'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($total_production, 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['actual_production'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['qty_wip'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $data['ng'], 2)  . '</td>
+                                    <td style="text-align:right;">' . number_format((float) $total_production, 2)  . '</td>
                                 </tr>';
                     $nod++;
                 }
@@ -269,14 +269,14 @@ class Report_value_ng extends CI_Controller
 
         $html .= '<tr>
             <td colspan="5" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td colspan="2"; style="text-align:right;">' . number_format($totalTotalProduction, 2) . '</td>
-            <td colspan="2"; style="text-align:right;">' . number_format($totalOutputProduction, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalNG, 2) . '</td>
+            <td colspan="2"; style="text-align:right;">' . number_format((float) $totalTotalProduction, 2) . '</td>
+            <td colspan="2"; style="text-align:right;">' . number_format((float) $totalOutputProduction, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalNG, 2) . '</td>
             <td style="text-align:right;">' . ($totalTotalProduction > 0 ? number_format(($totalNG / $totalTotalProduction) * 100, 2) . '%' : '0.00%') . '</td>
-            <td style="text-align:right;">' . number_format($totalPrice, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalAmountTotalProduction, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalAmountOutputProduction, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalAmountNG, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalPrice, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalAmountTotalProduction, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalAmountOutputProduction, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalAmountNG, 2) . '</td>
         </tr>
         </tbody>';
       
@@ -298,8 +298,8 @@ class Report_value_ng extends CI_Controller
         $filter_customer = $this->input->get("filter_customer");
         $filter_division = $this->input->get("filter_division");
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        $start = strtotime((string) $filter_from);
+        $finish = strtotime((string) $filter_to);
 
         //Config
         $this->db->select('*');
@@ -423,10 +423,10 @@ class Report_value_ng extends CI_Controller
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="2">' . $record->customer_name . '</td>
-                            <td colspan ="2"; style="text-align:right;">' . number_format($record->total_production, 2) . '</td>
-                            <td colspan ="2"; style="text-align:right;">' . number_format($record->output_production, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_ng, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->ng_percent, 2) . '</td>
+                            <td colspan ="2"; style="text-align:right;">' . number_format((float) $record->total_production, 2) . '</td>
+                            <td colspan ="2"; style="text-align:right;">' . number_format((float) $record->output_production, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->qty_ng, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((float) $record->ng_percent, 2) . '</td>
                         </tr>';
 
             // if ($filter_display == "DETAIL") {
@@ -488,7 +488,7 @@ class Report_value_ng extends CI_Controller
 
             //     // Urutkan data berdasarkan tanggal
             //     usort($all_data, function ($a, $b) {
-            //         return strtotime($a['date']) - strtotime($b['date']);
+            //         return strtotime((string) $a['date']) - strtotime((string) $b['date']);
             //     });
              
             //     // Generate HTML
@@ -503,10 +503,10 @@ class Report_value_ng extends CI_Controller
             //                         <td>' . $data['type']  . '</td>
             //                         <td>' . $data['date']  . '</td>
             //                         <td>' . $data['wo_no']  . '</td>
-            //                         <td style="text-align:right;">' . number_format($data['actual_production'], 2)  . '</td>
-            //                         <td style="text-align:right;">' . number_format($data['qty_wip'], 2)  . '</td>
-            //                         <td style="text-align:right;">' . number_format($data['ng'], 2)  . '</td>
-            //                         <td style="text-align:right;">' . number_format($total_production, 2)  . '</td>
+            //                         <td style="text-align:right;">' . number_format((float) $data['actual_production'], 2)  . '</td>
+            //                         <td style="text-align:right;">' . number_format((float) $data['qty_wip'], 2)  . '</td>
+            //                         <td style="text-align:right;">' . number_format((float) $data['ng'], 2)  . '</td>
+            //                         <td style="text-align:right;">' . number_format((float) $total_production, 2)  . '</td>
             //                     </tr>';
             //         $nod++;
             //     }
@@ -516,9 +516,9 @@ class Report_value_ng extends CI_Controller
 
         $html .= '<tr>
             <td colspan="3" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td colspan="2"; style="text-align:right;">' . number_format($totalTotalProduction, 2) . '</td>
-            <td colspan="2"; style="text-align:right;">' . number_format($totalOutputProduction, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalNG, 2) . '</td>
+            <td colspan="2"; style="text-align:right;">' . number_format((float) $totalTotalProduction, 2) . '</td>
+            <td colspan="2"; style="text-align:right;">' . number_format((float) $totalOutputProduction, 2) . '</td>
+            <td style="text-align:right;">' . number_format((float) $totalNG, 2) . '</td>
             <td style="text-align:right;">' . ($totalTotalProduction > 0 ? number_format(($totalNG / $totalTotalProduction) * 100, 2) . '%' : '0.00%') . '</td>
         </tr>
         </tbody>';

@@ -230,7 +230,7 @@ class Barcode_divides extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $label_no = base64_decode($this->input->get('label_no'));
+        $label_no = base64_decode((string) $this->input->get('label_no'));
 
         $this->db->select('a.*, c.receipt_date, d.number, d.name, e.location, e.area');
         $this->db->from('barcode_divides a');
@@ -321,7 +321,7 @@ class Barcode_divides extends CI_Controller
                                 </tr>
                                 <tr>
                                     <th style="text-align:left">
-                                        <small>Quantity</small><br><b style="font-size:24px;">' . number_format($record->qty, 4, ",", ".") . '</b>
+                                        <small>Quantity</small><br><b style="font-size:24px;">' . number_format((float) $record->qty, 4, ",", ".") . '</b>
                                     </th>
                                     <th style="text-align:left">
                                         <small>Location</small><br><b style="font-size:24px;">' . $record->location . '</b>

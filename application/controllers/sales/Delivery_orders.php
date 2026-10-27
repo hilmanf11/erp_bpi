@@ -412,7 +412,7 @@ class Delivery_orders extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $delivery_order_no = base64_decode($this->input->get('delivery_order_no'));
+            $delivery_order_no = base64_decode((string) $this->input->get('delivery_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, 
             (CASE WHEN a.sales_order_no is null THEN a.sales_order_no_rm ELSE a.sales_order_no END) as sales_order_number');
@@ -432,7 +432,7 @@ class Delivery_orders extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $delivery_order_no = base64_decode($this->input->get('delivery_order_no'));
+            $delivery_order_no = base64_decode((string) $this->input->get('delivery_order_no'));
 
             $this->db->select('a.*, 
             g.qty as accum_qty_do,
@@ -983,7 +983,7 @@ class Delivery_orders extends CI_Controller
                                 <td>' . $record['item_fg_number'] . '</td>
                                 <td>' . $record['item_fg_name'] . '</td>
                                 <td>' . $record['uom'] . '</td>
-                                <td style="text-align:right">' . number_format($record['qty_del'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['qty_del'], 2, ",", ".") . '</td>
                                 <td>' . $record['sales_order_no'] . '</td>
                                 <td>' . $record['customer_order_no'] . '</td>
                             </tr>';

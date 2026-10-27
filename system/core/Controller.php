@@ -50,6 +50,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * @author		EllisLab Dev Team
  * @link		https://codeigniter.com/user_guide/general/controllers.html
  */
+#[\AllowDynamicProperties]
 class CI_Controller
 {
 
@@ -104,7 +105,7 @@ class CI_Controller
 	//Get Menu ID
 	public function id_menu()
 	{
-		return base64_decode($this->uri->segment(4));
+		return base64_decode((string) $this->uri->segment(4));
 	}
 
 	//Ambil Data untuk button access

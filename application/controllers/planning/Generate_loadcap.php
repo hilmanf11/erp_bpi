@@ -81,9 +81,9 @@ class Generate_loadcap extends CI_Controller
 
     public function checkProdplan()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         //Select Query
         $this->db->select('prod_plan');
@@ -105,12 +105,12 @@ class Generate_loadcap extends CI_Controller
         if ($this->input->get()) {
             file_put_contents('failed/generate_loadcap.txt', '');
 
-            $filter_month       = base64_decode($this->input->get('filter_month'));
-            $filter_year        = base64_decode($this->input->get('filter_year'));
-            $filter_cutoff      = base64_decode($this->input->get('filter_cutoff'));
-            $filter_customer    = base64_decode($this->input->get('filter_customer'));
-            $filter_product_no  = base64_decode($this->input->get('filter_item_fg'));
-            $filter_revision    = base64_decode($this->input->get('filter_revision'));
+            $filter_month       = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year        = base64_decode((string) $this->input->get('filter_year'));
+            $filter_cutoff      = base64_decode((string) $this->input->get('filter_cutoff'));
+            $filter_customer    = base64_decode((string) $this->input->get('filter_customer'));
+            $filter_product_no  = base64_decode((string) $this->input->get('filter_item_fg'));
+            $filter_revision    = base64_decode((string) $this->input->get('filter_revision'));
 
             $prev_month         = (int)$filter_month - 1;
             $prev_year          = $filter_year;
@@ -477,8 +477,8 @@ class Generate_loadcap extends CI_Controller
 
     public function checkCalendar()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
 
         // Hitung periode 6 bulan ke depan
         $monthStart = strtotime("$filter_year-$filter_month-01");
@@ -700,9 +700,9 @@ class Generate_loadcap extends CI_Controller
 
     // public function overList()
     // {
-    //     $filter_month    = base64_decode($this->input->get('filter_month'));
-    //     $filter_year     = base64_decode($this->input->get('filter_year'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //     $filter_month    = base64_decode((string) $this->input->get('filter_month'));
+    //     $filter_year     = base64_decode((string) $this->input->get('filter_year'));
+    //     $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
     //     $this->db->select('machine_number, fg, ito, loadcap1, loadcap2, loadcap3, loadcap4');
     //     $this->db->from('generate_loadcap_machine_over');
@@ -752,10 +752,10 @@ class Generate_loadcap extends CI_Controller
     //         <tr>
     //             <td>{$row['machine_number']}</td>
     //             <td>{$row['fg']}</td>
-    //             <td align='right'>" . number_format($row['loadcap1'], 2) . "</td>
-    //             <td align='right'>" . number_format($row['loadcap2'], 2) . "</td>
-    //             <td align='right'>" . number_format($row['loadcap3'], 2) . "</td>
-    //             <td align='right'>" . number_format($row['loadcap4'], 2) . "</td>
+    //             <td align='right'>" . number_format((float) $row['loadcap1'], 2) . "</td>
+    //             <td align='right'>" . number_format((float) $row['loadcap2'], 2) . "</td>
+    //             <td align='right'>" . number_format((float) $row['loadcap3'], 2) . "</td>
+    //             <td align='right'>" . number_format((float) $row['loadcap4'], 2) . "</td>
     //         </tr>";
     //     }
 
@@ -769,9 +769,9 @@ class Generate_loadcap extends CI_Controller
     // Generate dengan Over list
     // public function rekapMachine()
     // {
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year  = base64_decode($this->input->get('filter_year'));
-    //     $revision     = base64_decode($this->input->get('filter_revision'));
+    //     $filter_month = base64_decode((string) $this->input->get('filter_month'));
+    //     $filter_year  = base64_decode((string) $this->input->get('filter_year'));
+    //     $revision     = base64_decode((string) $this->input->get('filter_revision'));
 
     //     // Ambil semua data generate_loadcap berdasarkan filter
     //     $this->db->select('*');
@@ -887,9 +887,9 @@ class Generate_loadcap extends CI_Controller
 
     public function rekapMachine()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year  = base64_decode($this->input->get('filter_year'));
-        $revision     = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year  = base64_decode((string) $this->input->get('filter_year'));
+        $revision     = base64_decode((string) $this->input->get('filter_revision'));
 
         $this->db->select('*');
         $this->db->from('generate_loadcap');
@@ -952,9 +952,9 @@ class Generate_loadcap extends CI_Controller
 
     public function rekapManPower()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year  = base64_decode($this->input->get('filter_year'));
-        $revision     = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year  = base64_decode((string) $this->input->get('filter_year'));
+        $revision     = base64_decode((string) $this->input->get('filter_revision'));
 
         $this->db->select('*');
         $this->db->from('generate_loadcap');
@@ -1017,9 +1017,9 @@ class Generate_loadcap extends CI_Controller
 
     public function rekapTonnage()
     {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year  = base64_decode($this->input->get('filter_year'));
-        $revision     = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year  = base64_decode((string) $this->input->get('filter_year'));
+        $revision     = base64_decode((string) $this->input->get('filter_revision'));
 
         // Ambil data dari rekap per machine
         $this->db->select('toonage, SUM(loadcap1) AS total, COUNT(machine_id) AS unit');
@@ -1127,12 +1127,12 @@ class Generate_loadcap extends CI_Controller
         $config = $this->db->get()->row();
 
         //Filter Data
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        // $filter_customer = base64_decode($this->input->get('filter_customer'));
-        $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-        $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        // $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+        $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+        $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
         $period = $filter_year . "-" . $filter_month;
 
         $query_main = "SELECT a.*, 
@@ -1304,12 +1304,12 @@ class Generate_loadcap extends CI_Controller
     //     $config = $this->db->get()->row();
 
     //     //Filter Data
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     // $filter_customer = base64_decode($this->input->get('filter_customer'));
-    //     $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-    //     $filter_product_no = base64_decode($this->input->get('filter_item_fg'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
+    //     $filter_month = base64_decode((string) $this->input->get('filter_month'));
+    //     $filter_year = base64_decode((string) $this->input->get('filter_year'));
+    //     // $filter_customer = base64_decode((string) $this->input->get('filter_customer'));
+    //     $filter_cutoff = base64_decode((string) $this->input->get('filter_cutoff'));
+    //     $filter_product_no = base64_decode((string) $this->input->get('filter_item_fg'));
+    //     $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
     //     $period = $filter_year . "-" . $filter_month;
 
     //     $query_main = "SELECT a.*
@@ -1403,9 +1403,9 @@ class Generate_loadcap extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_month = base64_decode((string) $this->input->get('filter_month'));
+        $filter_year = base64_decode((string) $this->input->get('filter_year'));
+        $filter_revision = base64_decode((string) $this->input->get('filter_revision'));
 
         // === REKAP PER MACHINE ===
         $query_main = "
@@ -1519,20 +1519,20 @@ class Generate_loadcap extends CI_Controller
                     <td align="center">' . $no++ . '</td>
                     <td>' . $r->machine_number . '</td>
                     <td align="center">' . $r->toonage . '</td>
-                    <td align="right" style="' . ($r->loadcap1 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($r->loadcap1, 2) . '%</td>
-                    <td align="right" style="' . ($r->loadcap2 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($r->loadcap2, 2) . '%</td>
-                    <td align="right" style="' . ($r->loadcap3 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($r->loadcap3, 2) . '%</td>
-                    <td align="right" style="' . ($r->loadcap4 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($r->loadcap4, 2) . '%</td>
+                    <td align="right" style="' . ($r->loadcap1 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format((float) $r->loadcap1, 2) . '%</td>
+                    <td align="right" style="' . ($r->loadcap2 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format((float) $r->loadcap2, 2) . '%</td>
+                    <td align="right" style="' . ($r->loadcap3 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format((float) $r->loadcap3, 2) . '%</td>
+                    <td align="right" style="' . ($r->loadcap4 > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format((float) $r->loadcap4, 2) . '%</td>
                 </tr>';
         }
 
         $html .= '
                     <tr style="background-color: #f9f9f9; font-weight: bold;">
                         <td colspan="3" align="center">TOTAL</td>
-                        <td align="right">' . number_format($tot_mc_1, 2) . '%</td>
-                        <td align="right">' . number_format($tot_mc_2, 2) . '%</td>
-                        <td align="right">' . number_format($tot_mc_3, 2) . '%</td>
-                        <td align="right">' . number_format($tot_mc_4, 2) . '%</td>
+                        <td align="right">' . number_format((float) $tot_mc_1, 2) . '%</td>
+                        <td align="right">' . number_format((float) $tot_mc_2, 2) . '%</td>
+                        <td align="right">' . number_format((float) $tot_mc_3, 2) . '%</td>
+                        <td align="right">' . number_format((float) $tot_mc_4, 2) . '%</td>
                     </tr>
                 </table>
             </div>
@@ -1563,20 +1563,20 @@ class Generate_loadcap extends CI_Controller
                         <td align="center">' . $no++ . '</td>
                         <td>' . $m->machine_number . '</td>
                         <td align="center">' . $m->toonage . '</td>
-                        <td align="right" style="color:' . ($m->manpower1 > 100 ? 'red' : 'black') . ';">' . number_format($m->manpower1, 2) . '</td>
-                        <td align="right" style="color:' . ($m->manpower2 > 100 ? 'red' : 'black') . ';">' . number_format($m->manpower2, 2) . '</td>
-                        <td align="right" style="color:' . ($m->manpower3 > 100 ? 'red' : 'black') . ';">' . number_format($m->manpower3, 2) . '</td>
-                        <td align="right" style="color:' . ($m->manpower4 > 100 ? 'red' : 'black') . ';">' . number_format($m->manpower4, 2) . '</td>
+                        <td align="right" style="color:' . ($m->manpower1 > 100 ? 'red' : 'black') . ';">' . number_format((float) $m->manpower1, 2) . '</td>
+                        <td align="right" style="color:' . ($m->manpower2 > 100 ? 'red' : 'black') . ';">' . number_format((float) $m->manpower2, 2) . '</td>
+                        <td align="right" style="color:' . ($m->manpower3 > 100 ? 'red' : 'black') . ';">' . number_format((float) $m->manpower3, 2) . '</td>
+                        <td align="right" style="color:' . ($m->manpower4 > 100 ? 'red' : 'black') . ';">' . number_format((float) $m->manpower4, 2) . '</td>
                     </tr>';
         }
 
         $html .= '
                     <tr style="background-color: #f9f9f9; font-weight: bold;">
                         <td colspan="3" align="center">TOTAL</td>
-                        <td align="right">' . number_format($tot_mp_1, 2) . '</td>
-                        <td align="right">' . number_format($tot_mp_2, 2) . '</td>
-                        <td align="right">' . number_format($tot_mp_3, 2) . '</td>
-                        <td align="right">' . number_format($tot_mp_4, 2) . '</td>
+                        <td align="right">' . number_format((float) $tot_mp_1, 2) . '</td>
+                        <td align="right">' . number_format((float) $tot_mp_2, 2) . '</td>
+                        <td align="right">' . number_format((float) $tot_mp_3, 2) . '</td>
+                        <td align="right">' . number_format((float) $tot_mp_4, 2) . '</td>
                     </tr>
                 </table>
             </div>
@@ -1602,9 +1602,9 @@ class Generate_loadcap extends CI_Controller
                     <tr>
                         <td align="center">' . $no++ . '</td>
                         <td align="center">' . $t->toonage . '</td>
-                        <td align="right">'  . number_format($t->total, 2) . '%</td>
+                        <td align="right">'  . number_format((float) $t->total, 2) . '%</td>
                         <td align="center">' . $t->unit . '</td>
-                        <td align="right" style="' . ($t->average > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format($t->average, 2) . '%</td>
+                        <td align="right" style="' . ($t->average > 100 ? 'background-color: #ffb6c1; color: black;' : '') . '">' . number_format((float) $t->average, 2) . '%</td>
                     </tr>';
         }
 
@@ -1613,9 +1613,9 @@ class Generate_loadcap extends CI_Controller
         $html .= '
                     <tr style="background-color: #f9f9f9; font-weight: bold;">
                         <td colspan="2" align="center">TOTAL</td>
-                        <td align="right">' . number_format($tot_ton_total, 2) . '%</td>
+                        <td align="right">' . number_format((float) $tot_ton_total, 2) . '%</td>
                         <td align="center">' . $tot_ton_unit . '</td>
-                        <td align="right">' . number_format($tot_ton_avg, 2) . '%</td>
+                        <td align="right">' . number_format((float) $tot_ton_avg, 2) . '%</td>
                     </tr>
                 </table>
             </div>

@@ -59,7 +59,7 @@ class Wip_receipts extends CI_Controller
         $trans_date = $this->input->get('trans_date');
         $shift = $this->input->get('shift');
 
-        if (!$trans_date || !strtotime($trans_date)) {
+        if (!$trans_date || !strtotime((string) $trans_date)) {
             echo json_encode([]);
             return;
         }
@@ -93,7 +93,7 @@ class Wip_receipts extends CI_Controller
     {
         $trans_date = $this->input->get('trans_date');
 
-        if (!$trans_date || !strtotime($trans_date)) {
+        if (!$trans_date || !strtotime((string) $trans_date)) {
             echo json_encode([]);
             return;
         }
@@ -190,7 +190,7 @@ class Wip_receipts extends CI_Controller
 
     public function label_no($trans_date)
     {
-        $datenow = date("Y-m", strtotime($trans_date));
+        $datenow = date("Y-m", strtotime((string) $trans_date));
         $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM wip_receipts WHERE trans_date like '%$datenow%'");
         $rowID = $sqlGetID->row();
         $kode = $rowID->kode;
@@ -207,7 +207,7 @@ class Wip_receipts extends CI_Controller
 
     // public function datatablesTemp()
     // {
-    //     $checksheet_number = base64_decode($this->input->get('checksheet_number'));
+    //     $checksheet_number = base64_decode((string) $this->input->get('checksheet_number'));
     //     $checksheet_number_ex = explode(",", $checksheet_number);
 
     //     $this->db->select('a.*,a.number as checksheet_number, a.qty as checksheet_qty, a.receipt as qty, b.id as item_fg_id,b.number as item_number, b.name as item_name , c.lot_no');
@@ -248,7 +248,7 @@ class Wip_receipts extends CI_Controller
 
     public function datatablesTemp()
     {
-        $prod_date = base64_decode($this->input->get('prod_date'));
+        $prod_date = base64_decode((string) $this->input->get('prod_date'));
         $shift = $this->input->get('shift');
         $division = $this->input->get('division');
 
@@ -414,8 +414,8 @@ class Wip_receipts extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $doc_no = base64_decode($this->input->get('document_no'));
-            // $filter_item_fg_id = base64_decode($this->input->get('filter_item_fg_id'));
+            $doc_no = base64_decode((string) $this->input->get('document_no'));
+            // $filter_item_fg_id = base64_decode((string) $this->input->get('filter_item_fg_id'));
 
             $this->db->select('a.*, b.wo_no, d.number as product_no, d.name as product_name, d.uom');
             $this->db->from('wip_receipts a');
@@ -673,7 +673,7 @@ class Wip_receipts extends CI_Controller
                         <td>' . $data['product_no'] . '</td>
                         <td>' . $data['product_name'] . '</td>
                         <td>' . $data['lot_no'] . '</td>
-                        <td style="text-align:right">' . number_format($data['qty']) . '</td>
+                        <td style="text-align:right">' . number_format((float) $data['qty']) . '</td>
                         <td style="text-align:center">' . $data['uom'] . '</td>
                         <td style="text-align:center">' . $data['status_subcont'] . '</td>
                         <td style="text-align:center">' . $data['subcont_type'] . '</td>

@@ -65,9 +65,9 @@ class Report_general_ledgers extends CI_Controller
 
     public function print($option = "") 
     {
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_account = base64_decode($this->input->get("filter_account"));
+        $filter_from = base64_decode((string) $this->input->get("filter_from"));
+        $filter_to = base64_decode((string) $this->input->get("filter_to"));
+        $filter_account = base64_decode((string) $this->input->get("filter_account"));
 
         //Config
         $this->db->select('*');
@@ -92,8 +92,8 @@ class Report_general_ledgers extends CI_Controller
             header("Content-Disposition: attachment; filename=report_general_ledgers_$format.xls");
         }
 
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
+        $filter_before = date("Y-01-01", strtotime((string) $filter_from));
+        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
 
         $account_numbers = [];
         if (is_string($filter_account)) {
@@ -466,23 +466,23 @@ class Report_general_ledgers extends CI_Controller
 
             $html .= '  <tr style="background:#DEDEDE;">
                         <th style="text-align:right;" colspan="7"><b>ENDING BALANCE</b></th>
-                        <th style="text-align:right;">' . $this->formatIDR(abs($ori_balance), 2) . '</th>
+                        <th style="text-align:right;">' . $this->formatIDR(abs($ori_balance ?? 0), 2) . '</th>
                         <th style="text-align:right;">-</th>
                         <th style="text-align:right;">-</th>
                         <th></th>
-                        <th style="text-align:right;">' . $this->formatIDR(abs($local_balance), 2) . '</th>
+                        <th style="text-align:right;">' . $this->formatIDR(abs($local_balance ?? 0), 2) . '</th>
                         <th style="text-align:right;">-</th>
                         <th style="text-align:right;">-</th>
                     </tr>';
             $html .= '  <tr style="background:#DEDEDE;">
                         <th style="text-align:right;" colspan="7"><b>GRAND TOTAL</b></th>
                         <th style="text-align:right;"></th>
-                        <th style="text-align:right;">' . $this->formatIDR(abs($ori_debit), 2) . '</th>
-                        <th style="text-align:right;">' . $this->formatIDR(abs($ori_credit), 2) . '</th>
+                        <th style="text-align:right;">' . $this->formatIDR(abs($ori_debit ?? 0), 2) . '</th>
+                        <th style="text-align:right;">' . $this->formatIDR(abs($ori_credit ?? 0), 2) . '</th>
                         <th></th>
                         <th style="text-align:right;"></th>
-                        <th style="text-align:right;">' . $this->formatIDR(abs($local_debit), 2) . '</th>
-                        <th style="text-align:right;">' . $this->formatIDR(abs($local_credit), 2) . '</th>
+                        <th style="text-align:right;">' . $this->formatIDR(abs($local_debit ?? 0), 2) . '</th>
+                        <th style="text-align:right;">' . $this->formatIDR(abs($local_credit ?? 0), 2) . '</th>
                     </tr>';
 
             $html .= '</table> <br><br>
@@ -507,7 +507,7 @@ class Report_general_ledgers extends CI_Controller
     }
 
     function formatIDR($number, $decimal_places = 2) {
-        $formatted_number = number_format($number, $decimal_places, ',', '.');
+        $formatted_number = number_format((float) $number, $decimal_places, ',', '.');
         return $formatted_number;
     }
 }

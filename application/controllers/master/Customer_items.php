@@ -49,7 +49,7 @@ class Customer_items extends CI_Controller
 
     public function readItems()
     {
-        $customer_id = base64_decode($this->input->get('customer_id'));
+        $customer_id = base64_decode((string) $this->input->get('customer_id'));
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price FROM customer_items a 
             JOIN item_fg b ON a.item_fg_id = b.id 
@@ -127,10 +127,10 @@ class Customer_items extends CI_Controller
     // public function datatableDetails()
     // {
     //     if ($this->input->get()) {
-    //         $number = base64_decode($this->input->get('number'));
-    //         $division_id = base64_decode($this->input->get('division_id'));
-    //         $customer_address_id = base64_decode($this->input->get('customer_address_id'));
-    //         $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
+    //         $number = base64_decode((string) $this->input->get('number'));
+    //         $division_id = base64_decode((string) $this->input->get('division_id'));
+    //         $customer_address_id = base64_decode((string) $this->input->get('customer_address_id'));
+    //         $filter_customer_id = base64_decode((string) $this->input->get('filter_customer_id'));
 
     //         $this->db->select('a.*, b.number as customer_number, b.name as customer_name, a.currency, c.number as item_fg_number, c.number_customer as item_fg_customer, c.name as item_fg_name');
     //         $this->db->from('customer_items a');
@@ -153,9 +153,9 @@ class Customer_items extends CI_Controller
     // public function datatableUpdates()
     // {
     //     if ($this->input->get()) {
-    //         $customer_id = base64_decode($this->input->get('customer_id'));
-    //         $division_id = base64_decode($this->input->get('division_id'));
-    //         $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+    //         $customer_id = base64_decode((string) $this->input->get('customer_id'));
+    //         $division_id = base64_decode((string) $this->input->get('division_id'));
+    //         $customer_address_id = base64_decode((string) $this->input->get('customer_address_id'));
             
     //         $this->db->select('a.*, b.number as item_fg_number, b.number_customer as item_fg_customer, a.currency');
     //         $this->db->from('customer_items a');
@@ -175,10 +175,10 @@ class Customer_items extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
-            $division_id = base64_decode($this->input->get('division_id'));
-            $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+            $customer_id = base64_decode((string) $this->input->get('customer_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
+            $division_id = base64_decode((string) $this->input->get('division_id'));
+            $customer_address_id = base64_decode((string) $this->input->get('customer_address_id'));
 
             $this->db->select('*');
             $this->db->from('customer_item_histories');
@@ -220,7 +220,7 @@ class Customer_items extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
 
             $dataFinal = array(

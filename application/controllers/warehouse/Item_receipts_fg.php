@@ -308,7 +308,7 @@ class Item_receipts_fg extends CI_Controller
     {
         $checksheet_number = base64_decode($checksheet_numbers);
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $filters = json_decode((string) $this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -374,7 +374,7 @@ class Item_receipts_fg extends CI_Controller
     //     if ($lock) {
     //         // Cek apakah packing_date dalam rentang lock
     //         if ($packing_date >= $lock->lock_from && $packing_date <= $lock->lock_to) {
-    //             $new_date = date('Y-m-d', strtotime('+1 month', strtotime($lock->lock_from)));
+    //             $new_date = date('Y-m-d', strtotime('+1 month', strtotime((string) $lock->lock_from)));
 
     //             $this->db->update('checksheets', [
     //                 "packing_date" => $new_date,
@@ -425,7 +425,7 @@ class Item_receipts_fg extends CI_Controller
         if ($lock) {
             if ($packing_date <= $lock->lock_to) {
                 
-                $new_date = date('Y-m-d', strtotime('+1 month', strtotime($lock->lock_from)));
+                $new_date = date('Y-m-d', strtotime('+1 month', strtotime((string) $lock->lock_from)));
 
                 $this->db->trans_start();
 
@@ -510,7 +510,7 @@ class Item_receipts_fg extends CI_Controller
 
     public function checkPassword()
     {
-        $inputPassword = base64_decode($this->input->post('password'));
+        $inputPassword = base64_decode((string) $this->input->post('password'));
         // var_dump($inputPassword);
         $sessionPassword = 'SCM01@23#';
 

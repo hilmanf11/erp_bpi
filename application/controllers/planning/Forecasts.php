@@ -67,14 +67,14 @@ class Forecasts extends CI_Controller
         $p_month = $this->input->post('p_month');
         $p_year = $this->input->post('p_year');
         $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
 
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         echo json_encode($dates);
@@ -158,12 +158,12 @@ class Forecasts extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $document_no = base64_decode($this->input->get('document_no'));
-            $p_month = base64_decode($this->input->get('p_month'));
-            $p_year = base64_decode($this->input->get('p_year'));
-            $revision = base64_decode($this->input->get('revision'));
-            $filter_items = @base64_decode($this->input->get('filter_items'));
+            $customer_id = base64_decode((string) $this->input->get('customer_id'));
+            $document_no = base64_decode((string) $this->input->get('document_no'));
+            $p_month = base64_decode((string) $this->input->get('p_month'));
+            $p_year = base64_decode((string) $this->input->get('p_year'));
+            $revision = base64_decode((string) $this->input->get('revision'));
+            $filter_items = @base64_decode((string) $this->input->get('filter_items'));
 
             $this->db->select('a.*, c.number as item_fg_number, c.name as item_fg_name, c.number_customer as item_fg_customer');
             $this->db->from('forecasts a');
@@ -190,10 +190,10 @@ class Forecasts extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $p_month = base64_decode($this->input->get('p_month'));
-            $p_year = base64_decode($this->input->get('p_year'));
-            $revision = base64_decode($this->input->get('revision'));
+            $customer_id = base64_decode((string) $this->input->get('customer_id'));
+            $p_month = base64_decode((string) $this->input->get('p_month'));
+            $p_year = base64_decode((string) $this->input->get('p_year'));
+            $revision = base64_decode((string) $this->input->get('revision'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, b.number_customer as item_fg_customer');
             $this->db->from('forecasts a');
@@ -213,10 +213,10 @@ class Forecasts extends CI_Controller
     public function datatableHistories()
     {
         if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
-            $p_month = base64_decode($this->input->get('p_month'));
-            $p_year = base64_decode($this->input->get('p_year'));
+            $customer_id = base64_decode((string) $this->input->get('customer_id'));
+            $item_fg_id = base64_decode((string) $this->input->get('item_fg_id'));
+            $p_month = base64_decode((string) $this->input->get('p_month'));
+            $p_year = base64_decode((string) $this->input->get('p_year'));
 
             $this->db->select('*');
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
@@ -237,7 +237,7 @@ class Forecasts extends CI_Controller
     public function autoid(){
         $post = $this->input->post();
         $issued_date = $post["issued_date"];
-        $month = date('ym',strtotime($issued_date));
+        $month = date('ym',strtotime((string) $issued_date));
         $format = "FC".$month;
         $sql = $this->db->query("SELECT max(document_no) as kode FROM forecasts WHERE document_no LIKE '%$format%'");
         $row = $sql->row();
@@ -394,7 +394,7 @@ class Forecasts extends CI_Controller
 
             $post = $this->input->post();
             $issued_date = $data["issued_date"];
-            $month = date('ym',strtotime($issued_date));
+            $month = date('ym',strtotime((string) $issued_date));
             $format = "FC".$month;
             $sql = $this->db->query("SELECT max(document_no) as kode FROM forecasts WHERE document_no LIKE '%$format%'");
             $row = $sql->row();
@@ -476,13 +476,13 @@ class Forecasts extends CI_Controller
         $filter_revision = @base64_decode($get['filter_revision']);
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime((string) $p_date_start)));
+        while (strtotime((string) $p_date_start) <= strtotime((string) $p_date_to)) {
             $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
+                "name" => date("M-y", strtotime((string) $p_date_start))
             );
 
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime((string) $p_date_start)));
         }
 
         if($filter_period_year == "" || $filter_period_month == ""){

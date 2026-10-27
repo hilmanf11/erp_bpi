@@ -62,8 +62,8 @@ class Purchase_requests extends CI_Controller
 
     function readTotalPo() 
     {
-        $item_rm = base64_decode($this->input->post('item_rm_id'));
-        $item_no = base64_decode($this->input->post('item_number'));
+        $item_rm = base64_decode((string) $this->input->post('item_rm_id'));
+        $item_no = base64_decode((string) $this->input->post('item_number'));
 
         $this->db->select('a.id, a.item_rm_id, a.po_date, SUM(a.qty) as qty_po,
             b.number as supplier_number, 
@@ -130,8 +130,8 @@ class Purchase_requests extends CI_Controller
 
         // sort by date desc
         usort($result, function($a, $b) {
-            $dateA = strtotime($a['po_date']);
-            $dateB = strtotime($b['po_date']);
+            $dateA = strtotime((string) $a['po_date']);
+            $dateB = strtotime((string) $b['po_date']);
             if ($dateA > $dateB) {
                 return -1;
             } elseif ($dateA < $dateB) {
@@ -432,7 +432,7 @@ class Purchase_requests extends CI_Controller
     }
 
     public function datatable_updates(){
-        $request_no = base64_decode($this->input->get('request_no'));
+        $request_no = base64_decode((string) $this->input->get('request_no'));
         $records = $this->crud->query("SELECT DISTINCT a.*, c.number as item_number, c.name as item_name, c.id as item_rm_id, b.uom_default, b.uom_inventory
             FROM purchase_requests a
             JOIN item_rm c on a.item_rm_id = c.id
@@ -861,7 +861,7 @@ class Purchase_requests extends CI_Controller
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record['item_rm_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['qty'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format((float) $record['qty'], 2, ",", ".") . '</td>
                                 <td>' . $record['uom'] . '</tdstyle=>
                                 <td>' . $record['remarks'] . '</td>
                             </tr>';
@@ -1007,7 +1007,7 @@ class Purchase_requests extends CI_Controller
                         <td>' . $data['sub_department'] . '</td>
                         <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
-                        <td>' . number_format($data['qty'], 2) . '</td>
+                        <td>' . number_format((float) $data['qty'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['length'] . '</td>
                         <td>' . $data['width'] . '</td>
@@ -1027,10 +1027,10 @@ class Purchase_requests extends CI_Controller
     {
         if ($this->input->get()) {
             
-            $filter_month        = base64_decode($this->input->get('filter_month'));
-            $filter_year         = base64_decode($this->input->get('filter_year'));
-            $filter_revision     = base64_decode($this->input->get('filter_revision'));
-            $filter_item_familys = base64_decode($this->input->get('filter_item_familys'));
+            $filter_month        = base64_decode((string) $this->input->get('filter_month'));
+            $filter_year         = base64_decode((string) $this->input->get('filter_year'));
+            $filter_revision     = base64_decode((string) $this->input->get('filter_revision'));
+            $filter_item_familys = base64_decode((string) $this->input->get('filter_item_familys'));
 
             $this->db->select("
                 a.id as mrp_id, 
