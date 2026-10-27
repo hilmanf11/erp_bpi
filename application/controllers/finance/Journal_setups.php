@@ -40,14 +40,14 @@ class Journal_setups extends CI_Controller
     //GET DATATABLES
     public function datatables()
     {
-        $filters = json_decode((string) $this->input->post('filterRules'));
+        $filters = json_decode($this->input->post('filterRules') ?? '[]');
         $id = $_POST['id'];
         // var_dump($id);
         if ($id === "0") {
             $this->db->select('a.journal_type_id, b.name as journal_name');
             $this->db->from('journal_setups a');
             $this->db->join('journal_types b', 'a.journal_type_id = b.id');
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if ($filter->field == "journal_name") {
                         $this->db->like("b.name", $filter->value);

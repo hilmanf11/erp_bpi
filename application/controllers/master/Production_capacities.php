@@ -63,7 +63,7 @@ class Production_capacities extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -79,7 +79,7 @@ class Production_capacities extends CI_Controller
             $this->db->join('menu_loadings d', 'd.machine_id = c.id');
             $this->db->join('molds e', 'd.mold_id = e.id');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_fg_id"){
                         $this->db->like("b.id", $filter->value);

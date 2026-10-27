@@ -34,7 +34,7 @@ class Upload_receipt_fg extends CI_Controller
     // public function datatables()
     // {
     //     if ($this->input->post()) {
-    //         $filters = json_decode((string) $this->input->post('filterRules'));
+    //         $filters = json_decode($this->input->post('filterRules') ?? '[]');
     //         $page = $this->input->post('page');
     //         $rows = $this->input->post('rows');
     //         //Pagination 1-10
@@ -46,7 +46,7 @@ class Upload_receipt_fg extends CI_Controller
     //         $this->db->select('*');
     //         $this->db->from('new_barcode_fg');
     //         $this->db->where('label_type', 'manual');
-    //         if (@count($filters) > 0) {
+    //         if (!empty($filters)) {
     //             foreach ($filters as $filter) {
     //                 $this->db->like($filter->field, $filter->value);
     //             }

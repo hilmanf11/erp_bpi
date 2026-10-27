@@ -41,7 +41,7 @@ class Journal_types extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -53,7 +53,7 @@ class Journal_types extends CI_Controller
             $this->db->select('a.*, b.account_name');
             $this->db->from('journal_types a');
             $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if ($filter->field == "account_number") {
                         $this->db->like("a.account_number", $filter->value);

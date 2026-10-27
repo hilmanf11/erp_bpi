@@ -39,7 +39,7 @@ class Subconts extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -53,7 +53,7 @@ class Subconts extends CI_Controller
             $this->db->join('subcont_types b', 'a.subcont_type_id = b.id');
             $this->db->join('delivery_areas c', 'a.delivery_area_id = c.id');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if ($filter->field == "subcont_type_name") {
                         $this->db->like("b.id", $filter->value);

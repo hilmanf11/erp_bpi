@@ -52,7 +52,7 @@ class Account_coa extends CI_Controller
         header('Content-Type: application/json');
 
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'), true); // Jadikan array asosiatif
+            $filters = json_decode($this->input->post('filterRules') ?? '[]', true); // Jadikan array asosiatif
             $page = (int)$this->input->post('page');
             $rows = (int)$this->input->post('rows');
             $offset = ($page > 0) ? ($page - 1) * $rows : 0;
@@ -145,7 +145,7 @@ class Account_coa extends CI_Controller
     public function datatables_backup()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -164,7 +164,7 @@ class Account_coa extends CI_Controller
             $this->db->join('journal_types', 'journal_types.account_number = account_coa.account_number', 'left');
             $this->db->where('account_coa.deleted', 0);
 
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if ($filter->field == 'account_group_detail_name') {
                         $this->db->like('account_group_details.name', $filter->value);
@@ -208,7 +208,7 @@ class Account_coa extends CI_Controller
     public function datatablesOld()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -226,7 +226,7 @@ class Account_coa extends CI_Controller
             $this->db->join('journal_types', 'journal_types.account_number = account_coa.account_number', 'left');
             $this->db->where('account_coa.deleted', 0);
 
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if ($filter->field == 'account_group_detail_id') {
                         $this->db->like('account_group_details.name', $filter->value);

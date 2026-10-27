@@ -41,7 +41,7 @@ class Account_cash_flow extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -55,7 +55,7 @@ class Account_cash_flow extends CI_Controller
             $this->db->join('account_coa', 'account_cash_flow.account_number = account_coa.account_number', 'left');
             $this->db->where('account_cash_flow.deleted', 0);
 
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     $this->db->like($filter->field, $filter->value);
                 }

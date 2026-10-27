@@ -38,7 +38,7 @@ class Wip_balances extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -63,7 +63,7 @@ class Wip_balances extends CI_Controller
             $this->db->join('item_ng e', 'e.document = c2.document and e.item_rm_id = c2.item_rm_id','left');
             $this->db->join('item_fg d', 'd.id = COALESCE(c.item_fg_id, e.item_fg_id)','left');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if ($filter->field == "item_number") {
                         $this->db->like("b.number", $filter->value);

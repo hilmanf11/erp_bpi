@@ -403,7 +403,7 @@ class Fixed_assets extends CI_Controller
         $rows = $this->input->post('rows') ?? 10;
         $offset = ($page - 1) * $rows;
 
-        $filters = json_decode((string) $this->input->post('filterRules'), true); // Filter keyword per kolom dari tabel datagrid view 
+        $filters = json_decode($this->input->post('filterRules') ?? '[]', true); // Filter keyword per kolom dari tabel datagrid view 
         $filter_from = base64_decode((string) $this->input->get('filter_from')) ?? null;
         $filter_to = base64_decode((string) $this->input->get('filter_to')) ?? null;
         $filter_financial_period_from = base64_decode((string) $this->input->get('filter_financial_period_from')) ?? null;
@@ -967,7 +967,7 @@ class Fixed_assets extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $filters = json_decode((string) $this->input->post('filterRules'), true); // Filter keyword per kolom dari tabel datagrid view 
+        $filters = json_decode($this->input->post('filterRules') ?? '[]', true); // Filter keyword per kolom dari tabel datagrid view 
         $filter_financial_period_from = base64_decode((string) $this->input->get('filter_financial_period_from')) ?? null;
         $filter_financial_period_to = base64_decode((string) $this->input->get('filter_financial_period_to')) ?? null;
         $filter_from = base64_decode((string) $this->input->get('filter_from')) ?? null;

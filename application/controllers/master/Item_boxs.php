@@ -39,7 +39,7 @@ class Item_boxs extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -52,7 +52,7 @@ class Item_boxs extends CI_Controller
             $this->db->from('item_boxs a');
             $this->db->join('item_kinds b', 'a.item_kind_id = b.id');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_kind_name"){
                         $this->db->like("b.id", $filter->value);

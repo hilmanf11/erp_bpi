@@ -41,7 +41,7 @@ class Account_group_details extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -55,7 +55,7 @@ class Account_group_details extends CI_Controller
             $this->db->join('account_groups', 'account_group_details.account_group_id = account_groups.id', 'left');
             $this->db->where('account_group_details.deleted', 0);
     
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if ($filter->field == 'group_name') {
                         $this->db->like('account_groups.name', $filter->value);

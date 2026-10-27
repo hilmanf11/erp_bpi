@@ -107,7 +107,7 @@ class Issued_materials extends CI_Controller
         $item_rm_ids = json_decode(base64_decode($item_rm_ids_encoded));
 
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             $page = isset($page) ? intval($page) : 1;
@@ -122,7 +122,7 @@ class Issued_materials extends CI_Controller
             $this->db->where('request_no', $request_no);
             $this->db->where_in('item_rm_id', $item_rm_ids); // gunakan where_in untuk array ID
 
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     $this->db->like($filter->field, $filter->value);
                 }

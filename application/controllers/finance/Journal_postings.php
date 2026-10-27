@@ -3198,7 +3198,7 @@ class Journal_postings extends CI_Controller
     public function datatableDetails()
     {
         $number = base64_decode((string) $this->input->get('number'));
-        $filters = json_decode((string) $this->input->post('filterRules'));
+        $filters = json_decode($this->input->post('filterRules') ?? '[]');
 
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
@@ -3211,7 +3211,7 @@ class Journal_postings extends CI_Controller
         $this->db->select('*');
         $this->db->from('journal_postings');
         $this->db->where('number', $number);
-        if (@count($filters) > 0) {
+        if (!empty($filters)) {
             foreach ($filters as $filter) {
                 $this->db->like($filter->field, $filter->value);
             }

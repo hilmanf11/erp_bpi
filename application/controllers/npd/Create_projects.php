@@ -80,7 +80,7 @@ class Create_projects extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -100,7 +100,7 @@ class Create_projects extends CI_Controller
             $this->db->join('customers c','c.id = a.customer_id');
             $this->db->join('project_categorys e','e.id = a.project_category_id');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     $this->db->like($filter->field, $filter->value);
                 }

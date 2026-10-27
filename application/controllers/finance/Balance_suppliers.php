@@ -38,7 +38,7 @@ class Balance_suppliers extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -52,7 +52,7 @@ class Balance_suppliers extends CI_Controller
             $this->db->join('account_balance_suppliers b', 'a.id = b.supplier_id', 'left');
             $this->db->join('account_coa c', 'b.account_number = c.account_number', 'left');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if($filter->field == "supplier_number"){
                         $this->db->like("a.number", $filter->value);

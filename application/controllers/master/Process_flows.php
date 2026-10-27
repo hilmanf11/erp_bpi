@@ -41,7 +41,7 @@ class Process_flows extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -54,7 +54,7 @@ class Process_flows extends CI_Controller
             $this->db->from('process_flows a');
             $this->db->join('process b', 'a.process_id = b.id');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     $this->db->like($filter->field, $filter->value);
                 }

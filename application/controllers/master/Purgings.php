@@ -39,7 +39,7 @@ class Purgings extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -52,7 +52,7 @@ class Purgings extends CI_Controller
             $this->db->from('purgings a');
             $this->db->join('machines b', 'a.machine_id = b.id');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if($filter->field == "machine_id"){
                         $this->db->like("b.id", $filter->value);

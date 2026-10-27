@@ -308,7 +308,7 @@ class Item_receipts_fg extends CI_Controller
     {
         $checksheet_number = base64_decode($checksheet_numbers);
         if ($this->input->post()) {
-            $filters = json_decode((string) $this->input->post('filterRules'));
+            $filters = json_decode($this->input->post('filterRules') ?? '[]');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -321,7 +321,7 @@ class Item_receipts_fg extends CI_Controller
             $this->db->from('scan_item_receipts_fg');
             $this->db->where('checksheet_number', $checksheet_number);
             $this->db->order_by('checksheet_label', 'ASC');
-            if (@count($filters) > 0) {
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     $this->db->like($filter->field, $filter->value);
                 }

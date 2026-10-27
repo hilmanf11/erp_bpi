@@ -323,7 +323,7 @@ class Notifications extends CI_Controller
     //     $user = base64_decode($user);
     //     $name = base64_decode($name);
 
-    //     $filters = json_decode((string) $this->input->post('filterRules'));
+    //     $filters = json_decode($this->input->post('filterRules') ?? '[]');
     //     $page = $this->input->post('page');
     //     $rows = $this->input->post('rows');
 
@@ -339,7 +339,7 @@ class Notifications extends CI_Controller
     //     $this->db->where('table_name', $table);
     //     $this->db->where('user_id', $user);
     //     $this->db->where('name', $name);
-    //     if (@count($filters) > 0) {
+    //     if (!empty($filters)) {
     //         foreach ($filters as $filter) {
     //             $this->db->like("log", $filter->value);
     //         }
@@ -406,7 +406,7 @@ class Notifications extends CI_Controller
         $user = base64_decode($user);
         $name = base64_decode($name);
 
-        $filters = json_decode((string) $this->input->post('filterRules'));
+        $filters = json_decode($this->input->post('filterRules') ?? '[]');
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
 
@@ -422,7 +422,7 @@ class Notifications extends CI_Controller
         $this->db->where('table_name', $table);
         $this->db->where('user_id', $user);
         $this->db->where('name', $name);
-        if (@count($filters) > 0) {
+        if (!empty($filters)) {
             foreach ($filters as $filter) {
                 $this->db->like("log", $filter->value);
             }
