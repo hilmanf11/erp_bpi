@@ -267,6 +267,200 @@ class Wip_adjustment_fg extends CI_Controller
         echo $send;
     }
 
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+
+        $request_date     = $data->val(2, 3);
+        $transaction_type = $data->val(3, 3);
+        $remarks          = $data->val(4, 3); 
+
+        $request_name = $this->session->name; 
+
+        $cek_type = $this->crud->read('wip_transactions', [], ["type" => $transaction_type]);
+        if (empty($cek_type)) {
+            echo json_encode([
+                "status"  => "error", 
+                "message" => "Transaction Type '$transaction_type' not found in database!"
+            ]);
+            @unlink($target);
+            return;
+        }
+
+        $datenow  = date("ymd", strtotime((string) $request_date));
+        $sqlGetID = $this->db->query("SELECT max(request_no) as kode FROM wip_adjustment_fg WHERE request_no like '%ADJWIPFG-$datenow%'");
+        $rowID    = $sqlGetID->row();
+        $kode     = $rowID->kode;
+        
+        if ($kode == NULL) {
+            $autoID = sprintf("%04s", 1);
+        } else {
+            $urutan = (int) substr($kode, -4);
+            $urutan++;
+            $autoID = sprintf("%04s", $urutan);
+        }
+        $request_no = "ADJWIPFG-" . $datenow . "-" . $autoID;
+
+        $total_row = $data->rowcount($sheet_index = 0);
+        $valid_datas = [];
+        $failed_datas = [];
+
+        for ($i = 6; $i <= $total_row; $i++) {
+            
+            $product_no = $data->val($i, 2);
+            $qty        = (float) $data->val($i, 3);
+            $notes      = $data->val($i, 4);
+
+            if (empty($product_no)) continue; 
+
+            if ($qty <= 0) {
+                $failed_datas[] = [
+                    "product_no" => $product_no,
+                    "reason"     => "Qty is 0 or empty"
+                ];
+                continue;             }
+
+            $item_fg = $this->crud->read('item_fg', [], ["number" => $product_no]);
+            if (empty($item_fg->id)) {
+                $failed_datas[] = [
+                    "product_no" => $product_no,
+                    "reason"     => "Product No not found in Master"
+                ];
+                continue; 
+            }
+
+            $valid_datas[] = array(
+                'request_date'     => $request_date,
+                'request_no'       => $request_no,
+                'request_name'     => $request_name,
+                'transaction_type' => $transaction_type,
+                'remarks'          => $remarks,
+                'item_fg_id'       => $item_fg->id,
+                'product_no'       => $product_no,
+                'qty'              => $qty,
+                'notes'            => $notes
+            );
+        }
+
+        echo json_encode([
+            "status"       => "success",
+            "request_no"   => $request_no,
+            "total_valid"  => count($valid_datas),
+            "total_failed" => count($failed_datas),
+            "valid_data"   => $valid_datas, 
+            "failed_data"  => $failed_datas
+        ]);
+        
+        @unlink($target);
+    }
+
+    public function uploadclearFailed()
+    {
+        @unlink('failed/wip_adjustment_fg.txt');
+    }
+
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/wip_adjustment_fg.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/wip_adjustment_fg.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            
+            // 1. AMAN DARI STRUKTUR AJAX: 
+            // Cek apakah data dikirim terbungkus { data: {...} } atau langsung objek {...}
+            $data = $this->input->post('data');
+            if (empty($data)) {
+                // Ambil langsung semua post jika JS mengirimnya tanpa key 'data'
+                $data = $this->input->post(); 
+            }
+
+            // Jika $data masih gagal ditangkap, cegah crash dan tampilkan error
+            if (empty($data['request_no'])) {
+                echo json_encode(array(
+                    "title" => "Error", 
+                    "message" => "Failed to receive Payload Data from AJAX.", 
+                    "theme" => "error"
+                ));
+                return;
+            }
+
+            // 2. Susun data untuk di Insert
+            $dataInsert = array(
+                "request_date"     => $data['request_date'],
+                "request_no"       => $data['request_no'],
+                "request_name"     => $data['request_name'],
+                "transaction_type" => $data['transaction_type'],
+                "remarks"          => $data['remarks'],
+                "item_fg_id"       => $data['item_fg_id'], 
+                "qty"              => $data['qty'],
+                "notes"            => $data['notes']
+            );
+
+            // 3. Pengecekan Duplikasi (Menggunakan Request No & Item FG)
+            $cek_data = $this->crud->read('wip_adjustment_fg', [], [
+                "request_no" => $data['request_no'], 
+                "item_fg_id" => $data['item_fg_id']
+            ]);
+
+            // PERBAIKAN DI SINI: Cukup cek apakah $cek_data ada isinya (tidak null)
+            if (!empty($cek_data)) {
+                
+                // Update menggunakan kombinasi Request No & Item FG
+                $this->db->update('wip_adjustment_fg', [
+                    "qty"   => $data['qty'], 
+                    "notes" => $data['notes']
+                ], [
+                    "request_no" => $data['request_no'], 
+                    "item_fg_id" => $data['item_fg_id']
+                ]);
+                
+                echo json_encode(array(
+                    "title" => "Update", 
+                    "message" => "Item [" . $data['product_no'] . "] has been updated.", 
+                    "theme" => "success"
+                ));
+            } else {
+                // Insert Baru
+                $this->crud->create('wip_adjustment_fg', $dataInsert);
+                
+                echo json_encode(array(
+                    "title" => "Success", 
+                    "message" => "Item [" . $data['product_no'] . "] has been saved.", 
+                    "theme" => "success"
+                ));
+            }
+        }
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {
