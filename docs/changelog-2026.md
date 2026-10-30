@@ -1028,3 +1028,6 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com> ([b067305f](https://gith
   - Penambahan kolom `Description` pada datagrid Journal Lists (`#dg3`), modal detail (`#dgDetailJournal`), dan printout invoice (`print_invoicing`).
   - Format pengisian otomatis kolom Description pada `addJournal()`: `{por_no};{product_no}` untuk baris item barang persediaan, dan `{por_no}` untuk baris PPN Masukan, Hutang Dagang (AP), dan PPh.
   - Penyertaan field `description` pada AJAX loop `createJournals`.
+
+### [2026-10-30]
+- **Yudhazaldi**: feat: implement journal inventory auto-posting and reporting integration ([223f3b9a](https://github.com/hilmanf11/erp_bpi/commit/223f3b9a3996fe1b58579e004c35a5c943591026))
