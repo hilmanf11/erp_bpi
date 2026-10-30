@@ -148,6 +148,11 @@ class Approvals extends CI_Controller
 
     public function approvalCount()
     {
+        // Session habis (polling AJAX tetap jalan): jangan hitung data approved_to IS NULL
+        if (empty($this->session->username)) {
+            return;
+        }
+
         $users = $this->crud->reads('users', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_requests = $this->crud->reads('purchase_requests', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
@@ -179,6 +184,11 @@ class Approvals extends CI_Controller
 
     public function approvalList()
     {
+        // Session habis (polling AJAX tetap jalan): jangan tampilkan data approved_to IS NULL
+        if (empty($this->session->username)) {
+            return;
+        }
+
         //Users
         $users = $this->crud->reads('users', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
@@ -284,7 +294,7 @@ class Approvals extends CI_Controller
                                     </div>
                                 </td>
                                 <td style="padding-left: 10px;">
-                                    <b>' . $user->name . '</b><br>
+                                    <b>' . (!empty($user) ? $user->name : "Unknown User") . '</b><br>
                                     <small>Sent a request to approve data <b>' . strtoupper(str_replace("_", " ", $table)) . '</b></small>
                                 </td>
                             </tr>

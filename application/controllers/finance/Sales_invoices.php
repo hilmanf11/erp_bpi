@@ -437,59 +437,77 @@ class Sales_invoices extends CI_Controller
 
     public function readJournalTypeByDivision()
     {
-        $division = $this->input->post('division');
+        $division    = $this->input->post('division');
         $customer_id = $this->input->post('customer_id');
 
         $customer = $this->db->get_where('customers', ['id' => $customer_id])->row();
-        
         if (empty($customer)) {
             echo json_encode([]);
             return;
         }
 
-        // Normalisasi Nama Customer
-        $customer_name = strtolower($customer->name);
-        // Hapus PT, CV, titik, dan koma
-        $search_term = str_replace(['pt ', 'cv ', '.', ','], '', $customer_name);
-        $search_term = trim((string) $search_term);
+        // Nama -> token kata (lowercase, tanpa PT/CV/Tbk & tanda baca)
+        $tok = function ($s) {
+            $s = preg_replace('/[^a-z0-9 ]+/', ' ', strtolower((string) $s));
+            $t = preg_split('/\s+/', trim($s), -1, PREG_SPLIT_NO_EMPTY);
+            return array_values(array_diff($t, ['pt', 'cv', 'tbk']));
+        };
+        $cust_tok = $tok($customer->name);
+        if (empty($cust_tok)) {
+            echo json_encode([]);
+            return;
+        }
+
+        // Prefix division (MTS boleh MDS/MTS) + fallback RM (penjualan raw material)
+        $prefixes = ($division == "MTS") ? ['MDS', 'MTS'] : ($division ? [$division] : []);
+        $prefixes[] = 'RM';
 
         $this->db->select('id, name');
         $this->db->from('journal_types');
-
-        // --- LOGIKA MULTI-DIVISION ---
+        $this->db->like('module', 'SALES INVOICING');
+        $this->db->where('is_journal_inventory', 0);
         $this->db->group_start();
-            if ($division == "MTS") {
-                // Jika input MTS, cari yang berawalan MDS ATAU MTS
-                $this->db->like('name', 'MDS', 'after');
-                $this->db->or_like('name', 'MTS', 'after');
-            } else {
-                // Jika selain MTS (misal: FIN, HRD), cari sesuai input
-                $this->db->like('name', $division, 'after');
-            }
+        foreach ($prefixes as $i => $p) {
+            $i == 0 ? $this->db->like('name', $p, 'after') : $this->db->or_like('name', $p, 'after');
+        }
         $this->db->group_end();
+        $rows = $this->db->get()->result();
 
-        // --- LOGIKA NAMA CUSTOMER ---
-        if (!empty($search_term)) {
-            $this->db->like('name', $search_term, 'both');
+        // Cocok bila kata journal type ⊆ kata customer atau sebaliknya
+        // (toleran urutan/kata tambahan, mis. "Dano Plast" vs "Dano Jaya Plast").
+        // Skor: jumlah kata sama; prefix division menang atas RM bila sama-sama cocok.
+        $best = null;
+        $best_score = -1;
+        foreach ($rows as $r) {
+            $parts = explode('-', $r->name, 2);
+            if (count($parts) < 2) continue;
+            $pfx    = strtoupper(trim($parts[0]));
+            $jt_tok = $tok($parts[1]);
+            if (empty($jt_tok)) continue;
+            $sub = !array_diff($jt_tok, $cust_tok) || !array_diff($cust_tok, $jt_tok);
+            if (!$sub) continue;
+            $score = count(array_intersect($jt_tok, $cust_tok)) * 10 + ($pfx == 'RM' ? 0 : 5);
+            if ($score > $best_score) {
+                $best_score = $score;
+                $best = $r;
+            }
         }
 
-        $result = $this->db->get()->row();
-
-        // die($this->db->last_query()); // Debugging: Buka comment jika data masih tidak muncul
-
-        echo json_encode($result ? $result : []);
+        echo json_encode($best ? $best : []);
     }
 
     public function readJournal($journal_type_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
 
-        $journal_type_id = base64_decode($journal_type_id);
+        $journal_type_id = base64_decode((string) $journal_type_id);
 
         $journals = $this->crud->query("SELECT a.*, a.flag, b.account_name FROM journal_setups a 
             JOIN account_coa b ON a.account_number = b.account_number 
             WHERE a.account_number LIKE '%$post%' and a.journal_type_id = '$journal_type_id' ORDER BY a.flag ASC");
 
+        $arr = [];
+        if (!empty($journals)) {
         foreach ($journals as $journal) {
             $arr[] = array(
                 "account_number" => $journal->account_number,
@@ -497,7 +515,10 @@ class Sales_invoices extends CI_Controller
                 "debit" => "0.00",
                 "credit" => "0.00",
                 "flag" => $journal->flag,
+                "local_debit"  => "0.00",
+                "local_credit" => "0.00",
             );
+        }
         }
 
         echo json_encode($arr);
@@ -551,103 +572,130 @@ class Sales_invoices extends CI_Controller
 
     public function calculateJournal()
     {
-        $journals = json_decode(file_get_contents("json/sales_invoice_journals.json"), true);
-        $sales_invoices_data = json_decode(file_get_contents("json/sales_invoices.json"), true);
+        $journals = json_decode((string) @file_get_contents("json/sales_invoice_journals.json"), true) ?: [];
+        $sales_invoices_data = json_decode((string) @file_get_contents("json/sales_invoices.json"), true) ?: [];
         $arr = [];
 
-        // Jika sales_invoice_journals.json TIDAK KOSONG
-        if (count($journals) == 0) {
+        // Jika sales_invoice_journals.json KOSONG
+        if (empty($journals) || count($journals) == 0) {
             $mergedData = [];
             $flag = 1;
             
             foreach ($sales_invoices_data as $jsonData) {
                 $account_number = $jsonData["account_number"];
                 $account_name = $jsonData["account_name"];
-                $total = $jsonData["total"];
+                $total = (float)$jsonData["total"];
+                $currency = $jsonData["currency"] ?? '';
+                $trans_date = $jsonData["trans_date"] ?? date('Y-m-d');
 
-                // Inisialisasi entri jika belum ada
+                // Get Rate
+                $rate = ($currency == 'IDR') ? 1 : (float)$this->getExchangeRate($currency, $trans_date);
+
                 if (!isset($mergedData[$account_number])) {
                     $mergedData[$account_number] = [
                         "account_number" => $account_number,
                         "account_name" => $account_name,
                         "debit" => 0,
                         "credit" => 0,
+                        "local_debit"  => 0,
+                        "local_credit" => 0,
                         "flag" => $flag++, 
                     ];
                 }
 
-                // Tambahkan nilai ke Debit atau Credit yang sesuai
                 if ($jsonData['account_type'] == "DEBIT") {
                     $mergedData[$account_number]["debit"] += $total;
+                    $mergedData[$account_number]["local_debit"] += ($total * $rate); // Kalkulasi Local
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $mergedData[$account_number]["credit"] += $total;
+                    $mergedData[$account_number]["local_credit"] += ($total * $rate); // Kalkulasi Local
                 }
             }
-
-            // Ubah hasil penggabungan menjadi array berindeks numerik
             $arr = array_values($mergedData);
 
         } else {
-            // --- Jika Jurnal SUDAH ADA (Membandingkan/Memperbarui) ---
-            
-            // 1. Agregasi data sales_invoices
+            // --- Jika Jurnal SUDAH ADA ---
             $aggregated_invoices = [];
             foreach ($sales_invoices_data as $jsonData) {
                 $account_number = $jsonData["account_number"];
-                $total = $jsonData["total"];
+                $total = (float)$jsonData["total"];
+                $currency = $jsonData["currency"] ?? '';
+                $trans_date = $jsonData["trans_date"] ?? date('Y-m-d');
+
+                $rate = ($currency == 'IDR') ? 1 : (float)$this->getExchangeRate($currency, $trans_date);
                 
                 if (!isset($aggregated_invoices[$account_number])) {
-                    $aggregated_invoices[$account_number] = ["debit" => 0, "credit" => 0];
+                    $aggregated_invoices[$account_number] = [
+                        "rate" => $rate, // add rate untuk referensi
+                        "debit" => 0, "credit" => 0, 
+                        "local_debit" => 0, "local_credit" => 0
+                    ];
                 }
 
                 if ($jsonData['account_type'] == "DEBIT") {
                     $aggregated_invoices[$account_number]["debit"] += $total;
+                    $aggregated_invoices[$account_number]["local_debit"] += ($total * $rate);
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $aggregated_invoices[$account_number]["credit"] += $total;
+                    $aggregated_invoices[$account_number]["local_credit"] += ($total * $rate);
                 }
             }
 
-            // 2. Loop melalui jurnal yang sudah ada untuk memperbarui nilainya
             foreach ($journals as $journal) {
-                $account_number = $journal['account_number'];
-                $total_debit = $journal['debit'];
-                $total_credit = $journal['credit'];
+                $acc_no = $journal['account_number'];
                 
-                // Cari total baru dari aggregated_invoices dan lakukan overwrite
-                if (isset($aggregated_invoices[$account_number])) {
-                    $total_debit = $aggregated_invoices[$account_number]['debit'];
-                    $total_credit = $aggregated_invoices[$account_number]['credit'];
+                if (isset($aggregated_invoices[$acc_no])) {
+                    $data = $aggregated_invoices[$acc_no];
+                    $arr[] = [
+                        "account_number" => $acc_no,
+                        "account_name"   => $journal['account_name'],
+                        "debit"          => round($data['debit'], 4),
+                        "credit"         => round($data['credit'], 4),
+                        "local_debit"    => round($data['local_debit'], 2),
+                        "local_credit"   => round($data['local_credit'], 2),
+                        "flag"           => $journal['flag'],
+                    ];
+                    unset($aggregated_invoices[$acc_no]); 
+                } else {
+                    // Jika tidak ada di data invoice baru, tetap pakai data jurnal lama
+                    $journal['local_debit'] = isset($journal['local_debit']) ? (float)$journal['local_debit'] : 0;
+                    $journal['local_credit'] = isset($journal['local_credit']) ? (float)$journal['local_credit'] : 0;
                     
-                    // Hapus dari aggregated_invoices setelah diproses
-                    unset($aggregated_invoices[$account_number]); 
+                    // FIX BUG VAT: Cek apakah Original Debit OR Credit punya nilai tapi Local-nya kosong
+                    $hasOriginalValue = ($journal['debit'] > 0 || $journal['credit'] > 0);
+                    $hasNoLocalValue = ($journal['local_debit'] == 0 && $journal['local_credit'] == 0);
+
+                    if ($hasOriginalValue && $hasNoLocalValue) {
+                        // Get currency dari invoice data (fallback ke IDR)
+                        $def_currency = isset($sales_invoices_data[0]['currency']) ? $sales_invoices_data[0]['currency'] : 'IDR';
+                        $def_date = isset($sales_invoices_data[0]['trans_date']) ? $sales_invoices_data[0]['trans_date'] : date('Y-m-d');
+                        
+                        $rate = ($def_currency == 'IDR') ? 1 : (float)$this->getExchangeRate($def_currency, $def_date);
+                        
+                        // Hitung ulang Debit & Credit
+                        $journal['local_debit'] = round((float)$journal['debit'] * $rate, 2);
+                        $journal['local_credit'] = round((float)$journal['credit'] * $rate, 2);
+                    }
+                    
+                    $arr[] = $journal;
                 }
-                
-                // Tambahkan ke array hasil
-                $arr[] = [
-                    "account_number" => $account_number,
-                    "account_name" => $journal['account_name'],
-                    "debit" => round($total_debit, 4),
-                    "credit" => round($total_credit, 4),
-                    "flag" => $journal['flag'],
-                ];
             }
             
-            // 3. Tambahkan akun-akun BARU
-            $flag_counter = count($journals) + 1;
-            foreach ($aggregated_invoices as $account_number => $data) {
-                $account_name = $this->getAccountNameFromInvoiceData($sales_invoices_data, $account_number);
-
+            // Tambahkan akun BARU yang belum ada di jurnal lama
+            $flag_counter = count($arr) + 1;
+            foreach ($aggregated_invoices as $acc_no => $data) {
+                $acc_name = $this->getAccountNameFromInvoiceData($sales_invoices_data, $acc_no);
                 $arr[] = [
-                    "account_number" => $account_number,
-                    "account_name" => $account_name,
-                    "debit" => round($data['debit'], 4),
-                    "credit" => round($data['credit'], 4),
-                    "flag" => $flag_counter++,
+                    "account_number" => $acc_no,
+                    "account_name"   => $acc_name,
+                    "debit"          => round($data['debit'], 4),
+                    "credit"         => round($data['credit'], 4),
+                    "local_debit"    => round($data['local_debit'], 2),
+                    "local_credit"   => round($data['local_credit'], 2),
+                    "flag"           => $flag_counter++,
                 ];
             }
         }
-        
-        // Output akhir hanya berupa array jurnal
         echo json_encode($arr);
     }
     // match account_number between json sales_invoice and journal
@@ -659,6 +707,22 @@ class Sales_invoices extends CI_Controller
             }
         }
         return "N/A";
+    }
+    private function getExchangeRate($currency, $trans_date) 
+    {
+        $this->db->select('middle, currency_from, currency_to');
+        $this->db->from('exchange_rates');
+        $this->db->where('currency_from', $currency);
+        $this->db->where('currency_to', 'IDR');
+        $this->db->where($this->db->escape($trans_date) . " BETWEEN start_date AND end_date", null, false);
+        $query = $this->db->get()->row();
+
+        if ($query) {
+            $rate = $query->middle;
+        } else {
+            $rate = 0;
+        }
+        return $rate;
     }
 
     public function calculateJournal_existing()
@@ -792,7 +856,8 @@ class Sales_invoices extends CI_Controller
         echo $datenow . "-" . $autoID;
     }
 
-    public function datatablesTemp()
+    // Bug different price between SO and SI (Bu Nina 2026-04-06)
+    public function datatablesTemp_existing()
     {
         // $delivery_note_no = base64_decode((string) $this->input->get('delivery_note_no'));
         $delivery_note_no = explode(",", base64_decode((string) $this->input->get('delivery_note_no')));
@@ -955,6 +1020,94 @@ class Sales_invoices extends CI_Controller
         die(json_encode($arr));
     }
 
+    // Optimized Query
+    public function datatablesTemp()
+    {
+        $delivery_note_no = explode(",", base64_decode($this->input->get('delivery_note_no')));
+        $division = (string) $this->input->get('division');
+
+        $this->db->select('
+            a.delivery_note_no, 
+            a.customer_order_no,  
+            a.division,
+            a.customer_id,
+            COALESCE(NULLIF(d.sales_order_no, ""), d.sales_order_no_rm) as display_so_no,
+            a.item_fg_id, 
+            b.number as item_number, 
+            b.name as item_name, 
+            b.uom, 
+            c.currency, 
+            d.qty_del as qty,
+            
+            /* Prioritas Harga: SO Utama -> SO RM -> 0 */
+            COALESCE(g.price, g2.price, 0) as price,
+            (d.qty_del * COALESCE(g.price, g2.price, 0)) as total,
+            
+            /* Prioritas Account: Account Division -> Account Default Customer */
+            COALESCE(e.account_number, cust.account_number) as final_account_number,
+            COALESCE(e.account_name, cust.account_name) as final_account_name,
+            
+            j.id as si_id
+        ');
+
+        $this->db->from('delivery_orders d');
+        $this->db->join('item_fg b', 'd.item_fg_id = b.id');
+        $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
+        $this->db->join('customers cust', 'a.customer_id = cust.id', 'left');
+        $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_fg_id = c.item_fg_id', 'left');
+        
+        /* Join Account berdasarkan Divisi */
+        $this->db->join('customer_account_numbers e', 'a.customer_id = e.customer_id AND e.division = ' . $this->db->escape($division), 'left');
+
+        /* Join Price dari SO atau SO RM */
+        $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no AND a.item_fg_id = g.item_fg_id', 'left');
+        $this->db->join('sales_order_rm g2', 'd.sales_order_no_rm = g2.sales_order_no AND a.item_fg_id = g2.item_fg_id', 'left');
+        
+        $this->db->join('sales_invoices j', 'a.delivery_note_no = j.delivery_note_no and a.item_fg_id = j.item_fg_id', 'left');
+
+        $this->db->where_in('a.delivery_note_no', $delivery_note_no);
+        
+        /* Grouping untuk menghindari duplikasi */
+        $this->db->group_by(['a.delivery_note_no', 'a.item_fg_id', 'display_so_no', 'a.id']);
+        $this->db->order_by('a.delivery_note_no', 'asc');
+
+        $records = $this->db->get()->result_array();
+
+        $obj = [];
+        $total_sub = 0;
+
+        foreach ($records as $record) {
+            $total_sub += (float)$record['total'];
+
+            $obj[] = [
+                "id"                => $record['si_id'],
+                "delivery_note_no"  => $record['delivery_note_no'],
+                "sales_order_no"    => $record['display_so_no'],
+                "customer_order_no" => $record['customer_order_no'],
+                "item_fg_id"        => $record['item_fg_id'],
+                "item_no"           => $record['item_number'],
+                "item_name"         => $record['item_name'],
+                "uom"               => $record['uom'],
+                "currency"          => $record['currency'],
+                "qty"               => $record['qty'],
+                "price"             => $record['price'],
+                "total"             => $record['total'],
+                "account_number"    => $record['final_account_number'],
+                "account_name"      => $record['final_account_name'],
+                "account_type"      => "CREDIT",
+            ];
+        }
+
+        $arr = [
+            'rows' => $obj,
+            'total_sub' => number_format($total_sub, 2, '.', '')
+        ];
+
+        header('Content-Type: application/json');
+        echo json_encode($arr);
+        exit;
+    }
+
     public function datatables($details = "")
     {
         $filter_type  = base64_decode((string) $this->input->get('filter_type'));
@@ -1037,32 +1190,66 @@ class Sales_invoices extends CI_Controller
             return;
         }
 
-        $jsonData = file_get_contents("php://input");
-        $post = json_decode($jsonData, true);
+        // Selalu balas JSON supaya loading "Please Wait for Saving Data" di view pasti tertutup
+        $reply = function ($theme, $message) {
+            echo json_encode([
+                "title"   => ($theme == "success" ? "Good Job" : "Error"),
+                "message" => $message,
+                "theme"   => $theme,
+            ]);
+        };
 
-        $sales_invoices = $post['dataSi'];
-        $sales_invoice_journals = $post['dataJournal'];
+        if ((string) $this->session->username === "") {
+            $reply("error", "Your session has expired. Please login again, then save again.");
+            return;
+        }
+
+        $post = json_decode((string) $this->input->raw_input_stream, true);
+        $sales_invoices         = (isset($post['dataSi']) && is_array($post['dataSi'])) ? $post['dataSi'] : [];
+        $sales_invoice_journals = (isset($post['dataJournal']) && is_array($post['dataJournal'])) ? $post['dataJournal'] : [];
+
+        if (empty($sales_invoices)) {
+            $reply("error", "Sales Invoice Lists is empty. Nothing was saved.");
+            return;
+        }
 
         // Validasi total DEBIT dan CREDIT itu Balance
         $balance_array = $post['dataBalance'] ?? null;
         $dataBalance = ($balance_array && is_array($balance_array) && count($balance_array) > 0) ? $balance_array[0] : null;
         if (empty($dataBalance) || !isset($dataBalance['balance_debit']) || !isset($dataBalance['balance_credit'])) {
-            echo json_encode(["title" => "Error", "message" => "Balance data is missing or improperly formatted.", "theme" => "error"]);
+            $reply("error", "Balance data is missing or improperly formatted.");
             return;
         }
 
         $debit  = (float)$dataBalance['balance_debit'];
         $credit = (float)$dataBalance['balance_credit'];
         if (round($debit, 2) != round($credit, 2)) {
-            echo json_encode([
-                "title"   => "Error", 
-                "message" => "Total Debit ($debit) and Total Credit ($credit) are Not Balance! Transaction blocked.", 
-                "theme"   => "error"
-            ]);
+            $reply("error", "Total Debit ($debit) and Total Credit ($credit) are Not Balance! Transaction blocked.");
             return;
         }
 
+        // Hanya kirim field yang memang ada kolomnya di tabel
+        // (mis. local_debit / local_credit baru tersimpan setelah kolomnya ditambahkan di DB)
+        $si_cols  = array_flip($this->db->list_fields('sales_invoices'));
+        $sij_cols = array_flip($this->db->list_fields('sales_invoice_journals'));
+
+        // Semua perubahan dalam 1 transaksi: kalau ada yang gagal, tidak ada yang tersimpan
+        // (termasuk hapus jurnal lama, yang dulu dilakukan terpisah lewat deleteJournal)
+        $db_debug = $this->db->db_debug;
+        $this->db->db_debug = FALSE;
+        $this->db->trans_begin();
+        $error = "";
+        $failed = function () use (&$error) {
+            if ($error === "" && $this->db->trans_status() === FALSE) {
+                $e = $this->db->error();
+                $error = !empty($e['message']) ? $e['message'] : "Database error";
+            }
+            return $error !== "";
+        };
+
         foreach ($sales_invoices as $sales_invoice) {
+            $sales_invoice = array_intersect_key($sales_invoice, $si_cols);
+
             $dn_no = $sales_invoice['delivery_note_no'] ?? null;
             $co_no = $sales_invoice['customer_order_no'] ?? null;
             $so_no = $sales_invoice['sales_order_no'] ?? null;
@@ -1093,10 +1280,10 @@ class Sales_invoices extends CI_Controller
             $sales_invoices_read = $this->crud->read('sales_invoices', [], $where_invoices);
 
             if (!empty($sales_invoice['id'])) {
-                $send = $this->db->update('sales_invoices', $sales_invoice, ["id" => $sales_invoice['id']]);
+                $this->db->update('sales_invoices', $sales_invoice, ["id" => $sales_invoice['id']]);
             } else {
                 if (!$sales_invoices_read) {
-                    $send = $this->crud->createNotLog('sales_invoices', $sales_invoice);
+                    $this->crud->createNotLog('sales_invoices', $sales_invoice);
                     
                     // Update delivery_notes hanya jika bukan entri manual
                     if (!$is_manual_entry) {
@@ -1106,28 +1293,49 @@ class Sales_invoices extends CI_Controller
                         ]);
                     }
                 } else {
-                    $send = $this->db->update('sales_invoices', $sales_invoice, $where_invoices);
+                    $this->db->update('sales_invoices', $sales_invoice, $where_invoices);
                 }
             }
 
+            if ($failed()) break;
         }
 
-        foreach ($sales_invoice_journals as $sales_invoice_journal) {
-                $sales_invoice_journals_read = $this->crud->read('sales_invoice_journals', [], [
-                "number" => $sales_invoice_journal['number'], 
-                "account_number" => $sales_invoice_journal['account_number']
-            ]);
+        // Jurnal: hapus jurnal lama lalu simpan ulang (hanya kalau Journal Lists dikirim)
+        if ($error === "" && !empty($sales_invoice_journals)) {
+            $numbers = array_unique(array_filter(array_map(function ($j) {
+                return (string) ($j['number'] ?? '');
+            }, $sales_invoice_journals)));
 
-            if (@$sales_invoice_journal['id'] != "") {
-                $send = $this->db->update('sales_invoice_journals', $sales_invoice_journal, ["number" => $sales_invoice_journal['number'], "account_number" => $sales_invoice_journal['account_number']]);
-            } else {
-                if(!$sales_invoice_journals_read){
-                    $send = $this->crud->createNotLog('sales_invoice_journals', $sales_invoice_journal);
-                } 
+            foreach ($numbers as $number) {
+                $this->crud->delete('sales_invoice_journals', ["number" => $number]);
+                if ($failed()) break;
+            }
+
+            if ($error === "") {
+                foreach ($sales_invoice_journals as $sales_invoice_journal) {
+                    foreach (['debit', 'credit', 'local_debit', 'local_credit'] as $k) {
+                        if (array_key_exists($k, $sales_invoice_journal)) {
+                            $sales_invoice_journal[$k] = (float) $sales_invoice_journal[$k];
+                        }
+                    }
+                    $sales_invoice_journal = array_intersect_key($sales_invoice_journal, $sij_cols);
+                    $this->crud->createNotLog('sales_invoice_journals', $sales_invoice_journal);
+                    if ($failed()) break;
+                }
             }
         }
 
-        die($send);
+        if ($error === "" && $this->db->trans_status() !== FALSE) {
+            $this->db->trans_commit();
+            $this->db->db_debug = $db_debug;
+            $reply("success", "Data Saved Successfully");
+        } else {
+            $failed();
+            $this->db->trans_rollback();
+            $this->db->db_debug = $db_debug;
+            log_message('error', 'Sales_invoices::create rollback: ' . $error);
+            $reply("error", "Save failed, nothing was saved. " . $error);
+        }
     }
 
     public function createOld() // Perbaikan Create/Update ketika Input DN Manual Error Create SI Loading
@@ -4523,8 +4731,10 @@ public function print($option = "")
             a.total, 
             a.total_discount, 
             a.taxes, 
+            a.currency,
             f.description as uom,
             e.hs_code')
+            ->select("(SELECT g.middle FROM exchange_rates g WHERE g.currency_from = a.currency AND g.currency_to = 'IDR' AND a.trans_date BETWEEN g.start_date AND g.end_date ORDER BY g.start_date DESC LIMIT 1) AS rate", FALSE)
             ->from('sales_invoices a')
             ->join('item_fg e', 'a.item_fg_id = e.id')
             ->join('uom f', 'e.uom = f.name', 'left')
@@ -4656,11 +4866,21 @@ public function print($option = "")
                     $product_no= htmlspecialchars($detail['product_no']);
                     $item_name = htmlspecialchars($detail['item_name']);
 
+                    // Gunakan Local Currency = Price * Rate (Bu Nina)
+                    $currency = $detail['currency'] ?? '';
+                    if ($currency != "IDR") {
+                        $rate = $detail['rate'] ?? 0;
+                    } else {
+                        $rate = 1;
+                    }
+
                     // Perbarui tag dengan nilai yang sudah digabungkan
                     $itemNode->addChild('Opt', 'A');
                     $itemNode->addChild('Code', $hs_code);
                     $itemNode->addChild('Name', $product_no . '/' . $item_name . $hs_code_item);
                     $itemNode->addChild('Unit', $uom);
+
+                    /** -- existing tanpa rate
                     $itemNode->addChild('Price', round($detail['price'], 2));
                     $itemNode->addChild('Qty', round($detail['qty'], 2)); // Gunakan qty yang sudah dijumlahkan
                     $itemNode->addChild('TotalDiscount', round($detail['total_discount'], 2));
@@ -4668,6 +4888,15 @@ public function print($option = "")
                     $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']), 2)); // Gunakan total yang sudah dijumlahkan
                     $itemNode->addChild('VATRate', round($detail['taxes'], 2));
                     $itemNode->addChild('VAT', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100), 2));
+                    // -- versi baru dikalikan dgn rate */
+                    $itemNode->addChild('Price', round($detail['price'] * $rate, 2));
+                    $itemNode->addChild('Qty', round($detail['qty'], 2));
+                    $itemNode->addChild('TotalDiscount', round($detail['total_discount'] * $rate, 2));
+                    $itemNode->addChild('TaxBase', round(($detail['total'] - $detail['total_discount']) * $rate, 2));
+                    $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']) * $rate, 2));
+                    $itemNode->addChild('VATRate', round($detail['taxes'], 2));
+                    $itemNode->addChild('VAT', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100) * $rate, 2));
+
                     $itemNode->addChild('STLGRate', 0);
                     $itemNode->addChild('STLG', 0);
                 }

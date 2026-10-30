@@ -217,7 +217,7 @@ class Purchase_order_others extends CI_Controller
 
             $datas[] = array(
                 'po_no' => $data->val($i, 2),
-                'po_date' => date("Y-m-d", $data->val($i, 3)),
+                'po_date' => is_numeric($data->val($i, 3)) ? date("Y-m-d", (int) $data->val($i, 3)) : null, // PHP 8: date() TypeError jika sel bukan angka
                 'po_name' => $this->session->name,
                 'supplier_number' => $data->val($i, 4),
                 'product_number' => $data->val($i, 5),

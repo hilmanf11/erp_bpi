@@ -1,5 +1,8 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
+
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 class Journal_setups extends CI_Controller
 {
     public function __construct()
@@ -30,9 +33,13 @@ class Journal_setups extends CI_Controller
     public function reads($journal_type_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $journal_type_id = base64_decode($journal_type_id);
+        $decoded = base64_decode(str_replace(' ', '+', $journal_type_id));
+        if (!empty($decoded)) {
+            $journal_type_id = $decoded;
+        }
+        $journal_type_id = str_replace('header_', '', $journal_type_id);
         $send = $this->crud->query("SELECT a.*, b.account_name FROM journal_setups a 
-            JOIN account_coa b ON a.account_number = b.account_number 
+            LEFT JOIN account_coa b ON a.account_number = b.account_number 
             WHERE a.account_number LIKE '%$post%' and a.journal_type_id = '$journal_type_id' ORDER BY a.flag ASC");
         echo json_encode($send);
     }
@@ -41,9 +48,8 @@ class Journal_setups extends CI_Controller
     public function datatables()
     {
         $filters = json_decode($this->input->post('filterRules') ?? '[]');
-        $id = $_POST['id'];
-        // var_dump($id);
-        if ($id === "0") {
+        $id = $this->input->post('id') ?? "0";
+        if ($id === "0" || empty($id)) {
             $this->db->select('a.journal_type_id, b.name as journal_name');
             $this->db->from('journal_setups a');
             $this->db->join('journal_types b', 'a.journal_type_id = b.id');
@@ -60,7 +66,7 @@ class Journal_setups extends CI_Controller
             $records = $this->db->get()->result_array();
             foreach ($records as $record) {
                 $arr[] = array(
-                    "id" => $record['journal_type_id'],
+                    "id" => "header_" . $record['journal_type_id'],
                     "journal_type_id" => $record['journal_type_id'],
                     "journal_name" => $record['journal_name'],
                     "state" => "closed",
@@ -68,11 +74,12 @@ class Journal_setups extends CI_Controller
                 );
             }
         } else {
+            $clean_id = str_replace('header_', '', $id);
             $this->db->select('a.*, b.name as journal_name, c.account_name');
             $this->db->from('journal_setups a');
-            $this->db->join('journal_types b', 'a.journal_type_id = b.id');
-            $this->db->join('account_coa c', 'a.account_number = c.account_number');
-            $this->db->where('a.journal_type_id', $id);
+            $this->db->join('journal_types b', 'a.journal_type_id = b.id', 'left');
+            $this->db->join('account_coa c', 'a.account_number = c.account_number', 'left');
+            $this->db->where('a.journal_type_id', $clean_id);
             $this->db->group_by('a.account_number');
             $this->db->order_by('a.flag', 'asc');
             $arr = $this->db->get()->result_array();
@@ -85,8 +92,13 @@ class Journal_setups extends CI_Controller
 
     public function datatable_updates()
     {
-        $journal_type_id = base64_decode((string) $this->input->get('journal_type_id'));
-        $records = $this->crud->query("SELECT a.*, b.account_name FROM journal_setups a JOIN account_coa b ON a.account_number = b.account_number WHERE a.journal_type_id = '$journal_type_id' ORDER BY a.flag ASC");
+        $raw = $this->input->get('journal_type_id');
+        $journal_type_id = base64_decode(str_replace(' ', '+', $raw));
+        if (empty($journal_type_id)) {
+            $journal_type_id = $raw;
+        }
+        $journal_type_id = str_replace('header_', '', $journal_type_id);
+        $records = $this->crud->query("SELECT a.*, b.account_name FROM journal_setups a LEFT JOIN account_coa b ON a.account_number = b.account_number WHERE a.journal_type_id = '$journal_type_id' ORDER BY a.flag ASC");
         echo json_encode($records);
     }
 
@@ -114,6 +126,124 @@ class Journal_setups extends CI_Controller
         $data = $this->input->post();
         $send = $this->crud->delete('journal_setups', $data);
         echo $send;
+    }
+
+    //UPLOAD DATA (template/tmp_journal_setups.xls: A=Journal Code, B=Account No, C=Debit/Credit, data mulai baris 4)
+    public function upload()
+    {
+        // Notice/deprecated PHP 8 dari PhpSpreadsheet tidak boleh tercetak ke response JSON
+        ini_set('display_errors', 0);
+        require_once APPPATH . 'third_party/PhpSpreadsheet/autoload.php';
+
+        $file = secure_excel_upload('file_upload', ['xls', 'xlsx']);
+        if (!$file['status']) {
+            echo json_encode(["title" => "Error", "message" => $file['message'], "theme" => "error"]);
+            return;
+        }
+
+        try {
+            $sheet = IOFactory::load($file['path'])->getSheet(0);
+            $highestRow = $sheet->getHighestRow();
+            $datas = [];
+            for ($i = 4; $i <= $highestRow; $i++) {
+                $journal_type   = trim((string) $sheet->getCell("A$i")->getValue());
+                $account_number = trim((string) $sheet->getCell("B$i")->getValue());
+                if ($journal_type === "" && $account_number === "") continue;
+
+                $datas[] = [
+                    'row'            => $i,
+                    'journal_type'   => $journal_type,
+                    'account_number' => $account_number,
+                    'status'         => strtoupper(trim((string) $sheet->getCell("C$i")->getValue())),
+                ];
+            }
+            echo json_encode(["total" => count($datas), "data" => $datas]);
+        } catch (Throwable $e) {
+            echo json_encode(["title" => "Error", "message" => "Failed to read file: " . $e->getMessage(), "theme" => "error"]);
+        } finally {
+            @unlink($file['path']);
+        }
+    }
+
+    //UPLOAD CREATE DATA (key: journal code + account + debit/credit; yang sudah ada di-skip, AP/AR/Index tidak ditimpa)
+    public function uploadcreate()
+    {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+        }
+        $data = $this->input->post('data');
+        $row  = "Row " . (int) $data['row'] . " : ";
+
+        // Kolom kosong tidak boleh ikut lookup (bisa match master dengan number/akun kosong)
+        $journal_type = ($data['journal_type'] ?? "") === "" ? null
+            : $this->crud->read('journal_types', [], ["number" => $data['journal_type']]);
+        $account   = ($data['account_number'] ?? "") === "" ? null
+            : $this->crud->read('account_coa', [], ["account_number" => $data['account_number']]);
+
+        if (empty($journal_type->id)) {
+            $error = ["Not Found", "Journal Code " . $data['journal_type'] . " Not Found"];
+        } elseif (empty($account->account_number)) {
+            $error = ["Not Found", "Account No " . $data['account_number'] . " Not Found"];
+        } elseif (!in_array($data['status'], ["DEBIT", "CREDIT"], true)) {
+            $error = ["Invalid", "Debit/Credit must be Debit or Credit"];
+        }
+        if (!empty($error)) {
+            echo json_encode(["title" => $error[0], "message" => $row . $error[1], "theme" => "error"]);
+            return;
+        }
+
+        $key = [
+            "journal_type_id" => $journal_type->id,
+            "account_number"  => $account->account_number,
+            "status"          => $data['status'],
+        ];
+        $label = $row . $journal_type->number . " / " . $account->account_number . " " . $data['status'] . " - ";
+        $exist = $this->crud->read('journal_setups', [], $key);
+        if (!empty($exist->id)) {
+            echo json_encode(["title" => "Already Exists", "message" => $label . "Skipped", "theme" => "success"]);
+            return;
+        }
+
+        // Index = urutan terakhir di journal tsb + 1, supaya urutan baris mengikuti file
+        $max  = $this->db->select_max('flag')->where('journal_type_id', $journal_type->id)->get('journal_setups')->row();
+        $flag = min((int) @$max->flag + 1, 127);
+
+        $send   = $this->crud->create('journal_setups', array_merge($key, ["ap_payment" => "NO", "ar_receipt" => "NO", "flag" => $flag]));
+        $result = json_decode((string) $send, true);
+        if (!is_array($result)) {
+            $result = ["title" => "Error", "message" => "Failed to save data", "theme" => "error"];
+        }
+        $result['message'] = $label . $result['message'];
+        echo json_encode($result);
+    }
+
+    public function uploadclearFailed()
+    {
+        @unlink('failed/journal_setups.txt');
+    }
+
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/journal_setups.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/journal_setups.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
     }
 
     //PRINT & EXCEL DATA

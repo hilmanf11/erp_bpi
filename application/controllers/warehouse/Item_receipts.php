@@ -203,6 +203,10 @@ class Item_receipts extends CI_Controller
                             $update   = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status_issued" => 1]);
                             $send   = $this->crud->create('issued_material_details', $dataFinal2);
                         }
+
+                        // Auto Posting Journal Inventory jika ini label terakhir yang di-scan (POR / Replacement NG INJ)
+                        $this->load->model('autopostingjournal');
+                        $this->autopostingjournal->auto_post_by_label($post['label_no']);
                         echo $send;
                     }
                 } else {

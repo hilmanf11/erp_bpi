@@ -205,6 +205,9 @@ class Item_rm extends CI_Controller
 
         $file_path = null;
 
+        // Deprecation notice PHP 8.x dari PhpSpreadsheet ikut tercetak & merusak response JSON
+        ini_set('display_errors', 0);
+
         try {
             $this->upload->initialize($config);
             if (!$this->upload->do_upload('file_upload')) { // 'file_upload' is the name of your file input
@@ -228,24 +231,24 @@ class Item_rm extends CI_Controller
                 // Mapping Kolom Excel ke Nama Field Database
                 for ($i = 3; $i <= $highestRow; $i++) {
                     $datas[] = [
-                        'number'             => trim($worksheet->getCell('B' . $i)->getValue()), // Kolom 2 di Excel = B
-                        'name'               => trim($worksheet->getCell('C' . $i)->getValue()), // Kolom 3 = C
-                        'uom'                => trim($worksheet->getCell('D' . $i)->getValue()), // Kolom 4 = D
-                        'division'           => trim($worksheet->getCell('E' . $i)->getValue()), // Kolom 5 = E
-                        'item_category_id'   => trim($worksheet->getCell('F' . $i)->getValue()), // Kolom 6 = F
-                        'item_family_id'     => trim($worksheet->getCell('G' . $i)->getValue()), // Kolom 7 = G
-                        'color'              => trim($worksheet->getCell('H' . $i)->getValue()), // Kolom 8 = H
-                        'item_sub_family_id' => trim($worksheet->getCell('I' . $i)->getValue()), // Kolom 9 = I
-                        'account_number'     => trim($worksheet->getCell('J' . $i)->getValue()), // Kolom 10 = J
-                        'account_name'       => trim($worksheet->getCell('K' . $i)->getValue()), // Kolom 11 = K
-                        'length'             => trim($worksheet->getCell('L' . $i)->getValue()), // Kolom 12 = L
-                        'width'              => trim($worksheet->getCell('M' . $i)->getValue()), // Kolom 13 = M
-                        'thickness'          => trim($worksheet->getCell('N' . $i)->getValue()), // Kolom 14 = N
-                        'diameter'           => trim($worksheet->getCell('O' . $i)->getValue()), // Kolom 15 = O
-                        'description'        => trim($worksheet->getCell('P' . $i)->getValue()), // Kolom 16 = P
-                        'supply'             => trim($worksheet->getCell('Q' . $i)->getValue()), // Kolom 17 = Q
-                        'status'             => trim($worksheet->getCell('R' . $i)->getValue()), // Kolom 18 = R
-                        'action'             => trim($worksheet->getCell('S' . $i)->getValue()), // Kolom 19 = S
+                        'number'             => trim((string) $worksheet->getCell('B' . $i)->getValue()), // Kolom 2 di Excel = B
+                        'name'               => trim((string) $worksheet->getCell('C' . $i)->getValue()), // Kolom 3 = C
+                        'uom'                => trim((string) $worksheet->getCell('D' . $i)->getValue()), // Kolom 4 = D
+                        'division'           => trim((string) $worksheet->getCell('E' . $i)->getValue()), // Kolom 5 = E
+                        'item_category_id'   => trim((string) $worksheet->getCell('F' . $i)->getValue()), // Kolom 6 = F
+                        'item_family_id'     => trim((string) $worksheet->getCell('G' . $i)->getValue()), // Kolom 7 = G
+                        'color'              => trim((string) $worksheet->getCell('H' . $i)->getValue()), // Kolom 8 = H
+                        'item_sub_family_id' => trim((string) $worksheet->getCell('I' . $i)->getValue()), // Kolom 9 = I
+                        'account_number'     => trim((string) $worksheet->getCell('J' . $i)->getValue()), // Kolom 10 = J
+                        'account_name'       => trim((string) $worksheet->getCell('K' . $i)->getValue()), // Kolom 11 = K
+                        'length'             => trim((string) $worksheet->getCell('L' . $i)->getValue()), // Kolom 12 = L
+                        'width'              => trim((string) $worksheet->getCell('M' . $i)->getValue()), // Kolom 13 = M
+                        'thickness'          => trim((string) $worksheet->getCell('N' . $i)->getValue()), // Kolom 14 = N
+                        'diameter'           => trim((string) $worksheet->getCell('O' . $i)->getValue()), // Kolom 15 = O
+                        'description'        => trim((string) $worksheet->getCell('P' . $i)->getValue()), // Kolom 16 = P
+                        'supply'             => trim((string) $worksheet->getCell('Q' . $i)->getValue()), // Kolom 17 = Q
+                        'status'             => trim((string) $worksheet->getCell('R' . $i)->getValue()), // Kolom 18 = R
+                        'action'             => trim((string) $worksheet->getCell('S' . $i)->getValue()), // Kolom 19 = S
                     ];
                 }
                 

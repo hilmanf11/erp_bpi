@@ -20,6 +20,10 @@
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
             <th rowspan="2" data-options="field:'account_name',width:200,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center'">Debit/Credit</th>
+            <th rowspan="2" data-options="field:'is_journal_inventory',width:120,align:'center',formatter:function(v){return v==1?'YES':'NO';}">Journal Inventory</th>
+            <th rowspan="2" data-options="field:'inventory_process',width:120,align:'center'">Inventory Process</th>
+            <th rowspan="2" data-options="field:'transaction_type',width:150,align:'center'">Transaction Type</th>
+            <th rowspan="2" data-options="field:'division',width:80,align:'center'">Division</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -52,28 +56,58 @@
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
-                <input style="width:60%;" name="type" id="type" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Module</span>
-                <select style="width:60%;" name="module" id="module" panelHeight="auto" required="" class="easyui-combobox">
-                    <option value="SALES INVOICING">SALES INVOICING</option>
-                    <option value="PURCHASE INVOICING">PURCHASE INVOICING</option>
-                    <option value="AP PAYMENT">AP PAYMENT</option>
-                    <option value="AR RECEIPT">AR RECEIPT</option>
-                    <option value="ASSET">ASSET</option>
+                <!-- Journal Inventory menentukan Type, Module, dan sumber akun DEBIT/CREDIT -->
+                <span style="width:35%; display:inline-block;">Journal Inventory</span>
+                <select style="width:60%;" name="is_journal_inventory" id="is_journal_inventory" panelHeight="auto" class="easyui-combobox" data-options="editable:false, onChange:toggleInventoryProcess">
+                    <option value="0">NO</option>
+                    <option value="1">YES</option>
                 </select>
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Type</span>
+                <input style="width:60%;" name="type" id="type" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Module</span>
+                <!-- Pilihan module diisi loadModules(): Journal Inventory = NO -> module finance, YES -> module inventory -->
+                <select style="width:60%;" name="module" id="module" class="easyui-combobox" data-options="panelHeight:200, editable:false, multiple:true, multivalue:false, separator:',', onChange:function(){ loadTransactionTypes(); }">
+                </select>
+            </div>
+            <div class="fitem" id="info_setup" style="display:none; color:#a15c00;">
+                <i class="fa fa-info-circle"></i> Debit/Credit account diambil dari <b>Journal Setups</b>.
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Default Account</span>
-                <input style="width:60%;" name="account_number" id="account_number" required="" class="easyui-combogrid">
+                <input style="width:60%;" name="account_number" id="account_number" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" panelHeight="auto" required="" class="easyui-combobox">
+                <select style="width:60%;" name="status" id="status" panelHeight="auto" class="easyui-combobox">
+                    <option value=""></option>
                     <option value="DEBIT">DEBIT</option>
                     <option value="CREDIT">CREDIT</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Inventory Process</span>
+                <select style="width:60%;" name="inventory_process" id="inventory_process" panelHeight="auto" class="easyui-combobox" data-options="editable:false">
+                    <option value=""></option>
+                    <option value="IN">IN</option>
+                    <option value="OUT">OUT</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Transaction Type</span>
+                <input style="width:60%;" name="transaction_type" id="transaction_type" class="easyui-combobox" data-options="valueField:'type', textField:'type', editable:false, panelHeight:'auto'">
+            </div>
+            <div class="fitem">
+                <!-- Journal type inventory per division item (item_rm.division), kosong = semua division -->
+                <span style="width:35%; display:inline-block;">Division</span>
+                <select style="width:60%;" name="division" id="division" class="easyui-combobox" data-options="editable:false, panelHeight:'auto'">
+                    <option value="">ALL DIVISION</option>
+                    <?php foreach ($divisions as $division) : ?>
+                        <option value="<?= $division ?>"><?= $division ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
         </fieldset>
@@ -83,20 +117,106 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('finance/journal_types/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+    var url_save = '';
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('finance/journal_types/create') ?>';
         $('#frm_insert').form('clear');
+        $('#module').combobox('clear');
+        $('#is_journal_inventory').combobox('setValue', '0');
+        toggleInventoryProcess('0');
+    }
+
+    // Journal Posting biasa (journal_postings) dan Journal Posting Inventory (journal_inventory) memakai module berbeda
+    var financeModules = <?= json_encode($finance_modules) ?>;
+    var inventoryModules = <?= json_encode($inventory_modules) ?>;
+
+    // Isi pilihan Module sesuai Journal Inventory, module terpilih yang tidak berlaku dibuang
+    function loadModules(isInventory) {
+        var $module = $('#module');
+        var list = isInventory ? inventoryModules : financeModules;
+        var current = $module.combobox('getValues') || [];
+        $module.combobox('loadData', $.map(list, function(m) { return {value: m, text: m}; }));
+        $module.combobox('setValues', $.grep(current, function(m) { return list.indexOf(m) >= 0; }));
+    }
+
+    // Inventory Process hanya berlaku untuk journal type inventory
+    function toggleInventoryProcess(val) {
+        loadModules(val == '1');
+
+        // YES: Type = Inventory, akun DEBIT/CREDIT dari Journal Setups (Default Account & Status tidak dipakai)
+        var $typeBox = $('#type');
+        if (val == '1') {
+            $typeBox.textbox('setValue', 'Inventory').textbox('readonly', true);
+            $('#account_number').combogrid('clear').combogrid('disable');
+            $('#status').combobox('clear').combobox('disable');
+            $('#info_setup').show();
+        } else {
+            if ($typeBox.textbox('getValue') == 'Inventory') $typeBox.textbox('setValue', '');
+            $typeBox.textbox('readonly', false);
+            $('#account_number').combogrid('enable');
+            $('#status').combobox('enable');
+            $('#info_setup').hide();
+        }
+
+        var $process = $('#inventory_process');
+        if (val == '1') {
+            $process.combobox('enable');
+            if (!$process.combobox('getValue')) {
+                $process.combobox('setValue', 'IN');
+            }
+        } else {
+            $process.combobox('clear').combobox('disable');
+        }
+        $('#division').combobox(val == '1' ? 'enable' : 'disable');
+        if (val != '1') $('#division').combobox('setValue', '');
+        loadTransactionTypes();
+    }
+
+    // Jenis transaksi untuk module yang punya lebih dari 1 jenis transaksi dalam 1 menu
+    var transactionRmTypes = []; // master transactions (Transaction RM), diload saat halaman dibuka
+    var nonSupplySheetTypes = [{type: 'Issued Production'}, {type: 'Issued Customer'}, {type: 'Issued Subcont'}];
+
+    // selected: nilai yang di-set setelah list diload (dipakai saat edit)
+    function loadTransactionTypes(selected) {
+        var $type = $('#transaction_type');
+        var mods = $('#module').combobox('getValues') || [];
+        var isInventory = $('#is_journal_inventory').combobox('getValue') == '1';
+        var current = (selected !== undefined) ? selected : $type.combobox('getValue');
+
+        var data = [];
+        if (mods.indexOf('TRANSACTION RM') >= 0) data = data.concat(transactionRmTypes);
+        if (mods.indexOf('NON SUPPLY SHEET') >= 0) data = data.concat(nonSupplySheetTypes);
+
+        $type.combobox('loadData', data);
+        var exists = data.some(function(d) { return d.type == current; });
+        if (isInventory && data.length > 0) {
+            $type.combobox('enable').combobox('setValue', exists ? current : '');
+        } else {
+            $type.combobox('clear').combobox('disable');
+        }
     }
 
     //EDIT DATA
     function update() {
-        var row = $('#dg').datagrid('getSelected');
-        if (row) {
+        var selected = $('#dg').datagrid('getSelected');
+        if (selected) {
+            // Nilai null (misal Module belum diisi) bikin combobox multiple error (split of null) dan menghentikan load
+            var row = {};
+            $.each(selected, function(k, v) { row[k] = (v === null || v === undefined) ? '' : v; });
+            url_save = '<?= base_url('finance/journal_types/update') ?>?id=' + btoa(row.id);
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('finance/journal_types/update') ?>?id=' + btoa(row.id);
+            var isJInv = (row.is_journal_inventory == 1) ? '1' : '0';
+            $('#inventory_process').combobox('setValue', row.inventory_process || '');
+            $('#is_journal_inventory').combobox('setValue', isJInv);
+            toggleInventoryProcess(isJInv);
+            // Module di-set setelah pilihan module dimuat sesuai Journal Inventory
+            $('#module').combobox('setValues', row.module ? row.module.split(',') : []);
+            $('#division').combobox('setValue', row.division || '');
+            loadTransactionTypes(row.transaction_type || '');
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -168,23 +288,31 @@
                 handler: function() {
                     $('#frm_insert').form('submit', {
                         url: url_save,
-                        onSubmit: function() {
+                        onSubmit: function(param) {
+                            var mods = $('#module').combobox('getValues');
+                            if (mods && mods.length > 0) {
+                                param.module = mods.join(',');
+                            }
                             return $(this).form('validate');
                         },
                         success: function(result) {
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
+                                $('#dlg_insert').dialog('close');
+                                $('#dg').datagrid('reload');
                             } else {
+                                // Dialog tetap terbuka supaya isian bisa diperbaiki
                                 toastr.error(result.message, result.title);
                             }
-
-                            $('#dlg_insert').dialog('close');
-                            $('#dg').datagrid('reload');
                         }
                     });
                 }
             }]
+        });
+
+        $.getJSON('<?= base_url('warehouse/transaction_rm/readType') ?>', function(records) {
+            transactionRmTypes = $.map(records, function(r) { return {type: r.type}; });
         });
 
         $("#account_number").combogrid({

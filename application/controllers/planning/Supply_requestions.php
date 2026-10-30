@@ -174,7 +174,7 @@ class Supply_requestions extends CI_Controller
                 "item_rm_id" => $record['id'],
                 "number" => $record['number'],
                 "name" => $record['name'],
-                "qty" => number_format((float) $qty, 4, '.', ''),
+                "qty" => number_format($qty, 4, '.', ''),
                 "uom" => $record['uom']
             );
             $id++;
@@ -188,7 +188,7 @@ class Supply_requestions extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime((string) $trans_date));
+        $datenow    = date("ymd", strtotime($trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM supply_requestions WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -243,7 +243,7 @@ class Supply_requestions extends CI_Controller
                 END) as status2,
                 k.total_approved_to_checking,
                 l.total_approved_to_approved,
-                COUNT(a.approved_to) as total_approved_to");
+                COUNT(a.approved_to) as total_approved_to, MAX(jv.journal_no) as journal_no");
                 
                 $this->db->from('supply_requestions a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -254,6 +254,7 @@ class Supply_requestions extends CI_Controller
                 $this->db->join('(SELECT request_no, COUNT(approved_to) as total_approved_to_approved FROM supply_requestions WHERE approved_to = "" || approved_to = NULL GROUP BY request_no) l', 'a.request_no = l.request_no', 'left');
                 $this->db->join('item_fg e', 'c.item_fg_id = e.id','left');
                 $this->db->join('item_ng f', 'a.document = f.document','left');
+                $this->db->join('(SELECT document_no, GROUP_CONCAT(DISTINCT number ORDER BY number ASC SEPARATOR \', \') as journal_no FROM journal_inventory WHERE modul = \'MATERIAL REQUESTION\' GROUP BY document_no) jv', 'a.request_no = jv.document_no', 'left');
                 $this->db->where('a.deleted', 0);
                 
                 if (!empty($filter_period_from) && !empty($filter_period_to)) {
@@ -332,6 +333,7 @@ class Supply_requestions extends CI_Controller
                         "total_status_close" => $record['total_status_close'],
                         "shift" => $record['shift'],
                         "type" => $record['type'],
+                        "journal_no" => $record['journal_no'] ?? '',
                         "state" => "closed"
                     );
                 }
@@ -549,6 +551,14 @@ class Supply_requestions extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+
+        // Material Requestion yang sudah dijurnal tidak boleh dihapus
+        $this->load->model('autopostingjournal');
+        if ($blocked = $this->autopostingjournal->journaled_block(['MATERIAL REQUESTION'], $data['request_no'] ?? '')) {
+            echo json_encode($blocked);
+            return;
+        }
+
         $send = $this->crud->delete('supply_requestions', ["id" => $data['id']]);
         $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']]);
         $update = $this->crud->update('scraps', ["document" => $data['document']], ["status" => 0]);
@@ -721,7 +731,7 @@ class Supply_requestions extends CI_Controller
                                         <tr>
                                             <td width="50">Request Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime((string) $kanban->request_date)) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime($kanban->request_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Request Name</td>
@@ -1026,10 +1036,10 @@ class Supply_requestions extends CI_Controller
                         <td>' . $data['item_family'] . '</td>
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['uom'] . '</td>
-                        <td>' . number_format((float) $issued, 2) . '</td>
-                        <td>' . number_format((float) $issued_qty_crusher, 2) . '</td>
-                        <td>' . number_format((float) $issued_qty_peletizing, 2) . '</td>
-                        <td>' . number_format((float) $outstanding, 2) . '</td>
+                        <td>' . number_format($issued, 2) . '</td>
+                        <td>' . number_format($issued_qty_crusher, 2) . '</td>
+                        <td>' . number_format($issued_qty_peletizing, 2) . '</td>
+                        <td>' . number_format($outstanding, 2) . '</td>
                         <td>' . $status . '</td>
                     </tr>';
             $no++;

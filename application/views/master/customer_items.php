@@ -436,14 +436,18 @@
             method: 'post',
             url: '<?= base_url('master/customer_items/delete') ?>',
             data: {
-                customer_id: row.customer_id,
+                customer_id: customer_id,
                 division_id: division_id,
                 customer_address_id: customer_address_id,
                 item_fg_id: item_fg_id
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
-                toastr.success(result.message);
+                if (result.theme == 'error') {
+                    toastr.error(result.message, result.title);
+                } else {
+                    toastr.success(result.message);
+                }
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 toastr.error(jqXHR.statusText);
@@ -529,12 +533,13 @@
                             method: 'post',
                             url: '<?= base_url('master/customer_items/delete') ?>',
                             data: {
-                                customer_id: row.customer_id,
-                                division_id: row.division_id,
-                                customer_address_id: row.customer_address_id
+                                id: row.id
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                if (result.theme == 'error') {
+                                    toastr.error(result.message, result.title);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);

@@ -145,7 +145,7 @@ class Report_value_ng_rm extends CI_Controller
         LEFT JOIN bom b ON x.item_fg_id = b.item_fg_id
         LEFT JOIN item_rm rm ON b.item_rm_id = rm.id
         LEFT JOIN item_familys fam ON rm.item_family_id = fam.id
-        LEFT JOIN standard_price_rm spr ON rm.id = spr.item_rm_id
+        LEFT JOIN standard_price_rm spr ON rm.id = spr.item_rm_id AND spr.division = rm.division AND spr.deleted = 0 AND '$filter_to' BETWEEN spr.start_date AND spr.end_date
         WHERE rm.id LIKE '%$filter_items%'
         AND rm.division LIKE '%$filter_division%'
         AND rm.item_family_id LIKE '%$filter_item_family%'

@@ -247,9 +247,52 @@ class Customer_items extends CI_Controller
     //DELETE DATA
     public function delete()
     {
-        $data = $this->input->post();
-        $send = $this->crud->delete('customer_items', $data);
-        $send2 = $this->crud->delete('customer_item_histories', $data);
+        $post = $this->input->post();
+
+        // Hapus per baris (id), atau per kombinasi lengkap customer + division + plant + item.
+        // Jangan pernah hapus hanya dengan customer/division/plant, karena akan ikut menghapus item lain.
+        if (!empty($post['id'])) {
+            $item = $this->crud->read('customer_items', [], ["id" => $post['id']]);
+        } elseif (!empty($post['customer_id']) && !empty($post['item_fg_id'])) {
+            $item = $this->crud->read('customer_items', [], [
+                "customer_id" => $post['customer_id'],
+                "item_fg_id" => $post['item_fg_id'],
+                "division_id" => @$post['division_id'],
+                "customer_address_id" => @$post['customer_address_id']
+            ]);
+        } else {
+            $item = null;
+        }
+
+        if (empty($item->id)) {
+            echo json_encode(array("title" => "Not Found", "message" => "Data not found", "theme" => "error"));
+            return;
+        }
+
+        // Item yang sudah dipakai di Sales Order tidak boleh dihapus
+        $this->db->select('sales_order_no');
+        $this->db->from('sales_orders');
+        $this->db->where('customer_id', $item->customer_id);
+        $this->db->where('customer_address_id', $item->customer_address_id);
+        $this->db->where('item_fg_id', $item->item_fg_id);
+        $this->db->group_by('sales_order_no');
+        $this->db->limit(5);
+        $sales_orders = $this->db->get()->result_array();
+
+        if (count($sales_orders) > 0) {
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $item->item_fg_id]);
+            $so_numbers = implode(', ', array_column($sales_orders, 'sales_order_no'));
+            echo json_encode(array("title" => "Cannot Delete", "message" => "Product " . @$item_fg->number . " is already used in Sales Order (" . $so_numbers . ")", "theme" => "error"));
+            return;
+        }
+
+        $send = $this->crud->delete('customer_items', ["id" => $item->id]);
+        $send2 = $this->crud->delete('customer_item_histories', [
+            "customer_id" => $item->customer_id,
+            "item_fg_id" => $item->item_fg_id,
+            "division_id" => $item->division_id,
+            "customer_address_id" => $item->customer_address_id
+        ]);
         echo $send;
     }
 

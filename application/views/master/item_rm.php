@@ -23,35 +23,31 @@
 
     <thead>
         <tr>
-            <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">Uom</th>
-            <th rowspan="2" data-options="field:'division',width:100,halign:'center'">Division</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
-            <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center'">Product Family</th>
-            <th rowspan="2" data-options="field:'color',width:100,halign:'center'">Color</th>
-            <th rowspan="2" data-options="field:'item_sub_family_name',width:150,halign:'center'">Sub Product Family</th>
-            <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account No</th>
-            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
-            <th rowspan="2" data-options="field:'kind',width:150,halign:'center'">Kind</th>
-            <th rowspan="2" data-options="field:'length',width:100,halign:'center'">Length</th>
-            <th rowspan="2" data-options="field:'width',width:100,halign:'center'">Width</th>
-            <th rowspan="2" data-options="field:'thickness',width:100,halign:'center'">Thickness</th>
-            <th rowspan="2" data-options="field:'diameter',width:100,halign:'center'">Diameter</th>
-            <th rowspan="2" data-options="field:'density',width:100,halign:'center'">Density</th>
-            <th rowspan="2" data-options="field:'volume',width:100,halign:'center'">Volume</th>
-            <th rowspan="2" data-options="field:'weight_gr',width:100,halign:'center'">Weight (GR)</th>
-            <th rowspan="2" data-options="field:'weight_kg',width:100,halign:'center'">Weight (KG)</th>
-            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
-            <th rowspan="2" data-options="field:'size',width:80,halign:'center'">Size</th>
-            <th rowspan="2" data-options="field:'supply',width:80,halign:'center', styler:cellStyler, formatter:cellFormatterSup">Supply</th>
-            <th rowspan="2" data-options="field:'status',width:80,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
-        </tr>
-        <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'uom',width:100,halign:'center'">Uom</th>
+            <th data-options="field:'division',width:100,halign:'center'">Division</th>
+            <th data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
+            <th data-options="field:'item_family_name',width:150,halign:'center'">Product Family</th>
+            <th data-options="field:'color',width:100,halign:'center'">Color</th>
+            <th data-options="field:'item_sub_family_name',width:150,halign:'center'">Sub Product Family</th>
+            <th data-options="field:'account_number',width:150,halign:'center'">Account No</th>
+            <th data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
+            <th data-options="field:'kind',width:150,halign:'center'">Kind</th>
+            <th data-options="field:'length',width:100,halign:'center'">Length</th>
+            <th data-options="field:'width',width:100,halign:'center'">Width</th>
+            <th data-options="field:'thickness',width:100,halign:'center'">Thickness</th>
+            <th data-options="field:'diameter',width:100,halign:'center'">Diameter</th>
+            <th data-options="field:'density',width:100,halign:'center'">Density</th>
+            <th data-options="field:'volume',width:100,halign:'center'">Volume</th>
+            <th data-options="field:'weight_gr',width:100,halign:'center'">Weight (GR)</th>
+            <th data-options="field:'weight_kg',width:100,halign:'center'">Weight (KG)</th>
+            <th data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th data-options="field:'size',width:80,halign:'center'">Size</th>
+            <th data-options="field:'supply',width:80,halign:'center', styler:cellStyler, formatter:cellFormatterSup">Supply</th>
+            <th data-options="field:'status',width:80,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th data-options="field:'created_by',width:100,align:'center'">Created By</th>
+            <th data-options="field:'created_date',width:150,align:'center'">Created Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center'">Updated By</th>
+            <th data-options="field:'updated_date',width:150,align:'center'">Updated Date</th>
         </tr>
     </thead>
 </table>

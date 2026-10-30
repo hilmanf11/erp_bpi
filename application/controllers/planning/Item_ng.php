@@ -537,6 +537,25 @@ class Item_ng extends CI_Controller
 
             $production_schedule = $this->crud->read('production_schedules',[],array("wo_no" => $data['workorder']));
             $item_fg = $this->crud->read('item_fg',[],array("number" => $data['item_number']));
+
+            // Validasi dulu sebelum query, supaya response selalu JSON
+            if (!$production_schedule || empty($production_schedule->id)) {
+                echo json_encode(["title" => "Not Found", "message" => "Workorder " . $data['workorder'] . " NOT FOUND", "theme" => "error"]);
+                return;
+            }
+            if (!$item_fg || empty($item_fg->id)) {
+                echo json_encode(["title" => "Not Found", "message" => "Product No " . $data['item_number'] . " NOT FOUND", "theme" => "error"]);
+                return;
+            }
+            if (!is_numeric($data['qty_product']) || $data['qty_product'] <= 0) {
+                echo json_encode(["title" => "Invalid", "message" => "Qty Product " . $data['item_number'] . " is Empty / not Valid", "theme" => "error"]);
+                return;
+            }
+            if (empty($data['trans_date']) || strtotime($data['trans_date']) === false) {
+                echo json_encode(["title" => "Invalid", "message" => "Trans Date " . $data['item_number'] . " is Empty / not Valid (format YYYY-MM-DD)", "theme" => "error"]);
+                return;
+            }
+
             $types = [];
             if (!empty($data['type_code'])) {
                 $codes = array_map('trim', explode(',', $data['type_code']));
@@ -578,9 +597,8 @@ class Item_ng extends CI_Controller
             $records = $this->db->get()->result_array();
 
             
-            if (!$production_schedule || empty($production_schedule->id)) {
-                echo json_encode(array("title" => "Not Found","message" => "Workorder " . $data['workorder'] . " NOT FOUND","theme" => "error"));
-                // return;
+            if (count($records) == 0) {
+                echo json_encode(["title" => "Not Found", "message" => "Supply Sheet Workorder " . $data['workorder'] . " NOT FOUND", "theme" => "error"]);
             } elseif ($data['kind'] === 'Ng for Req Material' && $production_schedule->status == 1) {
                 echo json_encode(["title"   => "Invalid","message" => "Workorder " . $data['workorder'] . " Already CLOSE, Cannot input Ng for Req Material","theme"   => "error"]);
                 //return;

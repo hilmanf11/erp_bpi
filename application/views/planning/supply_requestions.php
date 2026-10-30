@@ -25,6 +25,7 @@
             <th rowspan="2" data-options="field:'outstanding',width:80,halign:'center',align:'right',formatter:numberformatQpa">Outstanding</th>
             <th rowspan="2" data-options="field:'type',width:200,halign:'center'">Type NG</th>
             <!-- <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status</th> -->
+            <th rowspan="2" data-options="field:'journal_no',width:140,halign:'center',align:'center'">GL INV No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -367,6 +368,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                if (result && result.theme === 'error') toastr.error(result.message, result.title);
                                 $('#dg').treegrid('reload');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {

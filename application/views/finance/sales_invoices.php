@@ -413,68 +413,79 @@
             </thead>
         </table>
 
-        <div style="width: 50%; float: left; margin-top:20px;">
-            <a style="width: 100%;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
-            <br><br>
-            <table id="dgDetailJournal" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbarDetailJournal"></table>
-
-            <div class="fitem">
-                <b style="width:45%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
-                <input style="width:18%;" id="d_balance_debit" name="balance_debit" class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-                <input style="width:18%;" id="d_balance_credit" name="balance_credit" class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-            </div>
-        </div>
-
-        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
-            <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
-                <div style="width: 100%; float: left;">
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">TOTAL INVOICE</b>
-                        <input style="width:60%;" id="d_total_invoice" name="d_total_invoice" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">DISC %</b>
-                        <input style="width:10%;" id="d_disc_pr" name="d_disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
-                        <input style="width:50%; text-align:right;" id="d_discount" name="d_discount" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:60%;" id="d_total_sub" name="d_total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">DOWN PAYMENT %</b>
-                        <input style="width:10%;" id="d_disc_dp" name="d_disc_dp" value="0" class="easyui-numberbox" data-options="precision:2">
-                        <input style="width:50%; text-align:right;" id="d_down_payment" name="d_down_payment" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">DPP</b>
-                        <input style="width:60%;" id="d_total_dpp" name="d_total_dpp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">VAT</b>
-                        <input style="width:60%;" id="d_total_vat" name="d_total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">PPH</b>
-                        <input style="width:30%;" id="d_total_pph" name="d_total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                        <select style="width:30%;" id="d_pph" name="d_pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
-                            <option value="0">NON PPH</option>
-                            <!-- <option value="5">PPH 21</option> -->
-                            <option value="2">PPH 23</option>
-                            <option value="10">PPH 4(2)</option>
-                            <option value="10.0">Other Income</option>
-                        </select>
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
-                        <input style="width:60%;" id="d_total_grand" name="d_total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">CONVERT IDR</b>
-                        <input style="width:60%;" id="d_total_local" name="d_total_local" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+        <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px; margin-bottom: 20px;">
+            <div style="flex: 65%;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <a style="width: 200px; height: 40px; padding:10px;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
+                    
+                    <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="d_showExchange">
+                        <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="d_exchange"></b></p>
                     </div>
                 </div>
-            </fieldset>
+
+                <table id="dgDetailJournal" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbarDetailJournal">
+                </table>
+
+                <div class="fitem" style="margin-top: 10px; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;">
+                    <b style="width:30%; display:inline-block;">BALANCE TOTAL</b>
+                    <input style="width:16%;" id="d_balance_debit" name="d_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:16%;" id="d_balance_credit" name="d_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:16%;" id="d_local_balance_debit" name="d_local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:16%;" id="d_local_balance_credit" name="d_local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                </div>
+            </div>
+
+            <div style="width: 35%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+                <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
+                    <div style="width: 100%; float: left;">
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">TOTAL INVOICE</b>
+                            <input style="width:60%;" id="d_total_invoice" name="d_total_invoice" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">DISC %</b>
+                            <input style="width:10%;" id="d_disc_pr" name="d_disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
+                            <input style="width:50%; text-align:right;" id="d_discount" name="d_discount" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">SUB TOTAL</b>
+                            <input style="width:60%;" id="d_total_sub" name="d_total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">DOWN PAYMENT %</b>
+                            <input style="width:10%;" id="d_disc_dp" name="d_disc_dp" value="0" class="easyui-numberbox" data-options="precision:2">
+                            <input style="width:50%; text-align:right;" id="d_down_payment" name="d_down_payment" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">DPP</b>
+                            <input style="width:60%;" id="d_total_dpp" name="d_total_dpp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">VAT</b>
+                            <input style="width:60%;" id="d_total_vat" name="d_total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">PPH</b>
+                            <input style="width:30%;" id="d_total_pph" name="d_total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                            <select style="width:30%;" id="d_pph" name="d_pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
+                                <option value="0">NON PPH</option>
+                                <!-- <option value="5">PPH 21</option> -->
+                                <option value="2">PPH 23</option>
+                                <option value="10">PPH 4(2)</option>
+                                <option value="10.0">Other Income</option>
+                            </select>
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
+                            <input style="width:60%;" id="d_total_grand" name="d_total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">CONVERT IDR</b>
+                            <input style="width:60%;" id="d_total_local" name="d_total_local" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
         </div>
 
     </form>
@@ -746,6 +757,8 @@
             </thead>
         </table>
 
+        <?php
+        /** -- existing
         <div style="width: 50%; float: left; margin-top:20px;">
             <a style="width: 100%;" class="easyui-linkbutton c2" onclick="addJournal()">Add to Journal</a>
             <br><br>
@@ -757,8 +770,40 @@
                 <input style="width:18%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
             </div>
         </div>
+        */
+        ?>
 
-        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+        <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px;">
+            <div style="flex: 65%;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <div style="float: left; width: 30%; ">
+                        <a style="width: 90%; height: 50px; padding:10px;" class="easyui-linkbutton c2" onclick="addJournal()">Add to Journal</a>
+                    </div>
+                    <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="showExchange">
+                        <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="exchange"></b></p>
+                    </div>
+                </div>
+
+                <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3">
+                </table>
+
+                <div class="fitem" style="margin-top: 10px; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;">
+                    <b style="width:33%; display:inline-block;">BALANCE TOTAL</b>
+                    <input style="width:15%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2, groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:15%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2, groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:15%;" id="local_balance_debit" name="local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2, groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:15%;" id="local_balance_credit" name="local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2, groupSeparator:'.', decimalSeparator:','">
+
+                    <?php /** -- existing bug comma
+                    <input style="width:15%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                    <input style="width:15%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                    <input style="width:15%;" id="local_balance_debit" name="local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                    <input style="width:15%;" id="local_balance_credit" name="local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                    */ ?>
+                </div>
+            </div>
+
+            <div style="flex: 35%;">
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
@@ -813,6 +858,8 @@
                     </div>
                 </div>
             </fieldset>
+            </div>
+
         </div>
     </form>
 </div>
@@ -862,6 +909,7 @@
 
         $('#dg2').datagrid('loadData', []);
         $('#frm_insert').form('clear');
+        $("#showExchange").hide();
         
         $('#disc_pr').numberbox('setValue', 0); // initial discount 0
 
@@ -1199,6 +1247,7 @@
             }
         });
 
+        /** -- existing
         $("#faktur_code").combobox({
             onChange: function(newValue, oldValue) {
                 var fp_pengganti = $("#fp_pengganti").textbox('getValue');
@@ -1215,6 +1264,50 @@
                 }
                 $('#keterangan_tambahan').combogrid('resize'); // Perbarui UI agar perubahan terlihat
                 $('#cap_fasilitas').combogrid('resize');
+            }
+        });
+        */
+
+        $("#faktur_code").combobox({
+            onChange: function(newValue, oldValue) {
+                var fp_pengganti = $("#fp_pengganti").textbox('getValue');
+                
+                var kode_trans = newValue + fp_pengganti;
+                $("#kode_trans").textbox('setValue', kode_trans);
+
+                // Trigger reload untuk Keterangan Tambahan dan Cap Fasilitas
+                if (newValue == '07' || newValue == '08') {
+                    $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                        faktur_kode: newValue
+                    });
+
+                    $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                        faktur_kode: newValue
+                    });
+                } else {
+                    $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                        faktur_kode: 0
+                    });
+
+                    $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                        faktur_kode: 0
+                    });
+                }
+
+                // Set default value
+                if (newValue !== '07' && newValue !== '08') {
+                    $('#keterangan_tambahan').combogrid('setValue', '').combogrid('options').required = false;
+
+                    $('#cap_fasilitas').combogrid('setValue', 'TD.01105'); 
+                    $('#cap_fasilitas').combogrid('setText', '5 - (Tidak ada Cap)');
+                    $('#cap_fasilitas').combogrid('options').required = false;
+                } else {
+                    $('#keterangan_tambahan').combogrid('setValue', '').combogrid('options').required = false;
+                    $('#cap_fasilitas').combogrid('setValue', '').combogrid('options').required = false;
+                }
+                
+                $('#keterangan_tambahan').combogrid('validate');
+                $('#cap_fasilitas').combogrid('validate');
             }
         });
 
@@ -1422,6 +1515,30 @@
                 var vat_val = 0;
                 var pph_val = 0;
 
+                // Show Exchange Rate (inside Green Box like AR)
+                if (currency != "IDR") {
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
+                        data: "trans_date=" + trans_date + "&currency=" + currency,
+                        dataType: "json",
+                        success: function(exchange) {
+                            var rate = exchange.amount;
+                            if (!rate || isNaN(rate) || rate <= 0) {
+                                toastr.error("Rate Unavailable: Please set a valid rate for the active period.");
+                            }
+
+                            console.log(exchange.label);
+                            console.log(exchange.amount);
+
+                            $("#rate").numberbox('setValue', exchange.amount);
+                            $("#exchange").html(exchange.label);
+                            $("#showExchange").show();
+                        }
+                    });
+                }
+
+                // 1. Hitung Total Invoice dari detail (Tidak Berubah)
                 for (let i = 0; i < totalrows; i++) {
                     var total_detail = parseFloat(rows[i].total) || 0;
                     
@@ -1429,6 +1546,8 @@
                         account_number: rows[i].account_number,
                         account_name: rows[i].account_name,
                         account_type: rows[i].account_type,
+                        currency: rows[i].currency || currency,
+                        trans_date: trans_date,
                         total: total_detail
                     }
                     
@@ -1486,6 +1605,7 @@
                 setCurrencyPrecision(currency);
 
                 // AJAX untuk Exchange Rate
+                // Default rate=1
                 $.ajax({
                     type: "post",
                     url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
@@ -1528,6 +1648,8 @@
                         account_name: rows2[z].account_name,
                         debit: 0, 
                         credit: 0, 
+                        currency: currency,
+                        trans_date: trans_date,
                         flag: rows2[z].flag,
                     };
 
@@ -2012,7 +2134,7 @@
         }
     }
 
-    function addTable2(link = "") {
+    function addTable2_existing(link = "") {
         var lastIndex;
         var dg = $('#dg3').datagrid({
             url: link,
@@ -2141,6 +2263,117 @@
     //     }
     // }
 
+    function addTable2(link = "") {
+        var lastIndex;
+        var dg = $('#dg3').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                // BARIS PERTAMA
+                [{
+                    field: 'account_number',
+                    width: 100,
+                    halign: 'center',
+                    title: "Account No",
+                    rowspan: 2,
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('finance/account_coa/reads') ?>',
+                            panelWidth: 320,
+                            idField: 'account_number',
+                            textField: 'account_number',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Account No',
+                            columns: [[
+                                {field: 'account_number', title: 'Account No', width: 100},
+                                {field: 'account_name', title: 'Account Name', width: 200}
+                            ]],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dg3');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var ed = dg.datagrid('getEditor', { index: rowIndex, field: 'account_name' });
+                                $(ed.target).textbox('setValue', rows.account_name);
+                            }
+                        }
+                    }
+                }, {
+                    field: 'account_name',
+                    width: 250,
+                    halign: 'center',
+                    title: "Account Name",
+                    rowspan: 2,
+                    editor: { type: 'textbox', options: { readonly: true } }
+                }, {
+                    title: "Original Currency",
+                    colspan: 2, // Gabung 2 kolom (Debit & Credit)
+                    halign: 'center'
+                }, {
+                    title: "Local Currency",
+                    colspan: 2, // Gabung 2 kolom (Local Debit & Local Credit)
+                    halign: 'center'
+                }, {
+                    field: 'flag',
+                    width: 50,
+                    halign: 'center',
+                    title: "Order",
+                    rowspan: 2,
+                    editor: { type: 'numberbox', options: { required: true } }
+                }],
+                // BARIS KEDUA
+                [{
+                    field: 'debit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Debit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 2 } }
+                }, {
+                    field: 'credit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Credit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 2 } }
+                }, {
+                    field: 'local_debit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Debit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }, {
+                    field: 'local_credit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Credit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }]
+            ],
+            onClickCell: onClickCell2,
+            onBeginEdit: function(rowIndex, row) {
+                var curr = $("#currency").textbox('getValue');
+                if (curr === 'IDR') {
+                    if (row.debit) {
+                        row.debit = Math.round(row.debit);
+                    }
+                    if (row.credit) {
+                        row.credit = Math.round(row.credit);
+                    }
+                }
+
+                balance_journal();
+            }
+        });
+    }
+
     function balance_journal() {
         var rows = $('#dg3').datagrid('getRows'); // journal
         var totalrows = rows.length;
@@ -2153,9 +2386,14 @@
         if (totalrows > 0) {
             var debit = 0;
             var credit = 0;
+            var local_debit = 0;
+            var local_credit = 0;
+
             for (let i = 0; i < totalrows; i++) {
                 debit += parseFloat(rows[i].debit) || 0;
                 credit += parseFloat(rows[i].credit) || 0;
+                local_debit += parseFloat(rows[i].local_debit) || 0;
+                local_credit += parseFloat(rows[i].local_credit) || 0;
             }
 
             if (curr === 'IDR') {
@@ -2165,6 +2403,8 @@
 
             $("#balance_debit").numberbox('setValue', debit);
             $("#balance_credit").numberbox('setValue', credit);
+            $("#local_balance_debit").numberbox('setValue', local_debit);
+            $("#local_balance_credit").numberbox('setValue', local_credit);
 
             setCurrencyPrecision(curr);
         }
@@ -2177,15 +2417,16 @@
             url: link,
             singleSelect: true,
             columns: [
+                // BARIS PERTAMA
                 [{
                     field: 'account_number',
-                    width: 130,
+                    width: 100,
                     halign: 'center',
                     title: "Account No",
+                    rowspan: 2,
                     editor: {
                         type: 'combogrid',
                         options: {
-                            readonly: true,
                             url: '<?= base_url('finance/account_coa/reads') ?>',
                             panelWidth: 320,
                             idField: 'account_number',
@@ -2193,17 +2434,10 @@
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Account No',
-                            columns: [
-                                [{
-                                    field: 'account_number',
-                                    title: 'Account No',
-                                    width: 100
-                                }, {
-                                    field: 'account_name',
-                                    title: 'Account Name',
-                                    width: 200
-                                }]
-                            ],
+                            columns: [[
+                                {field: 'account_number', title: 'Account No', width: 100},
+                                {field: 'account_name', title: 'Account Name', width: 200}
+                            ]],
                             onSelect: function(value, rows) {
                                 var dg = $('#dgDetailJournal');
                                 var row = dg.datagrid('getSelected');
@@ -2219,19 +2453,33 @@
                     }
                 }, {
                     field: 'account_name',
-                    width: 230,
+                    width: 250,
                     halign: 'center',
                     title: "Account Name",
-                    editor: {
-                        type: 'textbox',
-                        options: {
-                            readonly: true
-                        }
-                    }
+                    rowspan: 2,
+                    editor: { type: 'textbox', options: { readonly: true } }
                 }, {
+                    title: "Original Currency",
+                    colspan: 2, // Gabung 2 kolom (Debit & Credit)
+                    halign: 'center'
+                }, {
+                    title: "Local Currency",
+                    colspan: 2, // Gabung 2 kolom (Local Debit & Local Credit)
+                    halign: 'center'
+                }, {
+                    field: 'flag',
+                    width: 50,
+                    halign: 'center',
+                    title: "Order",
+                    rowspan: 2,
+                    editor: { type: 'numberbox', options: { required: true } }
+                }],
+                // BARIS KEDUA
+                [{
                     field: 'debit',
                     width: 110,
                     halign: 'center',
+                    align: 'right',
                     title: "Debit",
                     formatter: numberformat,
                     editor: {
@@ -2245,6 +2493,7 @@
                     field: 'credit',
                     width: 110,
                     halign: 'center',
+                    align: 'right',
                     title: "Credit",
                     formatter: numberformat,
                     editor: {
@@ -2255,18 +2504,22 @@
                         }
                     }
                 }, {
-                    field: 'flag',
-                    width: 50,
+                    field: 'local_debit',
+                    width: 110,
                     halign: 'center',
-                    title: "Order",
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            required: true,
-                            readonly: true
-                        }
-                    }
-                }, ],
+                    align: 'right',
+                    title: "Debit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }, {
+                    field: 'local_credit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Credit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }]
             ],
             onLoadSuccess: function(data) {
                 // hitung total debit dan credit journal 
@@ -2275,16 +2528,22 @@
 
                 let debit = 0;
                 let credit = 0;
+                let local_debit = 0;
+                let local_credit = 0;
 
                 if (totalrows > 0) {
                     for (let i = 0; i < totalrows; i++) {
                         debit += parseFloat(rows[i].debit || 0);
                         credit += parseFloat(rows[i].credit || 0);
+                        local_debit += parseFloat(rows[i].local_debit || 0);
+                        local_credit += parseFloat(rows[i].local_credit || 0);
                     }
                 }
                 
                 $("#d_balance_debit").numberbox('setValue', debit);
                 $("#d_balance_credit").numberbox('setValue', credit);
+                $("#d_local_balance_debit").numberbox('setValue', local_debit);
+                $("#d_local_balance_credit").numberbox('setValue', local_credit);
             }
         });
     }
@@ -2567,6 +2826,7 @@
                     $("#dlg_insert").window('setTitle', "Update " + row.number);
                     
                     $('#frm_insert').form('load', row);
+                    $("#showExchange").hide();
 
                     // $("#trans_date").datebox('disable');
                     $("#number").textbox('disable');
@@ -2857,6 +3117,40 @@
                             
                             var kode_trans = newValue + fp_pengganti;
                             $("#kode_trans").textbox('setValue', kode_trans);
+
+                            // Trigger reload untuk Keterangan Tambahan dan Cap Fasilitas
+                            if (newValue == '07' || newValue == '08') {
+                                $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                                    faktur_kode: newValue
+                                });
+
+                                $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                                    faktur_kode: newValue
+                                });
+                            } else {
+                                $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                                    faktur_kode: 0
+                                });
+
+                                $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                                    faktur_kode: 0
+                                });
+                            }
+
+                            // Set default value
+                            if (newValue !== '07' && newValue !== '08') {
+                                $('#keterangan_tambahan').combogrid('setValue', '').combogrid('options').required = false;
+
+                                $('#cap_fasilitas').combogrid('setValue', 'TD.01105'); 
+                                $('#cap_fasilitas').combogrid('setText', '5 - (Tidak ada Cap)');
+                                $('#cap_fasilitas').combogrid('options').required = false;
+                            } else {
+                                $('#keterangan_tambahan').combogrid('setValue', '').combogrid('options').required = false;
+                                $('#cap_fasilitas').combogrid('setValue', '').combogrid('options').required = false;
+                            }
+
+                            $('#keterangan_tambahan').combogrid('validate');
+                            $('#cap_fasilitas').combogrid('validate');
                         }
                     });
 
@@ -3005,6 +3299,80 @@
         return true;
     }
 
+    // Tutup loading "Please Wait for Saving Data" dan tampilkan error kalau request Save gagal
+    // (error server, sesi habis, atau respon bukan JSON). Tanpa ini loading berputar terus.
+    function saveFailed(xhr, title, note) {
+        Swal.close();
+        var msg = (note || 'Data was not saved.') + '<br>Server response: ' + ((xhr && xhr.status) ? xhr.status : 'no response');
+        if (xhr && xhr.responseText) {
+            var text = new DOMParser().parseFromString(xhr.responseText, 'text/html').body.textContent || '';
+            text = text.replace(/\s+/g, ' ').trim().substring(0, 300);
+            if (text) {
+                msg += '<br><small>' + $('<div>').text(text).html() + '</small>';
+            }
+        }
+        Swal.fire({
+            title: title || 'Save Failed',
+            html: msg,
+            icon: 'error',
+            confirmButtonText: 'Ok',
+            allowOutsideClick: false,
+        });
+    }
+
+    function validateTaxLogic() {
+        return new Promise((resolve) => {
+            const type = $("#type").textbox('getValue');
+            const taxes = parseFloat($("#taxes").numberbox('getValue')) || 0;
+
+            // Kondisi khusus yang butuh konfirmasi
+            if (taxes === 0 && type === 'LOCAL') {
+                $.messager.confirm('Confirm', 'The Rate Tax is 0% and Customer is Local. Are you sure want proceed?', function(r) {
+                    resolve(r); // r bernilai true jika klik 'Yes', false jika 'No'
+                });
+            } else {
+                // Jika tidak ada kondisi aneh, langsung izinkan (true)
+                resolve(true);
+            }
+        });
+    }
+
+    async function validateRateLogic() {
+        // Get Data untuk Validasi Rate
+        $('#dg2').datagrid('acceptChanges');
+        const rows = $('#dg2').datagrid('getRows');
+        const currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR';
+        let trans_date = $("#trans_date").datebox('getValue');
+
+        // Jika IDR, anggap rate selalu valid (1)
+        if (currency === "IDR") {
+            return true;
+        }
+
+        try {
+            const exchange = await $.ajax({
+                type: "post",
+                url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
+                data: { trans_date: trans_date, currency: currency },
+                dataType: "json"
+            });
+
+            const rate = exchange ? exchange.amount : null;
+
+            if (!rate || isNaN(rate) || rate <= 0) {
+                toastr.error("Rate Unavailable: Please set a valid rate for the active period.");
+                return false; // Validasi gagal
+            }
+
+            console.log("Rate valid: ", rate);
+            return true; // Validasi berhasil
+
+        } catch (err) {
+            toastr.error("Error checking exchange rate.");
+            return false;
+        }
+    }
+
     // AI Optimasi Preview Data
     // function preview() {
     //     const customerId = $("#customer_id").combogrid('getValue');
@@ -3117,7 +3485,13 @@
     // }
 
     // AI Optimasi Preview Data
+    /* -- existing
     function preview() {
+    */
+    // Mengubah handler menjadi async untuk menangani fungsi validateTax yang mengembalikan Promise.
+    // Menggunakan async/await agar eksekusi kode menunggu jawaban user dari dialog $.message.confirm (asynchronous)
+    async function preview() 
+    {
         const customerId = $("#customer_id").combogrid('getValue');
         const deliveryNoteNo = $("#delivery_note_no").combobox('getText');
         const transDate = $("#trans_date").datebox('getValue');
@@ -3125,13 +3499,23 @@
         const type = $("#type").textbox('getValue');
         let discount = parseFloat($("#discount").numberbox('getValue')) || 0;
         let downPayment = parseFloat($("#down_payment").numberbox('getValue')) || 0;
-        const taxes = parseFloat($("#taxes").numberbox('getValue')) || 0;
+        const taxes = parseFloat($("#taxes").numberbox('getValue'));
         const journalTypeId = $("#journal_type").combobox('getValue');
 
         var curr = $("#currency").textbox('getValue');
 
+        /** 
         if (!deliveryNoteNo || !transDate || !dueDate || !taxes) { // Check for empty values directly
+         */
+        if (!deliveryNoteNo || !transDate || !dueDate || (taxes === '' || taxes === null || typeof taxes === 'undefined') ) {
             toastr.info('Please complete all required data (Delivery Note, Trans Date, Due Date, Taxes).');
+            return;
+        }
+
+        // Validasi jika taxes=0 dan customer=local
+        const isTaxOk = await validateTaxLogic();
+        if (!isTaxOk) {
+            console.log("Preview canceled by user.");
             return;
         }
 
@@ -3615,6 +3999,8 @@
             });
             
             return "<b>" + formatter.format(value) + "</b>";
+        } else {
+            return "<b>0,00</b>";
         }
         return "";
     }
@@ -3782,7 +4168,21 @@
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
+                /* -- existing
                 handler: function() {
+                */
+                // Mengubah handler menjadi async untuk menangani fungsi validateTax yang mengembalikan Promise.
+                // Menggunakan async/await agar eksekusi kode menunggu jawaban user dari dialog $.message.confirm (asynchronous)
+                handler: async function() {
+                    // CEGAH DOUBLE CLICK SEGERA
+                    if (isSubmitting) return;
+                    isSubmitting = true;
+                    var btn = $(this);
+                    btn.linkbutton('disable');
+                    setTimeout(function() {
+                        isSubmitting = false;
+                        btn.linkbutton('enable');
+                    }, 6000);
 
                     // --- validasi account_number call function validateDatagrid ---
                     var hasValidationError = false;
@@ -3800,17 +4200,24 @@
                         }
                         return;
                     }
-                    // --- Lanjutkan proses jika tidak ada error validasi ---
 
-                    if (isSubmitting) return; // cegah klik dobel
-                    
-                    isSubmitting = true;
-                    var btn = $(this);
-                    btn.linkbutton('disable');
-                    setTimeout(function() {
+                    // Validasi jika taxes=0 dan customer=local
+                    const isTaxOk = await validateTaxLogic();
+                    if (!isTaxOk) {
+                        console.log("Save canceled by user.");
+                        isSubmitting = false; // Buka kunci jika user pilih 'No'
+                        btn.linkbutton('enable');
+                        return;
+                    }
+
+                    // Validasi Rate
+                    const isRateOk = await validateRateLogic();
+                    if (!isRateOk) {
+                        console.log("Rate unavailable.");
                         isSubmitting = false;
                         btn.linkbutton('enable');
-                    }, 5000);
+                        return;
+                    }
                     
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
@@ -3895,12 +4302,9 @@
                                 var totalrows2 = rows2.length;
                                 endEditing2();
 
-                                $.ajax({
-                                    type: "post",
-                                    url: "<?= base_url('finance/sales_invoices/deleteJournal') ?>",
-                                    data: "number=" + number,
-                                    dataType: "json",
-                                    success: function(response) {
+                                // Jurnal lama sekarang dihapus di dalam create() dalam 1 transaksi bersama data baru.
+                                // Dulu lewat deleteJournal terpisah: kalau simpan gagal, jurnal lama sudah terlanjur hilang.
+                                (function() {
                                         Swal.fire({
                                             title: 'Please Wait for Saving Data',
                                             showConfirmButton: false,
@@ -3983,6 +4387,8 @@
                                                         account_name: rows2[z].account_name,
                                                         debit: rows2[z].debit,
                                                         credit: rows2[z].credit,
+                                                        local_debit: rows2[z].local_debit,
+                                                        local_credit: rows2[z].local_credit,
                                                         flag: rows2[z].flag,
                                                     });
                                                 }
@@ -4003,6 +4409,7 @@
                                                  */
                                                 data: JSON.stringify({ dataBalance: combinedBalance, dataSi: combinedSi, dataJournal: combinedJournal }),
                                                 dataType: "json",
+                                                error: function(xhr) { saveFailed(xhr); },
                                                 success: function (result) {
                                                     
                                                     if (auto_posting_journal !== true) { // -- setting on/off di awal <script>
@@ -4078,12 +4485,14 @@
                                                                         document_no: window.btoa(documentNo),
                                                                     },
                                                                     dataType: "json",
+                                                                    error: function(xhr) { saveFailed(xhr, 'Posting Journal Failed', 'Sales Invoice is already saved, but the Posting Journal was not created.'); },
                                                                     success: function(dataPosting) {
                                                                         // console.log(JSON.stringify(dataPosting));
                                                                         $.ajax({
                                                                             type: "post",
                                                                             url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
                                                                             dataType: "html",
+                                                                            error: function(xhr) { saveFailed(xhr, 'Posting Journal Failed', 'Sales Invoice is already saved, but the Posting Journal was not created.'); },
                                                                             success: function(noGL) {
                                                                                 var nomorGL = noGL;
                                                                                 var rowsData  = dataPosting.rows;
@@ -4115,6 +4524,7 @@
                                                                                             local_credit: rowsData[no].local_credit
                                                                                         },
                                                                                         dataType: "json",
+                                                                                        error: function(xhr) { console.log('Failed! auto-generate Posting Journals #' + no, xhr.status); },
                                                                                         success: function(responses) {
                                                                                             if (responses.theme == "success") {
                                                                                                 console.log('Success auto-generate Posting Journals #' + no);
@@ -4162,10 +4572,10 @@
                                             });
 
                                         } else {
+                                            Swal.close();
                                             toastr.warning("please selections your data in table first");
                                         }
-                                    }
-                                });
+                                })();
                             }, 3000); 
                         }
                     } else {
@@ -4248,13 +4658,25 @@
             }],
         });
 
+        /** -- existing
         $("#journal_type").combobox({
-            url: '<?= base_url('finance/journal_types/reads/' . base64_encode("PURCHASE INVOICING")) ?>',
+            url: '<?= base_url('finance/journal_types/reads/' . base64_encode("SALES INVOICING")) ?>',
             valueField: 'id',
             textField: 'name',
             prompt: "Choose Journal Types",
             onSelect: function(row) {
-                addTable2('<?= base_url('finance/purchase_invoices/readJournal/') ?>' + window.btoa(row.id));
+                addTable2('<?= base_url('finance/sales_invoices/readJournal/') ?>' + window.btoa(row.id));
+            }
+        });
+        */
+
+        $("#journal_type").combobox({
+            url: '<?= base_url('finance/journal_types/reads/' . base64_encode("SALES INVOICING")) ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Choose Journal Types",
+            onSelect: function(row) {
+                addTable2('<?= base_url('finance/sales_invoices/readJournal/') ?>' + window.btoa(row.id));
             }
         });
 
@@ -4494,7 +4916,8 @@
             onChange: function (newValue, oldValue) { calculatePPH(); }
         })
 
-        $('#keterangan_tambahan').combogrid({
+        // -- Existing : Keterangan Tambahan dan Cap Fasilitas
+        $('#keterangan_tambahan_old').combogrid({
             panelWidth: 600,
             idField: 'value',
             textField: 'description',
@@ -4513,7 +4936,7 @@
             editable: false,
         });
 
-        $('#cap_fasilitas').combogrid({
+        $('#cap_fasilitas_old').combogrid({
             panelWidth: 400,
             idField: 'value',
             textField: 'description',
@@ -4525,6 +4948,39 @@
             columns: [[
                 { field: 'value', title: 'Kode', width: 100 },
                 { field: 'description', title: 'Keterangan', width: 300 }
+            ]],
+            fitColumns: true,
+            prompt: "Cap Fasilitas",
+            editable: false,
+        });
+
+
+        // Updated REF-Keterangan Tambahan (DJP)
+        $('#keterangan_tambahan').combogrid({
+            panelWidth: 600,
+            idField: 'value',
+            textField: 'description',
+            url: '<?php echo site_url("master/ecoretax_reference/getKeteranganData"); ?>',
+            method: 'get',
+            columns: [[
+                { field: 'value', title: 'Kode', width: 100 },
+                { field: 'description', title: 'Keterangan', width: 480 }
+            ]],
+            fitColumns: true,
+            prompt: "Keterangan Tambahan",
+            editable: false,
+        });
+
+        // Updated REF-CapFasilitas Tambahan (DJP)
+        $('#cap_fasilitas').combogrid({
+            panelWidth: 600,
+            idField: 'value',
+            textField: 'description',
+            url: '<?php echo site_url("master/ecoretax_reference/getCapFasilitasData"); ?>',
+            method: 'get',
+            columns: [[
+                { field: 'value', title: 'Kode', width: 100 },
+                { field: 'description', title: 'Keterangan', width: 480 }
             ]],
             fitColumns: true,
             prompt: "Cap Fasilitas",
@@ -4648,6 +5104,7 @@
             $("#dlg_detail").window('setTitle', "Detail of " + row.number);
             
             $('#frm_detail').form('load', row);
+            $("#d_showExchange").hide();
 
             $("#d_trans_date").datebox('disable');
             $("#d_trans_date").datebox('setValue', row.trans_date);
@@ -4743,6 +5200,26 @@
                     $(this).datagrid('refreshRow', index);
                 },
             });
+
+            var currency   = row.currency;
+            var trans_date = row.trans_date;
+
+            // Show Exchange Rate (inside Green Box like AR)
+            if (currency != "IDR") {
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
+                    data: "trans_date=" + trans_date + "&currency=" + currency,
+                    dataType: "json",
+                    success: function(exchange) {
+                        console.log(exchange.label);
+                        console.log(exchange.amount);
+
+                        $("#d_exchange").html(exchange.label);
+                        $("#d_showExchange").show();
+                    }
+                });
+            }
 
             addTableJournal('<?= base_url('finance/sales_invoices/readJournals/') ?>' + window.btoa(row.number));
 

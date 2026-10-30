@@ -17,6 +17,7 @@
             <th rowspan="2" data-options="field:'state',width:80,align:'left',formatter:BtnPrint">Print</th>
             <th rowspan="2" data-options="field:'lot_no',width:100,align:'left'">Lot No</th>
             <th rowspan="2" data-options="field:'remarks',width:250,align:'left'">Remarks</th>
+            <th rowspan="2" data-options="field:'journal_no',width:140,halign:'center',align:'center'">GL INV No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -432,14 +433,12 @@
 
             var input = $(ed.target);
             input.textbox({
+                prompt: 'Lot No POR',
                 onChange: function (newValue, oldValue) {
-                    if (newValue.length < 7) {
-                        toastr.error("Lot No Must 7 Character.");
-                        $(this).textbox('setValue', '');
-                    } else if (newValue.length > 7) {
-                        let trimmed = newValue.slice(0, 7);
+                    // Lot POR 6/7 karakter, validasi ke POR dilakukan saat Save All
+                    let trimmed = $.trim(newValue);
+                    if (trimmed !== newValue) {
                         $(this).textbox('setValue', trimmed);
-                        toastr.warning("Lot No Must 7 Character: " + trimmed);
                     }
                 }
             });
@@ -534,6 +533,7 @@
                                     item_rm_id: row.item_rm_id
                                 },
                                 success: function (resDelete) {
+                                    try { var rd = (typeof resDelete === 'string') ? JSON.parse(resDelete) : resDelete; if (rd && rd.theme === 'error') toastr.error(rd.message, rd.title); } catch (e) {}
                                     resolve();
                                 },
                                 error: function (xhr) {
@@ -677,15 +677,40 @@
                                 return;
                             }
 
-                            if (rows[i].lot_no.length !== 7) {
-                                toastr.error(`Lot No must be 7 characters`);
-                                return;
-                            }
-
                             if (rows[i].label == 0) {
                                 toastr.error(`Row ${i + 1} has Label 0. Please correct it.`);
                                 return;
                             }
+                        }
+
+                        // Validasi Part No + Lot No harus ada di POR
+                        var lotInvalid = null;
+                        $.ajax({
+                            type: "post",
+                            url: '<?= base_url('planning/bpm/checkLotNo') ?>',
+                            async: false,
+                            data: {
+                                rows: rows.map(function(r) {
+                                    return { item_rm_id: r.item_rm_id, part_no: r.item_number, lot_no: r.lot_no };
+                                })
+                            },
+                            dataType: "json",
+                            success: function(result) {
+                                lotInvalid = result.invalid;
+                            }
+                        });
+                        if (lotInvalid === null) {
+                            toastr.error("Gagal cek Lot No ke POR, silakan coba lagi");
+                            return;
+                        }
+                        if (lotInvalid.length > 0) {
+                            toastr.error(lotInvalid.map(function(r) {
+                                return `Row ${r.row}: Lot No ${r.lot_no} tidak ditemukan di POR untuk Part No ${r.part_no}`;
+                            }).join('<br>'), "Lot No tidak valid");
+                            return;
+                        }
+
+                        for (let i = 0; i < totalrows; i++) {
 
                             if (rows[i].item_rm_id) {
                                 $.ajax({

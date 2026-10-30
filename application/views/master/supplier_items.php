@@ -571,12 +571,16 @@
             method: 'post',
             url: '<?= base_url('master/supplier_items/delete') ?>',
             data: {
-                supplier_id: row.supplier_id,
+                supplier_id: supplier_id,
                 item_rm_id: item_rm_id
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
-                toastr.success(result.message);
+                if (result.theme == 'error') {
+                    toastr.error(result.message, result.title);
+                } else {
+                    toastr.success(result.message);
+                }
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 toastr.error(jqXHR.statusText);
@@ -616,12 +620,13 @@
                             method: 'post',
                             url: '<?= base_url('master/supplier_items/delete') ?>',
                             data: {
-                                supplier_id: row.supplier_id,
-                                item_rm_id: row.item_rm_id
+                                id: row.id
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
-                                $('#dg').datagrid('reload');
+                                if (result.theme == 'error') {
+                                    toastr.error(result.message, result.title);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);

@@ -156,32 +156,15 @@ class Purchase_invoices extends CI_Controller
             foreach ($journals as $journal) {
                 $arr[] = array(
                     "account_number" => $journal->account_number,
-                    "account_name" => $journal->account_name,
-                    "debit" => "0.00",
-                    "credit" => "0.00",
-                    "flag" => $journal->flag,
+                    "account_name"   => $journal->account_name,
+                    "debit"          => "0.00",
+                    "credit"         => "0.00",
+                    "flag"           => $journal->flag,
+                    "vat"            => $journal->vat ?? 'NO',
+                    "pph"            => $journal->pph ?? 'NO',
+                    "ap_payment"     => $journal->ap_payment ?? 'NO',
+                    "status"         => $journal->status ?? '',
                 );
-            }
-        }
-
-        // Account VAT 170.170.00 dan Grand Total 210.110.00 (Bu Nina)
-        if (empty($journals)) {
-            $specialAccounts = ['170.170.00', '210.110.00'];
-            $existingAccNums = array_column($arr, 'account_number');
-            $flag = 1;
-            foreach ($specialAccounts as $accNum) {
-                if (!in_array($accNum, $existingAccNums)) {
-                    $accInfo = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', $accNum)->get()->row_array();
-                    if ($accInfo) {
-                        $arr[] = [
-                            "account_number" => $accInfo['account_number'],
-                            "account_name"   => $accInfo['account_name'],
-                            "debit"          => 0,
-                            "credit"         => 0,
-                            "flag"           => $flag++,
-                        ];
-                    }
-                }
             }
         }
 
@@ -192,6 +175,34 @@ class Purchase_invoices extends CI_Controller
     {
         $number = base64_decode($number);
         $reads = $this->crud->reads("purchase_invoice_journals", [], ["number" => $number], "", "flag", "asc");
+
+        // Info journal_setups (vat, pph, ap_payment, status) per akun, tanpa JOIN ke purchase_invoices
+        // agar baris jurnal tidak terduplikasi sebanyak baris item invoice.
+        // Kolom vat/pph hanya diambil jika ada di tabel journal_setups.
+        $invoice = $this->db->select('journal_type_id')->from('purchase_invoices')->where('number', $number)->limit(1)->get()->row();
+        $setup_map = [];
+        if (!empty($invoice->journal_type_id)) {
+            $setup_fields = ['account_number'];
+            foreach (['vat', 'pph', 'ap_payment', 'status'] as $field) {
+                if ($this->db->field_exists($field, 'journal_setups')) {
+                    $setup_fields[] = $field;
+                }
+            }
+            $setups = $this->db->select(implode(', ', $setup_fields))->from('journal_setups')->where('journal_type_id', $invoice->journal_type_id)->get()->result_array();
+            foreach ($setups as $setup) {
+                if (!isset($setup_map[$setup['account_number']])) {
+                    $setup_map[$setup['account_number']] = $setup;
+                }
+            }
+        }
+
+        foreach ($reads as $read) {
+            $setup = $setup_map[$read->account_number] ?? [];
+            $read->vat        = $setup['vat'] ?? 'NO';
+            $read->pph        = $setup['pph'] ?? 'NO';
+            $read->ap_payment = $setup['ap_payment'] ?? 'NO';
+            $read->status     = $setup['status'] ?? '';
+        }
         echo json_encode($reads);
     }
 
@@ -296,72 +307,69 @@ class Purchase_invoices extends CI_Controller
         $journals = json_decode(file_get_contents("json/purchase_invoice_journals.json"), true) ?? [];
         $jsonDatas = json_decode(file_get_contents("json/purchase_invoices.json"), true) ?? [];
         
-        // prepare data array
-        $array2 = array(); 
-        $array1 = array();
+        $array = array();
+        $flag = 1;
 
         if (count($journals) > 0 || count($jsonDatas) > 0) {
-            $flag = 1;
-            $mergedData = array();
-
+            // 1 baris per akun + PO + item (description: supplier | po_no | invoice_no | item_no | item_name),
+            // item yang sama di PO yang sama tetap digabung
+            $mergedItems = [];
+            $itemAccounts = [];
             foreach ($jsonDatas as $jsonData) {
-                $account_number = $jsonData["account_number"];
-                $total = $jsonData["total"];
+                $acc = $jsonData["account_number"];
+                $desc = $jsonData["description"] ?? '';
+                $key = $acc . '|' . $desc;
+                $deb = ($jsonData['account_type'] == "DEBIT") ? round($jsonData['total'], 2) : 0;
+                $crd = ($jsonData['account_type'] == "CREDIT") ? round($jsonData['total'], 2) : 0;
+                $itemAccounts[$acc] = true;
 
-                if (isset($mergedData[$account_number])) {
-                    if ($jsonData['account_type'] == "DEBIT") {
-                        $mergedData[$account_number]["debit"] += $total;
-                    } elseif ($jsonData['account_type'] == "CREDIT") {
-                        $mergedData[$account_number]["credit"] += $total;
-                    }
-                } else {
-                    $mergedData[$account_number] = array(
-                        "account_number" => $account_number,
+                if (!isset($mergedItems[$key])) {
+                    $mergedItems[$key] = [
+                        "account_number" => $acc,
                         "account_name"   => $jsonData["account_name"],
-                        "account_type"   => $jsonData["account_type"],
-                        "debit"          => ($jsonData['account_type'] == "DEBIT") ? $total : 0,
-                        "credit"         => ($jsonData['account_type'] == "CREDIT") ? $total : 0,
-                        "flag"           => $flag,
-                    );
+                        "description"    => $desc,
+                        "debit"          => $deb,
+                        "credit"         => $crd,
+                    ];
+                } else {
+                    $mergedItems[$key]["debit"] += $deb;
+                    $mergedItems[$key]["credit"] += $crd;
                 }
-                $flag++;
             }
 
-            $array1 = array_values($mergedData);
+            foreach ($mergedItems as $item) {
+                $array[] = array(
+                    "account_number" => $item["account_number"],
+                    "account_name"   => $item["account_name"],
+                    // kolom purchase_invoice_journals.description varchar(255)
+                    "description"    => mb_strimwidth($item["description"], 0, 255, '...'),
+                    "debit"          => round($item["debit"], 2),
+                    "credit"         => round($item["credit"], 2),
+                    "flag"           => $flag++,
+                );
+            }
 
             foreach ($journals as $journal) {
-                $array2[] = array(
-                    "account_number" => $journal['account_number'],
-                    "account_name"   => $journal['account_name'],
-                    "debit"          => round($journal['debit'] ?? 0, 2),
-                    "credit"         => round($journal['credit'] ?? 0, 2),
-                    "flag"           => $flag,
-                );
-                $flag++;
-            }
+                if (isset($itemAccounts[$journal['account_number']])) {
+                    continue;
+                }
 
-            $existingAccountNumbers = array_column($array2, 'account_number');
-            foreach ($array1 as $item1) {
-                if (!in_array($item1['account_number'], $existingAccountNumbers)) {
-                    $array2[] = $item1;
+                $debit = round($journal['debit'] ?? 0, 2);
+                $credit = round($journal['credit'] ?? 0, 2);
+                if ($debit > 0 || $credit > 0) {
+                    $array[] = array(
+                        "account_number" => $journal['account_number'],
+                        "account_name"   => $journal['account_name'],
+                        "description"    => $journal['description'] ?? '',
+                        "debit"          => $debit,
+                        "credit"         => $credit,
+                        "flag"           => $flag++,
+                    );
                 }
             }
-
-            foreach ($array2 as $i => $item2) {
-                foreach ($array1 as $item1) {
-                    if ($item2['account_number'] === $item1['account_number']) {
-                        $array2[$i] = array_merge($item2, $item1);
-                        break;
-                    }
-                }
-            }
-
-            usort($array2, function($a, $b) {
-                return $a['flag'] <=> $b['flag'];
-            });
         }
 
-        echo json_encode($array2);
+        echo json_encode($array);
     }
 
     public function calculateJournal_existing()
@@ -1045,7 +1053,7 @@ class Purchase_invoices extends CI_Controller
                         } else {
 
                             $estimate_month = $estimate_year * 12;
-                            $expired_date   = date("Y-m-d", strtotime("+" . $estimate_month . ' months', strtotime((string) $item['trans_date'])));
+                            $expired_date   = date("Y-m-d", strtotime("+" . $estimate_month . ' months', strtotime($item['trans_date'])));
                             $cost_local     = $item['price'] * $rate;
                             $total_local    = $item['total'] * $rate;
                             
@@ -1233,7 +1241,7 @@ class Purchase_invoices extends CI_Controller
             $cost_local     = $item['price'] * $rate;
             $total_local    = $item['total'] * $rate;
             $depreciation   = ($life_month > 0) ? ($cost_local / $life_month) : 0;
-            $expired_date   = date("Y-m-d", strtotime("+$life_month months", strtotime((string) $item['trans_date'])));
+            $expired_date   = date("Y-m-d", strtotime("+$life_month months", strtotime($item['trans_date'])));
 
             // Check Existing
             $existing = $this->db->get_where('asset_fixeds', [
@@ -1701,7 +1709,7 @@ class Purchase_invoices extends CI_Controller
             } else {
                 // Get PI number
                 if (empty($data["number"]) || $data["number"] == "-") {
-                    $datenow = "PI-" . date("Ymd", strtotime((string) $data["trans_date"]));
+                    $datenow = "PI-" . date("Ymd", strtotime($data["trans_date"]));
                     $sqlGetID = $this->db->select_max('number', 'kode')->like('number', $datenow, 'after')->get('purchase_invoices')->row();
                     $urutan = ($sqlGetID && $sqlGetID->kode) ? (int) substr($sqlGetID->kode, -4) : 0;
                     $urutan++;
@@ -1720,7 +1728,7 @@ class Purchase_invoices extends CI_Controller
                 
                 // Get Rate
                 $currency = $data['currency'];
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $data["trans_date"])));
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($data["trans_date"])));
                 $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
                 if ($currency != "IDR") {
                     if ($exchange) {
@@ -1740,7 +1748,7 @@ class Purchase_invoices extends CI_Controller
                 $trans_date     = $data['trans_date'];
                 $payment_term   = $supplier->payment_term ?? $data["payment_term"];
                 $vat_rate       = $supplier->vat ?? 0;
-                $due_date       = date('Y-m-d', strtotime('+' . $supplier->payment_term . ' days', strtotime((string) $data['trans_date'])));
+                $due_date       = date('Y-m-d', strtotime('+' . $supplier->payment_term . ' days', strtotime($data['trans_date'])));
                 $price          = (float)($data['price'] ?? $supplier_product->price ?? 0);
                 $qty            = (float)($data['qty'] ?? 0);
                 $discount_rate  = (float)($data['discount'] ?? 0);
@@ -2180,7 +2188,7 @@ for ($i = 0; $i < $page; $i++) {
     foreach ($records as $record) {
         $currency = $record['currency'];
 
-        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime((string) $record['trans_date'])));
+        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record['trans_date'])));
         $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
         if ($currency != "IDR") {
@@ -2214,19 +2222,19 @@ for ($i = 0; $i < $page; $i++) {
         <td>' . $record['uom'] . '</td>
         <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
         <td>' . $record['currency'] . '</td>
-        <td style="text-align:right;">' . @number_format((float) $record['price'], 2) . '</td>
-        <td style="text-align:right;">' . @number_format((float) $record['total'], 2) . '</td>
+        <td style="text-align:right;">' . @number_format($record['price'], 2) . '</td>
+        <td style="text-align:right;">' . @number_format($record['total'], 2) . '</td>
         <td>IDR</td>
-        <td style="text-align:right;">' . @number_format((float) $amount, 2) . '</td>
+        <td style="text-align:right;">' . @number_format($amount, 2) . '</td>
         </tr>';
         $no++;
     }
 
     $html .= '  <tr>
     <th colspan="10" style="text-align:right">TOTAL</th>
-    <th style="text-align:right">'.number_format((float) $grand_total, 2).'</th>
+    <th style="text-align:right">'.number_format($grand_total, 2).'</th>
     <th></th>
-    <th style="text-align:right">'.number_format((float) $grand_total_local, 2).'</th>
+    <th style="text-align:right">'.number_format($grand_total_local, 2).'</th>
     </tr>
     </table>
     </div>
@@ -2246,11 +2254,12 @@ $journals = $this->crud->query("SELECT a.*, b.account_name
 
 $html .= '<br><br>
 <div style="width:100%;">
-<div style="width:50%; float:left;">
+<div style="width:60%; float:left;">
 <table id="customers" style="width:100%; font-size:12px;">
 <tr>
 <td style="font-weight:bold;">Account No</td>
 <td style="font-weight:bold;">Account Name</td>
+<td style="font-weight:bold;">Description</td>
 <td style="font-weight:bold;">Debit</td>
 <td style="font-weight:bold;">Credit</td>
 </tr>';
@@ -2263,15 +2272,16 @@ foreach ($journals as $journal) {
     $html .= '  <tr>
     <td>' . $journal->account_number . '</td>
     <td>' . $journal->account_name . '</td>
-    <td style="text-align:right;">' . number_format((float) $journal->debit, 2) . '</td>
-    <td style="text-align:right;">' . number_format((float) $journal->credit, 2) . '</td>
+    <td>' . ($journal->description ?? '') . '</td>
+    <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
+    <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
     </tr>';
 }
 
 $html .= '      <tr>
-<td colspan="2">Balance</td>
-<td style="text-align:right;">' . @number_format((float) $total_debit, 2) . '</td>
-<td style="text-align:right;">' . @number_format((float) $total_credit, 2) . '</td>
+<td colspan="3">Balance</td>
+<td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
+<td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
 </tr>
 </table>
 </div>
@@ -2282,7 +2292,7 @@ $html .= '      <tr>
 <table id="customers" style="width:100%; font-size:12px;">
 <tr>
 <td style="font-weight:bold;">Sub Total</td>
-<td style="font-weight:bold; text-align:right;">' . @number_format((float) $grand_total_all, 2) . '</td>
+<td style="font-weight:bold; text-align:right;">' . @number_format($grand_total_all, 2) . '</td>
 </tr>
 <tr>
 <td style="font-weight:bold;">DPP</td>
@@ -2456,10 +2466,10 @@ public function print($option = "")
         <td>' . $data['trans_date'] . '</td>
         <td>' . $data['due_date'] . '</td>
         <td>' . $data['payment_term'] . '</td>
-        <td style="text-align:right;">' . number_format((float) $data['total_sub'], 2, ",", ".") . '</td>
-        <td style="text-align:right;">' . number_format((float) $data['total_vat'], 2, ",", ".") . '</td>
-        <td style="text-align:right;">' . number_format((float) $data['total_pph'], 2, ",", ".") . '</td>
-        <td colspan="2" style="text-align:right;">' . number_format((float) $data['total_grand'], 2, ",", ".") . '</td>
+        <td style="text-align:right;">' . number_format($data['total_sub'], 2, ",", ".") . '</td>
+        <td style="text-align:right;">' . number_format($data['total_vat'], 2, ",", ".") . '</td>
+        <td style="text-align:right;">' . number_format($data['total_pph'], 2, ",", ".") . '</td>
+        <td colspan="2" style="text-align:right;">' . number_format($data['total_grand'], 2, ",", ".") . '</td>
         </tr>';
         $html .= '  <tr>
         <td colspan="12" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
@@ -2487,11 +2497,11 @@ public function print($option = "")
             <td >' . $detail['created_by'] . '</td>
             <td>' . $detail['item_no'] . '</td>
             <td>' . $detail['item_name'] . '</td>
-            <td style="text-align:right">' . number_format((float) $detail['qty'], 2, ",", ".") . '</td>
+            <td style="text-align:right">' . number_format($detail['qty'], 2, ",", ".") . '</td>
             <td>' . $detail['uom'] . '</td>
             <td>' . $detail['currency'] . '</td>
-            <td style="text-align:right">' . number_format((float) $detail['price'], 2, ",", ".") . '</td>
-            <td style="text-align:right">' . number_format((float) $detail['total'], 2, ",", ".")  . '</td>
+            <td style="text-align:right">' . number_format($detail['price'], 2, ",", ".") . '</td>
+            <td style="text-align:right">' . number_format($detail['total'], 2, ",", ".")  . '</td>
             <td style="text-align:center">' . $detail['account_type'] . '</td>
             </tr>';
         }
@@ -2629,10 +2639,10 @@ public function print_backup($option = "")
         <td>' . $data['trans_date'] . '</td>
         <td>' . $data['due_date'] . '</td>
         <td>' . $data['payment_term'] . '</td>
-        <td style="text-align:right;">' . number_format((float) $data['total_sub'], 4) . '</td>
-        <td style="text-align:right;">' . number_format((float) $data['total_vat'], 4) . '</td>
-        <td style="text-align:right;">' . number_format((float) $data['total_pph'], 4) . '</td>
-        <td style="text-align:right;">' . number_format((float) $data['total_grand'], 4) . '</td>
+        <td style="text-align:right;">' . number_format($data['total_sub'], 4) . '</td>
+        <td style="text-align:right;">' . number_format($data['total_vat'], 4) . '</td>
+        <td style="text-align:right;">' . number_format($data['total_pph'], 4) . '</td>
+        <td style="text-align:right;">' . number_format($data['total_grand'], 4) . '</td>
         </tr>';
         $html .= '  <tr>
         <td colspan="11" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
@@ -2658,11 +2668,11 @@ public function print_backup($option = "")
             <td >' . $detail['created_by'] . '</td>
             <td>' . $detail['item_no'] . '</td>
             <td>' . $detail['item_name'] . '</td>
-            <td style="text-align:right">' . number_format((float) $detail['qty'], 2) . '</td>
+            <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
             <td>' . $detail['uom'] . '</td>
             <td>' . $detail['currency'] . '</td>
-            <td style="text-align:right">' . number_format((float) $detail['price'], 2) . '</td>
-            <td style="text-align:right">' . number_format((float) $detail['total'], 4)  . '</td>
+            <td style="text-align:right">' . number_format($detail['price'], 2) . '</td>
+            <td style="text-align:right">' . number_format($detail['total'], 4)  . '</td>
             </tr>';
         }
         $no++;
@@ -3035,7 +3045,7 @@ function exportAccurate($id) {
 
             // HEADER row
             fputcsv($output, [
-                'HEADER', $invoice['invoice_number'], $invoice['faktur_no'], date('d/m/Y', strtotime((string) $invoice['trans_date'])), $invoice['supp_id'], $invoice['address'], $ppn,'Tidak', $invoice['faktur_no'], 'Ya', 
+                'HEADER', $invoice['invoice_number'], $invoice['faktur_no'], date('d/m/Y', strtotime($invoice['trans_date'])), $invoice['supp_id'], $invoice['address'], $ppn,'Tidak', $invoice['faktur_no'], 'Ya', 
                 '', '', $invoice['invoice_no'], '', '', '', '', '', '', '', 
                 '', '', '', '', '', '', '', '', '', '', 
                 '', '', '', '', ''

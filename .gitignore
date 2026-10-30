@@ -1,3 +1,27 @@
+# Environment configs
 application/config/config.php
 application/config/database.php
+sftp.json
+
+# OS & IDE
 .DS_Store
+*/.DS_Store
+Thumbs.db
+.vscode/
+.claude/
+.agents/
+
+# Context & scratch
+context/
+scratch/
+crop_table.png
+
+# Upload directories (ignore uploaded files, keep .htaccess)
+assets/documents/*
+!assets/documents/.htaccess
+assets/image/users/*
+!assets/image/users/.htaccess
+assets/image/qrcode/*
+failed/*
+!failed/.htaccess
+*.md

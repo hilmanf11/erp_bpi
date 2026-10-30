@@ -211,7 +211,7 @@ class Transaction_rm extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime((string) $trans_date));
+        $datenow    = date("ymd", strtotime($trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM transaction_rm WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -276,9 +276,10 @@ class Transaction_rm extends CI_Controller
 
             if ($id === "0") {
                 //Select Query
-                $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom');
+                $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom, MAX(jv.journal_no) as journal_no', FALSE);
                 $this->db->from('transaction_rm a');
                 $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
+                $this->db->join('(SELECT document_no, GROUP_CONCAT(DISTINCT number ORDER BY number ASC SEPARATOR \', \') as journal_no FROM journal_inventory WHERE modul = \'TRANSACTION RM\' GROUP BY document_no) jv', 'a.request_no = jv.document_no', 'left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 if ($filter_request_no != "") {
@@ -327,6 +328,7 @@ class Transaction_rm extends CI_Controller
                         "request_no_return" => $record['request_no_return'],
                         "division" => $record['division'],
                         "item_category_id" => $record['item_category_id'],
+                        "journal_no" => $record['journal_no'] ?? '',
 
                         "state" => "closed"
                     );
@@ -438,10 +440,35 @@ class Transaction_rm extends CI_Controller
     //     }
     // }
 
+    // Dokumen yang sudah dijurnal (Journal Inventory) tidak boleh diubah / dihapus
+    private function _is_journaled($request_no)
+    {
+        return $this->db->where(['modul' => 'TRANSACTION RM', 'document_no' => $request_no])->count_all_results('journal_inventory') > 0;
+    }
+
+    // Dipanggil view setelah semua baris Save All tersimpan
+    public function autoPostJournal()
+    {
+        $request_no = $this->input->post('request_no');
+        if (empty($request_no)) {
+            echo json_encode(['status' => false, 'message' => 'Request No is empty.']);
+            return;
+        }
+
+        $this->load->model('autopostingjournal');
+        $result = $this->autopostingjournal->auto_post_transaction_rm($request_no, 'SAVE');
+        echo json_encode($result ?? ['status' => null, 'message' => 'No journal posting for this transaction.']);
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+
+            if (!empty($post['request_no']) && $this->_is_journaled($post['request_no'])) {
+                echo json_encode(["title" => "Failed", "message" => "Transaction {$post['request_no']} has been posted to Journal Inventory and cannot be changed.", "theme" => "error"]);
+                return;
+            }
             
             if (isset($post['qty']) && $post['qty'] <= 0) {
                 echo json_encode(["status" => true, "message" => "Skipped"]); 
@@ -523,6 +550,11 @@ class Transaction_rm extends CI_Controller
 
         if ($trans->status == 1) {
             echo json_encode(["title" => "Failed", "message" => "Cannot delete closed transaction", "theme" => "error"]);
+            return;
+        }
+
+        if ($this->_is_journaled($trans->request_no)) {
+            echo json_encode(["title" => "Failed", "message" => "Transaction {$trans->request_no} has been posted to Journal Inventory and cannot be deleted.", "theme" => "error"]);
             return;
         }
 
@@ -927,7 +959,7 @@ class Transaction_rm extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -1074,7 +1106,7 @@ class Transaction_rm extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                         </th>
                                         <th style="text-align:left">

@@ -91,7 +91,7 @@ class Supply_materials extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime((string) $trans_date));
+        $datenow    = date("ymd", strtotime($trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM supply_materials WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -151,12 +151,13 @@ class Supply_materials extends CI_Controller
             if ($id === "0") {
                 //Select Query
                 $this->db->select('a.*, c.number as item_number, c.name as item_name, b.uom, COUNT(a.status) as total_status, i.total_status_open,
-                    g.total_status_close');
+                    g.total_status_close, MAX(jv.journal_no) as journal_no', FALSE);
                 $this->db->from('supply_materials a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
                 $this->db->join('(SELECT request_no, COUNT(status) as total_status_close FROM supply_materials WHERE status = 1 GROUP BY request_no) g', 'a.request_no = g.request_no', 'left');
                 $this->db->join('(SELECT request_no, COUNT(status) as total_status_open FROM supply_materials WHERE status = 0 GROUP BY request_no) i', 'a.request_no = i.request_no', 'left');
+                $this->db->join('(SELECT document_no, GROUP_CONCAT(DISTINCT number ORDER BY number ASC SEPARATOR \', \') as journal_no FROM journal_inventory WHERE modul = \'NON SUPPLY SHEET\' GROUP BY document_no) jv', 'a.request_no = jv.document_no', 'left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 if ($filter_request_no != "") {
@@ -213,6 +214,7 @@ class Supply_materials extends CI_Controller
                         "type" => $record['type'],
                         "remarks" => $record['remarks'],
                         "status" => $status,
+                        "journal_no" => $record['journal_no'] ?? '',
                         "state" => "closed"
                     );
                 }
@@ -351,6 +353,14 @@ class Supply_materials extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+
+        // Non Supply Sheet yang sudah dijurnal tidak boleh dihapus
+        $this->load->model('autopostingjournal');
+        if ($blocked = $this->autopostingjournal->journaled_block(['NON SUPPLY SHEET'], $data['request_no'] ?? '')) {
+            echo json_encode($blocked);
+            return;
+        }
+
         $send = $this->crud->delete('supply_materials', ["id" => $data['id']]);
         $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']]);
         echo $send;
@@ -478,7 +488,7 @@ class Supply_materials extends CI_Controller
                                         <tr>
                                             <td width="50">Request Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime((string) $kanban->request_date)) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime($kanban->request_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Request Name</td>

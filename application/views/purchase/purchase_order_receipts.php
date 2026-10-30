@@ -24,6 +24,7 @@
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right'">MPQ</th>
             <th rowspan="2" data-options="field:'qty_label',width:80,halign:'center',align:'right'">Qty <br> Label</th>
             <th rowspan="2" data-options="field:'state',width:80,align:'center',formatter:BtnPrintLabel">Label</th>
+            <th rowspan="2" data-options="field:'journal_no',width:140,halign:'center',align:'center'">GL INV No</th>
             <th rowspan="2" data-options="field:'invoice_no',width:120,halign:'center',align:'right'">Invoice No</th>
             <th rowspan="2" data-options="field:'lotno',width:80,halign:'center',align:'right'">Lot No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -87,6 +88,15 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" id="filter_division" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status POR</span>
+                    <select style="width:60%;" id="filter_status_por" panelHeight="auto" class="easyui-combobox">
+                        <option value="">Choose All</option>
+                        <option value="open">OPEN</option>
+                        <option value="close">CLOSE</option>
+                        <option value="empty">EMPTY (NO LABEL)</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status Invoice</span>
@@ -526,6 +536,7 @@
                                     qty_receipt: row.qty_receipt
                                 },
                                 success: function (resDelete) {
+                                    try { var rd = (typeof resDelete === 'string') ? JSON.parse(resDelete) : resDelete; if (rd && rd.theme === 'error') toastr.error(rd.message, rd.title); } catch (e) {}
                                     resolve();
                                 },
                                 error: function (xhr) {
@@ -569,13 +580,14 @@
         var filter_lotno = $("#filter_lotno").combobox('getValue');
         var filter_doc_no = $("#filter_doc_no").combobox('getValue');
         var filter_status_invoice = $("#filter_status_invoice").combobox('getValue');
+        var filter_status_por = $("#filter_status_por").combobox('getValue');
 
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + 
         "&filter_supplier=" + filter_supplier + "&filter_receipt=" + filter_receipt + 
         "&filter_lotno=" + filter_lotno + 
         "&filter_doc_no=" + filter_doc_no + "&filter_categories=" + filter_categories + 
-        "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice;
+        "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice + "&filter_status_por=" + filter_status_por;
 
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_order_receipts/datatables') ?>' + url
@@ -600,13 +612,14 @@
         var filter_lotno = $("#filter_lotno").combobox('getValue');
         var filter_doc_no = $("#filter_doc_no").combobox('getValue');
         var filter_status_invoice = $("#filter_status_invoice").combobox('getValue');
+        var filter_status_por = $("#filter_status_por").combobox('getValue');
 
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + 
         "&filter_supplier=" + filter_supplier + "&filter_receipt=" + filter_receipt + 
         "&filter_lotno=" + filter_lotno + 
         "&filter_doc_no=" + filter_doc_no + "&filter_categories=" + filter_categories + 
-        "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice;
+        "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice + "&filter_status_por=" + filter_status_por;
         
          // Tampilkan overlay
          $("#loadingOverlay").show();
@@ -830,6 +843,7 @@
                 Swal.close();
                 if (response.status === true) {
                     toastr.success(response.message || "Success", "Auto Posting Journal Success");
+                    $('#dg').treegrid('reload');
                 } else {
                     toastr.info(response.message, "Failed to Auto Posting Journal");
                 }

@@ -205,6 +205,10 @@ class Barcode_divides extends CI_Controller
                             $this->db->update('purchase_order_labels', ["status" => 1], ["label_no" => $post['label_no']]);
                             $this->db->update('new_barcode', ["status" => 1], ["label_no" => $post['label_no']]);
                             $this->db->update('bpm_labels', ["status" => 1], ["label_no" => $post['label_no']]);
+
+                            // Auto Posting Journal Inventory POR jika ini label terakhir yang di-scan
+                            $this->load->model('autopostingjournal');
+                            $this->autopostingjournal->auto_post_por_by_label($post['label_no']);
                         } else {
                             $message = json_encode(array("title" => "Available", "message" => "Barcode Divided has been created ", "theme" => "error"));
                         }
@@ -321,7 +325,7 @@ class Barcode_divides extends CI_Controller
                                 </tr>
                                 <tr>
                                     <th style="text-align:left">
-                                        <small>Quantity</small><br><b style="font-size:24px;">' . number_format((float) $record->qty, 4, ",", ".") . '</b>
+                                        <small>Quantity</small><br><b style="font-size:24px;">' . number_format($record->qty, 4, ",", ".") . '</b>
                                     </th>
                                     <th style="text-align:left">
                                         <small>Location</small><br><b style="font-size:24px;">' . $record->location . '</b>

@@ -124,6 +124,31 @@ class Sales_dashboard extends CI_Controller
         return 0.0;
     }
 
+    // Filter Monthly: bulan awal s/d bulan akhir pada tahun terpilih (default Januari s/d Desember tahun ini = 12 bulan)
+    private function _get_monthly_range()
+    {
+        $year        = (int)($this->input->post('filter_year') ?: date('Y'));
+        $month_start = (int)($this->input->post('filter_month_start') ?: 1);
+        $month_end   = (int)($this->input->post('filter_month_end') ?: 12);
+
+        $month_start = max(1, min(12, $month_start));
+        $month_end   = max(1, min(12, $month_end));
+        if ($month_start > $month_end) {
+            list($month_start, $month_end) = [$month_end, $month_start];
+        }
+
+        $labels = [];
+        for ($m = $month_start; $m <= $month_end; $m++) {
+            $labels[] = sprintf('%04d-%02d', $year, $m);
+        }
+
+        return [
+            'labels'       => $labels,
+            'period_start' => sprintf('%04d-%02d-01', $year, $month_start),
+            'period_end'   => date('Y-m-t', strtotime(sprintf('%04d-%02d-01', $year, $month_end))),
+        ];
+    }
+
     // Unified Sales (Delivery Notes Type SALES) data fetcher
     private function _get_sales_dn_data($period_start, $period_end, $period_type, $filter_customer_id = '', $filter_division = '', $filter_item_fg_id = '')
     {
@@ -415,16 +440,14 @@ class Sales_dashboard extends CI_Controller
             }
 
         } elseif ($filter_period_type == "monthly") {
-            $end = new DateTime($filter_period_value . "-01");
-            $start = (clone $end)->modify('-5 months');
-            $period_start_date = $start->format('Y-m-01');
-            $period_end_date = $end->format('Y-m-t');
+            $range = $this->_get_monthly_range();
+            $period_start_date = $range['period_start'];
+            $period_end_date = $range['period_end'];
             $label_format = "M Y";
 
-            $period = new DatePeriod($start, new DateInterval('P1M'), (clone $end)->modify('+1 month'));
-            foreach ($period as $date) { 
-                $labels[] = $date->format('Y-m'); 
-                $trend_labels[] = $date->format('M Y');
+            foreach ($range['labels'] as $lbl) {
+                $labels[] = $lbl;
+                $trend_labels[] = date('M Y', strtotime($lbl . '-01'));
             }
 
         } elseif ($filter_period_type == "yearly") {
@@ -467,7 +490,16 @@ class Sales_dashboard extends CI_Controller
 
         // Set Average
         $trend_values = array_values($mapped_trend);
-        $average = count($trend_values) > 0 ? (array_sum($trend_values) / count($trend_values)) : 0;
+
+        // Average hanya dari periode yang sudah berjalan (s/d hari/minggu/bulan/tahun ini), periode mendatang tidak dihitung
+        $current_key = ['daily' => date('Y-m-d'), 'weekly' => date('oW'), 'monthly' => date('Y-m'), 'yearly' => date('Y')][$filter_period_type] ?? null;
+        $elapsed_values = [];
+        foreach ($mapped_trend as $key => $val) {
+            if ($current_key === null || (string)$key <= $current_key) {
+                $elapsed_values[] = $val;
+            }
+        }
+        $average = count($elapsed_values) > 0 ? (array_sum($elapsed_values) / count($elapsed_values)) : 0;
 
         $result = [
             'trend_labels'    => $trend_labels,
@@ -498,17 +530,11 @@ class Sales_dashboard extends CI_Controller
         $years  = [];
 
         if ($filter_period_type == 'monthly') {
-            $start = date('Y-m-01', strtotime((string) $filter_period_value));
-            $currentDate = new DateTime($start);
-            
-            for ($i = 5; $i >= 0; $i--) {
-                $date = clone $currentDate;
-                $date->sub(new DateInterval("P{$i}M"));
-                $labels[] = $date->format('Y-m');
-                $years[]  = $date->format('Y');
-            }
-            $period_start = $labels[0] . '-01';
-            $period_end   = date('Y-m-t', strtotime(end($labels) . '-01'));
+            $range        = $this->_get_monthly_range();
+            $labels       = $range['labels'];
+            $years        = [substr($range['period_start'], 0, 4)];
+            $period_start = $range['period_start'];
+            $period_end   = $range['period_end'];
         } else {
             $currentDate = new DateTime($filter_period_value . "-01-01");
             for ($i = 5; $i >= 0; $i--) {
@@ -573,16 +599,11 @@ class Sales_dashboard extends CI_Controller
         $years  = [];
 
         if ($filter_period_type == 'monthly') {
-            $start = date('Y-m-01', strtotime((string) $filter_period_value));
-            $currentDate = new DateTime($start);
-            for ($i = 5; $i >= 0; $i--) {
-                $date = clone $currentDate;
-                $date->sub(new DateInterval("P{$i}M"));
-                $labels[] = $date->format('Y-m');
-                $years[]  = $date->format('Y');
-            }
-            $period_start = $labels[0] . '-01';
-            $period_end   = date('Y-m-t', strtotime(end($labels) . '-01'));
+            $range        = $this->_get_monthly_range();
+            $labels       = $range['labels'];
+            $years        = [substr($range['period_start'], 0, 4)];
+            $period_start = $range['period_start'];
+            $period_end   = $range['period_end'];
         } else {
             $currentDate = new DateTime($filter_period_value . "-01-01");
             for ($i = 5; $i >= 0; $i--) {
@@ -676,16 +697,11 @@ class Sales_dashboard extends CI_Controller
         $years  = [];
 
         if ($filter_period_type == 'monthly') {
-            $start = date('Y-m-01', strtotime((string) $filter_period_value));
-            $currentDate = new DateTime($start);
-            for ($i = 5; $i >= 0; $i--) {
-                $date = clone $currentDate;
-                $date->sub(new DateInterval("P{$i}M"));
-                $labels[] = $date->format('Y-m');
-                $years[]  = $date->format('Y');
-            }
-            $period_start = $labels[0] . '-01';
-            $period_end   = date('Y-m-t', strtotime(end($labels) . '-01'));
+            $range        = $this->_get_monthly_range();
+            $labels       = $range['labels'];
+            $years        = [substr($range['period_start'], 0, 4)];
+            $period_start = $range['period_start'];
+            $period_end   = $range['period_end'];
         } else {
             $currentDate = new DateTime($filter_period_value . "-01-01");
             for ($i = 5; $i >= 0; $i--) {

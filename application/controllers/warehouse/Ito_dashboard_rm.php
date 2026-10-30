@@ -57,6 +57,8 @@ class Ito_dashboard_rm extends CI_Controller
             $filter_from = $filter_year . '-01-01';
             $filter_to = $filter_year . '-12-31';
         }
+        // Tanggal acuan standard price RM (akhir periode filter, maks hari ini utk tahun berjalan)
+        $price_date = ($filter_year == date('Y') && $filter_to > date('Y-m-d')) ? date('Y-m-d') : $filter_to;
         
 
         $start = strtotime((string) $filter_from);
@@ -222,7 +224,7 @@ class Ito_dashboard_rm extends CI_Controller
                 a.*, coalesce(b.middle,1) as middle
             FROM standard_price_rm a
             left join standard_exchange_rates b on a.currency = b.currency_from and b.deleted = 0 and b.end_date >='$currency_date_to' and b.currency_to='IDR'
-            WHERE a.start_date='$currency_date_from' and a.end_date='$currency_date_to'  and a.deleted=0
+            WHERE '$price_date' BETWEEN a.start_date AND a.end_date and a.deleted=0
             ORDER BY a.id ASC
         ) bb on aa.id = bb.item_rm_id and bb.division=aa.division
         group by aa.prodfam order by aa.prodfam asc

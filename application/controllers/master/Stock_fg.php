@@ -164,6 +164,8 @@ class Stock_fg extends CI_Controller
         $p_year = $data->val(2, 4);
         $revision = $data->val(3, 3);
 
+        // PHP 8: count(null) TypeError jika file tidak berisi baris data
+        $datas = [];
         for ($i = 5; $i <= $total_row; $i++) {
             $datas[] = array(
                 'p_month' => $p_month,

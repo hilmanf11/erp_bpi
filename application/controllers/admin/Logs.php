@@ -76,14 +76,23 @@ class Logs extends CI_Controller
         $this->db->from('logs');
         $this->db->where("id", $id);
         $record = $this->db->get()->row();
-        $descriptions = json_decode($record->description);
+        $descriptions = json_decode((string) @$record->description);
+        if (!is_array($descriptions) && !is_object($descriptions)) {
+            $descriptions = [];
+        }
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
                 <table id="customers" border="1" style="width: 100%;">';
+        if (empty((array) $descriptions)) {
+            $html .= '<tr><th>No detail data recorded</th></tr>';
+        }
         foreach ($descriptions as $description => $value) {
+            if (is_array($value) || is_object($value)) {
+                $value = json_encode($value);
+            }
             $html .= '  <tr>
-                            <th>' . $description . '</th>
-                            <th>' . $value . '</th>
+                            <th>' . htmlspecialchars((string) $description) . '</th>
+                            <th>' . htmlspecialchars((string) $value) . '</th>
                         </tr>';
         }
         $html .= '</table>';

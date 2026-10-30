@@ -21,6 +21,7 @@
             <th rowspan="2" data-options="field:'qty_label',width:80,halign:'center',align:'right'">Qty label</th>
             <th rowspan="2" data-options="field:'state',width:80,align:'center',formatter:BtnPrintLabel">Label</th>
             <th rowspan="2" data-options="field:'remarks',width:100,align:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'journal_no',width:140,halign:'center',align:'center'">GL INV No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -843,6 +844,7 @@
                     }
 
                     var hasProcessedData = false;
+                    var saveRequests = []; // ditunggu semua selesai sebelum Auto Posting Journal Inventory
 
                     // Looping baris tabel
                     for (let i = 0; i < totalrows; i++) {
@@ -883,6 +885,9 @@
                             }
 
                             // Eksekusi AJAX (Satu per satu)
+                            // Deferred sendiri: selesai (sukses/gagal) baru dihitung, supaya $.when tidak berhenti di request gagal pertama
+                            const saveDone = $.Deferred();
+                            saveRequests.push(saveDone.promise());
                             $.ajax({
                                 type: "POST",
                                 url: '<?= base_url('warehouse/transaction_rm/create') ?>',
@@ -894,7 +899,8 @@
                                     if (result && result.theme == "error") {
                                         toastr.warning(result.message, "Error");
                                     }
-                                }
+                                },
+                                complete: function() { saveDone.resolve(); }
                             });
                         }
                     }
@@ -904,6 +910,32 @@
                         return;
                     }
 
+                    Swal.fire({
+                        html: 'Saving data & Auto Posting Journal Inventory...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    // Semua baris tersimpan -> Auto Posting Journal Inventory (gagal tercatat di Failed Posting)
+                    $.when.apply($, saveRequests).always(function() {
+                        $.ajax({
+                            type: "POST",
+                            url: '<?= base_url('warehouse/transaction_rm/autoPostJournal') ?>',
+                            data: { request_no: request_no },
+                            dataType: "json",
+                            complete: function(xhr) {
+                                var res = xhr.responseJSON || {};
+                                if (res.status === true) {
+                                    toastr.success(res.message, "Journal Inventory");
+                                } else if (res.status === false) {
+                                    toastr.warning(res.message, "Journal Inventory (Failed Posting)");
+                                }
+                                showSavedDialog();
+                            }
+                        });
+                    });
+
+                    function showSavedDialog() {
                     if (transaction_type === 'REPLACEMENT NG FROM SUPPLIER') {
                         Swal.fire({
                             title: "Data Saved Successfully",
@@ -934,6 +966,7 @@
                                 window.location.reload();
                             }
                         });
+                    }
                     }
 
                     $('#dg').treegrid('reload');

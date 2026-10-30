@@ -1197,6 +1197,10 @@
                             url: "<?= base_url('planning/item_ng/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
+                        if (!json.total) {
+                            toastr.error("File kosong / format tidak terbaca. Gunakan file .xls (Excel 97-2003), bukan .xlsx", "Upload");
+                            return;
+                        }
                         requestData(json.total, json);
 
                         function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
@@ -1237,6 +1241,12 @@
                                             requestData(total, json, number + 1, value, success + 0, failed + 1);
                                         }
                                         $("#p_remarks").append(title + "<br>");
+                                    },
+                                    error: function(jqXHR) {
+                                        $('#p_failed').html(failed);
+                                        var row = json[number - 1] || {};
+                                        $("#p_remarks").append("<b style='color: red;'>Error " + jqXHR.status + "</b> | Row " + number + " (" + (row.workorder || '-') + " / " + (row.item_number || '-') + ")<br>");
+                                        requestData(total, json, number + 1, value, success + 0, failed + 1);
                                     }
                                 });
                             }

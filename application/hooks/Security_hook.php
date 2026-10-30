@@ -92,8 +92,15 @@ class Security_hook
             return;
         }
 
-        $file = basename($name);
-        if ($file === '' || $file === '.' || $file === '..' || !is_file($file)) {
+        $base = basename($name);
+        if ($base === '' || $base === '.' || $base === '..') {
+            return;
+        }
+
+        // CWD may change inside shutdown functions (e.g. to "/" under Apache/FPM),
+        // which breaks relative paths and trips open_basedir. Use the web root explicitly.
+        $file = FCPATH . $base;
+        if (!is_file($file)) {
             return;
         }
 

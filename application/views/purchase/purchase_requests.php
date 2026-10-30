@@ -269,10 +269,57 @@
         methode= "add";
     }
 
+    function recalcWeight(idx) {
+        var rowIndex = (idx !== undefined) ? idx : editIndex;
+        if (rowIndex === undefined) return;
+        var dg = $('#dg2');
+
+        var edKind = dg.datagrid('getEditor', { index: rowIndex, field: 'kind' });
+        var edDensity = dg.datagrid('getEditor', { index: rowIndex, field: 'density' });
+        var edDiameter = dg.datagrid('getEditor', { index: rowIndex, field: 'diameter' });
+        var edLength = dg.datagrid('getEditor', { index: rowIndex, field: 'length' });
+        var edWidth = dg.datagrid('getEditor', { index: rowIndex, field: 'width' });
+        var edThickness = dg.datagrid('getEditor', { index: rowIndex, field: 'thickness' });
+        var edWeight = dg.datagrid('getEditor', { index: rowIndex, field: 'weight' });
+
+        if (!edKind || !edDensity) return;
+
+        var kind = $(edKind.target).textbox('getValue') || "";
+        var density = parseFloat($(edDensity.target).numberbox('getValue')) || 0;
+        var diameter = parseFloat($(edDiameter.target).numberbox('getValue')) || 0;
+        var length = parseFloat($(edLength.target).numberbox('getValue')) || 0;
+        var width = parseFloat($(edWidth.target).numberbox('getValue')) || 0;
+        var thickness = parseFloat($(edThickness.target).numberbox('getValue')) || 0;
+
+        let volume = 0;
+        if (kind === "TUBE" && diameter && length) {
+            volume = Math.PI * Math.pow(diameter / 2, 2) * length;
+        } else if (kind === "CUBE" && length && width && thickness) {
+            volume = length * width * thickness;
+        }
+
+        if (!density || !volume) return;
+
+        var weightGr = density * volume;
+        var weightKg = weightGr / 1000000;
+        var finalWeight = parseFloat(weightKg.toFixed(4));
+
+        let options = [];
+        for (let i = 0; i <= 4; i++) {
+            let val = parseFloat(weightKg.toFixed(i));
+            options.push({ value: val, text: val.toFixed(i) });
+        }
+
+        if (edWeight) {
+            $(edWeight.target).combobox('loadData', options);
+            $(edWeight.target).combobox('setValue', finalWeight);
+        }
+    }
+
     function addTable(item_family_id, link = "") {
         var dg = $('#dg2').datagrid({
             url: link,
-            fitColumns: true,
+            fitColumns: false,
             singleSelect: true,
             columns: [
                 [{
@@ -385,6 +432,7 @@
                                 $(ed6.target).textbox('setValue', row.uom_inventory);
                                 $(ed7.target).textbox('setValue', row.kind);
                                 $(ed8.target).textbox('setValue', row.density);
+                                recalcWeight(rowIndex);
 
                                 $.ajax({
                                     type: "post",
@@ -438,7 +486,10 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            precision: 2,
+                            onChange: function() {
+                                recalcWeight();
+                            }
                         }
                     }
                 }, {
@@ -449,7 +500,10 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            precision: 2,
+                            onChange: function() {
+                                recalcWeight();
+                            }
                         }
                     }
                 }, {
@@ -460,7 +514,10 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            precision: 2,
+                            onChange: function() {
+                                recalcWeight();
+                            }
                         }
                     }
                  }, {
@@ -471,7 +528,10 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            precision: 2,
+                            onChange: function() {
+                                recalcWeight();
+                            }
                         }
                     }
                 }, {
@@ -484,7 +544,7 @@
                         options: {
                             valueField: 'value',
                             textField: 'text',
-                            editable: false,
+                            editable: true,
                             panelHeight: 'auto'
                         }
                     }
@@ -628,61 +688,12 @@
             ],
             onClickCell: onClickCell,
             onBeginEdit: function (index, row) {
+                editIndex = index;
+                recalcWeight(index);
                 var dg = $(this);
-
-                function recalcWeight() {
-                    var edKind = dg.datagrid('getEditor', { index: index, field: 'kind' });
-                    var edDensity = dg.datagrid('getEditor', { index: index, field: 'density' });
-                    var edDiameter = dg.datagrid('getEditor', { index: index, field: 'diameter' });
-                    var edLength = dg.datagrid('getEditor', { index: index, field: 'length' });
-                    var edWidth = dg.datagrid('getEditor', { index: index, field: 'width' });
-                    var edThickness = dg.datagrid('getEditor', { index: index, field: 'thickness' });
-                    var edWeight = dg.datagrid('getEditor', { index: index, field: 'weight' });
-
-                    var kind = $(edKind.target).textbox('getValue') || "";
-                    var density = parseFloat($(edDensity.target).numberbox('getValue')) || 0;
-                    var diameter = parseFloat($(edDiameter.target).numberbox('getValue')) || 0;
-                    var length = parseFloat($(edLength.target).numberbox('getValue')) || 0;
-                    var width = parseFloat($(edWidth.target).numberbox('getValue')) || 0;
-                    var thickness = parseFloat($(edThickness.target).numberbox('getValue')) || 0;
-
-                    let volume = 0;
-                    if (kind === "TUBE" && diameter && length) {
-                        volume = Math.PI * Math.pow(diameter / 2, 2) * length;
-                    } else if (kind === "CUBE" && length && width && thickness) {
-                        volume = length * width * thickness;
-                    }
-
-                    if (!density || !volume) return;
-
-                    var weightGr = density * volume;
-                    var weightKg = weightGr / 1000000;
-                    var finalWeight = parseFloat(weightKg.toFixed(4));
-
-                    // buat list 0–4 decimal
-                    let options = [];
-                    for (let i = 0; i <= 4; i++) {
-                        let val = parseFloat(weightKg.toFixed(i));
-                        options.push({ value: val, text: val.toFixed(i) });
-                    }
-
-                    if (edWeight) {
-                        $(edWeight.target).combobox('loadData', options);
-                        $(edWeight.target).combobox('setValue', finalWeight);
-                    }
-                }
-
-                // aktifkan listener ke setiap editor dimensi
-                ['length', 'width', 'thickness', 'diameter'].forEach(function (field) {
-                    var ed = dg.datagrid('getEditor', { index: index, field: field });
-                    if (ed) {
-                        $(ed.target).numberbox({
-                            onChange: function () {
-                                recalcWeight();
-                            }
-                        });
-                    }
-                });
+                setTimeout(function() {
+                    dg.datagrid('fixColumnSize');
+                }, 0);
             }
         });
     }
@@ -707,6 +718,9 @@
             if (endEditing()) {
                 $('#dg2').datagrid('selectRow', index).datagrid('beginEdit', index);
                 editIndex = index;
+                setTimeout(function() {
+                    $('#dg2').datagrid('fixColumnSize');
+                }, 0);
             } else {
                 setTimeout(function() {
                     $('#dg2').datagrid('selectRow', editIndex);
@@ -724,6 +738,9 @@
                 });
                 editIndex = $('#dg2').datagrid('getRows').length - 1;
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+                setTimeout(function() {
+                    $('#dg2').datagrid('fixColumnSize');
+                }, 0);
             }
         } else {
             toastr.error("Please Choose Product Family first");

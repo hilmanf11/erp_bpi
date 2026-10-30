@@ -125,10 +125,15 @@ class Process_costs extends CI_Controller
             return;
         }
 
+        // Jika 1 tahun punya beberapa efisiensi, dipakai rate yang terakhir disimpan
         $this->db->select('plain_rate_sec');
         $this->db->from('rates');
+        $this->db->where('deleted', 0);
         $this->db->where('toonage', $toonage);
         $this->db->where('year', $year);
+        $this->db->order_by('COALESCE(updated_date, created_date)', 'DESC', false);
+        $this->db->order_by('id', 'DESC');
+        $this->db->limit(1);
         $query = $this->db->get();
 
         if ($query->num_rows() > 0) {

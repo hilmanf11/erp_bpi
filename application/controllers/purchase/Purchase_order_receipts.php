@@ -376,6 +376,7 @@ class Purchase_order_receipts extends CI_Controller
             $filter_lotno = $this->input->get('filter_lotno');
             $filter_division = $this->input->get('filter_division');
             $filter_status_invoice = $this->input->get('filter_status_invoice');
+            $filter_status_por = $this->input->get('filter_status_por');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -434,10 +435,21 @@ class Purchase_order_receipts extends CI_Controller
                     $this->db->where('a.status', $filter_status_invoice);
                     }
                 }
-                if ($filter_lotno !== "") { 
+                if ($filter_lotno !== "") {
                     $this->db->where('a.lotno', $filter_lotno);
                 }
-    
+                if ($filter_status_por != "") {
+                    // Status POR = total label ter-scan vs qty label, kosong jika label belum di-print (sama dengan statusformat di view)
+                    $this->db->join("(SELECT SUBSTRING_INDEX(receipt_id, '-', 3) as receipt_no, SUM(`status`) as total_scan FROM purchase_order_labels GROUP BY SUBSTRING_INDEX(receipt_id, '-', 3)) pl", 'a.receipt_no = pl.receipt_no', 'left');
+                    if ($filter_status_por == 'empty') {
+                        $this->db->where('pl.total_scan IS NULL');
+                    } elseif ($filter_status_por == 'close') {
+                        $this->db->where('pl.total_scan = a.total_label');
+                    } else {
+                        $this->db->where('pl.total_scan <> a.total_label');
+                    }
+                }
+
                 $this->db->group_by('a.receipt_no');
                 $this->db->order_by('a.created_date', 'DESC');
                 $this->db->order_by('a.status', 'ASC');
@@ -473,6 +485,7 @@ class Purchase_order_receipts extends CI_Controller
                         "total_scan" => $purchase_order_label[0]->total_scan,
                         "status" => $record['status'],
                         "print" => $record['print'],
+                        "journal_no" => "",
                         "state" => "closed",
                     );
                 }
@@ -494,6 +507,7 @@ class Purchase_order_receipts extends CI_Controller
                     e.uom_default,
                     e.uom_inventory,
                     e.mpq,
+                    COALESCE(MAX(h.journal_no), "") as journal_no,
                     sum(g.status) as total_scan');
                 $this->db->from('purchase_order_receipts a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
@@ -502,6 +516,7 @@ class Purchase_order_receipts extends CI_Controller
                 $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id');
                 $this->db->join('purchase_order_labels g', 'g.receipt_id = a.receipt_id', 'left');
                 $this->db->join('item_categories f', 'c.item_category_id = f.id','left');
+                $this->db->join('(SELECT document_no, TRIM(SUBSTRING_INDEX(description, \';\', -1)) as item_no, description, GROUP_CONCAT(DISTINCT number ORDER BY number ASC SEPARATOR \', \') as journal_no FROM journal_inventory WHERE modul = \'PURCHASE ORDER RECEIPT\' GROUP BY document_no, description) h', 'a.receipt_no = h.document_no AND (h.item_no = TRIM(c.number) OR h.description = CONCAT(a.receipt_no, \';\', TRIM(c.number)) OR h.description = CONCAT(a.receipt_no, \' \', TRIM(c.number)) OR h.description LIKE CONCAT(\'%;\', TRIM(c.number), \'%\') OR h.description = a.receipt_no)', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" and $filter_to != "") {
                     $this->db->where('a.receipt_date >=', $filter_from);
@@ -516,11 +531,55 @@ class Purchase_order_receipts extends CI_Controller
         }
     }
 
+    // public function datatablesTemp()
+    // {
+    //     $po_no = $this->input->get('po_no');
+    //     //Select Query
+    //     $this->db->select('a.id,
+    //         a.po_no, 
+    //         a.price, 
+    //         a.currency,
+    //         b.id as item_rm_id, 
+    //         b.number as item_number, 
+    //         b.name as item_name, 
+    //         a.qty as qty_po, 
+    //         c.mpq, 
+    //         a.supplier_id, 
+    //         c.uom_default,
+    //         c.uom_inventory,
+    //         (CASE WHEN a.convertion = 0 THEN 1 ELSE a.convertion END) as convertion,
+    //         a.specification,
+    //         (a.qty - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) as qty_os,
+    //         (a.qty - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) as qty_receipt,
+    //         (CASE WHEN a.convertion = 0 THEN 1 ELSE a.convertion END) * (a.qty - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) as qty_convertion,
+    //         CEIL((((CASE WHEN a.convertion = 0 THEN 1 ELSE a.convertion END) * a.qty) - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) / c.mpq) as qty_label');
+    //     $this->db->from('purchase_orders a');
+    //     $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+    //     $this->db->join('supplier_items c', 'a.item_rm_id = c.item_rm_id and a.supplier_id = c.supplier_id');
+    //     $this->db->join('(SELECT sum(qty_receipt) as qty_os, item_rm_id, supplier_id, po_no FROM purchase_order_receipts GROUP BY item_rm_id, supplier_id, po_no) d', 'a.item_rm_id = d.item_rm_id and a.supplier_id = d.supplier_id and a.po_no = d.po_no', 'left');
+    //     $this->db->join('(SELECT sum(qty_receipt2) as qty_os2, item_rm_id, supplier_id, po_no FROM purchase_order_receipts GROUP BY item_rm_id, supplier_id, po_no) e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id and a.po_no = e.po_no', 'left');
+    //     $this->db->where('a.deleted', 0);
+    //     $this->db->where('a.status', 0);
+    //     $this->db->where('a.po_no', $po_no);
+    //     $records = $this->db->get()->result_array();
+    //     echo json_encode($records);
+    //     // (a.qty - (CASE WHEN d.qty_os is null THEN 0 ELSE d.qty_os END)) as qty_receipt,
+    // }
+
     public function datatablesTemp()
     {
         $po_no = $this->input->get('po_no');
-        //Select Query
-        $this->db->select('a.id,
+        
+        $sql_convertion = "
+            CASE 
+                WHEN c.uom_default != c.uom_inventory 
+                     AND (a.specification = '0.00 x 0.00 x 0.00' OR a.specification IS NULL OR a.specification = '') 
+                THEN COALESCE(NULLIF(c.weight_kg, 0), 1)
+                ELSE (CASE WHEN a.convertion = 0 THEN 1 ELSE a.convertion END)
+            END
+        ";
+
+        $this->db->select("a.id,
             a.po_no, 
             a.price, 
             a.currency,
@@ -532,23 +591,25 @@ class Purchase_order_receipts extends CI_Controller
             a.supplier_id, 
             c.uom_default,
             c.uom_inventory,
-            (CASE WHEN a.convertion = 0 THEN 1 ELSE a.convertion END) as convertion,
+            ($sql_convertion) as convertion,
             a.specification,
-            (a.qty - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) as qty_os,
-            (a.qty - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) as qty_receipt,
-            (CASE WHEN a.convertion = 0 THEN 1 ELSE a.convertion END) * (a.qty - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) as qty_convertion,
-            CEIL((((CASE WHEN a.convertion = 0 THEN 1 ELSE a.convertion END) * a.qty) - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) / c.mpq) as qty_label');
+            (a.qty - COALESCE(e.qty_os2, 0)) as qty_os,
+            (a.qty - COALESCE(e.qty_os2, 0)) as qty_receipt,
+            (($sql_convertion) * (a.qty - COALESCE(e.qty_os2, 0))) as qty_convertion,
+            CEIL(((($sql_convertion) * a.qty) - COALESCE(e.qty_os2, 0)) / c.mpq) as qty_label", false);
+            
         $this->db->from('purchase_orders a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('supplier_items c', 'a.item_rm_id = c.item_rm_id and a.supplier_id = c.supplier_id');
         $this->db->join('(SELECT sum(qty_receipt) as qty_os, item_rm_id, supplier_id, po_no FROM purchase_order_receipts GROUP BY item_rm_id, supplier_id, po_no) d', 'a.item_rm_id = d.item_rm_id and a.supplier_id = d.supplier_id and a.po_no = d.po_no', 'left');
         $this->db->join('(SELECT sum(qty_receipt2) as qty_os2, item_rm_id, supplier_id, po_no FROM purchase_order_receipts GROUP BY item_rm_id, supplier_id, po_no) e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id and a.po_no = e.po_no', 'left');
+        
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.po_no', $po_no);
+        
         $records = $this->db->get()->result_array();
         echo json_encode($records);
-        // (a.qty - (CASE WHEN d.qty_os is null THEN 0 ELSE d.qty_os END)) as qty_receipt,
     }
 
     // public function create()
@@ -604,6 +665,13 @@ class Purchase_order_receipts extends CI_Controller
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+
+            // POR yang sudah dijurnal tidak boleh ditambah/diubah
+            $this->load->model('autopostingjournal');
+            if (!empty($post['receipt_no']) && ($blocked = $this->autopostingjournal->journaled_block(['PURCHASE ORDER RECEIPT'], $post['receipt_no']))) {
+                echo json_encode($blocked);
+                return;
+            }
 
             $this->db->where('item_rm_id', $post['item_rm_id']);
             $this->db->where('supplier_id', $post['supplier_id']);
@@ -684,6 +752,15 @@ class Purchase_order_receipts extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+
+        // POR yang sudah dijurnal (Journal Inventory) tidak boleh dihapus
+        $this->load->model('autopostingjournal');
+        $por = !empty($data['id']) ? $this->db->select('receipt_no')->get_where('purchase_order_receipts', ['id' => $data['id']])->row() : null;
+        if ($por && ($blocked = $this->autopostingjournal->journaled_block(['PURCHASE ORDER RECEIPT'], $por->receipt_no))) {
+            echo json_encode($blocked);
+            return;
+        }
+
         $this->db->trans_start();
         // 1. Eksekusi Hapus Anak (Child)
         if (!empty($data['receipt_id'])) {
@@ -821,7 +898,7 @@ class Purchase_order_receipts extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -963,7 +1040,7 @@ class Purchase_order_receipts extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -1210,14 +1287,14 @@ class Purchase_order_receipts extends CI_Controller
                         <td>' . $record['specification'] . '</td>
                         <td>' . $record['item_familys_name'] . '</td>
                         <td>' . $record['location'] . '</td>
-                        <td style="text-align:right">' . number_format((float) $record['mpq'], 2) . '</td>
-                        <td style="text-align:right">' . number_format((float) $record['qty_receipt2'], 2) . '</td>
+                        <td style="text-align:right">' . number_format($record['mpq'], 2) . '</td>
+                        <td style="text-align:right">' . number_format($record['qty_receipt2'], 2) . '</td>
                         <td>' . $record['uom_default'] . '</td>
                     ';
 
                     if (!$hide_qty) {
                         $html .= '
-                            <td style="text-align:right;">' . number_format((float) $record['qty_receipt'], 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record['qty_receipt'], 2) . '</td>
                             <td style="text-align:center;">' . $record['uom_inventory'] . '</td>
                         </tr>';
                     }
@@ -1312,7 +1389,8 @@ class Purchase_order_receipts extends CI_Controller
             b.currency, 
             c.uom, 
             f.number as category_code,
-            SUM(pol.status) as total_scan
+            SUM(pol.status) as total_scan,
+            MAX(h.journal_no) as journal_no
         ');
         $this->db->from('purchase_order_receipts a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
@@ -1322,6 +1400,7 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->join('item_categories f', 'c.item_category_id = f.id','left');
         $this->db->join('purchase_orders g', 'a.po_no = g.po_no and a.item_rm_id = g.item_rm_id','left');
         $this->db->join('purchase_order_labels pol', 'a.receipt_id = pol.receipt_id', 'left'); // Join tabel purchase_order_labels
+        $this->db->join('(SELECT document_no, TRIM(SUBSTRING_INDEX(description, \';\', -1)) as item_no, description, GROUP_CONCAT(DISTINCT number ORDER BY number ASC SEPARATOR \', \') as journal_no FROM journal_inventory WHERE modul = \'PURCHASE ORDER RECEIPT\' GROUP BY document_no, description) h', 'a.receipt_no = h.document_no AND (h.item_no = TRIM(c.number) OR h.description = CONCAT(a.receipt_no, \';\', TRIM(c.number)) OR h.description = CONCAT(a.receipt_no, \' \', TRIM(c.number)) OR h.description LIKE CONCAT(\'%;\', TRIM(c.number), \'%\') OR h.description = a.receipt_no)', 'left');
         $this->db->where('a.deleted', 0);
 
         if ($filter_from != "" and $filter_to != "") {
@@ -1392,6 +1471,7 @@ class Purchase_order_receipts extends CI_Controller
                 <th rowspan="2">Currency</th>
                 <th rowspan="2">Label</th>
                 <th rowspan="2">Lotno</th>
+                <th rowspan="2">GL INV No</th>
             </tr>
             <tr>
                 <th>ID</th>
@@ -1432,11 +1512,12 @@ class Purchase_order_receipts extends CI_Controller
                         <td>' . $data['supplier_name'] . '</td>
                         <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
-                        <td>' . number_format((float) $data['qty_receipt'], 2) . '</td>
+                        <td>' . number_format($data['qty_receipt'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['currency'] . '</td>
-                        <td>' . number_format((float) $data['qty_label']) . '</td>
+                        <td>' . number_format($data['qty_label']) . '</td>
                         <td style="mso-number-format:\@;">' . $data['lotno'] . '</td>
+                        <td>' . ($data['journal_no'] ?? '') . '</td>
                     </tr>';
             $no++;
         }

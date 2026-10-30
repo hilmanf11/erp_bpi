@@ -97,7 +97,7 @@ class Bpm extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime((string) $trans_date));
+        $datenow    = date("ymd", strtotime($trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM bpm WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -156,11 +156,12 @@ class Bpm extends CI_Controller
             if ($id === "0") {
                 //Select Query
                 $this->db->select('a.*,b.uom, COUNT(a.status) as total_status, i.total_status_open,
-                    g.total_status_close');
+                    g.total_status_close, MAX(h.journal_no) as journal_no', FALSE);
                 $this->db->from('bpm a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('(SELECT request_no, COUNT(status) as total_status_close FROM bpm WHERE status = 1 GROUP BY request_no) g', 'a.request_no = g.request_no', 'left');
                 $this->db->join('(SELECT request_no, COUNT(status) as total_status_open FROM bpm WHERE status = 0 GROUP BY request_no) i', 'a.request_no = i.request_no', 'left');
+                $this->db->join('(SELECT document_no, GROUP_CONCAT(DISTINCT number ORDER BY number ASC SEPARATOR \', \') as journal_no FROM journal_inventory WHERE modul = \'BPM\' GROUP BY document_no) h', 'a.request_no = h.document_no', 'left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 if ($filter_request_no != "") {
@@ -211,6 +212,7 @@ class Bpm extends CI_Controller
                         "item_rm_id" => $record['item_rm_id'],
                         "item_fg_id" => $record['item_fg_id'],
                         "status" => $status,
+                        "journal_no" => $record['journal_no'] ?? '',
                         "state" => "closed"
                     );
                 }
@@ -317,13 +319,39 @@ class Bpm extends CI_Controller
         }
     }
 
+    // Lot No BPM wajib lot POR dari Part No yang sama
+    private function isReceiptLot($item_rm_id, $lot_no)
+    {
+        $lot_no = trim((string) $lot_no);
+        if ($lot_no === '' || empty($item_rm_id)) {
+            return false;
+        }
+        $sql = "SELECT COUNT(*) as cnt FROM purchase_order_receipts WHERE item_rm_id = ? AND lotno = ? AND deleted = 0";
+        return $this->db->query($sql, [$item_rm_id, $lot_no])->row()->cnt > 0;
+    }
+
+    public function checkLotNo()
+    {
+        $rows = $this->input->post('rows') ?: [];
+        $invalid = [];
+        foreach ($rows as $i => $row) {
+            if (!$this->isReceiptLot($row['item_rm_id'] ?? '', $row['lot_no'] ?? '')) {
+                $invalid[] = ['row' => (int) $i + 1, 'part_no' => $row['part_no'] ?? '', 'lot_no' => $row['lot_no'] ?? ''];
+            }
+        }
+        echo json_encode(['invalid' => $invalid]);
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
+                $post['lot_no'] = trim((string) ($post['lot_no'] ?? ''));
                 if ($post['qty'] == 0) {
                     echo json_encode(array("title" => "Qty 0", "message" => " Qty is 0", "theme" => "error"));
+                } elseif (!$this->isReceiptLot($post['item_rm_id'], $post['lot_no'])) {
+                    echo json_encode(array("title" => "Lot No", "message" => "Lot No " . $post['lot_no'] . " tidak ditemukan di POR untuk Part No ini", "theme" => "error"));
                 } else {
                     $request_no = $post['request_no'];
                     $item_rm_id = $post['item_rm_id'];
@@ -358,8 +386,9 @@ class Bpm extends CI_Controller
         $item_rm_id = $po_receipt->item_rm_id;
         $lot_no = $po_receipt->lot_no;
 
-        $lot_no_month = substr($lot_no, 3, 2);
-        $lot_no_year = substr($lot_no, 5, 2);
+        // Lot POR: NNNMMYY (7) atau NNMMYY (6, supplier khusus), bulan & tahun diambil dari belakang
+        $lot_no_month = substr((string) $lot_no, -4, 2);
+        $lot_no_year = substr((string) $lot_no, -2);
 
         // var_dump($po_receipt);
         // die;
@@ -456,7 +485,7 @@ class Bpm extends CI_Controller
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format((float) $record->qty, 2) . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
                                             <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
@@ -499,6 +528,15 @@ class Bpm extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+
+        // BPM yang sudah dijurnal tidak boleh dihapus
+        $this->load->model('autopostingjournal');
+        $bpm = $this->db->select('request_no')->get_where('bpm', ['request_id' => $data['request_id']])->row();
+        if ($bpm && ($blocked = $this->autopostingjournal->journaled_block(['BPM'], $bpm->request_no))) {
+            echo json_encode($blocked);
+            return;
+        }
+
         $send = $this->crud->delete('bpm', ["request_id" => $data['request_id']]);
         $delete = $this->crud->delete('bpm_labels', ["request_id" => $data['request_id'], "item_rm_id" => $data['item_rm_id']]);
         $delete2 = $this->crud->delete('scan_item_bpm', ["request_id" => $data['request_id'], "item_rm_id" => $data['item_rm_id']]);
@@ -618,7 +656,7 @@ class Bpm extends CI_Controller
                                         <tr>
                                             <td width="50">Doc Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime((string) $kanban->request_date)) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime($kanban->request_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Created By</td>

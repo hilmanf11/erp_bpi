@@ -3393,6 +3393,8 @@ class Journal_postings extends CI_Controller
         
         $number = $datenow . $autoID;
 
+        // PHP 8: count(null) TypeError jika file tidak berisi baris data
+        $datas = [];
         for ($i = 4; $i <= $total_row; $i++) {
             $datas[] = array(
                 'number' => $number,

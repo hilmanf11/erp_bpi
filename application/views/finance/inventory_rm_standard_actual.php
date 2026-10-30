@@ -56,6 +56,38 @@
     </fieldset>
     <?= $button ?>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="openUploadList()"><i class="fa fa-table"></i> List Uploaded Data</a>
+    <!-- Part yang kemungkinan gagal auto posting Journal Inventory (dari RECAP), badge = jumlah part -->
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="openValidasi()"><i class="fa fa-exclamation-triangle"></i> Validasi Jurnal <span id="validasi_badge" style="display:none; background-color:#d9534f; color:#fff; border-radius:10px; padding:0 6px; font-size:11px; font-weight:bold;"></span></a>
+</div>
+
+<!-- Validasi Journal Inventory: atas = alasan (pilih untuk filter), bawah = part dengan alasan tsb -->
+<div id="dlg_validasi" class="easyui-dialog" title="Validasi Journal Inventory" data-options="closed:true, modal:true" style="width:90%; height:560px; top:20px;">
+    <div id="layout_validasi" class="easyui-layout" data-options="fit:true">
+        <div data-options="region:'north', split:true, border:false" style="height:200px;">
+            <table id="dg_validasi_reason" class="easyui-datagrid" data-options="fit:true, singleSelect:true, nowrap:false, fitColumns:true, onSelect:filterValidasi">
+                <thead>
+                    <tr>
+                        <th data-options="field:'reason',width:700,halign:'center'">Alasan (pilih untuk melihat part)</th>
+                        <th data-options="field:'parts',width:60,align:'center'">Part</th>
+                        <th data-options="field:'total_doc',width:70,align:'center'">Dokumen</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div data-options="region:'center', border:false">
+            <table id="dg_validasi" class="easyui-datagrid" data-options="fit:true, singleSelect:true, rownumbers:true, nowrap:false, fitColumns:true">
+                <thead>
+                    <tr>
+                        <th data-options="field:'number',width:150,halign:'center'">Product No</th>
+                        <th data-options="field:'name',width:200,halign:'center'">Product Name</th>
+                        <th data-options="field:'division',width:60,align:'center'">Division</th>
+                        <th data-options="field:'total_doc',width:70,align:'center'">Dokumen</th>
+                        <th data-options="field:'documents',width:550,halign:'center',formatter:validasiDocuments">No Dokumen (Tanggal)</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
 </div>
 
 
@@ -150,6 +182,7 @@
         } else {
             url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+            loadValidasi();
 
             if (filter_display == 'RECAP') {
                 $("#printout").attr('src', '<?= base_url('finance/inventory_rm_standard_actual/print') ?>' + url);
@@ -158,6 +191,65 @@
             }
         }
 
+    }
+
+    // Validasi Journal Inventory: JSON #journal_issues dari RECAP di iframe (tidak ada di DETAIL)
+    var validasi = null;
+
+    function loadValidasi() {
+        validasi = null;
+        try {
+            var el = $("#printout").contents().find('#journal_issues');
+            if (el.length) validasi = JSON.parse(el.text());
+        } catch (e) {
+            validasi = null;
+        }
+        var parts = validasi ? validasi.parts : 0;
+        $("#validasi_badge").text(parts).toggle(parts > 0);
+    }
+
+    function openValidasi() {
+        if (!validasi) {
+            toastr.info("Validasi hanya ada di Report Display RECAP. Klik Filter Data dan tunggu Print Preview selesai.", "Information");
+            return;
+        }
+        if (validasi.parts == 0) {
+            toastr.success("Tidak ada part yang kemungkinan gagal auto posting Journal Inventory di periode ini.", "Validasi Jurnal");
+            return;
+        }
+        // Ringkasan per alasan: jumlah part & dokumen unik, urut part terbanyak
+        var reasons = {}, list = [];
+        $.each(validasi.rows, function(i, row) {
+            if (!reasons[row.reason]) {
+                reasons[row.reason] = { reason: row.reason, parts: 0, docs: {} };
+                list.push(reasons[row.reason]);
+            }
+            reasons[row.reason].parts++;
+            $.each(row.documents, function(j, doc) {
+                reasons[row.reason].docs[doc] = true;
+            });
+        });
+        $.each(list, function(i, r) {
+            r.total_doc = Object.keys(r.docs).length;
+        });
+        list.sort(function(a, b) {
+            return b.parts - a.parts;
+        });
+
+        $("#dlg_validasi").dialog('setTitle', 'Validasi Journal Inventory: ' + validasi.parts + ' part kemungkinan gagal auto posting (baris merah di Print Preview)').dialog('open');
+        $("#layout_validasi").layout('resize');
+        $("#dg_validasi").datagrid('loadData', []);
+        $("#dg_validasi_reason").datagrid('loadData', list).datagrid('selectRow', 0);
+    }
+
+    function filterValidasi(index, row) {
+        $("#dg_validasi").datagrid('loadData', $.grep(validasi.rows, function(r) {
+            return r.reason === row.reason;
+        }));
+    }
+
+    function validasiDocuments(value) {
+        return $('<div>').text((value || []).join(', ')).html();
     }
 
     function excel() {
@@ -195,11 +287,21 @@
     }
 
     $(function() {
+        $("#printout").on('load', loadValidasi);
+
         $("#filter_item_category").combobox({
             url: '<?= base_url('master/item_categories/readsnotfg') ?>',
             valueField: 'id',
             textField: 'name',
             prompt: "Select Categories",
+            editable: false,
+            // Inventory Valuation RM: hanya kategori RAW MATERIAL, otomatis terpilih
+            loadFilter: function(data) {
+                return (data || []).filter(function(row) { return row.number == 'RM'; });
+            },
+            onLoadSuccess: function(data) {
+                if (data.length) $(this).combobox('select', data[0].id);
+            },
             onSelect: function(category) {
                 $("#filter_item_family").combobox({
                     url: '<?= base_url('finance/inventory_rm_standard_actual/readItemFamily/') ?>' + category.id,

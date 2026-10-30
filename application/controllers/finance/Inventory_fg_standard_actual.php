@@ -105,6 +105,8 @@ class Inventory_fg_standard_actual extends CI_Controller
     {
         if (ob_get_length()) ob_end_clean();
         header('Content-Type: application/json');
+        // Notice/deprecated PHP 8 dari library tidak boleh tercetak ke response JSON (tetap tercatat di log)
+        ini_set('display_errors', 0);
         
         // Load PHPSpreadsheet autoloader
         require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';

@@ -43,6 +43,7 @@ class Abc_dashboard_rm extends CI_Controller
         $filter_year        = @base64_decode((string) $this->input->get('year'));
         $currency_date_from = $filter_year . '-01-01';
         $currency_date_to   = $filter_year . '-12-31';
+        $price_date         = date('Y-m-t', strtotime($filter_year . '-' . $filter_month . '-01'));
 
         $query = "SELECT 
                 c.name AS prodfam,
@@ -62,8 +63,7 @@ class Abc_dashboard_rm extends CI_Controller
                     AND er.deleted     = 0
                     AND er.end_date   >= '$currency_date_to'
                     AND er.currency_to = 'IDR'
-                WHERE sp.start_date = '$currency_date_from'
-                  AND sp.end_date   = '$currency_date_to'
+                WHERE '$price_date' BETWEEN sp.start_date AND sp.end_date
                   AND sp.deleted    = 0
             ) bb ON a.item_rm_id = bb.item_rm_id and b.division = bb.division
             WHERE a.p_month  = '$filter_month'

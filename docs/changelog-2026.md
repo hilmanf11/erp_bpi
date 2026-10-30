@@ -1021,3 +1021,10 @@ Perilaku identik di PHP 7. 99 controller, sudah live di dummy & live
 sejak 2026-10-23.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com> ([b067305f](https://github.com/hilmanf11/erp_bpi/commit/b067305f9816337891406931f614a117c43aba00))
+### [2026-10-14]
+- **Yudhazaldi**: Modifikasi Modul Purchase Invoicing:
+  - Penambahan kolom `description` pada tabel database `purchase_invoice_journals`.
+  - Penyesuaian `calculateJournal()` pada `Purchase_invoices.php` agar akun persediaan Raw Material tidak teragregasi menjadi 1 baris, melainkan terpecah per item rincian dengan nilai amount masing-masing.
+  - Penambahan kolom `Description` pada datagrid Journal Lists (`#dg3`), modal detail (`#dgDetailJournal`), dan printout invoice (`print_invoicing`).
+  - Format pengisian otomatis kolom Description pada `addJournal()`: `{por_no};{product_no}` untuk baris item barang persediaan, dan `{por_no}` untuk baris PPN Masukan, Hutang Dagang (AP), dan PPh.
+  - Penyertaan field `description` pada AJAX loop `createJournals`.

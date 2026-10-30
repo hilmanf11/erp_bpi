@@ -47,8 +47,8 @@ class Packaging_transportation_costs extends CI_Controller
     //GET DATA
     public function readFG()
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT a.*, 
+        $post = $this->db->escape_like_str((string) $this->input->post('q'));
+        $send = $this->crud->query("SELECT a.id, a.number, a.name, a.number_customer,
             d.name as box_kind_name,
             c.id as box_id,
             c.name as box_name,
@@ -62,7 +62,8 @@ class Packaging_transportation_costs extends CI_Controller
         JOIN item_kinds d ON c.item_kind_id = d.id
         WHERE a.status = '0' 
         AND (a.number like '%$post%' or a.number_customer like '%$post%' or a.name like '%$post%' or a.id like '%$post%') 
-        ORDER BY a.number ASC");
+        ORDER BY a.number ASC
+        LIMIT 50");
         echo json_encode($send);
     }
 
@@ -86,7 +87,7 @@ class Packaging_transportation_costs extends CI_Controller
 
     public function readItems()
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $post = $this->db->escape_like_str((string) $this->input->post('q'));
         $send = $this->crud->query("SELECT 
             a.id, 
             a.number, 
@@ -94,19 +95,42 @@ class Packaging_transportation_costs extends CI_Controller
             b.price 
         FROM item_rm a 
         JOIN supplier_items b ON b.item_rm_id = a.id 
-        WHERE b.share_order = '100' AND (a.number LIKE '%$post%' or a.name LIKE '%$post%')");
+        WHERE b.share_order = '100' AND (a.number LIKE '%$post%' or a.name LIKE '%$post%')
+        ORDER BY a.number ASC
+        LIMIT 50");
         echo json_encode($send);
+    }
+
+    public function readFilterProducts()
+    {
+        $post = $this->db->escape_like_str((string) $this->input->post('q'));
+        $send = $this->crud->query("SELECT DISTINCT a.item_fg_number as number, a.item_fg_name as name, b.number_customer 
+        FROM packaging_transportation_costs a 
+        LEFT JOIN item_fg b ON a.item_fg_id = b.id 
+        WHERE a.item_fg_number like '%$post%' or a.item_fg_name like '%$post%' or b.number_customer like '%$post%' 
+        ORDER BY a.item_fg_number ASC
+        LIMIT 50");
+        echo json_encode($send);
+    }
+
+    //FILTER DATA (dipakai datatables & print)
+    private function applyFilter($get)
+    {
+        $filter_customer_id = @base64_decode((string) @$get['filter_customer_id']);
+        $filter_item_fg_number = @base64_decode((string) @$get['filter_item_fg_number']);
+
+        if ($filter_customer_id != "") {
+            $this->db->where('a.customer_id', $filter_customer_id);
+        }
+        if ($filter_item_fg_number != "") {
+            $this->db->where('a.item_fg_number', $filter_item_fg_number);
+        }
     }
 
     //GET DATATABLES
     public function datatables()
     {
         if ($this->input->post()) {
-            $get = $this->input->get();
-            $filter_customer_id = @base64_decode($get['filter_customer_id']);
-            $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
-            $filter_item_fg_number = @base64_decode($get['filter_item_fg_number']);
-
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -118,10 +142,7 @@ class Packaging_transportation_costs extends CI_Controller
             $this->db->select('a.*');
             $this->db->from('packaging_transportation_costs a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->like('a.customer_id', $filter_customer_id);
-            $this->db->like('a.item_fg_id', $filter_item_fg_id);
-            $this->db->like('a.item_fg_number', $filter_item_fg_number);
-            
+            $this->applyFilter($this->input->get());
             $this->db->order_by('b.id', 'ASC');
             // $this->db->order_by('d.plant', 'ASC');
             //Total Data
@@ -165,8 +186,12 @@ class Packaging_transportation_costs extends CI_Controller
     //DELETE DATA
     public function delete()
     {
-        $data = $this->input->post();
-        $send = $this->crud->delete('packaging_transportation_costs', $data);
+        $id = (string) $this->input->post('id');
+        if ($id == "") {
+            echo json_encode(array("title" => "Failed", "message" => "Data not found", "theme" => "error"));
+            return;
+        }
+        $send = $this->crud->delete('packaging_transportation_costs', ["id" => $id]);
         echo $send;
     }
 
@@ -256,19 +281,20 @@ class Packaging_transportation_costs extends CI_Controller
     //     }
     // }
 
+    //FORMAT HARGA 2 DESIMAL
+    private function price2($value)
+    {
+        return number_format((float) $value, 2, '.', '');
+    }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=customer_items_$format.xls");
+            header("Content-Disposition: attachment; filename=packaging_transportation_costs_$format.xls");
         }
-
-        $get = $this->input->get();
-        $filter_customer_id = @base64_decode($get['filter_customer_id']);
-        $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
-        $filter_item_fg_number = @base64_decode($get['filter_item_fg_number']);
 
         //Config
         $this->db->select('*');
@@ -278,10 +304,8 @@ class Packaging_transportation_costs extends CI_Controller
         $this->db->select('a.*');
         $this->db->from('packaging_transportation_costs a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->like('a.customer_id', $filter_customer_id);
-        $this->db->like('a.item_fg_id', $filter_item_fg_id);
-        $this->db->like('a.item_fg_number', $filter_item_fg_number);
-        $this->db->order_by('a.id', 'ASC');
+        $this->applyFilter($this->input->get());
+        $this->db->order_by('b.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#packaging_transportation_costs {border-collapse: collapse;width: 100%;font-size: 12px;}#packaging_transportation_costs td, #packaging_transportation_costs th {border: 1px solid #ddd;padding: 2px;}#packaging_transportation_costs tr:nth-child(even){background-color: #f2f2f2;}#packaging_transportation_costs tr:hover {background-color: #ddd;}#packaging_transportation_costs th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
@@ -298,7 +322,7 @@ class Packaging_transportation_costs extends CI_Controller
                 </table>
             </div>
             <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:m:s") . ' <br>
+                Print Date ' . date("d M Y H:i:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
             <br><br>
@@ -321,36 +345,36 @@ class Packaging_transportation_costs extends CI_Controller
                 <th>Part No Layer</th>
                 <th>Qty Usage</th>
                 <th>Qty Packing Std</th>
-                <th>Price Layer</th>
+                <th>Price Layer (IDR)</th>
                 <th>Adj %</th>
-                <th>Adj Price</th>
-                <th>Price/Part</th>
+                <th>Adj Price (IDR)</th>
+                <th>Price/Part (IDR)</th>
 
                 <th>Polybag 1</th>
                 <th>Qty PB 1</th>
-                <th>Price PCS 1</th>
-                <th>Price/Part 1</th>
+                <th>Price PCS 1 (IDR)</th>
+                <th>Price/Part 1 (IDR)</th>
 
                 <th>Polybag 2</th>
                 <th>Qty PB 2</th>
-                <th>Price PCS 2</th>
-                <th>Price/Part 2</th>
+                <th>Price PCS 2 (IDR)</th>
+                <th>Price/Part 2 (IDR)</th>
 
                 <th>Part No Foam</th>
                 <th>Qty Foam</th>
-                <th>Price Foam</th>
+                <th>Price Foam (IDR)</th>
                 <th>Adj % Foam</th>
-                <th>Adj Price Foam</th>
-                <th>Price/Part Foam</th>
+                <th>Adj Price Foam (IDR)</th>
+                <th>Price/Part Foam (IDR)</th>
 
                 <th>Part No Tape</th>
                 <th>Length</th>
                 <th>Qty Tape</th>
-                <th>Price Tape</th>
+                <th>Price Tape (IDR)</th>
                 <th>Adj % Tape</th>
-                <th>Adj Price Tape</th>
-                <th>Price/MM</th>
-                <th>Price/Part Tape</th>
+                <th>Adj Price Tape (IDR)</th>
+                <th>Price/MM (IDR)</th>
+                <th>Price/Part Tape (IDR)</th>
 
                 <th>Vol/M</th>
                 <th>Need Part/Day</th>
@@ -360,13 +384,13 @@ class Packaging_transportation_costs extends CI_Controller
                 <th>Storage Dur</th>
                 <th>BPI/Day</th>
                 <th>Total Box</th>
-                <th>Price Box</th>
-                <th>Total Box Price</th>
+                <th>Price Box (IDR)</th>
+                <th>Total Box Price (IDR)</th>
                 <th>Month</th>
                 <th>Planning</th>
-                <th>Price/Part Box</th>
+                <th>Price/Part Box (IDR)</th>
 
-                <th>Total Packing Cost</th>
+                <th>Total Packing Cost (IDR)</th>
 
                 <th>Box Name</th>
                 <th>Box Color</th>
@@ -376,10 +400,10 @@ class Packaging_transportation_costs extends CI_Controller
                 <th>Cap PCS</th>
 
                 <th>Distance Astimation</th>
-                <th>BBM Cost</th>
-                <th>Tol Price</th>
-                <th>Operational Cost</th>
-                <th>Transportasion Cost/PCS</th>
+                <th>BBM Cost (IDR)</th>
+                <th>Tol Price (IDR)</th>
+                <th>Operational Cost (IDR)</th>
+                <th>Transportasion Cost/PCS (IDR)</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -396,36 +420,36 @@ class Packaging_transportation_costs extends CI_Controller
                     <td style="mso-number-format:\@;">'.$data['item_rm_number_layer'].'</td>
                     <td>'.$data['qty_usage'].'</td>
                     <td>'.$data['qty_packing_standart'].'</td>
-                    <td>'.$data['price_layer'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_layer']).'</td>
                     <td>'.$data['adjustment'].'</td>
-                    <td>'.$data['price_adjustment'].'</td>
-                    <td>'.$data['price_part'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_adjustment']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_part']).'</td>
 
                     <td>'.$data['polybag_size_1'].'</td>
                     <td>'.$data['qty_polybag_1'].'</td>
-                    <td>'.$data['price_pcs_1'].'</td>
-                    <td>'.$data['price_part_1'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_pcs_1']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_part_1']).'</td>
 
                     <td>'.$data['polybag_size_2'].'</td>
                     <td>'.$data['qty_polybag_2'].'</td>
-                    <td>'.$data['price_pcs_2'].'</td>
-                    <td>'.$data['price_part_2'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_pcs_2']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_part_2']).'</td>
 
                     <td style="mso-number-format:\@;">'.$data['item_rm_number_foam'].'</td>
                     <td>'.$data['qty_foam'].'</td>
-                    <td>'.$data['price_foam'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_foam']).'</td>
                     <td>'.$data['adjustment_foam'].'</td>
-                    <td>'.$data['price_adjustment_foam'].'</td>
-                    <td>'.$data['price_part_foam'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_adjustment_foam']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_part_foam']).'</td>
 
                     <td style="mso-number-format:\@;">'.$data['item_rm_number_tape'].'</td>
                     <td>'.$data['length'].'</td>
                     <td>'.$data['qty_tape'].'</td>
-                    <td>'.$data['price_tape'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_tape']).'</td>
                     <td>'.$data['adjustment_tape'].'</td>
-                    <td>'.$data['price_adjustment_tape'].'</td>
-                    <td>'.$data['price_mm_tape'].'</td>
-                    <td>'.$data['price_part_tape'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_adjustment_tape']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_mm_tape']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_part_tape']).'</td>
 
                     <td>'.$data['volume'].'</td>
                     <td>'.$data['need_part_day'].'</td>
@@ -435,13 +459,13 @@ class Packaging_transportation_costs extends CI_Controller
                     <td>'.$data['storage_duration'].'</td>
                     <td>'.$data['storage_bpi_day'].'</td>
                     <td>'.$data['total_need_box'].'</td>
-                    <td>'.$data['box_price'].'</td>
-                    <td>'.$data['total_box_price'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['box_price']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['total_box_price']).'</td>
                     <td>'.$data['month'].'</td>
                     <td>'.$data['planning'].'</td>
-                    <td>'.$data['price_part_box'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['price_part_box']).'</td>
 
-                    <td>'.$data['total_packing_cost'].'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['total_packing_cost']).'</td>
 
                     <td>'.$data['box_name'].'</td>
                     <td>'.$data['color'].'</td>
@@ -451,10 +475,11 @@ class Packaging_transportation_costs extends CI_Controller
                     <td>'.$data['armada_cap_pcs'].'</td>
 
                     <td>'.$data['distance_astimation'].'</td>
-                    <td>'.$data['bbm_cost'].'</td>
-                    <td>'.$data['tol_price'].'</td>
-                    <td>'.$data['operation'].'</td>
-                    <td>'.$data['transportasion_cost_pcs'].'</td>';
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['bbm_cost']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['tol_price']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['operation']).'</td>
+                    <td style="mso-number-format:\'0.00\';">'.$this->price2($data['transportasion_cost_pcs']).'</td>
+                </tr>';
             $no++;
         }
         $html .= '</table></body></html>';

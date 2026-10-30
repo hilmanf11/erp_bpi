@@ -158,6 +158,7 @@
             padding: 5px;
             border-radius: 4px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            white-space: nowrap;
         }
 
         /* Dropdown Chart Download */
@@ -711,22 +712,53 @@ function togglePill(btn, type, formId) {
         });
     } 
     else if (type === 'monthly') {
-        $wrapper.html('<input class="current-period-input easyui-combobox" style="width:180px; height:32px;">');
-        $wrapper.find('.easyui-combobox').combobox({
+        // Filter bulan awal s/d bulan akhir + tahun (default Januari s/d Desember tahun ini = 12 bulan)
+        $wrapper.html(
+            '<input class="filter-month-start" style="width:130px; height:32px;">' +
+            ' <span style="margin:0 4px;">s/d</span> ' +
+            '<input class="filter-month-end" style="width:130px; height:32px;">' +
+            ' <input class="filter-year" style="width:90px; height:32px;">'
+        );
+
+        const monthData = [
+            <?php for ($m = 1; $m <= 12; $m++): ?>
+            { id: '<?= $m ?>', text: '<?= date("F", mktime(0, 0, 0, $m, 1)) ?>' },
+            <?php endfor; ?>
+        ];
+        const currentYear = new Date().getFullYear();
+        const yearData = [];
+        for (let y = currentYear; y >= 2022; y--) {
+            yearData.push({ id: y.toString(), text: y.toString() });
+        }
+
+        $wrapper.find('.filter-month-start').combobox({
             valueField: 'id',
             textField: 'text',
             editable: false,
             panelHeight: 'auto',
-            data: [
-                <?php for($m=1; $m<=12; $m++): ?>
-                { id: '<?= date("Y-").sprintf("%02d", $m) ?>', text: '<?= date("F Y", mktime(0,0,0,$m, 1)) ?>' },
-                <?php endfor; ?>
-            ],
-            onLoadSuccess: function() {
-                $(this).combobox('setValue', '<?= date("Y-m") ?>');
-            }
+            prompt: 'Bulan Awal',
+            data: monthData,
+            value: '1'
         });
-    } 
+        $wrapper.find('.filter-month-end').combobox({
+            valueField: 'id',
+            textField: 'text',
+            editable: false,
+            panelHeight: 'auto',
+            prompt: 'Bulan Akhir',
+            data: monthData,
+            value: '12'
+        });
+        $wrapper.find('.filter-year').combobox({
+            valueField: 'id',
+            textField: 'text',
+            editable: false,
+            panelHeight: 'auto',
+            prompt: 'Tahun',
+            data: yearData,
+            value: currentYear.toString()
+        });
+    }
     else if (type === 'yearly') {
         $wrapper.html('<input class="current-period-input easyui-combobox" style="width:180px; height:32px;">');
         $wrapper.find('.easyui-combobox').combobox({
@@ -1273,6 +1305,19 @@ function submitFilter(formId) {
         }
     }
     payload.filter_period_value = periodValue;
+
+    // Monthly: bulan awal s/d bulan akhir + tahun
+    if (periodType === 'monthly' && $form.find('.filter-year').length) {
+        let monthStart = parseInt($form.find('.filter-month-start').combobox('getValue')) || 1;
+        let monthEnd   = parseInt($form.find('.filter-month-end').combobox('getValue')) || 12;
+        if (monthStart > monthEnd) {
+            toastr.warning('Bulan Awal tidak boleh lebih besar dari Bulan Akhir');
+            return;
+        }
+        payload.filter_month_start = monthStart;
+        payload.filter_month_end   = monthEnd;
+        payload.filter_year        = $form.find('.filter-year').combobox('getValue');
+    }
 
     // --- Pemisahan Request ---
     if (formId === 'form_purchase_trends') {

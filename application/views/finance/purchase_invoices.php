@@ -855,6 +855,8 @@
     }
 
 
+    var isLoadingPI = false;
+
     function addJournal() {//berubah
         var rows = $('#dg2').datagrid('getRows');//datatatblesTemp
         var taxes = $("#taxes").numberbox('getValue');
@@ -863,6 +865,11 @@
 
         var totalrows = rows.length;
 
+        // Format deskripsi disamakan dengan Journal Postings: supplier | no | invoice_no | item_no | item_name
+        var descSupplier = $("#supplier_id").combogrid('getText') || '';
+        var descInvoiceNo = $("#invoice_no").textbox('getValue') || '';
+        var descNumber = $("#number").textbox('getValue') || '';
+
         var rows2 = $('#dg3').datagrid('getRows');//journal
         var totalrows2 = rows2.length;
         endEditing2();
@@ -870,45 +877,38 @@
         if (totalrows > 0) {
             var data_array = [];
             var data_array2 = [];
-            var accountTotals = {}; 
             var total_sub = 0;
+            var porList = [];
             
             for (let i = 0; i < totalrows; i++) 
             {
                 var row = rows[i];
-                var accountNumber = row.account_number;
                 var totalValue = parseFloat(row.total);
                 
-                if (rows[i].account_type == "DEBIT") {
-                    total_sub += Math.abs(parseFloat(rows[i].total));
+                if (row.account_type == "DEBIT") {
+                    total_sub += Math.abs(totalValue);
                 } else {
-                    total_sub -= Math.abs(parseFloat(rows[i].total));
+                    total_sub -= Math.abs(totalValue);
                 }
 
-                // mapping total berdasarkan account_number yang sama
-                if (accountTotals[accountNumber]) {
-                    accountTotals[accountNumber].total += totalValue;
-                } else {
-                    accountTotals[accountNumber] = {
-                        account_name: row.account_name,
-                        account_type: row.account_type,
-                        total: totalValue
-                    };
+                if (row.por_no && jQuery.inArray(row.por_no, porList) === -1) {
+                    porList.push(row.por_no);
                 }
+
+                var itemProdNo = row.item_number ? row.item_number : (row.item_no ? row.item_no : '');
+                var itemDesc = descSupplier + ' | ' + (row.po_no || '') + ' | ' + descInvoiceNo + ' | ' + itemProdNo + ' | ' + (row.item_name || '');
+
+                data_array.push({
+                    account_number: row.account_number,
+                    account_name: row.account_name,
+                    account_type: row.account_type || "DEBIT",
+                    description: itemDesc,
+                    total: totalValue
+                });
             }
 
-            // push ke data_array untuk di tampilkan            
-            for (var accNum in accountTotals) {
-                if (accountTotals.hasOwnProperty(accNum)) {
-                    var aggregatedData = {
-                        account_number: accNum,
-                        account_name: accountTotals[accNum].account_name,
-                        account_type: accountTotals[accNum].account_type, // Ambil account_type dari data pertama
-                        total: accountTotals[accNum].total
-                    };
-                    data_array.push(aggregatedData);
-                }
-            }
+            var firstRow = rows[0];
+            var porDesc = descSupplier + ' | ' + descNumber + ' | ' + descInvoiceNo + ' | ' + (firstRow.item_number ? firstRow.item_number : (firstRow.item_no ? firstRow.item_no : '')) + ' | ' + (firstRow.item_name || '');
 
             $("#total_sub").numberbox('setValue', total_sub);
 
@@ -929,97 +929,77 @@
 
             var pph_val = 0;
             var vat_val = 0;
-            var arr_vat = ["170.160.00", "250.160.00"];
-            var arr_pph = ["250.130.00"];
-            var arr_ap = ["210.110.00", "120.140.00", "220.120.00"];
 
             for (let z = 0; z < totalrows2; z++) {
-                // if (rows2[z].account_number == "1154105") {
-                //     var debit = disc_tax;
-                //     var credit = 0;
-                //     vat_val = 1;
-                // } else {
-                //     var debit = rows2[z].debit;
-                //     var credit = rows2[z].credit;
-                // }
+                var row2 = rows2[z];
+                var accName = (row2.account_name || '').toUpperCase();
+                var isVat = row2.vat == 'YES' || accName.indexOf('VAT') !== -1 || accName.indexOf('PPN') !== -1;
+                var isPph = row2.pph == 'YES' || accName.indexOf('PPH') !== -1;
+                var isAp = row2.ap_payment == 'YES' || accName.indexOf('PAYABLE') !== -1 || accName.indexOf('HUTANG') !== -1;
 
-                if (jQuery.inArray(rows2[z].account_number, arr_vat) >= 0) {
-                    var debit = disc_tax;
-                    var credit = 0;
-                }
+                var debit = parseFloat(row2.debit) || 0;
+                var credit = parseFloat(row2.credit) || 0;
 
-                if (jQuery.inArray(rows2[z].account_number, arr_pph) >= 0) {
-                    var debit = 0;
-                    var credit = total_pph;
+                if (isVat) {
+                    if (row2.status == 'CREDIT') {
+                        debit = 0;
+                        credit = disc_tax;
+                    } else {
+                        debit = disc_tax;
+                        credit = 0;
+                    }
+                    vat_val = 1;
+                } else if (isPph) {
+                    if (row2.status == 'DEBIT') {
+                        debit = total_pph;
+                        credit = 0;
+                    } else {
+                        debit = 0;
+                        credit = total_pph;
+                    }
                     pph_val = 1;
+                } else if (isAp) {
+                    if (row2.status == 'DEBIT') {
+                        debit = total_grand;
+                        credit = 0;
+                    } else {
+                        debit = 0;
+                        credit = total_grand;
+                    }
                 }
 
-                if (jQuery.inArray(rows2[z].account_number, arr_ap) >= 0) {
-                    var debit = 0;
-                    var credit = total_grand;
+                var isItemAcc = false;
+                for (let k = 0; k < data_array.length; k++) {
+                    if (data_array[k].account_number == row2.account_number) {
+                        isItemAcc = true;
+                        break;
+                    }
                 }
-
-                if (rows2[z].account_number == "210.120.00") {
-                    var debit = 0;
-                    var credit = total_grand;
-                }
-
-                if (rows2[z].account_number == "170.170.00") {
-                    var debit = disc_tax;
-                    var credit = 0;
+                if (isItemAcc) {
+                    continue;
                 }
 
                 var data2 = {
-                    account_number: rows2[z].account_number,
-                    account_name: rows2[z].account_name,
+                    account_number: row2.account_number,
+                    account_name: row2.account_name,
+                    description: porDesc,
                     debit: debit,
                     credit: credit,
-                    flag: rows2[z].flag,
-                }
+                    flag: row2.flag,
+                    vat: row2.vat || 'NO',
+                    pph: row2.pph || 'NO',
+                    ap_payment: row2.ap_payment || 'NO',
+                    status: row2.status || ''
+                };
 
                 data_array2.push(data2);
             }
-
-            // if (taxes > 0 && vat_val == 0) {
-            //     var data2 = {
-            //         account_number: "",
-            //         account_name: "VAT",
-            //         debit: disc_tax,
-            //         credit: 0,
-            //         flag: "3",
-            //     }
-
-            //     data_array2.push(data2);
-            // }
-
-            // if (taxes > 0 && vat_val == 0) {
-            //     var data2 = {
-            //         account_number: "250.160.00",
-            //         account_name: "PPN Keluaran (VAT OUT)",
-            //         debit: disc_tax,
-            //         credit: 0,
-            //         flag: "0",
-            //     }
-
-            //     data_array2.push(data2);
-            // }
-
-            // if (taxes > 0 && vat_val == 0) {
-            //     var data2 = {
-            //         account_number: "220.110.00",
-            //         account_name: "Relatied Parties (Others)",
-            //         debit: 0,
-            //         credit: total_grand,
-            //         flag: "0",
-            //     }
-
-            //     data_array2.push(data2);
-            // }
 
             if (total_pph > 0 && pph_val == 0 && pphname == "5") {
                 var data2 = {
                     account_number: "250.110.00",
                     account_name: "PPH 21",
+                    description: porDesc,
                     debit: 0,
                     credit: total_pph,
                     flag: "4",
@@ -1032,6 +1012,7 @@
                 var data2 = {
                     account_number: "220.130.00",
                     account_name: "OTHER INCOME",
+                    description: porDesc,
                     debit: 0,
                     credit: total_pph,
                     flag: "4",
@@ -1044,6 +1025,7 @@
                 var data2 = {
                     account_number: "250.130.00",
                     account_name: "PPH 23",
+                    description: porDesc,
                     debit: 0,
                     credit: total_pph,
                     flag: "4",
@@ -1056,6 +1038,7 @@
                 var data2 = {
                     account_number: "250.150.00",
                     account_name: "PPH 4(2)",
+                    description: porDesc,
                     debit: 0,
                     credit: total_pph,
                     flag: "4",
@@ -1184,6 +1167,14 @@
                         }
                     }
                 }, {
+                    field: 'description',
+                    width: 220,
+                    halign: 'center',
+                    title: "Description",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
                     field: 'debit',
                     width: 100,
                     halign: 'center',
@@ -1221,6 +1212,12 @@
                 }, ],
             ],
             onClickCell: onClickCell2,
+            onLoadSuccess: function(data) {
+                balance_journal();
+            },
+            onAfterEdit: function(rowIndex, row, changes) {
+                balance_journal();
+            },
             onBeginEdit: function(rowIndex, row) {
                 balance_journal();
             }
@@ -1228,21 +1225,25 @@
     }
 
     function balance_journal() {
+        endEditing2();
         var rows = $('#dg3').datagrid('getRows');
         var totalrows = rows.length;
-        endEditing2();
 
+        var debit = 0;
+        var credit = 0;
         if (totalrows > 0) {
-            var debit = 0;
-            var credit = 0;
             for (let i = 0; i < totalrows; i++) {
-                debit += parseFloat(rows[i].debit);
-                credit += parseFloat(rows[i].credit);
+                var d = String(rows[i].debit || 0).replace(/,/g, '');
+                var c = String(rows[i].credit || 0).replace(/,/g, '');
+                debit += parseFloat(d) || 0;
+                credit += parseFloat(c) || 0;
             }
-
-            $("#balance_debit").numberbox('setValue', debit);
-            $("#balance_credit").numberbox('setValue', credit);
         }
+        debit = Math.round(debit * 100) / 100;
+        credit = Math.round(credit * 100) / 100;
+
+        $("#balance_debit").numberbox('setValue', debit);
+        $("#balance_credit").numberbox('setValue', credit);
     }
 
     // DATA ISIAN JOURNAL LIST --------------------------------------------------
@@ -1296,6 +1297,17 @@
                     width: 200,
                     halign: 'center',
                     title: "Account Name",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'description',
+                    width: 220,
+                    halign: 'center',
+                    title: "Description",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -1535,7 +1547,11 @@
                     $('#dlg_insert').dialog('open');
                     $("#dlg_insert").window('setTitle', "Update " + row.number);
                     
+                    // load form tidak boleh memicu hitung ulang PPH (total_pph tersimpan dipertahankan)
+                    isLoadingPI = true;
                     $('#frm_insert').form('load', row);
+                    isLoadingPI = false;
+                    $("#total_pph").numberbox(row.pph == "1" ? 'enable' : 'disable');
 
                     $("#type_selection_others").hide();
                     $("#type_selection_purchase").hide();
@@ -2267,8 +2283,8 @@
                     var remarks = $("#remarks").textbox('getValue');
                     var faktur_no = $("#faktur_no").textbox('getValue');
 
-                    var balance_debit = $("#balance_debit").numberbox('getValue');
-                    var balance_credit = $("#balance_credit").numberbox('getValue');
+                    var por_no = $("#por_no").combogrid('getText');
+                    var po_no = $("#po_no").combobox('getValue');
 
                     var total_sub = $("#total_sub").numberbox('getValue');
                     var total_vat = $("#total_vat").numberbox('getValue');
@@ -2277,19 +2293,29 @@
                     var total_grand = $("#total_grand").numberbox('getValue');
                     var total_dp = $("#total_dp").numberbox('getValue');
 
-                    // $.ajax({
-                    //     type: "post",
-                    //     url: "<?= base_url('closing/locks/checkLock') ?>",
-                    //     data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
-                    //     dataType: "json",
-                    //     success: function (lock) {
-                    //         if(lock.total > 0){
-                    //             toastr.error("This period is not active by Accounting");
-                    //             return false;
-                    //         }
+                    endEditing2();
+                    balance_journal();
 
-                    if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
-                        if (por_no == "" || invoice_no == "" || supplier_id == "" || total_grand == "") {
+                    var rows3 = $('#dg3').datagrid('getRows');
+                    var b_debit = 0;
+                    var b_credit = 0;
+                    for (let i = 0; i < rows3.length; i++) {
+                        var d = String(rows3[i].debit || 0).replace(/,/g, '');
+                        var c = String(rows3[i].credit || 0).replace(/,/g, '');
+                        b_debit += parseFloat(d) || 0;
+                        b_credit += parseFloat(c) || 0;
+                    }
+                    b_debit = Math.round(b_debit * 100) / 100;
+                    b_credit = Math.round(b_credit * 100) / 100;
+
+                    var isBalance = (b_debit > 0 && Math.abs(b_debit - b_credit) < 0.01);
+
+                    if (isBalance) {
+                        var isDocComplete = (invoice_no != "" && supplier_id != "" && total_grand != "");
+                        if (type == "purchase" && por_no == "") isDocComplete = false;
+                        if (type == "others" && po_no == "") isDocComplete = false;
+
+                        if (!isDocComplete) {
                             toastr.error("please complete your input data");
                         } else {
                             $('#dg2').datagrid('acceptChanges');
@@ -2346,6 +2372,7 @@
                                                         // total_sub: total_sub,
                                                         total_vat: total_vat,
                                                         total_dpp: total_dpp,
+                                                        pph: $("#pph").combobox('getValue'),
                                                         total_pph: total_pph,
                                                         // total_grand: total_grand,
                                                         total_dp: total_dp,
@@ -2576,6 +2603,7 @@
                                                         number: number,
                                                         account_number: rows2[z].account_number,
                                                         account_name: rows2[z].account_name,
+                                                        description: rows2[z].description,
                                                         debit: rows2[z].debit,
                                                         credit: rows2[z].credit,
                                                         flag: rows2[z].flag,
@@ -2602,7 +2630,7 @@
                             });
                         }
                     } else {
-                        toastr.error("Balance Debit Cannot match on Balance Credit");
+                        toastr.error("Balance Debit (" + b_debit.toLocaleString() + ") Cannot match on Balance Credit (" + b_credit.toLocaleString() + ")");
                     }
                     //     }
                     // });
@@ -2849,20 +2877,34 @@
 
         $("#pph").combobox({
             onChange: function(e) {
+                if (isLoadingPI) return;
                 var total_sub = $("#total_sub").numberbox('getValue');
                 var total_vat = $("#total_vat").numberbox('getValue');
                 var pph = $("#pph").combobox('getValue');
+                var total_pph = 0;
 
                 if (pph != "1") {
-                    var total_pph = parseFloat(total_sub * parseFloat(parseInt(pph) / 100));
+                    total_pph = parseFloat(total_sub * parseFloat(parseInt(pph) / 100));
+                    $("#total_pph").numberbox('disable');
                     $("#total_pph").numberbox('setValue', total_pph);
                 } else {
                     $("#total_pph").numberbox('enable');
                     $("#total_pph").numberbox('setValue', 0);
+                    total_pph = 0;
                 }
 
                 var grand_total = (parseFloat(total_sub) + parseFloat(total_vat) - parseFloat(total_pph));
                 $("#total_grand").numberbox('setValue', grand_total);
+            }
+        });
+
+        // PPH OTHER diisi manual: grand total ikut dihitung ulang
+        $("#total_pph").numberbox({
+            onChange: function(total_pph) {
+                if (isLoadingPI) return;
+                var total_sub = parseFloat($("#total_sub").numberbox('getValue')) || 0;
+                var total_vat = parseFloat($("#total_vat").numberbox('getValue')) || 0;
+                $("#total_grand").numberbox('setValue', total_sub + total_vat - (parseFloat(total_pph) || 0));
             }
         });
     });
@@ -2964,6 +3006,7 @@
             $("#d_total_invoice").textbox('setValue', formatPriceDetail(row.total_invoice));
             $("#d_total_local").textbox('setValue', formatPriceDetail(row.total_local));
             $("#d_total_pph").textbox('setValue', formatPriceDetail(row.total_pph));
+            $("#d_pph").combobox('setValue', row.pph != null && row.pph !== '' ? String(row.pph) : "0");
             $("#d_total_sub").textbox('setValue', formatPriceDetail(row.total_sub));
             $("#d_total_vat").textbox('setValue', formatPriceDetail(row.total_vat));
             $("#d_total_dp").textbox('setValue', formatPriceDetail(row.total_dp));

@@ -154,6 +154,10 @@ class Notifications extends CI_Controller
         // --- 2. LOGIKA Targeted Based  ---
         $my_username = $this->session->username;
         $user_info = $this->crud->read("users", [], ["username" => $my_username]);
+        // Session habis (polling AJAX tetap jalan) / user tidak ditemukan
+        if (empty($my_username) || empty($user_info)) {
+            return;
+        }
         $my_dept = $user_info->department;
         $my_sub_dept = $user_info->sub_department;
 
@@ -185,9 +189,14 @@ class Notifications extends CI_Controller
     {
         $my_username = $this->session->username;
         $user_info = $this->crud->read("users", [], ["username" => $my_username]);
+        // Session habis (polling AJAX tetap jalan) / user tidak ditemukan
+        if (empty($my_username) || empty($user_info)) {
+            echo '<li class="list-isi"><center><small>No New Notifications</small></center></li>';
+            return;
+        }
         $my_dept = $user_info->department;
         $my_sub_dept = $user_info->sub_department;
-        
+
         $this->db->group_start();
             $this->db->where('target_user', $my_username);
             $this->db->or_group_start();

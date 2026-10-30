@@ -98,7 +98,32 @@ class Purchase_dashboard extends CI_Controller
         echo json_encode($data);
     }
 
-    public function get_dashboard_data() 
+    // Filter Monthly: bulan awal s/d bulan akhir pada tahun terpilih (default Januari s/d Desember tahun ini = 12 bulan)
+    private function _get_monthly_range()
+    {
+        $year        = (int)($this->input->post('filter_year') ?: date('Y'));
+        $month_start = (int)($this->input->post('filter_month_start') ?: 1);
+        $month_end   = (int)($this->input->post('filter_month_end') ?: 12);
+
+        $month_start = max(1, min(12, $month_start));
+        $month_end   = max(1, min(12, $month_end));
+        if ($month_start > $month_end) {
+            list($month_start, $month_end) = [$month_end, $month_start];
+        }
+
+        $labels = [];
+        for ($m = $month_start; $m <= $month_end; $m++) {
+            $labels[] = sprintf('%04d-%02d', $year, $m);
+        }
+
+        return [
+            'labels'       => $labels,
+            'period_start' => sprintf('%04d-%02d-01', $year, $month_start),
+            'period_end'   => date('Y-m-t', strtotime(sprintf('%04d-%02d-01', $year, $month_end))),
+        ];
+    }
+
+    public function get_dashboard_data()
     {
         $filter_period_type = strtolower($this->input->post('filter_period_type') ? $this->input->post('filter_period_type') : 'monthly');
         $filter_period_value = $this->input->post('filter_period_value');
@@ -169,17 +194,14 @@ class Purchase_dashboard extends CI_Controller
             }
 
         } elseif ($filter_period_type == "monthly") {
-            $end = new DateTime($filter_period_value . "-01"); // Input: 2026-04
-            $start = (clone $end)->modify('-5 months');
-            
-            $period_start_date = $start->format('Y-m-01');
-            $period_end_date = $end->format('Y-m-t'); // Sampai akhir bulan
-            
+            $range = $this->_get_monthly_range();
+            $period_start_date = $range['period_start'];
+            $period_end_date = $range['period_end'];
+
             $group_by_sql = "DATE_FORMAT(a.receipt_date, '%Y-%m')";
             $label_format = "M-Y";
 
-            $period = new DatePeriod($start, new DateInterval('P1M'), (clone $end)->modify('+1 month'));
-            foreach ($period as $date) { $labels[] = $date->format('Y-m'); }
+            $labels = $range['labels'];
 
         } elseif ($filter_period_type == "yearly") {
             $year = $filter_period_value; // Input: 2026
@@ -285,7 +307,15 @@ class Purchase_dashboard extends CI_Controller
         $trend_values = array_values($mapped_trend);
         // $trend_labels = array_map(function($l) { return date('d M Y', strtotime((string) $l)); }, $labels); // comment: bug labels yearly
         
-        $average = count($trend_values) > 0 ? (array_sum($trend_values) / count($trend_values)) : 0;
+        // Average hanya dari periode yang sudah berjalan (s/d hari/minggu/bulan/tahun ini), periode mendatang tidak dihitung
+        $current_key = ['daily' => date('Y-m-d'), 'weekly' => date('oW'), 'monthly' => date('Y-m'), 'yearly' => date('Y')][$filter_period_type] ?? null;
+        $elapsed_values = [];
+        foreach ($mapped_trend as $key => $val) {
+            if ($current_key === null || (string)$key <= $current_key) {
+                $elapsed_values[] = $val;
+            }
+        }
+        $average = count($elapsed_values) > 0 ? (array_sum($elapsed_values) / count($elapsed_values)) : 0;
         $avg_values = array_fill(0, count($trend_values), round($average, 2));
 
         $division_text = !empty($filter_division) ? strtoupper($filter_division) : "ALL Division";
@@ -386,17 +416,14 @@ class Purchase_dashboard extends CI_Controller
             }
 
         } elseif ($filter_period_type == "monthly") {
-            $end = new DateTime($filter_period_value . "-01"); // Input: 2026-04
-            $start = (clone $end)->modify('-5 months');
-            
-            $period_start_date = $start->format('Y-m-01');
-            $period_end_date = $end->format('Y-m-t'); // Sampai akhir bulan
-            
+            $range = $this->_get_monthly_range();
+            $period_start_date = $range['period_start'];
+            $period_end_date = $range['period_end'];
+
             $group_by_sql = "DATE_FORMAT(po_date, '%Y-%m')";
             $label_format = "M-Y";
 
-            $period = new DatePeriod($start, new DateInterval('P1M'), (clone $end)->modify('+1 month'));
-            foreach ($period as $date) { $labels[] = $date->format('Y-m'); }
+            $labels = $range['labels'];
 
         } elseif ($filter_period_type == "yearly") {
             $year = $filter_period_value; // Input: 2026
@@ -637,17 +664,14 @@ class Purchase_dashboard extends CI_Controller
             }
 
         } elseif ($filter_period_type == "monthly") {
-            $end = new DateTime($filter_period_value . "-01"); // Input: 2026-04
-            $start = (clone $end)->modify('-5 months');
-            
-            $period_start_date = $start->format('Y-m-01');
-            $period_end_date = $end->format('Y-m-t'); // Sampai akhir bulan
-            
+            $range = $this->_get_monthly_range();
+            $period_start_date = $range['period_start'];
+            $period_end_date = $range['period_end'];
+
             $group_by_sql = "DATE_FORMAT(po_date, '%Y-%m')";
             $label_format = "M-Y";
 
-            $period = new DatePeriod($start, new DateInterval('P1M'), (clone $end)->modify('+1 month'));
-            foreach ($period as $date) { $labels[] = $date->format('Y-m'); }
+            $labels = $range['labels'];
 
         } elseif ($filter_period_type == "yearly") {
             $year = $filter_period_value; // Input: 2026

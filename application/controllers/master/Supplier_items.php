@@ -310,9 +310,40 @@ class Supplier_items extends CI_Controller
     //DELETE DATA
     public function delete()
     {
-        $data = $this->input->post();
-        $send = $this->crud->delete('supplier_items', $data);
-        $send2 = $this->crud->delete('supplier_item_histories', $data);
+        $post = $this->input->post();
+
+        // Hapus per baris (id), atau per kombinasi lengkap supplier + item
+        if (!empty($post['id'])) {
+            $item = $this->crud->read('supplier_items', [], ["id" => $post['id']]);
+        } elseif (!empty($post['supplier_id']) && !empty($post['item_rm_id'])) {
+            $item = $this->crud->read('supplier_items', [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']]);
+        } else {
+            $item = null;
+        }
+
+        if (empty($item->id)) {
+            echo json_encode(array("title" => "Not Found", "message" => "Data not found", "theme" => "error"));
+            return;
+        }
+
+        // Item yang sudah dipakai di Purchase Order tidak boleh dihapus
+        $this->db->select('po_no');
+        $this->db->from('purchase_orders');
+        $this->db->where('supplier_id', $item->supplier_id);
+        $this->db->where('item_rm_id', $item->item_rm_id);
+        $this->db->group_by('po_no');
+        $this->db->limit(5);
+        $purchase_orders = $this->db->get()->result_array();
+
+        if (count($purchase_orders) > 0) {
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $item->item_rm_id]);
+            $po_numbers = implode(', ', array_column($purchase_orders, 'po_no'));
+            echo json_encode(array("title" => "Cannot Delete", "message" => "Item " . @$item_rm->number . " is already used in Purchase Order (" . $po_numbers . ")", "theme" => "error"));
+            return;
+        }
+
+        $send = $this->crud->delete('supplier_items', ["id" => $item->id]);
+        $send2 = $this->crud->delete('supplier_item_histories', ["supplier_id" => $item->supplier_id, "item_rm_id" => $item->item_rm_id]);
         echo $send;
     }
 

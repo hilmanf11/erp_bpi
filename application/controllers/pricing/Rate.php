@@ -371,19 +371,26 @@ class Rate extends CI_Controller
             ];
 
             // cek existing
-            $exist = $this->db->get_where('rates', [
+            $key = [
                 'year' => $year,
                 'efisiensi' => $efisiensi,
                 'toonage' => $r['toonage'] ?? null
-            ])->row();
+            ];
+            $exist = $this->db->get_where('rates', $key)->row_array();
 
             try {
                 if ($exist) {
-                    $this->crud->update('rates', ['id' => $exist->id], $dataFinal);
+                    $this->saveHistoryBaseline($exist);
+                    $this->crud->update('rates', ['id' => $exist['id']], $dataFinal);
                     $summary['update']++;
                 } else {
                     $this->crud->create('rates', $dataFinal);
                     $summary['insert']++;
+                }
+
+                $saved = $this->db->get_where('rates', $key)->row_array();
+                if ($saved) {
+                    $this->saveHistory($exist ? 'UPDATE' : 'CREATE', $saved);
                 }
             } catch (Exception $e) {
                 $summary['errors'][] = $e->getMessage();
@@ -416,8 +423,41 @@ class Rate extends CI_Controller
             ];
         }
 
+        foreach ($this->db->get_where('rates', $dataFinal)->result_array() as $rate) {
+            $this->saveHistoryBaseline($rate);
+            $this->saveHistory('DELETE', $rate);
+        }
+
         $send = $this->crud->delete('rates', $dataFinal);
         echo $send;
+    }
+
+    // RATE HISTORY: setiap rate yang disimpan / dihapus dicatat ke rate_histories (CREATE, UPDATE, DELETE)
+    private function saveHistory($action, $rate, $by = null, $date = null)
+    {
+        static $fields = null;
+        if ($fields === null) {
+            $fields = array_flip($this->db->list_fields('rate_histories'));
+        }
+
+        $history = array_merge($rate, [
+            'id'           => $this->crud->autoid('rate_histories'),
+            'created_by'   => $by ?: $this->session->username,
+            'created_date' => $date ?: date('Y-m-d H:i:s'),
+            'updated_by'   => null,
+            'updated_date' => null,
+            'rate_id'      => $rate['id'],
+            'action'       => $action,
+        ]);
+        $this->db->insert('rate_histories', array_intersect_key($history, $fields));
+    }
+
+    // Rate yang sudah ada sebelum history dibuat dicatat dulu sebagai BASELINE, supaya nilai lamanya tidak hilang saat di-update / dihapus
+    private function saveHistoryBaseline($rate)
+    {
+        if ($this->db->where('rate_id', $rate['id'])->count_all_results('rate_histories') == 0) {
+            $this->saveHistory('BASELINE', $rate, $rate['updated_by'] ?: $rate['created_by'], $rate['updated_date'] ?: $rate['created_date']);
+        }
     }
 
 

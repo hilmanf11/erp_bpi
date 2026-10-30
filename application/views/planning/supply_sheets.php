@@ -23,6 +23,7 @@
             <th rowspan="2" data-options="field:'qty_issued',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Issued</th>
             <th rowspan="2" data-options="field:'qty_issued_bal',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">O/S Qty</th> -->
             <!-- <th rowspan="2" data-options="field:'supply_type',width:80,align:'center',formatter:issuedformat,styler:statusIssued" sortable="true">Supply<br>Type</th> -->
+            <th rowspan="2" data-options="field:'journal_no',width:140,halign:'center',align:'center'">GL INV No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -575,6 +576,7 @@
                                 item_fg_id: row.item_fg_id
                             },
                             success: function(result) {
+                                try { var rd = (typeof result === 'string') ? JSON.parse(result) : result; if (rd && rd.theme === 'error') toastr.error(rd.message, rd.title); } catch (e) {}
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -1263,7 +1265,7 @@
                                         },
                                         success: function(result) {
                                             var result = eval('(' + result + ')');
-                                            toastr.success(result.message);
+                                            (result.success === false ? toastr.error : toastr.success)(result.message);
                                         },
                                         error: function(jqXHR, textStatus, errorThrown) {
                                             toastr.error(jqXHR.statusText);

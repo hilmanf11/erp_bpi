@@ -124,6 +124,10 @@ class Scan_item_bpm extends CI_Controller
                             $this->crud->update('bpm_labels', ["label_no" => $post['label']], ["status" => "1"]);
                             if(round($post['qty'] + $totalScan[0]->qty) == round($bpm->qty)){
                                 $this->crud->update('bpm', ["request_id" => $request_id, "item_rm_id" => $item_rm_id], ["status" => "1"]);
+
+                                // Auto Posting Journal Inventory BPM (INJ) jika semua item BPM sudah ter-scan penuh
+                                $this->load->model('autopostingjournal');
+                                $this->autopostingjournal->auto_post_bpm($request_no);
                             }
                             echo $send;
                         } else {

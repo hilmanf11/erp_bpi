@@ -228,7 +228,7 @@ class Supply_sheets extends CI_Controller
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
-        $datenow    = date("ymd", strtotime((string) $trans_date));
+        $datenow    = date("ymd", strtotime($trans_date));
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM supply_sheets WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -248,6 +248,12 @@ class Supply_sheets extends CI_Controller
         $update = $this->db->update('supply_sheets', ["status" => 2, "remarks" =>'Closing SH'], ["request_no" => $request_no]);// , "qty" => 0
         // echo $update;
 
+        // Closing SH = supply sheet selesai: Auto Posting Journal Inventory sesuai qty yang sudah di-issue
+        if ($update) {
+            $this->load->model('autopostingjournal');
+            $this->autopostingjournal->auto_post_supply_document($request_no);
+        }
+
          // Berikan respon sesuai hasil
         if ($update) {
             echo json_encode(["success" => true,"message" => "Supply Sheets Close successfully."]);
@@ -260,6 +266,13 @@ class Supply_sheets extends CI_Controller
     {
         // $po_no = $this->input->post('po_no');
         $request_no = $this->input->post('request_no');
+
+        // Supply sheet yang sudah dijurnal tidak boleh dibuka lagi (issue baru tidak ikut jurnal)
+        $this->load->model('autopostingjournal');
+        if ($blocked = $this->autopostingjournal->journaled_block(['SUPPLY SHEET'], $request_no)) {
+            echo json_encode($blocked);
+            return;
+        }
         $update = $this->db->update('supply_sheets', ["status" => 0,"remarks" =>null], ["request_no" => $request_no]);// , "qty" => 0
 
         if ($update) {
@@ -299,7 +312,7 @@ class Supply_sheets extends CI_Controller
 
         // Select Query Utama
         $this->db->select('a.*, SUM(a.qty_req) as qty_req2, SUM(a.qty_act) as qty_act2, SUM(a.qty_bal) as qty_bal2, b.number as item_fg_number,
-        b.name as item_fg_name, b.uom, b.status_subcont, b.subcont_type, g.qty_issued2, COALESCE(SUM(c.qty),0) as qty_actual, COUNT(a.status) as total_status, i.total_status_open, h.total_status_close, j.total_status_complete');
+        b.name as item_fg_name, b.uom, b.status_subcont, b.subcont_type, g.qty_issued2, COALESCE(SUM(c.qty),0) as qty_actual, COUNT(a.status) as total_status, i.total_status_open, h.total_status_close, j.total_status_complete, MAX(jv.journal_no) as journal_no', FALSE);
         $this->db->from('supply_sheets a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('issued_material_details c', 'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id','left');
@@ -311,6 +324,7 @@ class Supply_sheets extends CI_Controller
         $this->db->join('(SELECT a.request_no, COUNT(a.status) as total_status_close FROM supply_sheets a JOIN bom b ON a.item_fg_id = b.item_fg_id and a.item_rm_id = b.item_rm_id WHERE a.status = 1 GROUP BY a.request_no) h', 'a.request_no = h.request_no', 'left');
         $this->db->join('(SELECT a.request_no, COUNT(a.status) as total_status_open FROM supply_sheets a JOIN bom b ON a.item_fg_id = b.item_fg_id and a.item_rm_id = b.item_rm_id WHERE a.status = 0 GROUP BY a.request_no) i', 'a.request_no = i.request_no', 'left');
         $this->db->join('(SELECT a.request_no, COUNT(a.status) as total_status_complete FROM supply_sheets a JOIN bom b ON a.item_fg_id = b.item_fg_id and a.item_rm_id = b.item_rm_id WHERE a.status = 2 GROUP BY a.request_no) j', 'a.request_no = j.request_no', 'left');
+        $this->db->join('(SELECT document_no, GROUP_CONCAT(DISTINCT number ORDER BY number ASC SEPARATOR \', \') as journal_no FROM journal_inventory WHERE modul = \'SUPPLY SHEET\' GROUP BY document_no) jv', 'a.request_no = jv.document_no', 'left');
         
         $this->db->where('a.deleted', 0);
         
@@ -407,6 +421,7 @@ class Supply_sheets extends CI_Controller
                 "total_status_complete" => $record['total_status_complete'],
                 "status_subcont" => $record['status_subcont'],
                 "subcont_type" => $record['subcont_type'],
+                "journal_no" => $record['journal_no'] ?? '',
                 "created_by" => $record['created_by'],
                 "created_date" => $record['created_date'],
                 "updated_by" => $record['updated_by'],
@@ -894,6 +909,14 @@ class Supply_sheets extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+
+        // Supply sheet yang sudah dijurnal tidak boleh dihapus
+        $this->load->model('autopostingjournal');
+        if ($blocked = $this->autopostingjournal->journaled_block(['SUPPLY SHEET'], $data['request_no'] ?? '')) {
+            echo json_encode($blocked);
+            return;
+        }
+
         $send = $this->crud->delete('supply_sheets', ["request_no" => $data['request_no']]);
         $update = $this->crud->update('production_schedules', ["wo_no" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
         $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no']]);
@@ -1079,7 +1102,7 @@ class Supply_sheets extends CI_Controller
                                         <tr>
                                             <td width="50">Doc. Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @date("d F Y", strtotime((string) $kanban->request_date)) . '</b></td>
+                                            <td><b>' . @date("d F Y", strtotime($kanban->request_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Created By</td>
@@ -1173,11 +1196,11 @@ class Supply_sheets extends CI_Controller
                                 <td>' . $record['item_rm_name'] . '</td>
                                 <td style="text-align:right;">' . $record['composition'] . '</td>
                                 <td>' . $record['uom'] . '</td>
-                                <td style="text-align:right;">' . @number_format((float) $record['mpq'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format((float) $record['need'], 4) . '</td>
-                                <td style="text-align:right;">' . @number_format((float) $record['req_qty_purging'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format((float) $record['qty_req'], 4) . '</td>
-                                <td style="text-align:right;">' . @number_format((float) $record['qty_issueds'], 4) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['mpq'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['need'], 4) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['req_qty_purging'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['qty_req'], 4) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['qty_issueds'], 4) . '</td>
                                 <td style="text-align:right;">' . @$record['lotnos'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($wip_balances->balance), 4) . '</td>
                                 <td style="text-align:right;">' . @number_format(($ending_stock), 4) . '</td>
@@ -1375,7 +1398,7 @@ class Supply_sheets extends CI_Controller
         //                         <td style="text-align:center">' ."Material ". $no . '</td>
         //                         <td>' . $record['item_rm_no'] . '</td>
         //                         <td>' . $record['item_rm_name'] . '</td>
-        //                         <td style="text-align:right;">' . number_format((float) $qty_final, 2) . '</td>
+        //                         <td style="text-align:right;">' . number_format($qty_final, 2) . '</td>
         //                         <td style="text-align:right;">' . $record['uom'] . '</td>
         //                         <td style="text-align:right;">' . $record['lotno'] . '</td>
         //                     </tr>';
@@ -1466,7 +1489,7 @@ class Supply_sheets extends CI_Controller
                                 <td style="text-align:center">' . "Material " .'</td>
                                 <td>' . $record['item_rm_no'] . '</td>
                                 <td>' . $record['item_rm_name'] . '</td>
-                                <td style="text-align:right;">' . number_format((float) $qty_final, 2) . '</td>
+                                <td style="text-align:right;">' . number_format($qty_final, 2) . '</td>
                                 <td style="text-align:right;">' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . $record['lotno'] . '</td>
                               </tr>';

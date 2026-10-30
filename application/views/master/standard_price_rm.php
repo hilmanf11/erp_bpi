@@ -145,6 +145,7 @@
         url_save = '<?= base_url('master/standard_price_rm/create') ?>';
         $('#frm_insert').form('clear');
 
+        isUpd = false;
         $("#division").combobox('enable', true);
         $('#start_date').datebox('setValue', '<?= date('Y') . '-01-01' ?>');
         $('#end_date').datebox('setValue', '<?= date('Y') . '-12-31' ?>');
@@ -446,6 +447,7 @@
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
+            isUpd = true;
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
 
@@ -701,6 +703,7 @@
                                 type: "post",
                                 url: '<?= base_url('master/standard_price_rm/create') ?>',
                                 data: {
+                                    id: rows[i].id || '',
                                     start_date: start_date,
                                     end_date: end_date,
                                     document_number: document_number,
@@ -711,6 +714,7 @@
                                 },
                                 dataType: "json",
                                 success: function(result) {
+                                    if (result.theme == 'error') toastr.error(result.message);
                                     if (i == (totalrows - 1)) {
                                         Swal.fire({
                                             title: result.message,
@@ -821,6 +825,15 @@
                 addTable(val.number, '<?= base_url('master/standard_price_rm/datatableUpdates?document_number=') ?>' + window.btoa(document_number));
             }, 500);
 
+        }
+    });
+
+    // Regen doc no jika tanggal diubah (mode Add saja)
+    var isUpd = false;
+    $('#start_date, #end_date').datebox({
+        onChange: function() {
+            var d = $('#division').combobox('getValue');
+            if (!isUpd && d) autonumber(d, $('#start_date').datebox('getValue'), $('#end_date').datebox('getValue'));
         }
     });
 

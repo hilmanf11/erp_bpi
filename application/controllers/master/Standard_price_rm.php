@@ -60,17 +60,17 @@ class Standard_price_rm extends CI_Controller
         $end_date = $post['end_date'];
         $datenow = date("y", strtotime((string) $start_date));
         $sql = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where division='$division' AND `start_date`='$start_date' AND `end_date`='$end_date'");
-        $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `start_date`='$start_date' AND `end_date`='$end_date'");
+        $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `document_number` LIKE 'SP-RM$datenow%'");
         $row = $sql->row();
         $row2 = $sql2->row();
         if (!empty(@$row->kode)) {
             $autoid = @$row->kode;
         } else {
             if (empty(@$row2->kode)) {
-                $kode = substr(@$row2->kode, 1);
+                $kode = 0;
                 $autoid = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
             } else {
-                $kode = substr(@$row2->kode, -2);
+                $kode = (int) substr(@$row2->kode, -2);
                 $autoid = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
             }
         }
@@ -194,12 +194,29 @@ class Standard_price_rm extends CI_Controller
         echo json_encode($result);
     }
 
+    // Cek overlap periode harga per item + division (exclude $id)
+    private function overlap($item, $div, $s, $e, $id = '')
+    {
+        $this->db->from('standard_price_rm');
+        $this->db->where(['item_rm_id' => $item, 'division' => $div, 'deleted' => 0, 'start_date <=' => $e, 'end_date >=' => $s]);
+        if (!empty($id)) $this->db->where('id !=', $id);
+        return $this->db->get()->row();
+    }
+
+    private function ovMsg($item, $ov)
+    {
+        return json_encode(["title" => "Overlap Period", "message" => "Part ID $item overlap dengan $ov->document_number ($ov->start_date s/d $ov->end_date)", "theme" => "error"]);
+    }
+
     //CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
-            $whereupdate = array(
+            if ($post['start_date'] > $post['end_date']) {
+                die(json_encode(["title" => "Invalid", "message" => "Start Date > Ending Date", "theme" => "error"]));
+            }
+            $whereupdate = !empty($post['id']) ? ['id' => $post['id']] : array(
                 'document_number' => $post['document_number'],
                 'start_date' => $post['start_date'],
                 'end_date' => $post['end_date'],
@@ -217,6 +234,8 @@ class Standard_price_rm extends CI_Controller
                 'price' => $post['price'],
             );
             $standard_price_rm = $this->crud->read("standard_price_rm", [], $whereupdate);
+            $ov = $this->overlap($post['item_rm_id'], $post['division'], $post['start_date'], $post['end_date'], @$standard_price_rm->id);
+            if ($ov) die($this->ovMsg($post['item_rm_id'], $ov));
             if (@$standard_price_rm->item_rm_id != "") {
                 if (
                     @$standard_price_rm->document_number == $post['document_number'] &&
@@ -327,17 +346,17 @@ class Standard_price_rm extends CI_Controller
 
             $datenow = date("y", strtotime((string) $start_date));
             $sql = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where division='$division' AND `start_date`='$start_date' AND `end_date`='$end_date'");
-            $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `start_date`='$start_date' AND `end_date`='$end_date'");
+            $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `document_number` LIKE 'SP-RM$datenow%'");
             $row = $sql->row();
             $row2 = $sql2->row();
             if (!empty(@$row->kode)) {
                 $document_number = @$row->kode;
             } else {
                 if (empty(@$row2->kode)) {
-                    $kode = substr(@$row2->kode, 1);
+                    $kode = 0;
                     $document_number = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
                 } else {
-                    $kode = substr(@$row2->kode, -2);
+                    $kode = (int) substr(@$row2->kode, -2);
                     $document_number = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
                 }
             }
@@ -355,6 +374,8 @@ class Standard_price_rm extends CI_Controller
 
                 );
                 $standard_price_rm = $this->crud->read('standard_price_rm', [], $whereupdate);
+                $ov = $this->overlap($data['item_rm_id'], $division, $data['start_date'], $data['end_date'], @$standard_price_rm->id);
+                if ($ov) die($this->ovMsg($data['item_rm_id'], $ov));
 
                 $dataFinal = array(
                     //field

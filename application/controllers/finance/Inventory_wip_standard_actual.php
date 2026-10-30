@@ -112,6 +112,8 @@ class Inventory_wip_standard_actual extends CI_Controller
     {
         if (ob_get_length()) ob_end_clean();
         header('Content-Type: application/json');
+        // Notice/deprecated PHP 8 dari library tidak boleh tercetak ke response JSON (tetap tercatat di log)
+        ini_set('display_errors', 0);
         
         // Load PHPSpreadsheet autoloader
         require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
@@ -614,7 +616,9 @@ class Inventory_wip_standard_actual extends CI_Controller
                         ->limit(1)
                         ->get('inventory_wip_actual')
                         ->row();
-        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
+        // Tanpa cutoff: sama dengan Progress WIP, saldo awal wip_balances_fg 2025-04-30 + transaksi mulai 2025-05-01
+        $start_system  = ($cutoff_data) ? $cutoff_data->cutoff_date : '2025-05-01';
+        $where_opening = ($cutoff_data) ? "trans_date >= '$start_system'" : "trans_date = '2025-04-30'";
 
         //------------------------------------ GET DATA ----------------------------------//
 
@@ -650,9 +654,9 @@ class Inventory_wip_standard_actual extends CI_Controller
         $where_shift_b  = "";
         $where_shift_ab = "";
         if ($filter_shift !== "" && $filter_shift !== null) {
-            $where_shift    = " shift = " . (int)$filter_shift;
-            $where_shift_b  = " b.shift = " . (int)$filter_shift;
-            $where_shift_ab = " ab.shift = " . (int)$filter_shift;
+            $where_shift    = " AND shift = " . (int)$filter_shift;
+            $where_shift_b  = " AND b.shift = " . (int)$filter_shift;
+            $where_shift_ab = " AND ab.shift = " . (int)$filter_shift;
         }
     
         // Filter Items (langsung atau dari WO)
@@ -683,25 +687,12 @@ class Inventory_wip_standard_actual extends CI_Controller
             }
         }
 
-        // mengambil 'price' (standard price) dari standard_price_fg
-        $query_standard_price = "SELECT item_fg_id, currency, price 
-            FROM standard_price_fg 
-            WHERE '$filter_from' >= `start_date` AND '$filter_to' <= `end_date` 
-            GROUP BY item_fg_id";
-
         $query_main = "SELECT a.id,
                 a.number,
                 a.name, 
                 a.uom,
                 a.type,
                 b.number as division,
-                COALESCE(sp.price, 0) as std_price,
-                sp.currency AS standard_currency,
-
-                -- Actual Price and Qty from upload
-                COALESCE(actual.price, 0) as actual_price, 
-                COALESCE(actual.qty, 0) as actual_qty,
-
                 COALESCE(b.qty_wo,0) as qty_wo,
                 COALESCE(i.begin_balance,0) as begin_balance,
                 COALESCE(c.qty_actual,0) as qty_actual,
@@ -709,19 +700,17 @@ class Inventory_wip_standard_actual extends CI_Controller
                 COALESCE(outmap.qty_output, 0) AS qty_output,
                 COALESCE(d.qty_ng,0) as qty_ng,
                 COALESCE(ng_map.qty_ng,0) as qty_ng_sa,
-                COALESCE((COALESCE(c.qty_actual,0)+COALESCE(d.qty_ng,0)+COALESCE(c2.qty_wip,0)),0) as total_production,
+                COALESCE((COALESCE(c.qty_actual,0)+COALESCE(c2.qty_wip,0)),0) as total_production,
                 COALESCE(f.qty_subcont_jasa,0) as subconts_jasa,
                 COALESCE(j.qty_adj_in,0) as qty_adj_in,
                 COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as qty_rfg,
+                COALESCE(gd.qty_repacking,0) as qty_repacking,
                 COALESCE(h.qty_rfg_jasa,0) as rfg_jasa,
                 COALESCE(k.qty_adj_out,0) as qty_adj_out,
                 COALESCE(k2.qty_ng_wip,0) as qty_ng_wip,
-                COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0) - COALESCE(k2.qty_ng_wip,0) - COALESCE(outmap.qty_output, 0), 0) as ending_balance
+                COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(gd.qty_repacking,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0) - COALESCE(k2.qty_ng_wip,0) - COALESCE(outmap.qty_output, 0), 0) as ending_balance
             FROM item_fg a
             LEFT JOIN divisions b ON a.division_id = b.id
-            LEFT JOIN inventory_wip_actual actual ON (actual.part_no = a.number OR actual.item_fg_id = a.id)
-
-            LEFT JOIN ($query_standard_price) sp ON a.id = sp.item_fg_id
             LEFT JOIN (
                 SELECT 
                     item_fg_id, 
@@ -812,6 +801,8 @@ class Inventory_wip_standard_actual extends CI_Controller
                     JOIN checksheets b ON b.number = a.checksheet_number
                     WHERE b.packing_date BETWEEN '$filter_from' AND '$filter_to' 
                         AND b.status_subcont='NO' 
+                        AND b.wo_no NOT LIKE '%RG-%' -- IN REPAIR FG tidak ikut jadi qty RFG
+                        AND b.checksheet_type != 'Output Repacking'
                         $where_shift_b
                     GROUP BY b.item_fg_id
                 ) main
@@ -840,6 +831,15 @@ class Inventory_wip_standard_actual extends CI_Controller
                         GROUP BY a.item_fg_id
             ) gc on a.id = gc.item_fg_id
             LEFT JOIN (
+                        SELECT ab.item_fg_id, SUM(aa.qty) AS qty_repacking
+                        FROM scan_item_receipts_fg aa
+                        JOIN checksheets ab ON aa.checksheet_number = ab.number
+                        WHERE ab.packing_date BETWEEN '$filter_from' AND '$filter_to'
+                        AND ab.checksheet_type = 'Output Repacking'
+                        $where_shift_ab
+                        GROUP BY ab.item_fg_id
+            ) gd on a.id = gd.item_fg_id
+            LEFT JOIN (
                         select aa.item_fg_id,sum(aa.qty) as qty_rfg_jasa 
                         FROM scan_item_receipts_fg aa 
                         JOIN checksheets ab on aa.checksheet_number = ab.number
@@ -866,13 +866,13 @@ class Inventory_wip_standard_actual extends CI_Controller
             ) k2 on a.id = k2.item_fg_id
             LEFT JOIN (
                         SELECT a.id,
-                            COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k2.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
+                            COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(gd.qty_repacking, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k2.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
                         FROM item_fg a
                         -- qty_balance_wip pada 2025-04-30 (cutoff)
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_balance_wip
                             FROM wip_balances_fg
-                            WHERE trans_date >= '$start_system'
+                            WHERE $where_opening
                             GROUP BY item_fg_id
                         ) e ON a.id = e.item_fg_id
 
@@ -942,6 +942,8 @@ class Inventory_wip_standard_actual extends CI_Controller
                                 WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '$start_system'
                                 AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
                                 AND b.status_subcont = 'NO'
+                                AND b.wo_no NOT LIKE '%RG-%' -- IN REPAIR FG tidak ikut jadi qty RFG
+                                AND b.checksheet_type != 'Output Repacking'
                                 $where_shift_b
                                 GROUP BY b.item_fg_id
                             ) main
@@ -996,6 +998,17 @@ class Inventory_wip_standard_actual extends CI_Controller
                             AND trans_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) gc ON a.id = gc.item_fg_id
+
+                        LEFT JOIN (
+                            SELECT ab.item_fg_id, SUM(aa.qty) AS qty_repacking
+                            FROM scan_item_receipts_fg aa
+                            JOIN checksheets ab ON aa.checksheet_number = ab.number
+                            WHERE ab.packing_date >= '$start_system'
+                            AND ab.packing_date < '$filter_from'
+                            AND ab.checksheet_type = 'Output Repacking'
+                            $where_shift_ab
+                            GROUP BY ab.item_fg_id
+                        ) gd ON a.id = gd.item_fg_id
 
                         LEFT JOIN (
                             SELECT ab.item_fg_id, SUM(aa.qty) AS qty_rfg_jasa
@@ -1067,530 +1080,213 @@ class Inventory_wip_standard_actual extends CI_Controller
                     Print By ' . $this->session->username . '  
                 </div>
                 <br><br><br>
-                <h3 style="margin:0;">INVENTORY WIP STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <h3 style="margin:0;">INVENTORY VALUATION WIP <i>' . $display_title . '</i> </h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br>';
+
+        // Harga std per pcs (Material, DL) dari Cost Pattern, jika tidak ada dari % Standard Price FG
+        $std_prices = $this->stdCostPrices(array_column($records, 'id'), $filter_to, $get_rate($filter_to));
+
+        // Urutan blok kolom = field query
+        $fields = [
+            'begin_balance',    // Begin Balance
+            'qty_actual',       // IN - Output Production - Qty FG
+            'qty_wip',          // IN - Output Production - Qty WIP
+            'qty_ng',           // NG Process
+            'total_production', // Total Production = Qty FG + Qty WIP (NG tidak termasuk)
+            'subconts_jasa',    // IN - SubCont Jasa
+            'qty_adj_in',       // IN - ADJ IN
+            'qty_ng_sa',        // OUT - NG ASSY
+            'qty_ng_wip',       // OUT - NG WIP
+            'qty_output',       // OUT - OUTPUT ASSY
+            'qty_rfg',          // OUT - RFG
+            'qty_repacking',    // OUT - RFG Repacking
+            'rfg_jasa',         // OUT - RFG SubCont Jasa
+            'qty_adj_out',      // OUT - ADJ OUT
+            'ending_balance',   // Ending Balance
+        ];
+
+        // Validasi: produk bertransaksi tanpa harga std (tidak ada di Cost Pattern / harga 0 dan Standard Price FG expire). WIP tidak dijurnal di Journal Inventory (hanya RM)
+        // Info: Cost Pattern tanpa Rate Year (upload sebelum terhubung modul Rate) belum menyimpan DL, DL = 0
+        $invalid_prices = [];
+        $no_rate_prices = [];
+        foreach ($records as $record) {
+            $has_qty = false;
+            foreach ($fields as $field) {
+                if ((float) $record->$field != 0) {
+                    $has_qty = true;
+                    break;
+                }
+            }
+            if (!$has_qty) {
+                continue;
+            }
+            if (!isset($std_prices[$record->id])) {
+                $invalid_prices[$record->id] = $record->number;
+            } elseif ($std_prices[$record->id]['no_rate']) {
+                $no_rate_prices[$record->id] = $record->number;
+            }
+        }
+        if (!empty($invalid_prices)) {
+            $html .= '<div style="color: #9C0006; background-color: #FFC7CE; padding: 4px; font-size: 12px;">
+                    <b>Validasi:</b> ' . count($invalid_prices) . ' produk tidak ada di Cost Pattern (atau harga 0) dan Standard Price FG tidak berlaku di periode ini, harga = 0: ' . implode(', ', $invalid_prices) . '
+                </div><br>';
+        }
+        if (!empty($no_rate_prices)) {
+            $html .= '<div style="color: #9C5700; background-color: #FFEB9C; padding: 4px; font-size: 12px;">
+                    <b>Info:</b> ' . count($no_rate_prices) . ' produk memakai Cost Pattern tanpa Rate Year, DL = 0 (upload ulang Cost Pattern dengan Rate Year): ' . implode(', ', $no_rate_prices) . '
+                </div><br>';
+        }
 
         // Build Table Header
         $html .= '<table id="customers" border="1" style="font-size: 11px;">
             <thead>
                 <tr style="background-color: #eee;">
-                    <th rowspan="5" width="20">No</th>
-                    <th rowspan="5" colspan="3">Product No</th>
-                    <th rowspan="5" colspan="2">Product Name</th>
-                    <th rowspan="5" colspan="2">UOM</th>
-                    <th rowspan="5" colspan="2">Division</th>
-
-                    <th colspan="24">SUMMARY</th>
-                    <th colspan="50">DETAIL</th>
+                    <th rowspan="4" width="20">No</th>
+                    <th rowspan="4">Product No</th>
+                    <th rowspan="4">Product Name</th>
+                    <th rowspan="4">Total WO Qty</th>
+                    <th rowspan="3" colspan="5">Begin Balance</th>
+                    <th colspan="10">IN</th>
+                    <th rowspan="3" colspan="5">NG Process</th>
+                    <th rowspan="3" colspan="5">Total Production</th>
+                    <th colspan="10">IN</th>
+                    <th colspan="35">OUT</th>
+                    <th rowspan="3" colspan="5">Ending Balance</th>
                 </tr>
-                <tr style="background-color:#d5d5d5;">
-                    <th colspan="6">BEGIN</th>
-                    <th colspan="6">IN</th>
-                    <th colspan="6">OUT</th>
-                    <th colspan="6">ENDING</th>
-                    
-                    <th colspan="20">IN</th>
-                    <th colspan="30">OUT</th>
-                </tr>';
-
-        $html .= '<tr class="bg-yellow">
-                    <th rowspan="3" class="bg-grey">QTY</th>
-                    <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                    <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                    <th rowspan="3">VARIANCE</th>
-
-                    <th rowspan="3" class="bg-grey">QTY</th>
-                    <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                    <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                    <th rowspan="3">VARIANCE</th>
-
-                    <th rowspan="3" class="bg-grey">QTY</th>
-                    <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                    <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                    <th rowspan="3">VARIANCE</th>
-
-                    <th rowspan="3" class="bg-grey">QTY</th>
-                    <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                    <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                    <th rowspan="3">VARIANCE</th>
-
-                    <th colspan="5"> OUTPUT PROD. FG</th>
-                    <th colspan="5"> OUTPUT PROD. WIP</th>
-                    <th colspan="5"> SubCont Jasa</th>
-                    <th colspan="5"> ADJ IN</th>
-
-                    <th colspan="5"> NG ASSY</th>
-                    <th colspan="5"> NG WIP</th>
-                    <th colspan="5"> OUTPUT ASSY</th>
-                    <th colspan="5"> RFG</th>
-                    <th colspan="5"> RFG SubCont Jasa</th>
-                    <th colspan="5"> ADJ OUT</th>
-                </tr>';
-
-            $html .= '<tr>
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-            </tr>';
-
-            $html .= '<tr>
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
-                    
-                    <th style="background-color: #D1FFC6;">PRICE</th>
-                    <th style="background-color: #D1FFC6;">AMOUNT</th>
-                    <th style="background-color: #CFE6F9;">PRICE</th>
-                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                <tr style="background-color: #eee;">
+                    <th colspan="10">Output Production</th>
+                    <th rowspan="2" colspan="5">SubCont Jasa</th>
+                    <th rowspan="2" colspan="5">ADJ IN</th>
+                    <th rowspan="2" colspan="5">NG ASSY</th>
+                    <th rowspan="2" colspan="5">NG WIP</th>
+                    <th rowspan="2" colspan="5">OUTPUT ASSY</th>
+                    <th rowspan="2" colspan="5">RFG</th>
+                    <th rowspan="2" colspan="5">RFG Repacking</th>
+                    <th rowspan="2" colspan="5">RFG SubCont Jasa</th>
+                    <th rowspan="2" colspan="5">ADJ OUT</th>
                 </tr>
+                <tr style="background-color: #eee;">
+                    <th colspan="5">Qty FG</th>
+                    <th colspan="5">Qty WIP</th>
+                </tr>
+                <tr>' . str_repeat($this->stdValueHeaders(), count($fields)) . '</tr>
             </thead>';
 
         $no = 1;
-        $total_b_qty   = 0;
-        $total_i_qty   = 0;
-        $total_o_qty   = 0;
-        $total_e_qty   = 0;
-
-        $total_b_std_amount   = 0;
-        $total_i_std_amount   = 0;
-        $total_o_std_amount   = 0;
-        $total_e_std_amount   = 0;
-
-        $total_b_act_amount   = 0;
-        $total_i_act_amount   = 0;
-        $total_o_act_amount   = 0;
-        $total_e_act_amount   = 0;
-
-        $total_qty_actual     = 0;
-        $total_std_qty_actual = 0;
-        $total_act_qty_actual = 0;
-        
-        $total_qty_wip        = 0;
-        $total_std_qty_wip    = 0;
-        $total_act_qty_wip    = 0;
-        
-        $total_subconts_jasa     = 0;
-        $total_std_subconts_jasa = 0;
-        $total_act_subconts_jasa = 0;
-
-        $total_qty_adj_in     = 0;
-        $total_std_qty_adj_in = 0;
-        $total_act_qty_adj_in = 0;
-
-        $total_qty_ng_sa      = 0;
-        $total_std_qty_ng_sa  = 0;
-        $total_act_qty_ng_sa  = 0;
-
-        $total_qty_ng_wip     = 0;
-        $total_std_qty_ng_wip = 0;
-        $total_act_qty_ng_wip = 0;
-
-        $total_qty_output     = 0;
-        $total_std_qty_output = 0;
-        $total_act_qty_output = 0;
-
-        $total_qty_rfg        = 0;
-        $total_std_qty_rfg    = 0;
-        $total_act_qty_rfg    = 0;
-
-        $total_rfg_jasa       = 0;
-        $total_std_rfg_jasa   = 0;
-        $total_act_rfg_jasa   = 0;
-
-        $total_qty_adj_out     = 0;
-        $total_std_qty_adj_out = 0;
-        $total_act_qty_adj_out = 0;
+        $total_qty_wo = 0;
+        $total_qty    = array_fill_keys($fields, 0);
+        $total_amount = array_fill_keys($fields, 0);
 
         foreach ($records as $record) {
-            $item_fg_id = $record->id;
-            $currency   = $record->standard_currency;
-            $rate = 1;
+            $material_pcs = $std_prices[$record->id]['material'] ?? 0;
+            $dl_pcs       = $std_prices[$record->id]['dl'] ?? 0;
+            $price_pcs    = $material_pcs + $dl_pcs;
 
-            // Get Price
-            $std_price = (float)$record->std_price * $rate;
-            $act_price = (float)$record->actual_price * 1; // IDR
-
-            // Get QTY
-            $actual_upload_qty = (float)$record->actual_qty;
-            $mutation_before = (float)$record->begin_stock;
-            $b_qty = $actual_upload_qty + $mutation_before;
-
-            $i_qty = (float)$record->qty_actual + $record->qty_wip + $record->subconts_jasa + $record->qty_adj_in;
-            $o_qty = (float)$record->qty_ng_sa + $record->qty_ng_wip + $record->qty_output + $record->qty_rfg + $record->rfg_jasa + $record->qty_adj_out;
-            $e_qty = ($b_qty + $i_qty) - $o_qty;
-
-            // Begin
-            $b_std_amount = $b_qty * $std_price;
-            $b_act_amount = $b_qty * $act_price;
-            $b_variance   = $b_act_amount - $b_std_amount;
-
-            // IN
-            $i_std_amount = $i_qty * $std_price;
-            $i_act_amount = $i_qty * $act_price;
-            $i_variance   = $i_act_amount - $i_std_amount;
-
-            // OUT
-            $o_std_amount = $o_qty * $std_price;
-            $o_act_amount = $o_qty * $act_price;
-            $o_variance   = $o_act_amount - $o_std_amount;
-
-            // Ending
-            $e_std_amount = $e_qty * $std_price;
-            $e_act_amount = $e_qty * $act_price;
-            $e_variance   = $e_act_amount - $e_std_amount;
-
-            $html .= '  <tr>
+            $html .= '<tr' . (isset($invalid_prices[$record->id]) ? ' style="background-color: #FFC7CE;"' : '') . '>
                 <td style="text-align:center">' . $no . '</td>
-                <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
-                <td colspan="2" style="mso-number-format:\@;">' . $record->name . '</td>
-                <td colspan="2">' . $record->uom . '</td>
-                <td colspan="2">' . $record->division . '</td>
+                <td style="mso-number-format:\@;">' . $record->number . '</td>
+                <td style="mso-number-format:\@;">' . $record->name . '</td>
+                <td style="text-align:right;">' . number_format((float) $record->qty_wo, 2) . '</td>';
+            foreach ($fields as $field) {
+                $qty = (float) $record->$field;
+                $html .= $this->stdValueCells($qty, $material_pcs, $dl_pcs, $price_pcs);
+                $total_qty[$field] += $qty;
+                $total_amount[$field] += $qty * $price_pcs;
+            }
+            $html .= '</tr>';
 
-                <td style="text-align:right;">' . number_format((float) $b_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $b_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $b_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $b_variance, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $i_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $i_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $i_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $i_variance, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $o_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $o_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $o_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $o_variance, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $record->ending_balance, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $e_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $e_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $e_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $e_variance, 2) . '</td>
-                
-
-                <td style="text-align:right;">' . number_format((float) $record->qty_actual, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->qty_actual, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->qty_actual, 2) . '</td>
-                
-                <td style="text-align:right;">' . number_format((float) $record->qty_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->qty_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->qty_wip, 2) . '</td>
-                
-                <td style="text-align:right;">' . number_format((float) $record->subconts_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->subconts_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->subconts_jasa, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $record->qty_adj_in, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->qty_adj_in, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->qty_adj_in, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $record->qty_ng_sa, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->qty_ng_sa, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->qty_ng_sa, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $record->qty_ng_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->qty_ng_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->qty_ng_wip, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $record->qty_output, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->qty_output, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->qty_output, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $record->qty_rfg, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->qty_rfg, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->qty_rfg, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $record->rfg_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->rfg_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->rfg_jasa, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $record->qty_adj_out, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_price * $record->qty_adj_out, 2) . '</td>
-                <td style="text-align:right;">' . number_format((float) $act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_price * $record->qty_adj_out, 2) . '</td>
-            </tr>';
-
-
-            $total_b_qty += $b_qty;
-            $total_b_std_amount += $b_std_amount;
-            $total_b_act_amount += $b_act_amount;
-
-            $total_i_qty += $i_qty;
-            $total_i_std_amount += $i_std_amount;
-            $total_i_act_amount += $i_act_amount;
-
-            $total_o_qty += $o_qty;
-            $total_o_std_amount += $o_std_amount;
-            $total_o_act_amount += $o_act_amount;
-
-            $total_e_qty += $e_qty;
-            $total_e_std_amount += $e_std_amount;
-            $total_e_act_amount += $e_act_amount;
-
-            // Details
-            $total_qty_actual += ($record->qty_actual);
-            $total_std_qty_actual += ($std_price * $record->qty_actual);
-            $total_act_qty_actual += ($act_price * $record->qty_actual);
-            
-            $total_qty_wip += ($record->qty_wip);
-            $total_std_qty_wip += ($std_price * $record->qty_wip);
-            $total_act_qty_wip += ($act_price * $record->qty_wip);
-            
-            $total_subconts_jasa += ($record->subconts_jasa);
-            $total_std_subconts_jasa += ($std_price * $record->subconts_jasa);
-            $total_act_subconts_jasa += ($act_price * $record->subconts_jasa);
-
-            $total_qty_adj_in += ($record->qty_adj_in);
-            $total_std_qty_adj_in += ($std_price * $record->qty_adj_in);
-            $total_act_qty_adj_in += ($act_price * $record->qty_adj_in);
-
-            $total_qty_ng_sa += ($record->qty_ng_sa);
-            $total_std_qty_ng_sa += ($std_price * $record->qty_ng_sa);
-            $total_act_qty_ng_sa += ($act_price * $record->qty_ng_sa);
-
-            $total_qty_ng_wip += ($record->qty_ng_wip);
-            $total_std_qty_ng_wip += ($std_price * $record->qty_ng_wip);
-            $total_act_qty_ng_wip += ($act_price * $record->qty_ng_wip);
-
-            $total_qty_output += ($record->qty_output);
-            $total_std_qty_output += ($std_price * $record->qty_output);
-            $total_act_qty_output += ($act_price * $record->qty_output);
-
-            $total_qty_rfg += ($record->qty_rfg);
-            $total_std_qty_rfg += ($std_price * $record->qty_rfg);
-            $total_act_qty_rfg += ($act_price * $record->qty_rfg);
-
-            $total_rfg_jasa += ($record->rfg_jasa);
-            $total_std_rfg_jasa += ($std_price * $record->rfg_jasa);
-            $total_act_rfg_jasa += ($act_price * $record->rfg_jasa);
-
-            $total_qty_adj_out += ($record->qty_adj_out);
-            $total_std_qty_adj_out += ($std_price * $record->qty_adj_out);
-            $total_act_qty_adj_out += ($act_price * $record->qty_adj_out);
-            
+            $total_qty_wo += (float) $record->qty_wo;
             $no++;
         }
 
-
         $html .= '<tr style="background-color: #eee; font-weight: bold;">
-                <td colspan="10" style="text-align:right;">GRAND TOTAL</td>
-                <td style="text-align:right;">'.number_format((float) $total_b_qty, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format((float) $total_b_std_amount, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format((float) $total_b_act_amount, 2).'</td>
-                <td></td>
-
-                <td style="text-align:right;">'.number_format((float) $total_i_qty, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format((float) $total_i_std_amount, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format((float) $total_i_act_amount, 2).'</td>
-                <td></td>
-
-                <td style="text-align:right;">'.number_format((float) $total_o_qty, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format((float) $total_o_std_amount, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format((float) $total_o_act_amount, 2).'</td>
-                <td></td>
-
-                <td style="text-align:right;">'.number_format((float) $total_e_qty, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format((float) $total_e_std_amount, 2).'</td>
-                <td></td>
-                <td style="text-align:right;">'.number_format((float) $total_e_act_amount, 2).'</td>
-                <td></td>
-
-                <td style="text-align:right;">' . number_format((float) $total_qty_actual, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_qty_actual, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_qty_actual, 2) . '</td>
-                
-                <td style="text-align:right;">' . number_format((float) $total_qty_wip, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_qty_wip, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_qty_wip, 2) . '</td>
-                
-                <td style="text-align:right;">' . number_format((float) $total_subconts_jasa, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_subconts_jasa, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_subconts_jasa, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $total_qty_adj_in, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_qty_adj_in, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_qty_adj_in, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $total_qty_ng_sa, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_qty_ng_sa, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_qty_ng_sa, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $total_qty_ng_wip, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_qty_ng_wip, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_qty_ng_wip, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $total_qty_output, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_qty_output, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_qty_output, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $total_qty_rfg, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_qty_rfg, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_qty_rfg, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $total_rfg_jasa, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_rfg_jasa, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_rfg_jasa, 2) . '</td>
-
-                <td style="text-align:right;">' . number_format((float) $total_qty_adj_out, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_std_qty_adj_out, 2) . '</td>
-                <td></td>
-                <td style="text-align:right;">' . number_format((float) $total_act_qty_adj_out, 2) . '</td>
-            </tr>';
+                <td colspan="3" style="text-align:right;">GRAND TOTAL</td>
+                <td style="text-align:right;">' . number_format($total_qty_wo, 2) . '</td>';
+        foreach ($fields as $field) {
+            $html .= '<td style="text-align:right;">' . number_format($total_qty[$field], 2) . '</td>
+                <td></td><td></td><td></td>
+                <td style="text-align:right;">' . number_format($total_amount[$field], 2) . '</td>';
+        }
+        $html .= '</tr>';
 
         $html .= '</table></body></html>';
         echo $html;
+    }
+
+    // Harga std per pcs FG dari Cost Pattern periode terakhir s/d bulan $date (revisi tertinggi, customer dengan harga terendah), harga Cost Pattern dalam IDR:
+    // Material = Total 1, DL = DL modul Rate yang tersimpan di Cost Pattern saat upload (Labour x Labour Cost x C.T / Cavity), FOH sementara tidak dipakai.
+    // Jika tidak terdaftar di Cost Pattern / harga 0: Material 55%, DL 10% x Standard Price FG yang berlaku pada $date (USD dikali $usd_rate).
+    // FG tanpa harga valid tidak ada di hasil, no_rate = Cost Pattern belum punya Rate Year (DL belum tersimpan).
+    private function stdCostPrices($item_fg_ids, $date, $usd_rate)
+    {
+        if (empty($item_fg_ids)) {
+            return [];
+        }
+        $item_fg_ids_str = "'" . implode("','", array_map([$this->db, 'escape_str'], $item_fg_ids)) . "'";
+        $date_str = $this->db->escape_str((string) $date);
+        $period = (int) date('Ym', strtotime((string) $date));
+
+        $prices = [];
+        $patterns = $this->crud->query("
+            SELECT item_fg_id, customer_id,
+                COALESCE(total_material_cost, 0) AS material,
+                COALESCE(dl_cost, 0) AS dl,
+                COALESCE(rate_year, '') = '' AS no_rate
+            FROM cost_patterns
+            WHERE deleted = 0 AND item_fg_id IN ($item_fg_ids_str) AND p_year * 100 + p_month <= $period
+            ORDER BY p_year DESC, p_month DESC, revision DESC, COALESCE(updated_date, created_date) DESC, id DESC");
+        // Per customer dipakai pola terakhir; jika 1 FG punya pola dari beberapa customer, dipakai yang total harganya terendah (harga 0 diabaikan)
+        $customers = [];
+        foreach ($patterns as $pattern) {
+            $key = $pattern->item_fg_id . '|' . $pattern->customer_id;
+            if (isset($customers[$key])) {
+                continue;
+            }
+            $customers[$key] = true;
+            $price = ['material' => (float) $pattern->material, 'dl' => (float) $pattern->dl, 'no_rate' => (bool) $pattern->no_rate];
+            $total = $price['material'] + $price['dl'];
+            if ($total <= 0) {
+                continue;
+            }
+            if (!isset($prices[$pattern->item_fg_id]) || $total < $prices[$pattern->item_fg_id]['material'] + $prices[$pattern->item_fg_id]['dl']) {
+                $prices[$pattern->item_fg_id] = $price;
+            }
+        }
+
+        // 1 harga per FG: periode yang mulai paling akhir, lalu yang paling pendek (jika periode tumpang tindih)
+        $std_fg = $this->crud->query("
+            SELECT item_fg_id, currency, price
+            FROM standard_price_fg
+            WHERE deleted = 0 AND '$date_str' BETWEEN start_date AND end_date AND item_fg_id IN ($item_fg_ids_str)
+            ORDER BY start_date DESC, end_date ASC");
+        foreach ($std_fg as $std) {
+            if (!isset($prices[$std->item_fg_id]) && (float) $std->price > 0) {
+                $price = (float) $std->price * (strtoupper((string) $std->currency) == 'USD' ? $usd_rate : 1);
+                $prices[$std->item_fg_id] = ['material' => $price * 0.55, 'dl' => $price * 0.10, 'no_rate' => false];
+            }
+        }
+        return $prices;
+    }
+
+    private function stdValueHeaders()
+    {
+        $style = 'style="background-color: #DDEBF7;"';
+        return '<th>Qty</th><th ' . $style . '>STD Price Material</th><th ' . $style . '>DL</th><th ' . $style . '>Price</th><th ' . $style . '>Amount</th>';
+    }
+
+    // Price = STD Price Material + DL (per pcs), Amount = Price x Qty
+    private function stdValueCells($qty, $material_pcs, $dl_pcs, $price_pcs)
+    {
+        if ($qty == 0) {
+            return '<td style="text-align:right;">-</td><td></td><td></td><td style="text-align:right;">-</td><td style="text-align:right;">-</td>';
+        }
+        return '<td style="text-align:right;">' . number_format($qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $material_pcs, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $dl_pcs, 2) . '</td>
+                <td style="text-align:right;">' . number_format((float) $price_pcs, 2) . '</td>
+                <td style="text-align:right;">' . number_format($qty * $price_pcs, 2) . '</td>';
     }
 
     public function print_without_actual($option = "")
@@ -2047,7 +1743,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                     Print By ' . $this->session->username . '  
                 </div>
                 <br><br><br>
-                <h3 style="margin:0;">INVENTORY WIP STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <h3 style="margin:0;">INVENTORY VALUATION WIP <i>' . $display_title . '</i> </h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br>';
@@ -2721,7 +2417,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                     Print By ' . $this->session->username . '  
                 </div>
                 <br><br><br>
-                <h3 style="margin:0;">INVENTORY WIP STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <h3 style="margin:0;">INVENTORY VALUATION WIP <i>' . $display_title . '</i> </h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br>';
@@ -3623,7 +3319,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                     Print By ' . $this->session->username . '  
                 </div>
                 <br><br><br>
-                <h3 style="margin:0;">INVENTORY WIP STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <h3 style="margin:0;">INVENTORY VALUATION WIP <i>' . $display_title . '</i> </h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br>';

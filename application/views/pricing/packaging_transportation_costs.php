@@ -20,39 +20,39 @@
             <th data-options="field:'item_rm_number_layer',width:150">Part No Layer</th>
             <th data-options="field:'qty_usage',width:120,align:'right'">Qty Usage</th>
             <th data-options="field:'qty_packing_standart',width:150,align:'right'">Qty Packing Std</th>
-            <th data-options="field:'price_layer',width:120,align:'right'">Price Layer</th>
+            <th data-options="field:'price_layer',width:120,align:'right',formatter:priceIdr">Price Layer (IDR)</th>
             <th data-options="field:'adjustment',width:120,align:'right'">Adj %</th>
-            <th data-options="field:'price_adjustment',width:140,align:'right'">Adj Price</th>
-            <th data-options="field:'price_part',width:140,align:'right'">Price/Part</th>
+            <th data-options="field:'price_adjustment',width:140,align:'right',formatter:priceIdr">Adj Price (IDR)</th>
+            <th data-options="field:'price_part',width:140,align:'right',formatter:priceIdr">Price/Part (IDR)</th>
 
             <!-- POLYBAG -->
             <th data-options="field:'polybag_size_1',width:140">Polybag 1</th>
             <th data-options="field:'qty_polybag_1',width:140,align:'right'">Qty PB 1</th>
-            <th data-options="field:'price_pcs_1',width:140,align:'right'">Price PCS 1</th>
-            <th data-options="field:'price_part_1',width:140,align:'right'">Price/Part 1</th>
+            <th data-options="field:'price_pcs_1',width:140,align:'right',formatter:priceIdr">Price PCS 1 (IDR)</th>
+            <th data-options="field:'price_part_1',width:140,align:'right',formatter:priceIdr">Price/Part 1 (IDR)</th>
 
             <th data-options="field:'polybag_size_2',width:140">Polybag 2</th>
             <th data-options="field:'qty_polybag_2',width:140,align:'right'">Qty PB 2</th>
-            <th data-options="field:'price_pcs_2',width:140,align:'right'">Price PCS 2</th>
-            <th data-options="field:'price_part_2',width:140,align:'right'">Price/Part 2</th>
+            <th data-options="field:'price_pcs_2',width:140,align:'right',formatter:priceIdr">Price PCS 2 (IDR)</th>
+            <th data-options="field:'price_part_2',width:140,align:'right',formatter:priceIdr">Price/Part 2 (IDR)</th>
 
             <!-- FOAM -->
             <th data-options="field:'item_rm_number_foam',width:150">Part No Foam</th>
             <th data-options="field:'qty_foam',width:120,align:'right'">Qty Foam</th>
-            <th data-options="field:'price_foam',width:120,align:'right'">Price Foam</th>
+            <th data-options="field:'price_foam',width:120,align:'right',formatter:priceIdr">Price Foam (IDR)</th>
             <th data-options="field:'adjustment_foam',width:120,align:'right'">Adj %</th>
-            <th data-options="field:'price_adjustment_foam',width:150,align:'right'">Adj Price</th>
-            <th data-options="field:'price_part_foam',width:140,align:'right'">Price/Part</th>
+            <th data-options="field:'price_adjustment_foam',width:150,align:'right',formatter:priceIdr">Adj Price (IDR)</th>
+            <th data-options="field:'price_part_foam',width:140,align:'right',formatter:priceIdr">Price/Part (IDR)</th>
 
             <!-- TAPE -->
             <th data-options="field:'item_rm_number_tape',width:150">Part No Tape</th>
             <th data-options="field:'length',width:120,align:'right'">Length</th>
             <th data-options="field:'qty_tape',width:120,align:'right'">Qty Tape</th>
-            <th data-options="field:'price_tape',width:120,align:'right'">Price Tape</th>
+            <th data-options="field:'price_tape',width:120,align:'right',formatter:priceIdr">Price Tape (IDR)</th>
             <th data-options="field:'adjustment_tape',width:120,align:'right'">Adj %</th>
-            <th data-options="field:'price_adjustment_tape',width:150,align:'right'">Adj Price</th>
-            <th data-options="field:'price_mm_tape',width:150,align:'right'">Price/MM</th>
-            <th data-options="field:'price_part_tape',width:150,align:'right'">Price/Part</th>
+            <th data-options="field:'price_adjustment_tape',width:150,align:'right',formatter:priceIdr">Adj Price (IDR)</th>
+            <th data-options="field:'price_mm_tape',width:150,align:'right',formatter:priceIdr">Price/MM (IDR)</th>
+            <th data-options="field:'price_part_tape',width:150,align:'right',formatter:priceIdr">Price/Part (IDR)</th>
 
             <!-- PACKING BOX -->
             <th data-options="field:'volume',width:120,align:'right'">Vol/M</th>
@@ -63,14 +63,14 @@
             <th data-options="field:'storage_duration',width:140,align:'right'">Storage Dur</th>
             <th data-options="field:'storage_bpi_day',width:140,align:'right'">BPI/Day</th>
             <th data-options="field:'total_need_box',width:150,align:'right'">Total Box</th>
-            <th data-options="field:'box_price',width:120,align:'right'">Price Box</th>
-            <th data-options="field:'total_box_price',width:150,align:'right'">Total Box Price</th>
+            <th data-options="field:'box_price',width:120,align:'right',formatter:priceIdr">Price Box (IDR)</th>
+            <th data-options="field:'total_box_price',width:150,align:'right',formatter:priceIdr">Total Box Price (IDR)</th>
             <th data-options="field:'month',width:120,align:'right'">Month</th>
             <th data-options="field:'planning',width:150,align:'right'">Planning</th>
-            <th data-options="field:'price_part_box',width:150,align:'right'">Price/Part</th>
+            <th data-options="field:'price_part_box',width:150,align:'right',formatter:priceIdr">Price/Part (IDR)</th>
 
             <!-- TOTAL -->
-            <th data-options="field:'total_packing_cost',width:160,align:'right'">Total Packing Cost</th>
+            <th data-options="field:'total_packing_cost',width:160,align:'right',formatter:priceIdr">Total Packing Cost (IDR)</th>
 
             <!-- BOX -->
             <th data-options="field:'box_name',width:180">Box Name</th>
@@ -83,10 +83,10 @@
 
             <!-- OPERATION -->
             <th data-options="field:'distance_astimation',width:150,align:'right'">Distance Astimation</th>
-            <th data-options="field:'bbm_cost',width:150,align:'right'">BBM Cost</th>
-            <th data-options="field:'tol_price',width:120,align:'right'">Tol Price</th>
-            <th data-options="field:'operation',width:150,align:'right'">Operational Cost</th>
-            <th data-options="field:'transportasion_cost_pcs',width:180,align:'right'"> Transportasion Cost/PCS</th>
+            <th data-options="field:'bbm_cost',width:150,align:'right',formatter:priceIdr">BBM Cost (IDR)</th>
+            <th data-options="field:'tol_price',width:120,align:'right',formatter:priceIdr">Tol Price (IDR)</th>
+            <th data-options="field:'operation',width:150,align:'right',formatter:priceIdr">Operational Cost (IDR)</th>
+            <th data-options="field:'transportasion_cost_pcs',width:180,align:'right',formatter:priceIdr">Transportasion Cost/PCS (IDR)</th>
 
             <!-- AUDIT -->
             <th data-options="field:'created_by',width:120">Created By</th>
@@ -228,7 +228,7 @@
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Price</span>
-                            <input style="width:60%;" name="price_layer" id="price_layer" class="easyui-numberbox" readonly>
+                            <input style="width:60%;" name="price_layer" id="price_layer" class="easyui-numberbox" readonly precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Adjustment %</span>
@@ -258,11 +258,11 @@
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Price/Pcs Polybag 1</span>
-                            <input style="width:60%;" name="price_pcs_1" id="price_pcs_1" readonly class="easyui-numberbox">
+                            <input style="width:60%;" name="price_pcs_1" id="price_pcs_1" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Price/Part Polybag 1</span>
-                            <input style="width:60%;" name="price_part_1" id="price_part_1" readonly class="easyui-numberbox" precision = "2">
+                            <input style="width:60%;" name="price_part_1" id="price_part_1" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Polybag Size 2</span>
@@ -274,11 +274,11 @@
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Price/Pcs Polybag 2</span>
-                            <input style="width:60%;" name="price_pcs_2" id="price_pcs_2" readonly class="easyui-numberbox">
+                            <input style="width:60%;" name="price_pcs_2" id="price_pcs_2" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Price/Part Polybag 2</span>
-                            <input style="width:60%;" name="price_part_2" id="price_part_2" readonly class="easyui-numberbox" precision = "2">
+                            <input style="width:60%;" name="price_part_2" id="price_part_2" readonly class="easyui-numberbox" precision="2">
                         </div>
                     </div>
                 </div>
@@ -400,11 +400,11 @@
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Box Price</span>
-                            <input style="width:60%;" name="box_price" id="box_price" required="" class="easyui-numberbox" precision="3">
+                            <input style="width:60%;" name="box_price" id="box_price" required="" class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Palet Price</span>
-                            <input style="width:60%;" name="palet_price" id="palet_price" class="easyui-numberbox" precision="3">
+                            <input style="width:60%;" name="palet_price" id="palet_price" class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Mpq</span>
@@ -412,7 +412,7 @@
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Total Box Price</span>
-                            <input style="width:60%;" name="total_box_price" id="total_box_price" readonly class="easyui-numberbox" precision="3">
+                            <input style="width:60%;" name="total_box_price" id="total_box_price" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Month</span>
@@ -532,27 +532,27 @@
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">BBM Price</span>
-                            <input style="width:60%;" name="bbm_price" id="bbm_price" readonly class="easyui-numberbox">
+                            <input style="width:60%;" name="bbm_price" id="bbm_price" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">BBM Cost</span>
-                            <input style="width:60%;" name="bbm_cost" id="bbm_cost" readonly class="easyui-numberbox">
+                            <input style="width:60%;" name="bbm_cost" id="bbm_cost" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Rent Box Daily</span>
-                            <input style="width:60%;" name="rent_daily" id="rent_daily" readonly class="easyui-numberbox">
+                            <input style="width:60%;" name="rent_daily" id="rent_daily" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">MP Cost Daily</span>
-                            <input style="width:60%;" name="mp_cost_daily" id="mp_cost_daily" readonly class="easyui-numberbox">
+                            <input style="width:60%;" name="mp_cost_daily" id="mp_cost_daily" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Tol Price</span>
-                            <input style="width:60%;" name="tol_price" id="tol_price" required="" class="easyui-numberbox" precision ="2">
+                            <input style="width:60%;" name="tol_price" id="tol_price" required="" class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Operational Cost</span>
-                            <input style="width:60%;" name="operation" id="operation" readonly class="easyui-numberbox">
+                            <input style="width:60%;" name="operation" id="operation" readonly class="easyui-numberbox" precision="2">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Transportasion Cost/Pcs</span>
@@ -601,7 +601,7 @@
 </div> -->
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('pricing/packaging_transportation_costs/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
@@ -640,7 +640,6 @@
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
-        console.log(row);
 
         if (row) {
             $('#dlg_insert').dialog('open');
@@ -654,7 +653,6 @@
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
-        console.log(rows);
         if (rows.length > 0) {
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
                 if (r) {
@@ -664,9 +662,7 @@
                             method: 'post',
                             url: '<?= base_url('pricing/packaging_transportation_costs/delete') ?>',
                             data: {
-                                customer_id: row.customer_id,
-                                division_id: row.division_id,
-                                customer_address_id: row.customer_address_id
+                                id: row.id
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
@@ -696,37 +692,34 @@
     // }
 
     //FILTER DATA
-    function filter() {
-        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
-        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_item_fg_number = $("#filter_item_fg_number").combogrid('getValue');
+    function filterUrl() {
+        var filter_customer_id = $("#filter_customer_id").combogrid('getValue') || "";
+        var filter_item_fg_number = $("#filter_item_fg_number").combogrid('getValue') || "";
 
-        var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + "&filter_item_fg_number=" + window.btoa(filter_item_fg_number);
-
-        $('#dg').datagrid({
-            url: '<?= base_url('pricing/packaging_transportation_costs/datatables') ?>' + url
-        });
-
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('pricing/packaging_transportation_costs/print') ?>' + url);
+        return "?filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_item_fg_number=" + window.btoa(filter_item_fg_number);
     }
 
-    //PRINT PDF
+    function filter() {
+        $('#dg').datagrid('options').url = '<?= base_url('pricing/packaging_transportation_costs/datatables') ?>' + filterUrl();
+        $('#dg').datagrid('load');
+    }
+
+    //PRINT PDF (iframe baru di-load saat diperlukan)
     function pdf() {
-        $("#printout").get(0).contentWindow.print();
+        $.messager.progress({
+            title: 'Please Wait',
+            msg: 'Preparing Print Data'
+        });
+        $("#printout").off('load').on('load', function() {
+            $.messager.progress('close');
+            this.contentWindow.print();
+        }).attr('src', '<?= base_url('pricing/packaging_transportation_costs/print') ?>' + filterUrl());
     }
 
     //PRINT EXCEL
     function excel() {
-        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
-        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_item_fg_number = $("#filter_item_fg_number").combogrid('getValue');
-
-        var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + "&filter_item_fg_number=" + window.btoa(filter_item_fg_number);
-
-        window.location.assign('<?= base_url('pricing/packaging_transportation_costs/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('pricing/packaging_transportation_costs/print/excel') ?>' + filterUrl());
     }
 
     //RELOAD
@@ -776,7 +769,7 @@
 
         $('#dlg_insert').dialog({
             onOpen: function () {
-                $.parser.parse('#dlg_insert');
+                $('#dlg_insert .easyui-tabs').tabs('resize').tabs('select', 0);
             }
         });
 
@@ -813,6 +806,13 @@
         $('#volume').numberbox({
             onChange: function () {
                 calculateNeedPartDay();
+                calculateBoxCalculation();
+            }
+        });
+
+        $('#need_box_day').numberbox({
+            onChange: function () {
+                calculateBoxCalculation();
             }
         });
 
@@ -876,8 +876,6 @@
         var calculatedAdj = priceLayer + (priceLayer * (adjustment / 100));
         $('#price_adjustment').numberbox('setValue', calculatedAdj.toFixed(2));
 
-        console.log(calculatedAdj);
-
         if (qtyPacking > 0) { 
             var pricePart = (qtyUsage * calculatedAdj) / qtyPacking; 
             $('#price_part').numberbox('setValue', pricePart.toFixed(2));
@@ -919,7 +917,7 @@
         if (length > 0) {
             priceMm = calculatedAdj / (length * 1000);
         }
-        $('#price_mm_tape').numberbox('setValue', priceMm.toFixed(6));
+        $('#price_mm_tape').numberbox('setValue', priceMm.toFixed(2));
 
         // STEP 3: Hitung Price Part
         if (qtyUsage > 0 && priceMm > 0) {
@@ -994,7 +992,7 @@
                 $('#total_need_box').numberbox('setValue', totalNeedBox.toFixed(2));
 
                 var totalBoxPrice = totalNeedBox * boxPrice;
-                $('#total_box_price').numberbox('setValue', totalBoxPrice.toFixed(3));
+                $('#total_box_price').numberbox('setValue', totalBoxPrice.toFixed(2));
 
                 var planning = volume * month;
                 $('#planning').numberbox('setValue', planning.toFixed(3));
@@ -1143,6 +1141,7 @@
 
     $('#item_fg_number').combogrid({
         url: '<?= base_url('pricing/packaging_transportation_costs/readFG'); ?>',
+        delay: 500,
         panelWidth: 500,
         idField: 'number',
         textField: 'number',
@@ -1213,6 +1212,8 @@
 
     $('#item_rm_number_layer').combobox({
         url: '<?= base_url('pricing/packaging_transportation_costs/readItems/'); ?>',
+        mode: 'remote',
+        delay: 500,
         valueField: 'number',
         textField: 'number',
         prompt: 'Choose Part No',
@@ -1225,6 +1226,8 @@
 
     $('#item_rm_number_foam').combobox({
         url: '<?= base_url('pricing/packaging_transportation_costs/readItems/'); ?>',
+        mode: 'remote',
+        delay: 500,
         valueField: 'number',
         textField: 'number',
         prompt: 'Choose Part No',
@@ -1237,6 +1240,8 @@
 
     $('#item_rm_number_tape').combobox({
         url: '<?= base_url('pricing/packaging_transportation_costs/readItems/'); ?>',
+        mode: 'remote',
+        delay: 500,
         valueField: 'number',
         textField: 'number',
         prompt: 'Choose Part No',
@@ -1306,7 +1311,7 @@
             $('#vehicle_length').textbox('setValue', rows.dimension_p);
             $('#vehicle_width').textbox('setValue', rows.dimension_l);
             $('#vehicle_height').textbox('setValue', rows.dimension_t);
-
+            calculateArmadaCapacity();
         }
     }); 
 
@@ -1334,10 +1339,11 @@
             }]
         ],
         onSelect: function(value, rows) {
-            $('#fuel_consumption_per_km').textbox('setValue', rows.fuel_consumption_per_km);
-            $('#bbm_price').textbox('setValue', rows.bbm_price);
-            $('#rent_daily').textbox('setValue', rows.rent_daily);
-            $('#mp_cost_daily').textbox('setValue', rows.mp_cost_daily);
+            $('#fuel_consumption_per_km').numberbox('setValue', rows.fuel_consumption_per_km);
+            $('#bbm_price').numberbox('setValue', rows.bbm_price);
+            $('#rent_daily').numberbox('setValue', rows.rent_daily);
+            $('#mp_cost_daily').numberbox('setValue', rows.mp_cost_daily);
+            calculateBbmAndOperation();
         }
     }); 
 
@@ -1394,39 +1400,9 @@
         }]
     });
 
-    $('#filter_item_fg_id').combogrid({
-        url: '<?= base_url('master/item_fg/reads'); ?>',
-        panelWidth: 500,
-        idField: 'id',
-        textField: 'id',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Product Id.",
-        columns: [
-            [{
-                field: 'id',
-                title: 'Product ID',
-                width: 200
-            }, {
-                field: 'number',
-                title: 'Product No.',
-                width: 150
-            }, {
-                field: 'name',
-                title: 'Product Name',
-                width: 150
-            }]
-        ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
-    });
-
     $('#filter_item_fg_number').combogrid({
-        url: '<?= base_url('master/item_fg/reads'); ?>',
+        url: '<?= base_url('pricing/packaging_transportation_costs/readFilterProducts'); ?>',
+        delay: 500,
         panelWidth: 500,
         idField: 'number',
         textField: 'number',
@@ -1530,6 +1506,17 @@
             });
             return "<b>" + formatter.format(value) + "</b>";
         }
+    }
+
+    //FORMAT HARGA IDR 2 DESIMAL
+    function priceIdr(value) {
+        if (value === null || value === undefined || value === "") {
+            return "";
+        }
+        return new Intl.NumberFormat("id-ID", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(parseFloat(value) || 0);
     }
 
     function btnHistories(val, row) {

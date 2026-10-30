@@ -625,6 +625,7 @@ class Cost_pattern extends CI_Controller
                     'cycle_time_process'=> $process['cycle_time_process'] ?? 0,
                     'cavity_standard'   => $process['cavity_standard'] ?? 0,
                     'toonage'           => $process['toonage'] ?? 0,
+                    'rate_year'         => $process['rate_year'] ?? '',
                     'plain_rate_sec'    => $process['plain_rate_sec'] ?? 0,
                     'labour_cost'       => $process['labour_cost'] ?? 0,
                     'total_process_cost'=> $process['total_process_cost'] ?? 0,
@@ -748,6 +749,32 @@ class Cost_pattern extends CI_Controller
         // } else {
             // echo json_encode(array("theme" => "error"));
         // }
+    }
+
+    // Rate dari modul Rate per Rate Year + tonase (tonase harus sama persis), jika 1 tahun punya beberapa efisiensi dipakai yang terakhir disimpan
+    private function getRate($year, $toonage)
+    {
+        return $this->db->where('deleted', 0)
+            ->where('year', $year)
+            ->where('toonage', $toonage)
+            ->order_by('COALESCE(updated_date, created_date)', 'DESC', false)
+            ->order_by('id', 'DESC')
+            ->limit(1)
+            ->get('rates')
+            ->row();
+    }
+
+    // Per pcs (detik = C.T / Cavity): Process Cost = Plain Rate x detik + 2nd Process, DL = Labour x Labour Cost x detik, FOH = FOH rate x detik (tanpa energy & depresiasi mesin)
+    private function rateCosts($rate, $cycle_time, $cavity_standard, $cycle_time_process)
+    {
+        $sec_pcs = $cavity_standard > 0 ? $cycle_time / $cavity_standard : 0;
+        return [
+            'rate_efisiensi'     => $rate->efisiensi,
+            'plain_rate_sec'     => (float) $rate->plain_rate_sec,
+            'total_process_cost' => (float) $rate->plain_rate_sec * $sec_pcs + $cycle_time_process,
+            'dl_cost'            => (float) $rate->labour * (float) $rate->labour_cost * $sec_pcs,
+            'foh_cost'           => (float) $rate->foh * $sec_pcs,
+        ];
     }
 
     public function datatables()
@@ -895,6 +922,21 @@ class Cost_pattern extends CI_Controller
             return;
         }
 
+        // Plain Rate, Process Cost, DL & FOH ikut modul Rate (Rate Year dari Process Cost + tonase)
+        $rate_year = trim((string) ($post['rate_year'] ?? ''));
+        $rate = $rate_year != '' ? $this->getRate($rate_year, (float) $post['toonage']) : null;
+        if (empty($rate)) {
+            echo json_encode([
+                'theme' => 'error',
+                'title' => 'Failed',
+                'message' => $rate_year == ''
+                    ? 'Rate Year for Item ' . $post['item_fg_number'] . ' is required (choose Rate Year in Process Cost)'
+                    : 'Rate Year ' . $rate_year . ' Tonnage ' . (float) $post['toonage'] . ' for Item ' . $post['item_fg_number'] . ' is Not Found in Rate'
+            ]);
+            return;
+        }
+        $costs = $this->rateCosts($rate, (float) $post['cycle_time'], (float) $post['cavity_standard'], (float) ($post['cycle_time_process'] ?? 0));
+
         $postFinal = [
             'p_month'        => $post['p_month'] ?? null,
             'p_year'         => $post['p_year'] ?? null,
@@ -933,11 +975,16 @@ class Cost_pattern extends CI_Controller
 
             // ===== PROCESS =====
             'cycle_time'          => $post['cycle_time'],
+            'cycle_time_process'  => $post['cycle_time_process'] ?? 0,
             'cavity_standard'     => $post['cavity_standard'],
             'toonage'             => $post['toonage'],
-            'plain_rate_sec'      => $post['plain_rate_sec'],
+            'rate_year'           => $rate_year,
+            'rate_efisiensi'      => $costs['rate_efisiensi'],
+            'plain_rate_sec'      => $costs['plain_rate_sec'],
             'labour_cost'         => $post['labour_cost'],
-            'total_process_cost'  => $post['total_process_cost'],
+            'dl_cost'             => $costs['dl_cost'],
+            'foh_cost'            => $costs['foh_cost'],
+            'total_process_cost'  => $costs['total_process_cost'],
             'ng_ratio_cost'       => $post['ng_ratio_cost'],
             'adm_foh_cost'        => $post['adm_foh_cost'],
             'mtn_cost'            => $post['mtn_cost'],
@@ -956,8 +1003,8 @@ class Cost_pattern extends CI_Controller
             'total_packing_cost'      => $post['total_packing_cost'],
             'transportasion_cost_pcs' => $post['transportasion_cost_pcs'],
 
-            'sub_total' => $post['total_process_cost'] + $post['total_material_cost'],
-            'grand_total' => round($post['total_process_cost'] + $post['total_material_cost'] + $post['ng_ratio_cost'] + $post['adm_foh_cost'] + $post['mtn_cost'] + $post['total_packing_cost'] + $post['transportasion_cost_pcs'] + $post['purging_value'] + $post['mold_depreciation'] + $post['profit_nominal']),
+            'sub_total' => $costs['total_process_cost'] + $post['total_material_cost'],
+            'grand_total' => round($costs['total_process_cost'] + $post['total_material_cost'] + $post['ng_ratio_cost'] + $post['adm_foh_cost'] + $post['mtn_cost'] + $post['total_packing_cost'] + $post['transportasion_cost_pcs'] + $post['purging_value'] + $post['mold_depreciation'] + $post['profit_nominal']),
         ];
 
         $insert = $this->crud->create('cost_patterns', $postFinal);
@@ -1071,7 +1118,10 @@ class Cost_pattern extends CI_Controller
                 'moq'                       => $data->val($i, 40),
                 'volume'                    => $data->val($i, 41),
                 'total_packing_cost'        => $data->val($i, 42),
-                'transportasion_cost_pcs'   => $data->val($i, 43)
+                'transportasion_cost_pcs'   => $data->val($i, 43),
+
+                // Rate Year modul Rate (Plain Rate & Process Cost diambil dari modul Rate)
+                'rate_year'                 => $data->val($i, 44)
             );
         }
         $datas['total'] = count($datas);
@@ -1220,7 +1270,7 @@ class Cost_pattern extends CI_Controller
             $item_rm_cp = !empty($data['part_no_cp']) ? $this->crud->read('item_rm', [], ["number" => $data['part_no_cp']]) : null;
 
             $cek_duplicate = null;
-            if (!empty($item_fg->id)) {
+            if (!empty($item_fg->id) && !empty($customer->id)) {
                 $cek_duplicate = $this->crud->read('cost_patterns', [], [
                     "item_fg_id" => $item_fg->id,
                     "customer_id" => $customer->id,
@@ -1229,6 +1279,16 @@ class Cost_pattern extends CI_Controller
                     "p_year"     => $data['p_year']
                 ]);
             }
+
+            $num = function($val) {
+                return (float) str_replace(',', '.', $val ?? 0);
+            };
+
+            // Plain Rate, Process Cost, DL & FOH ikut modul Rate (Rate Year + tonase), nilainya disimpan di Cost Pattern
+            // Rate Year Excel bisa terbaca sesuai format sel (mis. "2026.00" / "2,026"), diambil angka tahunnya saja
+            $rate_year = preg_replace('/[^0-9.]/', '', (string) ($data['rate_year'] ?? ''));
+            $rate_year = $rate_year === '' ? '' : (string) (int) $rate_year;
+            $rate = $rate_year != '' ? $this->getRate($rate_year, $num($data['toonage'])) : null;
 
             if (empty($customer->name)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Customer Name " . $data['customer_name'] . " is Not Found", "theme" => "error"));
@@ -1248,11 +1308,12 @@ class Cost_pattern extends CI_Controller
                     "theme"   => "error"
                 ));
 
+            } else if ($rate_year == '') {
+                echo json_encode(array("title" => "Not Found", "message" => "Rate Year for Item " . $data['item_fg_number'] . " is required", "theme" => "error"));
+            } else if (empty($rate)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Rate Year " . $rate_year . " Tonnage " . $num($data['toonage']) . " for Item " . $data['item_fg_number'] . " is Not Found in Rate", "theme" => "error"));
             } else {
-                
-                $num = function($val) {
-                    return (float) str_replace(',', '.', $val ?? 0);
-                };
+                $costs = $this->rateCosts($rate, $num($data['cycle_time']), $num($data['cavity_standard']), $num($data['cycle_time_process']));
 
                 $dataFinal = array(
                     // Product & Customer Info
@@ -1297,10 +1358,14 @@ class Cost_pattern extends CI_Controller
                     "cycle_time_process"      => $num($data['cycle_time_process']),
                     "cavity_standard"         => $num($data['cavity_standard']),
                     "toonage"                 => $num($data['toonage']),
-                    "plain_rate_sec"          => $num($data['plain_rate_sec']),
+                    "rate_year"               => $rate_year,
+                    "rate_efisiensi"          => $costs['rate_efisiensi'],
+                    "plain_rate_sec"          => $costs['plain_rate_sec'],
                     "labour_cost"             => $num($data['labour_cost']),
+                    "dl_cost"                 => $costs['dl_cost'],
+                    "foh_cost"                => $costs['foh_cost'],
                     "total_material_cost"     => $num($data['total_material_cost']),
-                    "total_process_cost"      => $num($data['total_process_cost']),
+                    "total_process_cost"      => $costs['total_process_cost'],
                     "ng_ratio_cost"           => $num($data['ng_ratio_cost']),
                     "adm_foh_cost"            => $num($data['adm_foh_cost']),
                     "mtn_cost"                => $num($data['mtn_cost']),
@@ -1321,8 +1386,8 @@ class Cost_pattern extends CI_Controller
                     "total_packing_cost"      => $num($data['total_packing_cost']),
                     "transportasion_cost_pcs" => $num($data['transportasion_cost_pcs']),
                     
-                    "sub_total"               => $num($data['total_process_cost']) + $num($data['total_material_cost']),
-                    "grand_total"             => round($num($data['total_process_cost']) + $num($data['total_material_cost']) + $num($data['ng_ratio_cost']) + $num($data['adm_foh_cost']) + $num($data['mtn_cost']) + $num($data['total_packing_cost']) + $num($data['transportasion_cost_pcs']) + $num($data['purging_value']) + $num($data['mold_depreciation']) + $num($data['profit_nominal'])),
+                    "sub_total"               => $costs['total_process_cost'] + $num($data['total_material_cost']),
+                    "grand_total"             => round($costs['total_process_cost'] + $num($data['total_material_cost']) + $num($data['ng_ratio_cost']) + $num($data['adm_foh_cost']) + $num($data['mtn_cost']) + $num($data['total_packing_cost']) + $num($data['transportasion_cost_pcs']) + $num($data['purging_value']) + $num($data['mold_depreciation']) + $num($data['profit_nominal'])),
                     "model_name"              => $data['model_name']
                 );
                 

@@ -52,9 +52,12 @@
             <th data-options="field:'cycle_time',width:80">C.T (Sec)</th>
             <th data-options="field:'cavity_standard',width:80">CAV</th>
             <th data-options="field:'toonage',width:80">MC Tonage</th>
+            <th data-options="field:'rate_year',width:80">Rate Year</th>
             <th data-options="field:'plain_rate_sec',width:80">Rate (Sec)</th>
             <th data-options="field:'cycle_time_process',width:80">2nd Process</th>
             <th data-options="field:'total_process_cost',width:90">Subtotal 2</th>
+            <th data-options="field:'dl_cost',width:90">DL</th>
+            <th data-options="field:'foh_cost',width:90">FOH</th>
 
             <th data-options="field:'created_by',width:120,align:'center'">By</th>
             <th data-options="field:'created_date',width:120,align:'center'">Date</th>
@@ -228,9 +231,12 @@
                         'cycle_time',
                         'cavity_standard',
                         'toonage',
+                        'rate_year',
                         'plain_rate_sec',
                         'cycle_time_process',
                         'total_process_cost',
+                        'dl_cost',
+                        'foh_cost',
                         'total_material_cost',
                         'ng_ratio_cost',
                         'adm_foh_cost',

@@ -150,6 +150,8 @@ class Setting_parameters extends CI_Controller
         $file = $_FILES['file_upload']['name'];
         $data = new Spreadsheet_Excel_Reader($file, false);
         $total_row = $data->rowcount($sheet_index = 0);
+        // PHP 8: count(null) TypeError jika file tidak berisi baris data
+        $datas = [];
         for ($i = 5; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel

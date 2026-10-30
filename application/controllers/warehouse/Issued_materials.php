@@ -666,8 +666,19 @@ class Issued_materials extends CI_Controller
     //     }
     // }
 
-    // dokumentasi : handle status not change in supply sheet    
+    // dokumentasi : handle status not change in supply sheet
+    // Item tertutup -> Auto Posting Journal Inventory jika semua item dokumen (SH- / REQ- / PRQ-) sudah selesai di-issue
     private function _checkAndCloseSupplyStatus($request_no, $item_rm_id_sh, $issuedQty)
+    {
+        $closed = $this->_closeSupplyStatus($request_no, $item_rm_id_sh, $issuedQty);
+        if ($closed) {
+            $this->load->model('autopostingjournal');
+            $this->autopostingjournal->auto_post_supply_document($request_no);
+        }
+        return $closed;
+    }
+
+    private function _closeSupplyStatus($request_no, $item_rm_id_sh, $issuedQty)
     {
         $rm_main  = $item_rm_id_sh;
 
@@ -780,6 +791,15 @@ class Issued_materials extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode((string) $this->input->get('id'));
             $post = $this->input->post();
+
+            // Qty issued dokumen yang sudah dijurnal tidak boleh diubah
+            $this->load->model('autopostingjournal');
+            $detail = $this->db->select('request_no')->get_where('issued_material_details', ['id' => $id])->row();
+            if ($detail && ($blocked = $this->autopostingjournal->journaled_block(['SUPPLY SHEET', 'NON SUPPLY SHEET', 'MATERIAL REQUESTION'], $detail->request_no))) {
+                echo json_encode($blocked);
+                return;
+            }
+
             $send = $this->crud->update('issued_material_details', ["id" => $id], $post);
             echo $send;
         } else {

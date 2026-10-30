@@ -16,6 +16,7 @@
             <th rowspan="2" data-options="field:'lotnos',width:80,halign:'center',align:'right'">Lot No RM</th>
             <th rowspan="2" data-options="field:'type',width:120,align:'left'">Type</th>
             <th rowspan="2" data-options="field:'remarks',width:250,align:'left'">Remarks</th>
+            <th rowspan="2" data-options="field:'journal_no',width:140,halign:'center',align:'center'">GL INV No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -424,6 +425,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                if (result && result.theme === 'error') toastr.error(result.message, result.title);
                                 $('#dg').treegrid('reload');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
