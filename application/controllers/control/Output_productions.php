@@ -202,10 +202,36 @@ class Output_productions extends CI_Controller
         }
     }
 
+    // Dokumen yang sudah dijurnal (Journal Inventory) tidak boleh diubah / dihapus
+    private function _journaled_block($number)
+    {
+        $this->load->model('autopostingjournal');
+        return $this->autopostingjournal->journaled_block(['OUTPUT PRODUCTION'], $number);
+    }
+
+    // Dipanggil view setelah semua baris Save All tersimpan (tidak ada scan)
+    public function autoPostJournal()
+    {
+        $number = $this->input->post('number');
+        if (empty($number)) {
+            echo json_encode(['status' => false, 'message' => 'Number is empty.']);
+            return;
+        }
+
+        $this->load->model('autopostingjournal');
+        $result = $this->autopostingjournal->auto_post_on_save('OUTPUT PRODUCTION', $number);
+        echo json_encode($result ?? ['status' => null, 'message' => 'No journal posting for this document.']);
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+
+            if ($blocked = $this->_journaled_block($post['number'] ?? '')) {
+                echo json_encode($blocked + ['journaled' => true]);
+                return;
+            }
 
             $dataFinal = array(
                 //field
@@ -235,6 +261,15 @@ class Output_productions extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+        $number = $data['number'] ?? null;
+        if (empty($number) && !empty($data['id'])) {
+            $row = $this->db->select('number')->get_where('output_productions', ['id' => $data['id']])->row();
+            $number = $row->number ?? null;
+        }
+        if ($blocked = $this->_journaled_block($number)) {
+            echo json_encode($blocked);
+            return;
+        }
         $send = $this->crud->delete('output_productions', $data);
         echo $send;
     }
@@ -384,6 +419,10 @@ class Output_productions extends CI_Controller
                 // return;
 
                 $send = $this->crud->create('output_productions', $dataFinal);
+
+                // Upload: 1 baris = 1 dokumen -> langsung Auto Posting Journal Inventory (gagal tercatat di Failed Posting)
+                $this->load->model('autopostingjournal');
+                $this->autopostingjournal->auto_post_on_save('OUTPUT PRODUCTION', $dataFinal['number']);
 
                 // === Tambahan Validasi Update Status Production Schedule ===
                 if ($item_fg->type == 'SA') {

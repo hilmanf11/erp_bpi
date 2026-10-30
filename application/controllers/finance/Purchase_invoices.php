@@ -22,6 +22,7 @@ class Purchase_invoices extends CI_Controller
         $this->load->library('session');
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
+        $this->load->model('autopostingjournal'); // konstanta POR_CATEGORY (POR RM wajib dijurnal di JI sebelum PI)
         //Validasi Form
         $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
@@ -481,6 +482,7 @@ class Purchase_invoices extends CI_Controller
             JOIN purchase_orders d ON a.po_no = d.po_no
             WHERE a.supplier_id = '$supplier_id' and c.id = '$item_category_id' and a.status = '0' $dp
             AND a.receipt_date >= '2025-01-01'
+            AND a.receipt_no IN (" . $this->por_ready_sql() . ")
             GROUP BY a.receipt_no 
             ORDER BY a.created_date DESC");
         echo json_encode($records);
@@ -623,7 +625,167 @@ class Purchase_invoices extends CI_Controller
         echo $datenow . "-" . time();
     }
 
-    public function datatablesTemp() 
+    /**
+     * Akun GR/IR dari voucher Journal Inventory POR (baris CREDIT).
+     * POR yang sudah dijurnal di Journal Inventory sudah mendebit Persediaan RM, jadi item PI-nya
+     * harus mendebit GR/IR (bukan Persediaan lagi) supaya Persediaan tidak tercatat 2x di GL.
+     * @param string[] $por_nos
+     * @return array ["receipt_no|po_no|item_no" => [account_number, account_name], "receipt_no" => ...]
+     */
+    private function grir_accounts_from_journal_inventory(array $por_nos)
+    {
+        $por_nos = array_values(array_filter(array_unique(array_map('trim', $por_nos)), function ($por_no) {
+            return $por_no !== '' && $por_no !== '-';
+        }));
+        if (empty($por_nos)) {
+            return [];
+        }
+
+        $this->db->select('document_no, invoice_no, description, account_number, account_name');
+        $this->db->from('journal_inventory');
+        $this->db->where('modul', 'PURCHASE ORDER RECEIPT');
+        $this->db->where_in('document_no', $por_nos);
+        $this->db->where('local_credit >', 0);
+        $this->db->where('journal_date >=', JOURNAL_INVENTORY_START); // voucher uji sebelum tanggal mulai tidak masuk GL
+        $rows = $this->db->get()->result_array();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $account = ['account_number' => $row['account_number'], 'account_name' => $row['account_name']];
+            // description POR di Journal Inventory: receipt_no;item_no
+            $parts   = explode(';', (string) $row['description'], 2);
+            $item_no = trim($parts[1] ?? '');
+            $map[$row['document_no'] . '|' . $row['invoice_no'] . '|' . $item_no] = $account;
+            if (!isset($map[$row['document_no']])) {
+                $map[$row['document_no']] = $account;
+            }
+        }
+        return $map;
+    }
+
+    private function grir_account_for($map, $por_no, $po_no, $item_no)
+    {
+        return $map[$por_no . '|' . $po_no . '|' . trim((string) $item_no)] ?? $map[$por_no] ?? null;
+    }
+
+    /**
+     * POR yang boleh masuk PI: Status POR CLOSE (semua label sudah di-scan) dan Status Print GRN CLOSE.
+     * Perhitungan sama dengan kolom Status POR / Status Print GRN di menu Purchase Order Receipts.
+     * POR RM (semua item kategori RM) juga harus sudah dijurnal di Journal Inventory, supaya PI-nya
+     * mendebit GR/IR dan Persediaan RM tidak tercatat 2x di GL. POR non-RM tidak dijurnal di JI.
+     */
+    private function por_ready_sql()
+    {
+        return "SELECT r.receipt_no
+            FROM purchase_order_receipts r
+            LEFT JOIN (SELECT receipt_id, SUM(`status`) AS total_scan FROM purchase_order_labels GROUP BY receipt_id) l ON l.receipt_id = r.receipt_id
+            LEFT JOIN item_rm i_rm ON i_rm.id = r.item_rm_id
+            LEFT JOIN item_categories c_rm ON c_rm.id = i_rm.item_category_id
+            GROUP BY r.receipt_no
+            HAVING SUM(r.qty_label) > 0
+                AND SUM(COALESCE(l.total_scan, 0)) = SUM(r.qty_label)
+                AND MIN(COALESCE(r.print, 0)) = 1
+                AND (MAX(COALESCE(c_rm.number, '') <> '" . Autopostingjournal::POR_CATEGORY . "') = 1
+                    OR MAX(r.receipt_date) < '" . JOURNAL_INVENTORY_START . "'
+                    OR EXISTS (SELECT 1 FROM journal_inventory j WHERE j.modul = 'PURCHASE ORDER RECEIPT' AND j.document_no = r.receipt_no))";
+    }
+
+    /**
+     * POR RM yang belum punya voucher Journal Inventory
+     * @param string[] $por_nos
+     * @return string[] receipt_no
+     */
+    private function por_rm_not_journaled(array $por_nos)
+    {
+        if (empty($por_nos)) {
+            return [];
+        }
+
+        $this->db->select("r.receipt_no, MAX(COALESCE(c.number, '') <> '" . Autopostingjournal::POR_CATEGORY . "') AS has_non_rm", false);
+        $this->db->from('purchase_order_receipts r');
+        $this->db->join('item_rm i', 'i.id = r.item_rm_id', 'left');
+        $this->db->join('item_categories c', 'c.id = i.item_category_id', 'left');
+        $this->db->where_in('r.receipt_no', $por_nos);
+        $this->db->where('r.deleted', 0);
+        $this->db->where('r.receipt_date >=', JOURNAL_INVENTORY_START);
+        $this->db->group_by('r.receipt_no');
+        $rm_por = [];
+        foreach ($this->db->get()->result_array() as $row) {
+            if ((int) $row['has_non_rm'] !== 1) {
+                $rm_por[] = $row['receipt_no'];
+            }
+        }
+        if (empty($rm_por)) {
+            return [];
+        }
+
+        $this->db->select('document_no');
+        $this->db->from('journal_inventory');
+        $this->db->where('modul', 'PURCHASE ORDER RECEIPT');
+        $this->db->where_in('document_no', $rm_por);
+        $this->db->group_by('document_no');
+        $journaled = array_column($this->db->get()->result_array(), 'document_no');
+
+        return array_values(array_diff($rm_por, $journaled));
+    }
+
+    /**
+     * @param string[] $por_nos
+     * @return array ["receipt_no" => alasan] untuk POR yang belum boleh masuk PI
+     */
+    private function por_not_ready(array $por_nos)
+    {
+        $por_nos = array_values(array_filter(array_unique(array_map('trim', $por_nos)), function ($por_no) {
+            return $por_no !== '' && $por_no !== '-';
+        }));
+        if (empty($por_nos)) {
+            return [];
+        }
+
+        $this->db->select('r.receipt_no, SUM(r.qty_label) AS qty_label, SUM(COALESCE(l.total_scan, 0)) AS total_scan, MIN(COALESCE(r.print, 0)) AS grn_print', false);
+        $this->db->from('purchase_order_receipts r');
+        $this->db->join('(SELECT receipt_id, SUM(`status`) AS total_scan FROM purchase_order_labels GROUP BY receipt_id) l', 'l.receipt_id = r.receipt_id', 'left');
+        $this->db->where_in('r.receipt_no', $por_nos);
+        $this->db->group_by('r.receipt_no');
+        $rows = [];
+        foreach ($this->db->get()->result_array() as $row) {
+            $rows[$row['receipt_no']] = $row;
+        }
+
+        $not_journaled = $this->por_rm_not_journaled(array_keys($rows));
+
+        $not_ready = [];
+        foreach ($por_nos as $por_no) {
+            $row = $rows[$por_no] ?? null;
+            $reasons = [];
+            if (!$row) {
+                $reasons[] = 'POR tidak ditemukan';
+            } else {
+                if ((float) $row['qty_label'] <= 0 || (float) $row['total_scan'] != (float) $row['qty_label']) {
+                    $reasons[] = 'Status POR masih OPEN (scan ' . (float) $row['total_scan'] . '/' . (float) $row['qty_label'] . ' label)';
+                }
+                if ((int) $row['grn_print'] !== 1) {
+                    $reasons[] = 'Status Print GRN masih OPEN';
+                }
+                if (empty($reasons) && in_array($por_no, $not_journaled, true)) {
+                    $reasons[] = 'POR RM belum dijurnal di Journal Inventory (cek Failed Posting di menu Journal Inventory)';
+                }
+            }
+            if ($reasons) {
+                $not_ready[$por_no] = implode(', ', $reasons);
+            }
+        }
+        return $not_ready;
+    }
+
+    public function checkPorReady()
+    {
+        $por_nos = $this->input->post('por_no');
+        $por_nos = is_array($por_nos) ? $por_nos : explode(',', (string) $por_nos);
+        echo json_encode(['not_ready' => $this->por_not_ready($por_nos)]);
+    }
+
+    public function datatablesTemp()
     {
         $por_no = base64_decode((string) $this->input->get('por_no'));
         $trans_date = base64_decode((string) $this->input->get('trans_date'));
@@ -692,11 +854,13 @@ class Purchase_invoices extends CI_Controller
             $journal_map[$jd['journal_type_id']] = $jd;
         }
 
+        $grir_map = $this->grir_accounts_from_journal_inventory(array_column($records, 'por_no'));
+
         $obj = [];
         $total_sub = 0;
         foreach ($records as $index => $record) {
             $total_sub += $record['total'];
-            
+
             // Logika penentuan Account
             $acc_no = $record['account_number'];
             $acc_name = $record['account_name'];
@@ -704,6 +868,13 @@ class Purchase_invoices extends CI_Controller
             if (!empty($record['pi_no']) && isset($journal_map[$record['pi_journal_type_id']])) {
                 $acc_no = $journal_map[$record['pi_journal_type_id']]['account_number'];
                 $acc_name = $journal_map[$record['pi_journal_type_id']]['account_name'];
+            }
+
+            // POR sudah dijurnal di Journal Inventory -> debit GR/IR
+            $grir = $this->grir_account_for($grir_map, $record['por_no'], $record['po_no'], $record['item_number']);
+            if ($grir) {
+                $acc_no = $grir['account_number'];
+                $acc_name = $grir['account_name'];
             }
 
             $obj[] = [
@@ -1339,6 +1510,13 @@ class Purchase_invoices extends CI_Controller
                 echo $send;
 
             } else {
+                $not_ready = $this->por_not_ready([(string) ($post['por_no'] ?? '')]);
+                if (!empty($not_ready)) {
+                    $por_no = key($not_ready);
+                    echo json_encode(["title" => "Error", "message" => "POR No. " . $por_no . " belum bisa dibuatkan PI: " . $not_ready[$por_no], "theme" => "error"]);
+                    return;
+                }
+
                 // Skenario tidak ada POR Number / input manual
                 if (!empty($_POST['por_no']) && !empty($_POST['po_no']) && !empty($_POST['item_no']) ) {
 
@@ -1652,6 +1830,16 @@ class Purchase_invoices extends CI_Controller
             $account_coa  = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
             $item_rm      = $this->crud->read('item_rm', ["number" => $data['item_no']]);
             $item_rm_id   = !empty($item_rm) ? $item_rm->id : "";
+
+            // POR sudah dijurnal di Journal Inventory -> item DEBIT memakai GR/IR, bukan akun Persediaan dari file
+            if (!empty($account_coa) && ($data['account_type'] ?? '') == "DEBIT" && !empty($data['por_no'])) {
+                $grir_map = $this->grir_accounts_from_journal_inventory([$data['por_no']]);
+                $grir = $this->grir_account_for($grir_map, trim((string) $data['por_no']), trim((string) ($data['po_no'] ?? '')), $item_rm->number ?? ($data['item_no'] ?? ''));
+                if ($grir) {
+                    $data['account_number'] = $grir['account_number'];
+                }
+            }
+
             $purchase_invoices = $this->db->select('*')->from('purchase_invoices')->where('number', $data['number'])->where('po_no', $data['po_no'])->where('account_number', $data['account_number'])->like('price', $data['price'])->like('item_rm_id', $item_rm_id, 'both')->get()->row();
             $purchase_receipts = $this->db->select('*')->from('purchase_order_receipts')->where('receipt_no', $data['por_no'])->where('po_no', $data['po_no'])->where('supplier_id', $data['supplier_id'])->like('item_rm_id', $item_rm_id, 'both')->get()->row();
             
@@ -1681,7 +1869,10 @@ class Purchase_invoices extends CI_Controller
                 
             } elseif ($data['por_no'] !== "-" && !empty($purchase_receipts) && $purchase_receipts->status == "1" && strtolower($data['action']) !== 'update') {
                 echo json_encode(["title" => "Duplicated", "message" => "Purchase Order Receipt No. " . $data['por_no'] . " has been processed previously (Closed)", "theme" => "error"]);
-                
+
+            } elseif (strtolower($data['action']) !== 'update' && ($not_ready = $this->por_not_ready([(string) ($data['por_no'] ?? '')]))) {
+                echo json_encode(["title" => "Error", "message" => "Purchase Order Receipt No. " . $data['por_no'] . " belum bisa dibuatkan PI: " . reset($not_ready), "theme" => "error"]);
+
             } elseif (empty($data['type']) || (strtoupper($data['type']) !== "PURCHASE" && strtoupper($data['type']) !== "OTHER")) {
                 echo json_encode(["title" => "Error", "message" => "Type must be PURCHASE or OTHER", "theme" => "error"]);
                 

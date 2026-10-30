@@ -264,6 +264,8 @@ class Transaction_rm extends CI_Controller
             $filter_from = $this->input->get('filter_from');
             $filter_to = $this->input->get('filter_to');
             $filter_transaction_type = $this->input->get('filter_transaction_type');
+            $filter_status_posting = $this->input->get('filter_status_posting');
+            $this->load->model('autopostingjournal');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -300,6 +302,10 @@ class Transaction_rm extends CI_Controller
                 }
                 if($filter_transaction_type != ""){
                     $this->db->where('a.transaction_type', $filter_transaction_type);
+                }
+                // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+                if ($cond = $this->autopostingjournal->posting_status_sql(['TRANSACTION RM'], 'a.request_no', $filter_status_posting)) {
+                    $this->db->where($cond, NULL, FALSE);
                 }
                 $this->db->group_by('a.request_no');
                 $this->db->order_by('a.request_no', 'DESC');
@@ -466,7 +472,8 @@ class Transaction_rm extends CI_Controller
             $post = $this->input->post();
 
             if (!empty($post['request_no']) && $this->_is_journaled($post['request_no'])) {
-                echo json_encode(["title" => "Failed", "message" => "Transaction {$post['request_no']} has been posted to Journal Inventory and cannot be changed.", "theme" => "error"]);
+                // journaled: view berhenti (tidak auto posting / tampilkan sukses)
+                echo json_encode(["title" => "Failed", "message" => "Transaction {$post['request_no']} has been posted to Journal Inventory and cannot be changed. Delete the journal first.", "theme" => "error", "journaled" => true]);
                 return;
             }
             
@@ -741,6 +748,8 @@ class Transaction_rm extends CI_Controller
         $filter_from  = $this->input->get('filter_from');
         $filter_to = $this->input->get('filter_to');
         $filter_transaction_type = $this->input->get('filter_transaction_type');
+        $filter_status_posting = $this->input->get('filter_status_posting');
+        $this->load->model('autopostingjournal');
 
         //Config
         $this->db->select('*');
@@ -771,6 +780,10 @@ class Transaction_rm extends CI_Controller
         }
         if($filter_transaction_type != ""){
             $this->db->where('a.transaction_type', $filter_transaction_type);
+        }
+        // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+        if ($cond = $this->autopostingjournal->posting_status_sql(['TRANSACTION RM'], 'a.request_no', $filter_status_posting)) {
+            $this->db->where($cond, NULL, FALSE);
         }
         $this->db->order_by('a.request_no', 'DESC');
         $records = $this->db->get()->result_array();

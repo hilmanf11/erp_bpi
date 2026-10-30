@@ -580,6 +580,12 @@ class Delivery_notes extends CI_Controller
             $new_so = $old_so;
         }
 
+        $dn_row = $this->db->select('delivery_note_no')->get_where('delivery_notes', ['id' => $id_dn])->row();
+        if ($blocked = $this->_journaled_block($dn_row->delivery_note_no ?? $dn_no)) {
+            echo json_encode(['status' => FALSE, 'message' => $blocked['message']]);
+            return;
+        }
+
         // =================================================================
         // 2. VALIDASI CEK OVER-DELIVERY (Skenario Pindah SO atau Qty Naik)
         // =================================================================
@@ -974,10 +980,36 @@ class Delivery_notes extends CI_Controller
     //     }
     // }
 
+    // Dokumen yang sudah dijurnal (Journal Inventory) tidak boleh diubah / dihapus
+    private function _journaled_block($delivery_note_no)
+    {
+        $this->load->model('autopostingjournal');
+        return $this->autopostingjournal->journaled_block(['DELIVERY NOTE'], $delivery_note_no);
+    }
+
+    // Dipanggil view setelah semua baris Save tersimpan. Scan ada di DO (Shipping Orders), DN hanya dari DO yang sudah full scan
+    public function autoPostJournal()
+    {
+        $delivery_note_no = $this->input->post('delivery_note_no');
+        if (empty($delivery_note_no)) {
+            echo json_encode(['status' => false, 'message' => 'Delivery Note No is empty.']);
+            return;
+        }
+
+        $this->load->model('autopostingjournal');
+        $result = $this->autopostingjournal->auto_post_on_save('DELIVERY NOTE', $delivery_note_no);
+        echo json_encode($result ?? ['status' => null, 'message' => 'No journal posting for this document.']);
+    }
+
     public function create()//berubah
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+
+            if ($blocked = $this->_journaled_block($post['delivery_note_no'] ?? '')) {
+                echo json_encode($blocked + ['journaled' => true]);
+                return;
+            }
 
             $delivery_notes = $this->crud->read("delivery_notes", [], ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']]);
             $sales_order = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no']]);
@@ -1069,6 +1101,10 @@ class Delivery_notes extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+        if ($blocked = $this->_journaled_block($data['delivery_note_no'] ?? '')) {
+            echo json_encode($blocked);
+            return;
+        }
         $delivery_notes = $this->crud->reads('delivery_notes', [], ["delivery_note_no" => $data['delivery_note_no']]);
 
         $send = $this->crud->delete('delivery_notes', ["delivery_note_no" => $data['delivery_note_no']]);

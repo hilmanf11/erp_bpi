@@ -177,6 +177,7 @@
 
     // Jenis transaksi untuk module yang punya lebih dari 1 jenis transaksi dalam 1 menu
     var transactionRmTypes = []; // master transactions (Transaction RM), diload saat halaman dibuka
+    var transactionFgTypes = []; // master fg_transactions (Transaction FG), diload saat halaman dibuka
     var nonSupplySheetTypes = [{type: 'Issued Production'}, {type: 'Issued Customer'}, {type: 'Issued Subcont'}];
 
     // selected: nilai yang di-set setelah list diload (dipakai saat edit)
@@ -188,6 +189,7 @@
 
         var data = [];
         if (mods.indexOf('TRANSACTION RM') >= 0) data = data.concat(transactionRmTypes);
+        if (mods.indexOf('TRANSACTION FG') >= 0) data = data.concat(transactionFgTypes);
         if (mods.indexOf('NON SUPPLY SHEET') >= 0) data = data.concat(nonSupplySheetTypes);
 
         $type.combobox('loadData', data);
@@ -313,6 +315,9 @@
 
         $.getJSON('<?= base_url('warehouse/transaction_rm/readType') ?>', function(records) {
             transactionRmTypes = $.map(records, function(r) { return {type: r.type}; });
+        });
+        $.getJSON('<?= base_url('warehouse/transaction_fg/readType') ?>', function(records) {
+            transactionFgTypes = $.map(records, function(r) { return {type: r.type}; });
         });
 
         $("#account_number").combogrid({

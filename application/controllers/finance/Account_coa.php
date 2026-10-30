@@ -418,8 +418,9 @@ class Account_coa extends CI_Controller
         $ap_exists = $this->db->get_where('ap_payments', ['account_number' => $account->account_number, 'deleted' => 0])->row();
         $ar_exists = $this->db->get_where('ar_receipts', ['account_number' => $account->account_number, 'deleted' => 0])->row();
         $journal_exists = $this->db->get_where('journal_postings', ['account_number' => $account->account_number, 'deleted' => 0])->row();
+        $journal_inventory_exists = $this->db->select('id')->get_where('journal_inventory', ['account_number' => $account->account_number], 1)->row();
 
-        if ( !empty($pi_exists) || !empty($si_exists) || !empty($ap_exists) || !empty($ar_exists) || !empty($journal_exists) ) {
+        if ( !empty($pi_exists) || !empty($si_exists) || !empty($ap_exists) || !empty($ar_exists) || !empty($journal_exists) || !empty($journal_inventory_exists) ) {
             echo json_encode(["title" => "Error", "message" => "Data is already in use in another table", "theme" => "error"]);
             
         } elseif ($account->original_debit > 0 || $account->original_kredit > 0 || $account->local_debit > 0 || $account->local_kredit > 0) {

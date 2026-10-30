@@ -31,6 +31,11 @@ class Autopostingjournal extends CI_Model {
         'NON SUPPLY SHEET'       => ['company_required' => 0, 'process' => '_build_non_supply_sheets'],
         'MATERIAL REQUESTION'    => ['company_required' => 0, 'process' => '_build_material_requestion'],
         'WIP ADJUSTMENT FG'      => ['company_required' => 0, 'process' => '_build_wip_adjustment_fg'],
+        'OUTPUT PRODUCTION'      => ['company_required' => 0, 'process' => '_build_output_production'],
+        'ITEM NG'                => ['company_required' => 0, 'process' => '_build_item_ng'],
+        'WIP RECEIPT'            => ['company_required' => 0, 'process' => '_build_wip_receipt'],
+        'DELIVERY NOTE'          => ['company_required' => 0, 'process' => '_build_delivery_note'],
+        'TRANSACTION FG'         => ['company_required' => 0, 'process' => '_build_transaction_fg'],
     ];
 
     // Nama modul lama (jenis transaksi) diarahkan ke module menu-nya
@@ -72,6 +77,11 @@ class Autopostingjournal extends CI_Model {
 
     // Hanya POR kategori RM yang dijurnal (POR kategori lain tidak di-scan, jurnalnya lewat Purchase Invoicing)
     const POR_CATEGORY = 'RM';
+
+    // Dokumen tanpa qty issued/transaksi (misal SH di-close tanpa issue, atau yang di-issue hanya item CR):
+    // tidak ada jurnal, dicatat COMPLETE di queue (bukan FAILED)
+    const ERR_NO_QTY = 4401;
+    const QUEUE_COMPLETE = 'COMPLETE';
 
     // Kondisi SQL: POR dengan receipt_no = $receipt_col berisi item selain kategori RM
     public function non_rm_por_sql($receipt_col)
@@ -147,6 +157,8 @@ class Autopostingjournal extends CI_Model {
             if ($result['status']) {
                 $result['number']  = $number;
                 $result['message'] = "Success: Document $document_no posted to Journal $number.";
+            } elseif (!empty($result['complete'])) {
+                $result['message'] = "Complete (tidak dijurnal, qty 0): " . $result['message'];
             }
 
             $this->_queue_result($modul, $document_no, $result, $source);
@@ -183,8 +195,9 @@ class Autopostingjournal extends CI_Model {
         try {
             $now  = date('Y-m-d H:i:s');
             $user = !empty($this->session->username) ? $this->session->username : null;
+            $complete = !empty($result['complete']);
             $data = [
-                'status'            => $result['status'] ? 'SUCCESS' : 'FAILED',
+                'status'            => $result['status'] ? 'SUCCESS' : ($complete ? self::QUEUE_COMPLETE : 'FAILED'),
                 'last_error'        => $result['status'] ? null : $result['message'],
                 'last_source'       => $source,
                 'journal_number'    => $result['number'] ?? null,
@@ -196,8 +209,8 @@ class Autopostingjournal extends CI_Model {
             if ($queue) {
                 $this->db->set('attempts', 'attempts + 1', FALSE);
                 $this->db->update('journal_inventory_queue', $data, ['id' => $queue->id]);
-            } elseif (!$result['status']) {
-                // Dokumen yang langsung sukses tidak perlu dicatat
+            } elseif (!$result['status'] && !$complete) {
+                // Dokumen yang langsung sukses / tanpa qty tidak perlu dicatat
                 $this->db->insert('journal_inventory_queue', array_merge($data, [
                     'modul'        => $modul,
                     'document_no'  => $document_no,
@@ -241,10 +254,10 @@ class Autopostingjournal extends CI_Model {
         $this->db->order_by('id', 'asc');
         $queues = $this->db->get()->result();
 
-        $summary = ['success' => 0, 'failed' => 0, 'results' => []];
+        $summary = ['success' => 0, 'complete' => 0, 'failed' => 0, 'results' => []];
         foreach ($queues as $q) {
             $result = $this->inventory($q->modul, $q->document_no, $source);
-            $summary[$result['status'] ? 'success' : 'failed']++;
+            $summary[$result['status'] ? 'success' : (!empty($result['complete']) ? 'complete' : 'failed')]++;
             $summary['results'][$q->document_no] = $result['message'];
         }
         return $summary;
@@ -436,6 +449,53 @@ class Autopostingjournal extends CI_Model {
         return null;
     }
 
+    // Jenis transaksi Transaction FG yang dijurnal otomatis (master fg_transactions)
+    public $transaction_fg_auto_types = ['ADJ IN STO', 'ADJ OUT STO', 'BPB', 'RECEIPT FG', 'RETURN FROM CUSTOMER'];
+
+    // Transaction FG: setelah Save All (tidak ada scan)
+    public function auto_post_transaction_fg($request_no)
+    {
+        try {
+            $types = $this->db->select('DISTINCT UPPER(TRIM(transaction_type)) AS type', FALSE)
+                ->where(['request_no' => $request_no, 'deleted' => 0])->get('transaction_fg')->result();
+            if (count($types) != 1 || !in_array($types[0]->type, $this->transaction_fg_auto_types)) return null;
+            return $this->_auto_post('TRANSACTION FG', $request_no, 'SAVE');
+        } catch (Throwable $e) {
+            log_message('error', "AutoPosting TRANSACTION FG $request_no: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // Output Production, Item NG, Delivery Note: setelah Save All / upload (tidak ada scan di dokumen ini)
+    public function auto_post_on_save($modul, $document_no)
+    {
+        if (!in_array($modul, ['OUTPUT PRODUCTION', 'ITEM NG', 'DELIVERY NOTE'])) return null;
+        return $this->_auto_post($modul, $document_no, 'SAVE');
+    }
+
+    /**
+     * WIP Receipt: dijurnal jika semua baris status = 1
+     * - INJ: status 1 setelah semua label di-scan di Scan Receiving FG (Item_receipts_fg) -> $source SCAN
+     * - MTS: status 1 langsung saat save -> $source SAVE
+     */
+    public function auto_post_wip_receipt($document_no, $source = 'SCAN')
+    {
+        try {
+            if (!$this->is_wip_receipt_ready($document_no)) return null;
+            return $this->_auto_post('WIP RECEIPT', $document_no, $source);
+        } catch (Throwable $e) {
+            log_message('error', "AutoPosting WIP RECEIPT $document_no: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    // Semua baris WIP Receipt sudah closed (INJ: semua label di-scan)
+    public function is_wip_receipt_ready($document_no)
+    {
+        $row = $this->db->query("SELECT COUNT(*) AS total, SUM(status = 1) AS closed FROM wip_receipts WHERE document_no = ? AND deleted = 0", [$document_no])->row();
+        return $row && $row->total > 0 && $row->total == $row->closed;
+    }
+
     /**
      * Preview jurnal tanpa insert (dipakai Journal Inventory manual), hasilnya sama dengan inventory()
      * @return array ['status' => bool, 'message' => string, 'rows' => [...], 'footer' => [...]]
@@ -464,6 +524,26 @@ class Autopostingjournal extends CI_Model {
         ]];
 
         return ['status' => true, 'message' => 'Ready to post', 'rows' => $rows, 'footer' => $footer];
+    }
+
+    /**
+     * Kondisi SQL filter "Status Posting" di modul sumber (Supply Sheet, BPM, POR, dll):
+     * CLOSED = dokumen sudah punya voucher di journal_inventory, OPEN = belum.
+     * Dokumen COMPLETE (qty 0) tidak punya voucher, jadi termasuk OPEN.
+     * @param string[] $moduls       Module journal_inventory dokumen ini
+     * @param string   $document_col Kolom nomor dokumen di query sumber (misal 'a.request_no')
+     * @param string   $status       OPEN / CLOSED, selain itu null (tanpa filter)
+     * @return string|null
+     */
+    public function posting_status_sql(array $moduls, $document_col, $status)
+    {
+        $status = strtoupper(trim((string) $status));
+        if (!in_array($status, ['OPEN', 'CLOSED'], true) || empty($moduls)) {
+            return null;
+        }
+        $in = implode(', ', array_map([$this->db, 'escape'], $moduls));
+        $exists = "EXISTS (SELECT 1 FROM journal_inventory ji_ps WHERE ji_ps.modul IN ($in) AND ji_ps.document_no = $document_col)";
+        return $status === 'CLOSED' ? $exists : "NOT $exists";
     }
 
     /**
@@ -577,6 +657,25 @@ class Autopostingjournal extends CI_Model {
         ])->row();
         if (!$r || (float) $r->middle <= 0) {
             throw new Exception("Exchange rate $currency for $date is not available! Please update Standard Exchange Rate");
+        }
+        return (float) $r->middle;
+    }
+
+    /**
+     * Kurs middle Exchange Rates (bukan Standard Exchange Rate) pada periode yang mencakup $date.
+     * Dipakai POR, supaya nilai IDR GR/IR di POR sama dengan PI (PI memakai exchange_rates middle per periode).
+     */
+    public function get_rate_period($date, $currency) {
+        if (empty($currency) || $currency == "IDR") return 1.0;
+        $r = $this->db->get_where('exchange_rates', [
+            'currency_from' => $currency,
+            'currency_to'   => 'IDR',
+            'start_date <=' => $date,
+            'end_date >='   => $date,
+            'deleted'       => 0
+        ])->row();
+        if (!$r || (float) $r->middle <= 0) {
+            throw new Exception("Exchange rate $currency for $date is not available! Please update Exchange Rate");
         }
         return (float) $r->middle;
     }
@@ -758,6 +857,9 @@ class Autopostingjournal extends CI_Model {
             // Rollback jika terjadi error (termasuk Error PHP, misal hasil query gagal saat db_debug = FALSE)
             $this->db->trans_rollback();
             $msg = "Error: " . $e->getMessage();
+            if ($e->getCode() === self::ERR_NO_QTY) {
+                return ['status' => false, 'complete' => true, 'message' => $e->getMessage()];
+            }
             log_message('error', "AutoPosting: " . $msg);
             return ['status' => false, 'message' => $msg];
         }
@@ -931,8 +1033,9 @@ class Autopostingjournal extends CI_Model {
      * @param array $records  Wajib berisi: request_date, request_no, qty_field, item_no, item_name, item_division (opsional)
      * @param string $ref_field  Kolom referensi untuk invoice_no & description
      * @param callable $get_price function($row) => price
+     * @param string $price_source Keterangan sumber harga untuk pesan error
      */
-    private function _standard_price_entry(callable $setup_for, $document_no, $records, $qty_field, $ref_field, callable $get_price)
+    private function _standard_price_entry(callable $setup_for, $document_no, $records, $qty_field, $ref_field, callable $get_price, $price_source = 'harga PO terakhir dan Standard Price tidak ada')
     {
         $currency = "IDR"; // default
         $groups = [];
@@ -941,7 +1044,7 @@ class Autopostingjournal extends CI_Model {
             if ((float) $row[$qty_field] <= 0) continue; // tidak ada mutasi
             $price = $get_price($row);
             if ($price <= 0) {
-                throw new Exception("Harga tidak ditemukan untuk item {$row['item_no']} (harga PO terakhir dan Standard Price tidak ada)");
+                throw new Exception("Harga tidak ditemukan untuk item {$row['item_no']} ($price_source)");
             }
 
             // Item yang sama dalam 1 dokumen dijadikan 1 baris DEBIT
@@ -970,7 +1073,7 @@ class Autopostingjournal extends CI_Model {
         }
 
         if (empty($lines)) {
-            throw new Exception("No issued/transaction qty for document $document_no.");
+            throw new Exception("No issued/transaction qty for document $document_no.", self::ERR_NO_QTY);
         }
 
         $first = $records[0];
@@ -1051,7 +1154,7 @@ class Autopostingjournal extends CI_Model {
             $lines[$key] = [
                 'setup'           => $setup,
                 'amount_original' => $row['item_total_original'],
-                'rate'            => $this->get_rate($row['trans_date'], $row['currency']),
+                'rate'            => $this->get_rate_period($row['trans_date'], $row['currency']),
                 'invoice_no'      => $row['invoice_no'],
                 // Description POR: doc_no;product_no (format Finance)
                 'description'     => $receipt_no . ';' . trim((string) $row['item_no']),
@@ -1066,7 +1169,7 @@ class Autopostingjournal extends CI_Model {
                 'document_no'  => $first['document_no'],
                 'invoice_no'   => $first['invoice_no'],
                 'currency'     => $first['currency'],
-                'rate'         => $this->get_rate($first['trans_date'], $first['currency']),
+                'rate'         => $this->get_rate_period($first['trans_date'], $first['currency']),
                 'company_id'   => $first['supplier_id'],
                 'company_name' => $first['supplier_name'],
                 'description'  => $receipt_no,
@@ -1148,9 +1251,64 @@ class Autopostingjournal extends CI_Model {
             throw new Exception("No records found for Request No: $document_no or document not closed (Scan/Print)");
         }
 
-        return $this->_standard_price_entry($setup_for, $document_no, $records, 'qty_issued', 'workorder', function ($row) {
-            return $this->get_price_rm_for_journal($row['request_date'], $row['item_rm_id']);
-        });
+        try {
+            return $this->_standard_price_entry($setup_for, $document_no, $records, 'qty_issued', 'workorder', function ($row) {
+                return $this->get_price_rm_for_journal($row['request_date'], $row['item_rm_id']);
+            });
+        } catch (Exception $e) {
+            if ($e->getCode() !== self::ERR_NO_QTY) throw $e;
+            throw new Exception($this->_supply_sheet_no_qty_reason($document_no, $records), self::ERR_NO_QTY);
+        }
+    }
+
+    /**
+     * Keterangan kenapa Supply Sheet tidak punya qty RM untuk dijurnal:
+     * - yang di-issue hanya item lain (pengganti CR-/PL-/equivalent), atau
+     * - tidak ada issue sama sekali; kalau issue WO ini tercatat di nomor SH lain, nomor itu disebut (termasuk SH yang sudah dihapus)
+     */
+    private function _supply_sheet_no_qty_reason($document_no, array $records)
+    {
+        $this->db->select('c.number as item_no, SUM(d.qty) as qty', FALSE);
+        $this->db->from('issued_material_details d');
+        $this->db->join('item_rm c', 'c.id = d.item_rm_id', 'left');
+        $this->db->where('d.request_no', $document_no);
+        $this->db->where('d.deleted', 0);
+        $this->db->group_by('c.number');
+        $issued = $this->db->get()->result_array();
+
+        if (!empty($issued)) {
+            $items = array_map(function ($r) {
+                return trim((string) $r['item_no']) . ' = ' . (float) $r['qty'];
+            }, $issued);
+            return "Supply Sheet $document_no: yang di-issue bukan item RM di Supply Sheet (" . implode(', ', $items)
+                . "), misalnya item pengganti CR-/PL-/equivalent. Item pengganti tidak dijurnal.";
+        }
+
+        $workorder = trim((string) ($records[0]['workorder'] ?? ''));
+        $reason    = "Supply Sheet $document_no di-close tanpa issue (tidak ada label yang di-scan)";
+        if ($workorder === '') {
+            return "$reason.";
+        }
+
+        // Issue untuk WO yang sama tapi tercatat di nomor SH lain
+        $this->db->select("d.request_no, SUM(d.qty) as qty, MAX(CASE WHEN s.request_no IS NULL THEN 1 ELSE 0 END) as sh_deleted", FALSE);
+        $this->db->from('issued_material_details d');
+        $this->db->join('(SELECT DISTINCT request_no, workorder FROM issued_materials) m', 'm.request_no = d.request_no', 'inner', FALSE);
+        $this->db->join('(SELECT DISTINCT request_no FROM supply_sheets WHERE deleted = 0) s', 's.request_no = d.request_no', 'left', FALSE);
+        $this->db->where('m.workorder', $workorder);
+        $this->db->where('d.request_no <>', $document_no);
+        $this->db->where('d.deleted', 0);
+        $this->db->group_by('d.request_no');
+        $others = $this->db->get()->result_array();
+
+        if (empty($others)) {
+            return "$reason. WO $workorder juga tidak punya issue di Supply Sheet lain.";
+        }
+
+        $list = array_map(function ($r) {
+            return $r['request_no'] . ' (qty ' . (float) $r['qty'] . ((int) $r['sh_deleted'] === 1 ? ', SH sudah dihapus, issue tidak dijurnal' : '') . ')';
+        }, $others);
+        return "$reason. Issue WO $workorder tercatat di: " . implode(', ', $list) . ".";
     }
 
     /**
@@ -1215,26 +1373,106 @@ class Autopostingjournal extends CI_Model {
     }
 
     // WIP Adjustment FG - harga Standard Price FG
+    // Division per item dari item_fg.division_id (journal type division item diutamakan, lalu division kosong)
     private function _build_wip_adjustment_fg($modul, $document_no)
     {
-        // item_fg tidak punya division: pakai journal type dengan division kosong
-        $setup_for = $this->_setup_resolver($modul);
+        $records = $this->_fg_records('wip_adjustment_fg', 'request_no', $document_no,
+            'a.request_date, a.request_no, a.workorder, a.qty');
+        return $this->_fg_price_entry($this->_setup_resolver($modul), $document_no, $records, 'qty', 'workorder');
+    }
 
-        // Get Transaction
-        $this->db->select('a.*, b.number as item_no, b.name as item_name, b.uom, b.id as item_fg_id');
-        $this->db->from('wip_adjustment_fg a');
+    /**
+     * Ambil baris dokumen FG untuk _standard_price_entry: request_date, request_no, item_fg_id, item_no, item_name, item_division
+     * @param string $select Kolom tambahan dari tabel sumber (alias a), wajib berisi request_date & request_no
+     */
+    private function _fg_records($table, $doc_col, $document_no, $select, $division_col = 'd.number')
+    {
+        $this->db->select("$select, b.id AS item_fg_id, b.number AS item_no, b.name AS item_name, b.uom, $division_col AS item_division", FALSE);
+        $this->db->from("$table a");
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('divisions d', 'b.division_id = d.id', 'left');
         $this->db->where('a.deleted', 0);
-        $this->db->where('a.request_no', $document_no);
+        $this->db->where("a.$doc_col", $document_no);
         $records = $this->db->get()->result_array();
 
         if (empty($records)) {
-            throw new Exception("No records found for Request No: $document_no");
+            throw new Exception("No records found for Document No: $document_no");
         }
+        return $records;
+    }
 
-        return $this->_standard_price_entry($setup_for, $document_no, $records, 'qty', 'workorder', function ($row) {
+    private function _fg_price_entry($setup_for, $document_no, $records, $qty_field, $ref_field)
+    {
+        return $this->_standard_price_entry($setup_for, $document_no, $records, $qty_field, $ref_field, function ($row) {
             return $this->get_price_fg($row['request_date'], $row['item_fg_id']);
-        });
+        }, 'Standard Price FG periode ' . date('m/Y', strtotime((string) $records[0]['request_date'])) . ' tidak ada');
+    }
+
+    // Output Production (Shop Floor Control): qty FG + qty WIP
+    private function _build_output_production($modul, $document_no)
+    {
+        $records = $this->_fg_records('output_productions', 'number', $document_no,
+            'a.trans_date AS request_date, a.number AS request_no, a.wo_no, (COALESCE(a.qty, 0) + COALESCE(a.qty_wip, 0)) AS qty_total');
+        return $this->_fg_price_entry($this->_setup_resolver($modul), $document_no, $records, 'qty_total', 'wo_no');
+    }
+
+    // Item NG: 1 baris per komponen RM, nilai pakai qty produk NG (qty_product) x harga FG, sama dengan Report Value NG
+    private function _build_item_ng($modul, $document_no)
+    {
+        $this->db->select("a.document AS request_no, MIN(a.trans_date) AS request_date, MIN(a.workorder) AS workorder,
+            CAST(a.qty_product AS DECIMAL(15,4)) AS qty_product,
+            b.id AS item_fg_id, MAX(b.number) AS item_no, MAX(b.name) AS item_name, MAX(d.number) AS item_division", FALSE);
+        $this->db->from('item_ng a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('divisions d', 'b.division_id = d.id', 'left');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.document', $document_no);
+        $this->db->group_by(['a.document', 'b.id', 'a.qty_product']);
+        $records = $this->db->get()->result_array();
+
+        if (empty($records)) {
+            throw new Exception("No records found for Document No: $document_no");
+        }
+        return $this->_fg_price_entry($this->_setup_resolver($modul), $document_no, $records, 'qty_product', 'workorder');
+    }
+
+    // WIP Receipt: hanya jika semua baris closed (INJ: semua label di-scan)
+    private function _build_wip_receipt($modul, $document_no)
+    {
+        if (!$this->is_wip_receipt_ready($document_no)) {
+            throw new Exception("WIP Receipt $document_no is not closed yet (not all labels have been scanned).");
+        }
+        $records = $this->_fg_records('wip_receipts', 'document_no', $document_no,
+            'a.trans_date AS request_date, a.document_no AS request_no, a.wo_no, a.qty', 'a.division');
+        return $this->_fg_price_entry($this->_setup_resolver($modul), $document_no, $records, 'qty', 'wo_no');
+    }
+
+    // Delivery Note: DN hanya bisa dibuat dari DO yang sudah full scan (Shipping Orders)
+    private function _build_delivery_note($modul, $document_no)
+    {
+        $records = $this->_fg_records('delivery_notes', 'delivery_note_no', $document_no,
+            'a.delivery_note_date AS request_date, a.delivery_note_no AS request_no, a.delivery_order_no, a.qty, a.customer_id', 'a.division');
+        $entry = $this->_fg_price_entry($this->_setup_resolver($modul), $document_no, $records, 'qty', 'delivery_order_no');
+
+        $customer = $this->db->select('id, name')->get_where('customers', ['id' => $records[0]['customer_id']])->row();
+        if ($customer) {
+            $entry['doc']['company_id']   = $customer->id;
+            $entry['doc']['company_name'] = $customer->name;
+        }
+        return $entry;
+    }
+
+    // Transaction FG: journal type per jenis transaksi (seperti Transaction RM)
+    private function _build_transaction_fg($modul, $document_no)
+    {
+        $records = $this->_fg_records('transaction_fg', 'request_no', $document_no,
+            'a.request_date, a.request_no, a.transaction_type, a.qty');
+
+        $transaction_types = array_values(array_unique(array_map(function ($r) { return strtoupper(trim((string) $r['transaction_type'])); }, $records)));
+        if (count($transaction_types) != 1 || $transaction_types[0] === '') {
+            throw new Exception("Transaction Type of Request No: $document_no is empty or not unique.");
+        }
+        return $this->_fg_price_entry($this->_setup_resolver($modul, $transaction_types[0]), $document_no, $records, 'qty', 'request_no');
     }
 
 }

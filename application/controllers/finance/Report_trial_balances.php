@@ -111,6 +111,23 @@ class Report_trial_balances extends CI_Controller
                     'local_credit' => (float)$journal_row['total_credit']
                 ];
             }
+
+            // Mutasi Journal Inventory (GLINV) ikut dijumlahkan, periode = journal_date (tanggal dokumen), sejak JOURNAL_INVENTORY_START
+            $this->db->select('account_number, SUM(local_debit) as total_debit, SUM(local_credit) as total_credit');
+            $this->db->from('journal_inventory');
+            $this->db->where_in('account_number', $all_account_numbers);
+            $this->db->where("journal_date BETWEEN '$filter_from' AND '$filter_to'");
+            $this->db->where('journal_date >=', JOURNAL_INVENTORY_START);
+            $this->db->group_by('account_number');
+            $journal_mutations_inventory = $this->db->get()->result_array();
+
+            foreach ($journal_mutations_inventory as $journal_row) {
+                $account_number = $journal_row['account_number'];
+                $journal_mutations_map[$account_number] = [
+                    'local_debit'  => (float) ($journal_mutations_map[$account_number]['local_debit'] ?? 0) + (float) $journal_row['total_debit'],
+                    'local_credit' => (float) ($journal_mutations_map[$account_number]['local_credit'] ?? 0) + (float) $journal_row['total_credit']
+                ];
+            }
         }
         
         // --- Tentukan Saldo Awal (Begin Balance) ---

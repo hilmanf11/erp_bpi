@@ -85,6 +85,14 @@
                         <option value="1">CLOSE</option>
                     </select>
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Posting</span>
+                    <select style="width:60%;" id="filter_status_posting" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Choose All</option>
+                        <option value="OPEN">Open</option>
+                        <option value="CLOSED">Closed</option>
+                    </select>
+                </div>
             </div>
         </fieldset>
         <?= $button ?>
@@ -386,6 +394,11 @@
         var row = $('#dg').treegrid('getSelected');
         if (row) {
             if(row.state == "closed"){
+                // Dokumen yang sudah dijurnal (Journal Inventory) tidak boleh diubah
+                if (row.journal_no) {
+                    toastr.error("Document " + row.request_no + " has been posted to Journal Inventory (" + row.journal_no + ") and cannot be changed. Delete the journal first.", "Failed");
+                    return;
+                }
                 $('#dlg_insert').dialog('open');
                 $('#frm_insert').form('load', row);
                 $("#request_date").datebox('disable');
@@ -454,11 +467,12 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_type = $("#filter_type").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
         url = "?&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + 
         "&filter_product_no=" + btoa(filter_product_no) + "&filter_type=" + filter_type + 
         "&filter_from=" + filter_from + "&filter_to=" + filter_to +
-        "&filter_status=" + filter_status;
+        "&filter_status=" + filter_status + "&filter_status_posting=" + filter_status_posting;
         $('#dg').treegrid({
             url: '<?= base_url('planning/supply_materials/datatables') ?>' + url
         });
@@ -480,11 +494,12 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_type = $("#filter_type").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
         url = "?&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + 
         "&filter_product_no=" + btoa(filter_product_no) + "&filter_type=" + filter_type + 
         "&filter_from=" + filter_from + "&filter_to=" + filter_to +
-        "&filter_status=" + filter_status;
+        "&filter_status=" + filter_status + "&filter_status_posting=" + filter_status_posting;
         window.location.assign('<?= base_url('planning/supply_materials/print/excel') ?>' + url);
     }
 

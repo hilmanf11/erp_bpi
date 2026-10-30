@@ -238,6 +238,31 @@ class Journal_inventory extends CI_Controller
 
             $records = $this->db->get()->result_array();
         }
+        elseif (in_array($modul, ["OUTPUT PRODUCTION", "ITEM NG", "WIP RECEIPT", "DELIVERY NOTE", "TRANSACTION FG"]))
+        {
+            // [tabel, kolom no dokumen, kolom tanggal]
+            $sources = [
+                "OUTPUT PRODUCTION" => ['output_productions', 'number', 'trans_date'],
+                "ITEM NG"           => ['item_ng', 'document', 'trans_date'],
+                "WIP RECEIPT"       => ['wip_receipts', 'document_no', 'trans_date'],
+                "DELIVERY NOTE"     => ['delivery_notes', 'delivery_note_no', 'delivery_note_date'],
+                "TRANSACTION FG"    => ['transaction_fg', 'request_no', 'request_date'],
+            ];
+            list($table, $doc_col, $date_col) = $sources[$modul];
+
+            $this->db->select("a.$doc_col as document_no, MIN(a.$date_col) as trans_date", FALSE);
+            $this->db->from("$table a");
+            $this->db->where('a.deleted', 0);
+            $this->db->where("a.$date_col >=", $transaction_from);
+            $this->db->where("a.$date_col <=", $transaction_to);
+            $this->db->where("a.$doc_col NOT IN ($journaled)", NULL, FALSE);
+            $this->db->group_by("a.$doc_col");
+            // WIP Receipt: semua baris closed (INJ: semua label sudah di-scan)
+            if ($modul == "WIP RECEIPT") $this->db->having('SUM(a.status <> 1) = 0', NULL, FALSE);
+            $this->db->order_by("a.$doc_col", 'asc');
+
+            $records = $this->db->get()->result_array();
+        }
 
         header('Content-Type: application/json');
         echo json_encode($records);
@@ -634,7 +659,7 @@ class Journal_inventory extends CI_Controller
         $ids = $this->input->post('ids');
         $summary = $this->autopostingjournal->repost_failed(!empty($ids) ? (array) $ids : null, 'REPOST');
 
-        $message = "Repost: {$summary['success']} success, {$summary['failed']} failed.";
+        $message = "Repost: {$summary['success']} success, {$summary['complete']} complete (no qty, not journaled), {$summary['failed']} failed.";
         foreach ($summary['results'] as $document_no => $result) {
             $message .= "<br>$document_no: $result";
         }
@@ -660,7 +685,7 @@ class Journal_inventory extends CI_Controller
         }
 
         $summary = $this->autopostingjournal->repost_failed(null, 'CRON', Autopostingjournal::MAX_AUTO_ATTEMPTS);
-        echo date('Y-m-d H:i:s') . " Repost FAILED: {$summary['success']} success, {$summary['failed']} failed" . PHP_EOL;
+        echo date('Y-m-d H:i:s') . " Repost FAILED: {$summary['success']} success, {$summary['complete']} complete, {$summary['failed']} failed" . PHP_EOL;
 
         if ($sweep_from) {
             $date = DateTime::createFromFormat('Ymd', $sweep_from);
@@ -710,6 +735,41 @@ class Journal_inventory extends CI_Controller
         if (empty($voucher_numbers)) {
             echo json_encode(['status' => 'error', 'message' => 'No voucher selected']);
             return;
+        }
+
+        $voucher_numbers = (array) $voucher_numbers;
+
+        // Voucher POR yang PI-nya sudah mendebit GR/IR dari voucher ini tidak boleh dihapus,
+        // karena GR/IR di GL tidak akan pernah nol (PI Dr GR/IR tanpa POR Cr GR/IR)
+        $this->db->select('number, document_no, account_number');
+        $this->db->from('journal_inventory');
+        $this->db->where_in('number', $voucher_numbers);
+        $this->db->where('modul', 'PURCHASE ORDER RECEIPT');
+        $this->db->where('local_credit >', 0);
+        $grir_rows = $this->db->get()->result_array();
+
+        if (!empty($grir_rows)) {
+            $this->db->select('pi.number as pi_no, pi.por_no, pi.account_number');
+            $this->db->from('purchase_invoices pi');
+            $this->db->where_in('pi.por_no', array_unique(array_column($grir_rows, 'document_no')));
+            $this->db->where_in('pi.account_number', array_unique(array_column($grir_rows, 'account_number')));
+            $this->db->where('pi.account_type', 'DEBIT');
+            $this->db->where('pi.deleted', 0);
+            $this->db->group_by(['pi.number', 'pi.por_no', 'pi.account_number']);
+            $used = $this->db->get()->result_array();
+
+            $blocked = [];
+            foreach ($grir_rows as $row) {
+                foreach ($used as $pi) {
+                    if ($pi['por_no'] == $row['document_no'] && $pi['account_number'] == $row['account_number']) {
+                        $blocked[$row['number']] = $row['number'] . ' (' . $row['document_no'] . ' → PI ' . $pi['pi_no'] . ')';
+                    }
+                }
+            }
+            if (!empty($blocked)) {
+                echo json_encode(['title' => 'Error', 'theme' => 'error', 'message' => 'Voucher sudah dipakai Purchase Invoice (GR/IR), hapus PI-nya dulu: ' . implode(', ', $blocked)]);
+                return;
+            }
         }
 
         $this->db->trans_begin();

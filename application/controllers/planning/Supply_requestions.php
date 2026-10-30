@@ -211,6 +211,7 @@ class Supply_requestions extends CI_Controller
             $filter_workorder   = $this->input->get('filter_workorder');
             $filter_request_no  = $this->input->get('filter_request_no');
             $filter_status      = $this->input->get('filter_status');
+            $filter_status_posting = $this->input->get('filter_status_posting');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -274,7 +275,13 @@ class Supply_requestions extends CI_Controller
                 if ($filter_status !== "") {
                     $this->db->having('status2', $filter_status);
                 }
-                
+
+                // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+                $this->load->model('autopostingjournal');
+                if ($cond = $this->autopostingjournal->posting_status_sql(['MATERIAL REQUESTION'], 'a.request_no', $filter_status_posting)) {
+                    $this->db->where($cond, NULL, FALSE);
+                }
+
                 $this->db->group_by('a.request_no');
                 $this->db->order_by('a.request_no', 'DESC');
                 
@@ -440,6 +447,14 @@ class Supply_requestions extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
+
+                // Material Requestion yang sudah dijurnal tidak boleh diubah/ditambah detail
+                $this->load->model('autopostingjournal');
+                if ($blocked = $this->autopostingjournal->journaled_block(['MATERIAL REQUESTION'], $post['request_no'] ?? '')) {
+                    echo json_encode($blocked);
+                    return;
+                }
+
                 if ($post['qty'] == 0) {
                     echo json_encode(array("title" => "Qty 0", "message" => " Qty is 0", "theme" => "error"));
                 } else {
@@ -881,6 +896,7 @@ class Supply_requestions extends CI_Controller
         $filter_workorder   = $this->input->get('filter_workorder');
         $filter_request_no  = $this->input->get('filter_request_no');
         $filter_status      = $this->input->get('filter_status');
+        $filter_status_posting = $this->input->get('filter_status_posting');
 
         //Config
         $this->db->select('*');
@@ -929,7 +945,13 @@ class Supply_requestions extends CI_Controller
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }
-        
+
+        // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+        $this->load->model('autopostingjournal');
+        if ($cond = $this->autopostingjournal->posting_status_sql(['MATERIAL REQUESTION'], 'a.request_no', $filter_status_posting)) {
+            $this->db->where($cond, NULL, FALSE);
+        }
+
         $this->db->group_by('a.request_no');
         $this->db->group_by('a.item_rm_id');
         $this->db->order_by('a.request_no', 'DESC');

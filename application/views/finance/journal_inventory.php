@@ -66,6 +66,7 @@
         <select id="failed_status" class="easyui-combobox" style="width:150px;" data-options="editable:false, panelHeight:'auto', onChange:function(){ loadFailedPosting(); }">
             <option value="FAILED">FAILED</option>
             <option value="SUCCESS">SUCCESS</option>
+            <option value="COMPLETE">COMPLETE (qty 0)</option>
             <option value="ALL">ALL</option>
         </select>
         <a href="javascript:;" class="easyui-linkbutton" onclick="repost(true)"><i class="fa fa-repeat"></i> Repost Selected</a>
@@ -642,7 +643,7 @@
                 dataType: 'json',
                 success: function(res) {
                     $.messager.progress('close');
-                    $.messager.alert(res.title, res.message, res.theme == 'success' ? 'info' : 'warning');
+                    showRepostResult(res);
                     $('#dg_failed').datagrid('reload');
                     $('#dg').datagrid('reload');
                     loadFailedCount();
@@ -652,6 +653,69 @@
                     toastr.error("Repost request failed", "Error");
                 }
             });
+        });
+    }
+
+    // Hasil repost: ringkasan + tabel per dokumen (lebar, scroll ke bawah kalau panjang)
+    function showRepostResult(res) {
+        var summary = res.summary || {};
+        var results = summary.results || {};
+        var esc = function(text) {
+            return $('<div>').text(text == null ? '' : String(text)).html();
+        };
+        var badge = function(status) {
+            var color = {SUCCESS: '#28a745', COMPLETE: '#17a2b8', FAILED: '#dc3545'}[status] || '#6c757d';
+            return '<span style="display:inline-block; min-width:82px; padding:2px 8px; border-radius:10px; background:' + color + '; color:#fff; font-size:11px; font-weight:bold; text-align:center;">' + status + '</span>';
+        };
+
+        var rows = '';
+        var no = 0;
+        $.each(results, function(documentNo, message) {
+            message = String(message || '');
+            var status = 'FAILED';
+            if (message.indexOf('Success') === 0) status = 'SUCCESS';
+            else if (message.indexOf('Complete') === 0) status = 'COMPLETE';
+            // Buang prefix status & nomor dokumen yang berulang, sisakan keterangannya
+            var detail = message
+                .replace(/^(Success|Complete \(tidak dijurnal, qty 0\)|Complete|Error):\s*/, '')
+                .replace(new RegExp('^Supply Sheet ' + documentNo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':?\\s*'), '');
+            detail = detail.charAt(0).toUpperCase() + detail.slice(1);
+            no++;
+            rows += '<tr>' +
+                '<td style="padding:6px 8px; border-bottom:1px solid #eee; text-align:center; vertical-align:top;">' + no + '</td>' +
+                '<td style="padding:6px 8px; border-bottom:1px solid #eee; white-space:nowrap; vertical-align:top; font-weight:bold;">' + esc(documentNo) + '</td>' +
+                '<td style="padding:6px 8px; border-bottom:1px solid #eee; vertical-align:top;">' + badge(status) + '</td>' +
+                '<td style="padding:6px 8px; border-bottom:1px solid #eee; vertical-align:top;">' + esc(detail) + '</td>' +
+                '</tr>';
+        });
+
+        var html =
+            '<div style="text-align:left; font-size:13px;">' +
+                '<div style="margin-bottom:10px;">' +
+                    badge('SUCCESS') + ' <b>' + (summary.success || 0) + '</b>&nbsp;&nbsp; ' +
+                    badge('COMPLETE') + ' <b>' + (summary.complete || 0) + '</b> <span style="color:#6c757d;">(qty 0, tidak dijurnal)</span>&nbsp;&nbsp; ' +
+                    badge('FAILED') + ' <b>' + (summary.failed || 0) + '</b>' +
+                '</div>' +
+                (rows === '' ? '<div style="color:#6c757d;">Tidak ada dokumen FAILED untuk di-repost.</div>' :
+                '<div style="max-height:380px; overflow-y:auto; border:1px solid #ddd; border-radius:4px;">' +
+                    '<table style="width:100%; border-collapse:collapse;">' +
+                        '<thead><tr style="background:#f5f5f5; position:sticky; top:0;">' +
+                            '<th style="padding:6px 8px; width:40px; text-align:center;">No</th>' +
+                            '<th style="padding:6px 8px; width:150px; text-align:left;">Document No</th>' +
+                            '<th style="padding:6px 8px; width:100px; text-align:left;">Status</th>' +
+                            '<th style="padding:6px 8px; text-align:left;">Keterangan</th>' +
+                        '</tr></thead>' +
+                        '<tbody>' + rows + '</tbody>' +
+                    '</table>' +
+                '</div>') +
+            '</div>';
+
+        Swal.fire({
+            title: 'Repost Journal Inventory',
+            html: html,
+            icon: (summary.failed || 0) > 0 ? 'warning' : 'success',
+            width: Math.min(1100, $(window).width() - 40),
+            confirmButtonText: 'OK'
         });
     }
 

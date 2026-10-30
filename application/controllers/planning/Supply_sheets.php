@@ -245,12 +245,18 @@ class Supply_sheets extends CI_Controller
     public function closeSh()
     {
         $request_no = $this->input->post('request_no');
+
+        // Supply sheet yang sudah dijurnal tidak boleh diubah statusnya lagi
+        $this->load->model('autopostingjournal');
+        if ($blocked = $this->autopostingjournal->journaled_block(['SUPPLY SHEET'], $request_no)) {
+            echo json_encode($blocked);
+            return;
+        }
         $update = $this->db->update('supply_sheets', ["status" => 2, "remarks" =>'Closing SH'], ["request_no" => $request_no]);// , "qty" => 0
         // echo $update;
 
         // Closing SH = supply sheet selesai: Auto Posting Journal Inventory sesuai qty yang sudah di-issue
         if ($update) {
-            $this->load->model('autopostingjournal');
             $this->autopostingjournal->auto_post_supply_document($request_no);
         }
 
@@ -297,6 +303,7 @@ class Supply_sheets extends CI_Controller
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         $filter_status_subcont = $this->input->get('filter_status_subcont');
         $filter_subcont_type = $this->input->get('filter_subcont_type');
+        $filter_status_posting = $this->input->get('filter_status_posting');
 
         // Ambil pagination dan sorting
         $page = $this->input->post('page');
@@ -372,6 +379,12 @@ class Supply_sheets extends CI_Controller
             elseif ($filter_status == "2") {
                 $this->db->where('j.total_status_complete >=', 1); // Status close
             }
+        }
+
+        // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+        $this->load->model('autopostingjournal');
+        if ($cond = $this->autopostingjournal->posting_status_sql(['SUPPLY SHEET'], 'a.request_no', $filter_status_posting)) {
+            $this->db->where($cond, NULL, FALSE);
         }
 
         $this->db->group_by('a.request_no');
@@ -827,6 +840,13 @@ class Supply_sheets extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
+
+                // Supply sheet yang sudah dijurnal tidak boleh ditambah/diubah
+                $this->load->model('autopostingjournal');
+                if ($blocked = $this->autopostingjournal->journaled_block(['SUPPLY SHEET'], $post['request_no'] ?? '')) {
+                    echo json_encode($blocked);
+                    return;
+                }
                 $item_rm_id = $post['item_rm_id'];
                 $qty_act = $post['qty_act'];
                 $qty_req = $post['qty_req'];
@@ -917,9 +937,30 @@ class Supply_sheets extends CI_Controller
             return;
         }
 
+        // Supply sheet yang materialnya sudah di-issue (label sudah di-scan) tidak boleh dihapus.
+        // Kalau dihapus, header issued_materials tertinggal dan gudang tetap bisa scan ke nomor SH yang sudah tidak ada
+        // (kasus SH-261026-0014: issue tercatat di SH terhapus, tidak pernah dijurnal)
+        $issued = $this->db->select('COUNT(*) as n, COALESCE(SUM(qty), 0) as qty', false)
+            ->where('request_no', $data['request_no'] ?? '')
+            ->where('deleted', 0)
+            ->get('issued_material_details')->row();
+        if ($issued && (int) $issued->n > 0) {
+            echo json_encode([
+                'title'   => 'Failed',
+                'message' => "Supply Sheet {$data['request_no']} sudah di-issue ({$issued->n} label, qty " . (float) $issued->qty . ") dan tidak bisa dihapus.",
+                'theme'   => 'error',
+                'success' => false,
+            ]);
+            return;
+        }
+
         $send = $this->crud->delete('supply_sheets', ["request_no" => $data['request_no']]);
         $update = $this->crud->update('production_schedules', ["wo_no" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
         $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no']]);
+        // Header issue (belum ada label di-scan) ikut dihapus supaya tidak bisa di-scan lagi
+        if ($this->db->where('request_no', $data['request_no'])->count_all_results('issued_materials') > 0) {
+            $this->crud->delete('issued_materials', ["request_no" => $data['request_no']]);
+        }
         echo $send;
     }
 
@@ -1540,6 +1581,7 @@ class Supply_sheets extends CI_Controller
         $filter_lot_no      = $this->input->get('filter_lot_no');
         $filter_request_no  = $this->input->get('filter_request_no');
         $filter_wo_no       = $this->input->get('filter_wo_no');
+        $filter_status_posting = $this->input->get('filter_status_posting');
 
         // $filter_operation = $this->input->get('filter_operation');
         
@@ -1595,6 +1637,11 @@ class Supply_sheets extends CI_Controller
         }
         if ($filter_wo_no != "") {
             $this->db->where('a.workorder', $filter_wo_no);
+        }
+        // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+        $this->load->model('autopostingjournal');
+        if ($cond = $this->autopostingjournal->posting_status_sql(['SUPPLY SHEET'], 'a.request_no', $filter_status_posting)) {
+            $this->db->where($cond, NULL, FALSE);
         }
         // if ($filter_operation != "") {
         //     $this->db->where('f.operation', $filter_operation);

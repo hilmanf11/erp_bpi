@@ -494,6 +494,13 @@ class Item_receipts_fg extends CI_Controller
                         if (count($total_labels) == $checksheet->label) {
                             // $this->crud->update('wip_receipts', ["checksheet_number" => $post['checksheet_number']], ["status" => 1]);
                             $this->db->update('wip_receipts',["status" => "1"], ["checksheet_number" => $post['checksheet_number']]);
+
+                            // Semua label dokumen WIP Receipt sudah di-scan -> Auto Posting Journal Inventory (gagal tercatat di Failed Posting)
+                            $wip = $this->db->select('document_no')->get_where('wip_receipts', ["checksheet_number" => $post['checksheet_number']])->row();
+                            if ($wip) {
+                                $this->load->model('autopostingjournal');
+                                $this->autopostingjournal->auto_post_wip_receipt($wip->document_no, 'SCAN');
+                            }
                         }
                     }
             

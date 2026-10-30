@@ -98,6 +98,13 @@ class Scan_item_bpm extends CI_Controller
                 $request_no = $post['request_no'];
                 $request_id = $post['request_id'];
                 $item_rm_id = $post['item_rm_id'];
+
+                // BPM yang sudah dijurnal di Journal Inventory tidak boleh di-scan lagi (qty berubah, jurnal tidak)
+                $this->load->model('autopostingjournal');
+                if ($blocked = $this->autopostingjournal->journaled_block(['BPM'], $request_no)) {
+                    echo json_encode($blocked);
+                    return;
+                }
                 
                 $scan_item_bpm = $this->crud->read("scan_item_bpm", [], ["request_id" => $request_id, "label" => $post['label']]);
 

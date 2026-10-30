@@ -324,11 +324,36 @@ class Item_ng extends CI_Controller
     //     }
     // }
 
+    // Dokumen yang sudah dijurnal (Journal Inventory) tidak boleh diubah / dihapus
+    private function _journaled_block($document)
+    {
+        $this->load->model('autopostingjournal');
+        return $this->autopostingjournal->journaled_block(['ITEM NG'], $document);
+    }
+
+    // Dipanggil view setelah semua baris Save All tersimpan (tidak ada scan)
+    public function autoPostJournal()
+    {
+        $document = $this->input->post('document');
+        if (empty($document)) {
+            echo json_encode(['status' => false, 'message' => 'Document is empty.']);
+            return;
+        }
+
+        $this->load->model('autopostingjournal');
+        $result = $this->autopostingjournal->auto_post_on_save('ITEM NG', $document);
+        echo json_encode($result ?? ['status' => null, 'message' => 'No journal posting for this document.']);
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
+                if ($blocked = $this->_journaled_block($post['document'] ?? '')) {
+                    echo json_encode($blocked + ['journaled' => true]);
+                    return;
+                }
                 $document = $this->db->escape($post['document']); // Escape variable to prevent SQL injection
 
                 // Hitung jumlah data yang sudah ada dengan dokumen yang sama
@@ -380,6 +405,10 @@ class Item_ng extends CI_Controller
             $post = $this->input->post();
 
             $itemNg = $this->crud->read("item_ng", [], ["id" => $id]);
+            if ($blocked = $this->_journaled_block(@$itemNg->document)) {
+                echo json_encode($blocked);
+                return;
+            }
             $scraps = $this->crud->reads("scraps", [], ["document" => @$itemNg->document_scrap, "item_rm_id" => @$itemNg->item_rm_id, "trans_date" => @$itemNg->trans_date]);
             if (count($scraps) > 0) {
                 $send = $this->crud->update('scraps', [
@@ -399,6 +428,10 @@ class Item_ng extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+        if ($blocked = $this->_journaled_block($data['document'] ?? '')) {
+            echo json_encode($blocked);
+            return;
+        }
 
         @$itemNg = $this->crud->reads("item_ng", [], ["id" => $data['id']]);
 
@@ -423,6 +456,11 @@ class Item_ng extends CI_Controller
     public function deleteSingle()
     {
         $data = $this->input->post();
+        $row = !empty($data) ? $this->db->select('document')->where($data)->get('item_ng', 1)->row() : null;
+        if ($row && ($blocked = $this->_journaled_block($row->document))) {
+            echo json_encode($blocked);
+            return;
+        }
         $send = $this->crud->delete('item_ng', $data);
         echo $send;
     }
@@ -654,6 +692,10 @@ class Item_ng extends CI_Controller
                     );
                     $send = $this->crud->create('item_ng', $dataFinal);
                 }
+
+                // Upload: 1 request = 1 dokumen -> langsung Auto Posting Journal Inventory (gagal tercatat di Failed Posting)
+                $this->load->model('autopostingjournal');
+                $this->autopostingjournal->auto_post_on_save('ITEM NG', $autonumber);
 
                 echo $send;
             }

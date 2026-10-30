@@ -74,6 +74,14 @@
                         <option value="1">CLOSE</option>
                     </select>
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Posting</span>
+                    <select style="width:60%;" id="filter_status_posting" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="OPEN">Open</option>
+                        <option value="CLOSED">Closed</option>
+                    </select>
+                </div>
             </div>
         </fieldset>
         <?= $button ?>
@@ -392,8 +400,9 @@
         var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
-        url = "?filter_period_from=" + filter_period_from + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_status=" + filter_status;
+        url = "?filter_period_from=" + filter_period_from + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_status=" + filter_status + "&filter_status_posting=" + filter_status_posting;
 
         $('#dg').treegrid({
             url: '<?= base_url('planning/supply_requestions/datatables') ?>' + url,
@@ -426,8 +435,9 @@
         var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
-        url = "?filter_period_from=" + filter_period_from + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_status=" + filter_status;
+        url = "?filter_period_from=" + filter_period_from + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_status=" + filter_status + "&filter_status_posting=" + filter_status_posting;
         window.location.assign('<?= base_url('planning/supply_requestions/print/excel') ?>' + url);
     }
 

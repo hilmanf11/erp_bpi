@@ -688,6 +688,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                if (result && result.theme == "error") toastr.error(result.message, result.title);
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -913,8 +914,14 @@
 
                     endEditing();
 
+                    var saveRequests = [];
+                    var blockedMessage = "";
+                    var lastResult = null;
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_rm_id) {
+                            // Deferred sendiri: selesai (sukses/gagal) baru dihitung, supaya $.when tidak berhenti di request gagal pertama
+                            const saveDone = $.Deferred();
+                            saveRequests.push(saveDone.promise());
                             $.ajax({
                                 type: "post",
                                 url: '<?= base_url('planning/item_ng/create') ?>',
@@ -944,17 +951,13 @@
                                 },
                                 dataType: "json",
                                 success: function(result) {
-                                    Swal.fire({
-                                        title: result.message,
-                                        icon: result.theme,
-                                        confirmButtonText: 'Ok',
-                                        allowOutsideClick: false,
-                                    }).then((result) => {
-                                        if (result.isConfirmed) {
-                                            window.location.reload();
-                                        }
-                                    });
-                                }
+                                    lastResult = result;
+                                    if (result && result.theme == "error") {
+                                        toastr.warning(result.message, "Error");
+                                        if (result.journaled) blockedMessage = result.message;
+                                    }
+                                },
+                                complete: function() { saveDone.resolve(); }
                             });
                         }
                     }
@@ -962,6 +965,46 @@
                     // });
 
                     $('#dlg_insert').dialog('close');
+                    if (saveRequests.length == 0) return;
+
+                    Swal.fire({
+                        html: 'Saving data & Auto Posting Journal Inventory...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    // Semua baris tersimpan -> Auto Posting Journal Inventory (gagal tercatat di Failed Posting)
+                    $.when.apply($, saveRequests).always(function() {
+                        // Ditolak server (sudah dijurnal) -> jangan posting & jangan tampilkan sukses
+                        if (blockedMessage) {
+                            Swal.fire({ title: "Failed", text: blockedMessage, icon: "error", confirmButtonText: 'Ok' });
+                            return;
+                        }
+                        $.ajax({
+                            type: "POST",
+                            url: '<?= base_url('planning/item_ng/autoPostJournal') ?>',
+                            data: { document: document },
+                            dataType: "json",
+                            complete: function(xhr) {
+                                var res = xhr.responseJSON || {};
+                                if (res.status === true) {
+                                    toastr.success(res.message, "Journal Inventory");
+                                } else if (res.status === false) {
+                                    toastr.warning(res.message, "Journal Inventory (Failed Posting)");
+                                }
+                                Swal.fire({
+                                    title: (lastResult && lastResult.message) || "Data Saved Successfully",
+                                    icon: (lastResult && lastResult.theme) || "success",
+                                    confirmButtonText: 'Ok',
+                                    allowOutsideClick: false,
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.reload();
+                                    }
+                                });
+                            }
+                        });
+                    });
                 }
             }]
         });

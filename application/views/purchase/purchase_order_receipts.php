@@ -108,6 +108,14 @@
                     </select>
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Posting</span>
+                    <select style="width:60%;" id="filter_status_posting" panelHeight="auto" class="easyui-combobox">
+                        <option value="">Select All</option>
+                        <option value="OPEN">Open</option>
+                        <option value="CLOSED">Closed</option>
+                    </select>
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Lot No</span>
                     <input style="width:60%;" id="filter_lotno" class="easyui-combobox">
                 </div>
@@ -499,6 +507,7 @@
             });
 
             let promises = [];
+            let deletedCount = 0; // hanya hitung yang benar-benar terhapus (bukan ditolak Journal Inventory / checkReceipt)
 
             rows.forEach(row => {
 
@@ -536,7 +545,13 @@
                                     qty_receipt: row.qty_receipt
                                 },
                                 success: function (resDelete) {
-                                    try { var rd = (typeof resDelete === 'string') ? JSON.parse(resDelete) : resDelete; if (rd && rd.theme === 'error') toastr.error(rd.message, rd.title); } catch (e) {}
+                                    var rd = null;
+                                    try { rd = (typeof resDelete === 'string') ? JSON.parse(resDelete) : resDelete; } catch (e) {}
+                                    if (rd && rd.theme === 'error') {
+                                        toastr.error(rd.message, rd.title);
+                                    } else {
+                                        deletedCount++;
+                                    }
                                     resolve();
                                 },
                                 error: function (xhr) {
@@ -560,7 +575,7 @@
             // Eksekusi setelah semua selesai
             Promise.all(promises).then(() => {
                 $.messager.progress('close'); // tutup loading
-                toastr.success("Selected data has been deleted");
+                if (deletedCount > 0) toastr.success("Selected data has been deleted");
                 $('#dg').treegrid('reload');
                 readReceiptNo();
             });
@@ -581,13 +596,15 @@
         var filter_doc_no = $("#filter_doc_no").combobox('getValue');
         var filter_status_invoice = $("#filter_status_invoice").combobox('getValue');
         var filter_status_por = $("#filter_status_por").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + 
         "&filter_supplier=" + filter_supplier + "&filter_receipt=" + filter_receipt + 
         "&filter_lotno=" + filter_lotno + 
         "&filter_doc_no=" + filter_doc_no + "&filter_categories=" + filter_categories + 
-        "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice + "&filter_status_por=" + filter_status_por;
+        "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice + "&filter_status_por=" + filter_status_por +
+        "&filter_status_posting=" + filter_status_posting;
 
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_order_receipts/datatables') ?>' + url
@@ -613,13 +630,15 @@
         var filter_doc_no = $("#filter_doc_no").combobox('getValue');
         var filter_status_invoice = $("#filter_status_invoice").combobox('getValue');
         var filter_status_por = $("#filter_status_por").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + 
         "&filter_supplier=" + filter_supplier + "&filter_receipt=" + filter_receipt + 
         "&filter_lotno=" + filter_lotno + 
         "&filter_doc_no=" + filter_doc_no + "&filter_categories=" + filter_categories + 
-        "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice + "&filter_status_por=" + filter_status_por;
+        "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice + "&filter_status_por=" + filter_status_por +
+        "&filter_status_posting=" + filter_status_posting;
         
          // Tampilkan overlay
          $("#loadingOverlay").show();

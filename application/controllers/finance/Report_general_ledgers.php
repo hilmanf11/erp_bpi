@@ -257,7 +257,26 @@ class Report_general_ledgers extends CI_Controller
             $this->db->order_by('account_number', 'asc');
             $journals = $this->db->get()->result_array();
 
-            $this->db->select('account_number, account_name, 
+            // Journal Inventory (GLINV) ikut dibaca. Di journal_inventory, journal_date = tanggal dokumen
+            // (trans_date = tanggal posting dijalankan), jadi difilter & ditampilkan dengan journal_date.
+            // Hanya sejak JOURNAL_INVENTORY_START (sebelumnya data uji).
+            $this->db->select('number, journal_date as trans_date, document_no, account_number, account_name, description, currency,
+                original_debit, original_credit, rates, local_debit, local_credit');
+            $this->db->from('journal_inventory');
+            $this->db->where("journal_date between '$filter_from' and '$filter_to'");
+            $this->db->where('journal_date >=', JOURNAL_INVENTORY_START);
+            $this->db->where("account_number", $filter_account_number);
+            $journals_inventory = $this->db->get()->result_array();
+
+            if (!empty($journals_inventory)) {
+                $journals = array_merge($journals, $journals_inventory);
+                usort($journals, function ($a, $b) {
+                    return [(string) $a['trans_date'], (string) $a['document_no'], (string) $a['account_number']]
+                        <=> [(string) $b['trans_date'], (string) $b['document_no'], (string) $b['account_number']];
+                });
+            }
+
+            $this->db->select('account_number, account_name,
                 COALESCE(SUM(original_debit)) as original_debit,
                 COALESCE(SUM(original_credit)) as original_credit,
                 COALESCE(SUM(local_debit)) as local_debit,
@@ -267,6 +286,23 @@ class Report_general_ledgers extends CI_Controller
             $this->db->where("trans_date between '$filter_before' and '$filter_before_to'");
             $this->db->where("account_number", $filter_account_number);
             $journal_bf = $this->db->get()->row();
+
+            // Brought forward dari Journal Inventory
+            $this->db->select('COALESCE(SUM(original_debit), 0) as original_debit,
+                COALESCE(SUM(original_credit), 0) as original_credit,
+                COALESCE(SUM(local_debit), 0) as local_debit,
+                COALESCE(SUM(local_credit), 0) as local_credit');
+            $this->db->from('journal_inventory');
+            $this->db->where("journal_date between '$filter_before' and '$filter_before_to'");
+            $this->db->where('journal_date >=', JOURNAL_INVENTORY_START);
+            $this->db->where("account_number", $filter_account_number);
+            $journal_bf_inventory = $this->db->get()->row();
+
+            if ($journal_bf) {
+                foreach (['original_debit', 'original_credit', 'local_debit', 'local_credit'] as $col) {
+                    $journal_bf->$col = (float) $journal_bf->$col + (float) @$journal_bf_inventory->$col;
+                }
+            }
 
             $this->db->select('*');
             $this->db->from('account_coa');
@@ -494,11 +530,16 @@ class Report_general_ledgers extends CI_Controller
     }
 
     // get link detail transaksi GL
-    function createLink($value, $idLink) 
+    function createLink($value, $idLink)
     {
-        $base_url   = base_url('finance/journal_postings/print_voucher_gl/');
-        $id_encoded = base64_encode($idLink);
-        $url        = $base_url . $id_encoded;
+        if (strpos((string) $idLink, 'GLINV') === 0) {
+            // Voucher Journal Inventory -> print Journal Inventory
+            $url = base_url('finance/journal_inventory/print') . '?filter_voucher=' . base64_encode($idLink);
+        } else {
+            $base_url   = base_url('finance/journal_postings/print_voucher_gl/');
+            $id_encoded = base64_encode($idLink);
+            $url        = $base_url . $id_encoded;
+        }
 
         if ($value > 0) {
             return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';

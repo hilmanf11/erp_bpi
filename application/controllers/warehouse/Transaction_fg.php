@@ -237,11 +237,36 @@ class Transaction_fg extends CI_Controller
         }
     }
 
+    // Dokumen yang sudah dijurnal (Journal Inventory) tidak boleh diubah / dihapus
+    private function _journaled_block($request_no)
+    {
+        $this->load->model('autopostingjournal');
+        return $this->autopostingjournal->journaled_block(['TRANSACTION FG'], $request_no);
+    }
+
+    // Dipanggil view setelah semua baris Save All tersimpan
+    public function autoPostJournal()
+    {
+        $request_no = $this->input->post('request_no');
+        if (empty($request_no)) {
+            echo json_encode(['status' => false, 'message' => 'Request No is empty.']);
+            return;
+        }
+
+        $this->load->model('autopostingjournal');
+        $result = $this->autopostingjournal->auto_post_transaction_fg($request_no);
+        echo json_encode($result ?? ['status' => null, 'message' => 'No journal posting for this transaction.']);
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             // if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
+                if ($blocked = $this->_journaled_block($post['request_no'] ?? '')) {
+                    echo json_encode($blocked + ['journaled' => true]);
+                    return;
+                }
                 if ($post['qty'] == 0) {
                     echo json_encode(array("title" => "Qty 0", "message" => " Qty is 0", "theme" => "error"));
                 } else {
@@ -269,6 +294,11 @@ class Transaction_fg extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+        $trans = $this->db->select('request_no')->get_where('transaction_fg', ["id" => $data['id']])->row();
+        if ($trans && ($blocked = $this->_journaled_block($trans->request_no))) {
+            echo json_encode($blocked);
+            return;
+        }
         $send = $this->crud->delete('transaction_fg', ["id" => $data['id']]);
         echo $send;
     }

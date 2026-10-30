@@ -458,7 +458,8 @@
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
-                toastr.success(result.message);
+                if (result && result.theme == "error") toastr.error(result.message, result.title);
+                else toastr.success(result.message);
             },
             complete: function(data) {
                 $('#dg').datagrid('reload');
@@ -592,6 +593,7 @@
                                 },
                                 success: function(result) {
                                     var result = eval('(' + result + ')');
+                                    if (result && result.theme == "error") toastr.error(result.message, result.title);
                                 },
                                 error: function(jqXHR, textStatus, errorThrown) {
                                     toastr.error(jqXHR.statusText);
@@ -855,8 +857,14 @@
                             if(totalrows){
                                 if (customer_id != "" && delivery_note_date !="" && address_id !="" && 
                                 police_no !="" && origin !="" && sailing !="" && incoterm !="") {
+                                    var saveRequests = [];
+                                    var blockedMessage = "";
+                                    var lastResult = null;
                                     for (let i = 0; i < totalrows; i++) {
                                         if (rows[i].item_fg_id) {
+                                            // Deferred sendiri: selesai (sukses/gagal) baru dihitung, supaya $.when tidak berhenti di request gagal pertama
+                                            const saveDone = $.Deferred();
+                                            saveRequests.push(saveDone.promise());
                                             $.ajax({
                                                 type: "post",
                                                 url: '<?= base_url('sales/delivery_notes/create') ?>',
@@ -887,25 +895,59 @@
                                                 },
                                                 dataType: "json",
                                                 success: function(result) {
-                                                    if (i == (totalrows - 1)) {
-                                                        Swal.fire({
-                                                            title: result.message,
-                                                            icon: result.theme,
-                                                            confirmButtonText: 'Ok',
-                                                            allowOutsideClick: false,
-                                                        }).then((result) => {
-                                                            if (result.isConfirmed) {
-                                                                window.location.reload();
-                                                            }
-                                                        });
+                                                    lastResult = result;
+                                                    if (result && result.theme == "error") {
+                                                        toastr.warning(result.message, "Error");
+                                                        if (result.journaled) blockedMessage = result.message;
                                                     }
-                                                }
+                                                },
+                                                complete: function() { saveDone.resolve(); }
                                             });
                                         }
                                     }
 
                                     $('#dg').datagrid('reload');
                                     $('#dlg_insert').dialog('close');
+                                    if (saveRequests.length == 0) return;
+
+                                    Swal.fire({
+                                        html: 'Saving data & Auto Posting Journal Inventory...',
+                                        allowOutsideClick: false,
+                                        didOpen: () => { Swal.showLoading(); }
+                                    });
+
+                                    // Semua baris tersimpan -> Auto Posting Journal Inventory (gagal tercatat di Failed Posting)
+                                    $.when.apply($, saveRequests).always(function() {
+                                        // Ditolak server (sudah dijurnal) -> jangan posting & jangan tampilkan sukses
+                                        if (blockedMessage) {
+                                            Swal.fire({ title: "Failed", text: blockedMessage, icon: "error", confirmButtonText: 'Ok' });
+                                            return;
+                                        }
+                                        $.ajax({
+                                            type: "POST",
+                                            url: '<?= base_url('sales/delivery_notes/autoPostJournal') ?>',
+                                            data: { delivery_note_no: delivery_note_no },
+                                            dataType: "json",
+                                            complete: function(xhr) {
+                                                var res = xhr.responseJSON || {};
+                                                if (res.status === true) {
+                                                    toastr.success(res.message, "Journal Inventory");
+                                                } else if (res.status === false) {
+                                                    toastr.warning(res.message, "Journal Inventory (Failed Posting)");
+                                                }
+                                                Swal.fire({
+                                                    title: (lastResult && lastResult.message) || "Data Saved Successfully",
+                                                    icon: (lastResult && lastResult.theme) || "success",
+                                                    confirmButtonText: 'Ok',
+                                                    allowOutsideClick: false,
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        window.location.reload();
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    });
                                 } else {
                                     toastr.error("Please Completed your input");
                                 }

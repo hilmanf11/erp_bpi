@@ -377,6 +377,8 @@ class Purchase_order_receipts extends CI_Controller
             $filter_division = $this->input->get('filter_division');
             $filter_status_invoice = $this->input->get('filter_status_invoice');
             $filter_status_por = $this->input->get('filter_status_por');
+            $filter_status_posting = $this->input->get('filter_status_posting');
+            $this->load->model('autopostingjournal');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -448,6 +450,10 @@ class Purchase_order_receipts extends CI_Controller
                     } else {
                         $this->db->where('pl.total_scan <> a.total_label');
                     }
+                }
+                // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+                if ($cond = $this->autopostingjournal->posting_status_sql(['PURCHASE ORDER RECEIPT'], 'a.receipt_no', $filter_status_posting)) {
+                    $this->db->where($cond, NULL, FALSE);
                 }
 
                 $this->db->group_by('a.receipt_no');
@@ -669,7 +675,8 @@ class Purchase_order_receipts extends CI_Controller
             // POR yang sudah dijurnal tidak boleh ditambah/diubah
             $this->load->model('autopostingjournal');
             if (!empty($post['receipt_no']) && ($blocked = $this->autopostingjournal->journaled_block(['PURCHASE ORDER RECEIPT'], $post['receipt_no']))) {
-                echo json_encode($blocked);
+                // status false: view tampilkan pesan lalu berhenti (tidak lanjut tawarkan print barcode)
+                echo json_encode(array_merge($blocked, ['status' => false]));
                 return;
             }
 
@@ -1373,6 +1380,8 @@ class Purchase_order_receipts extends CI_Controller
         $filter_doc_no = $this->input->get('filter_doc_no');
         $filter_categories = $this->input->get('filter_categories');
         $filter_division = $this->input->get('filter_division');
+        $filter_status_posting = $this->input->get('filter_status_posting');
+        $this->load->model('autopostingjournal');
         
         //Config
         $this->db->select('*');
@@ -1423,6 +1432,10 @@ class Purchase_order_receipts extends CI_Controller
             $this->db->where('c.item_category_id', $filter_categories);
         }
         $this->db->like('a.po_no', $filter_po_no);
+        // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+        if ($cond = $this->autopostingjournal->posting_status_sql(['PURCHASE ORDER RECEIPT'], 'a.receipt_no', $filter_status_posting)) {
+            $this->db->where($cond, NULL, FALSE);
+        }
 
         $this->db->group_by('a.receipt_id'); // Kelompokkan berdasarkan receipt_id untuk menghitung SUM
         $this->db->order_by('a.created_date', 'DESC');

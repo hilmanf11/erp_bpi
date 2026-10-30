@@ -83,3 +83,18 @@ defined('EXIT_USER_INPUT')     OR define('EXIT_USER_INPUT', 7); // invalid user 
 defined('EXIT_DATABASE')       OR define('EXIT_DATABASE', 8); // database error
 defined('EXIT__AUTO_MIN')      OR define('EXIT__AUTO_MIN', 9); // lowest automatically-assigned error code
 defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest automatically-assigned error code
+
+/*
+|--------------------------------------------------------------------------
+| Journal Inventory
+|--------------------------------------------------------------------------
+|
+| Tanggal efektif Journal Inventory = tanggal JI live (2026-10-28), dibandingkan dengan tanggal dokumen (journal_date).
+| POR 28-31 Okt yang PI-nya sudah mendebit Persediaan bisa dobel di GL; dianggap tidak dihitung sampai 1 Nov (keputusan user).
+| - GL, Trial Balance, Cash Flow hanya membaca journal_inventory sejak tanggal ini
+|   (voucher dengan tanggal dokumen sebelumnya = trial / data uji / backdate, tidak masuk GL).
+| - Purchase Invoice: POR RM dengan receipt_date sejak tanggal ini wajib sudah dijurnal di JI,
+|   dan item PI-nya mendebit GR/IR. POR sebelumnya: PI mendebit Persediaan seperti dulu.
+|
+*/
+defined('JOURNAL_INVENTORY_START') OR define('JOURNAL_INVENTORY_START', '2026-10-28');

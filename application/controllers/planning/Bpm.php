@@ -143,6 +143,7 @@ class Bpm extends CI_Controller
             $filter_kanban_date_from = $this->input->get('filter_kanban_date_from');
             $filter_kanban_date_to   = $this->input->get('filter_kanban_date_to');
             $filter_status = $this->input->get('filter_status');
+            $filter_status_posting = $this->input->get('filter_status_posting');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -182,6 +183,11 @@ class Bpm extends CI_Controller
                 }
                 if($filter_status != ""){
                     $this->db->where('a.status', $filter_status);
+                }
+                // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+                $this->load->model('autopostingjournal');
+                if ($cond = $this->autopostingjournal->posting_status_sql(['BPM'], 'a.request_no', $filter_status_posting)) {
+                    $this->db->where($cond, NULL, FALSE);
                 }
                 $this->db->group_by('a.request_no');
                 $this->db->order_by('a.request_no', 'DESC');
@@ -348,6 +354,14 @@ class Bpm extends CI_Controller
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
                 $post['lot_no'] = trim((string) ($post['lot_no'] ?? ''));
+
+                // BPM yang sudah dijurnal tidak boleh diubah/ditambah detail
+                $this->load->model('autopostingjournal');
+                if ($blocked = $this->autopostingjournal->journaled_block(['BPM'], $post['request_no'] ?? '')) {
+                    echo json_encode($blocked);
+                    return;
+                }
+
                 if ($post['qty'] == 0) {
                     echo json_encode(array("title" => "Qty 0", "message" => " Qty is 0", "theme" => "error"));
                 } elseif (!$this->isReceiptLot($post['item_rm_id'], $post['lot_no'])) {
@@ -733,6 +747,7 @@ class Bpm extends CI_Controller
         $filter_kanban_date_from = $this->input->get('filter_kanban_date_from');
         $filter_kanban_date_to   = $this->input->get('filter_kanban_date_to');
         $filter_status = $this->input->get('filter_status');
+        $filter_status_posting = $this->input->get('filter_status_posting');
 
         //Config
         $this->db->select('*');
@@ -763,6 +778,11 @@ class Bpm extends CI_Controller
         }
         if($filter_status != ""){
             $this->db->where('a.status', $filter_status);
+        }
+        // Status Posting: CLOSED = sudah ada voucher Journal Inventory, OPEN = belum
+        $this->load->model('autopostingjournal');
+        if ($cond = $this->autopostingjournal->posting_status_sql(['BPM'], 'a.request_no', $filter_status_posting)) {
+            $this->db->where($cond, NULL, FALSE);
         }
         $this->db->order_by('a.request_no', 'DESC');
         $records = $this->db->get()->result_array();

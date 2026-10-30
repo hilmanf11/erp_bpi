@@ -79,6 +79,14 @@
                     <span style="width:35%; display:inline-block;">Transaction Type</span>
                     <input style="width:60%;" id="filter_transaction_type" class="easyui-combobox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Posting</span>
+                    <select style="width:60%;" id="filter_status_posting" panelHeight="auto" class="easyui-combobox">
+                        <option value="">Select All</option>
+                        <option value="OPEN">Open</option>
+                        <option value="CLOSED">Closed</option>
+                    </select>
+                </div>
             </div>
         </fieldset>
         <?= $button ?>
@@ -551,6 +559,11 @@
         var row = $('#dg').treegrid('getSelected');
         if (row) {
             if(row.state == "closed"){
+                // Sudah dijurnal (Journal Inventory) -> tidak bisa diubah, server juga menolak
+                if (row.journal_no) {
+                    toastr.error("Transaction " + row.request_no + " has been posted to Journal Inventory (" + row.journal_no + ") and cannot be changed. Delete the journal first.", "Failed");
+                    return;
+                }
                 is_updating = true;
                 $('#dlg_insert').dialog('open');
                 
@@ -667,8 +680,9 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_transaction_type = $("#filter_transaction_type").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
-        url = "?&filter_request_no=" + filter_request_no + "&filter_product_no=" + btoa(filter_product_no) + "&filter_product_family=" + filter_product_family + "&filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_transaction_type=" + filter_transaction_type;
+        url = "?&filter_request_no=" + filter_request_no + "&filter_product_no=" + btoa(filter_product_no) + "&filter_product_family=" + filter_product_family + "&filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_transaction_type=" + filter_transaction_type + "&filter_status_posting=" + filter_status_posting;
 
         $('#dg').treegrid({
             url: '<?= base_url('warehouse/transaction_rm/datatables') ?>' + url
@@ -691,8 +705,9 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_transaction_type = $("#filter_transaction_type").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
-        url = "?&filter_request_no=" + filter_request_no + "&filter_product_no=" + btoa(filter_product_no) + "&filter_product_family=" + filter_product_family + "&filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_transaction_type=" + filter_transaction_type;
+        url = "?&filter_request_no=" + filter_request_no + "&filter_product_no=" + btoa(filter_product_no) + "&filter_product_family=" + filter_product_family + "&filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_transaction_type=" + filter_transaction_type + "&filter_status_posting=" + filter_status_posting;
         window.location.assign('<?= base_url('warehouse/transaction_rm/print/excel') ?>' + url);
     }
 
@@ -845,6 +860,7 @@
 
                     var hasProcessedData = false;
                     var saveRequests = []; // ditunggu semua selesai sebelum Auto Posting Journal Inventory
+                    var blockedMessage = ''; // diisi jika server menolak (dokumen sudah dijurnal)
 
                     // Looping baris tabel
                     for (let i = 0; i < totalrows; i++) {
@@ -898,6 +914,7 @@
                                 success: function(result) {
                                     if (result && result.theme == "error") {
                                         toastr.warning(result.message, "Error");
+                                        if (result.journaled) blockedMessage = result.message;
                                     }
                                 },
                                 complete: function() { saveDone.resolve(); }
@@ -918,6 +935,11 @@
 
                     // Semua baris tersimpan -> Auto Posting Journal Inventory (gagal tercatat di Failed Posting)
                     $.when.apply($, saveRequests).always(function() {
+                        // Ditolak server (sudah dijurnal) -> jangan posting & jangan tampilkan sukses
+                        if (blockedMessage) {
+                            Swal.fire({ title: "Failed", text: blockedMessage, icon: "error", confirmButtonText: 'Ok' });
+                            return;
+                        }
                         $.ajax({
                             type: "POST",
                             url: '<?= base_url('warehouse/transaction_rm/autoPostJournal') ?>',

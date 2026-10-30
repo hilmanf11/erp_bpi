@@ -360,6 +360,13 @@ class Issued_materials extends CI_Controller
                     $post['item_fg_id'] = null;
                 }
 
+                // Dokumen yang sudah dijurnal di Journal Inventory tidak boleh diubah issue-nya
+                $this->load->model('autopostingjournal');
+                if ($blocked = $this->autopostingjournal->journaled_block(['SUPPLY SHEET', 'NON SUPPLY SHEET', 'MATERIAL REQUESTION'], $post['request_no'] ?? '')) {
+                    echo json_encode($blocked);
+                    return;
+                }
+
                 $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "workorder" => $post['workorder'], "item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
                 if (!$issued_materials) {
                     $send   = $this->crud->create('issued_materials', $post);
@@ -813,6 +820,20 @@ class Issued_materials extends CI_Controller
             $post       = $this->input->post();
             $request_no = $post['request_no']; // dari supply sheet
             $item_rm_id = $post['item_rm_id']; // item_rm_id (atau ID Label/Material Utama)
+
+            // Supply Sheet yang sudah dihapus tidak boleh di-scan lagi (header issued_materials bisa tertinggal)
+            if (strpos((string) $request_no, 'SH-') === 0
+                && $this->db->where('request_no', $request_no)->where('deleted', 0)->count_all_results('supply_sheets') == 0) {
+                echo json_encode(array("title" => "Not Registered", "message" => "Supply Sheet $request_no not found (deleted). Please reload and use the current Supply Sheet.", "theme" => "error"));
+                return;
+            }
+
+            // Dokumen yang sudah dijurnal di Journal Inventory tidak boleh ditambah issue (qty berubah, jurnal tidak)
+            $this->load->model('autopostingjournal');
+            if ($blocked = $this->autopostingjournal->journaled_block(['SUPPLY SHEET', 'NON SUPPLY SHEET', 'MATERIAL REQUESTION'], $request_no)) {
+                echo json_encode($blocked);
+                return;
+            }
 
             $totalSupply              = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id'");
             $issued_material_details  = $this->crud->read("issued_material_details", [], ["label_no" => $post['label_no']]);

@@ -89,6 +89,14 @@
                     </select>
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Posting</span>
+                    <select style="width:60%;" id="filter_status_posting" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="OPEN">Open</option>
+                        <option value="CLOSED">Closed</option>
+                    </select>
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status Subcont</span>
                     <select style="width:60%;" id="filter_status_subcont" class="easyui-combobox" panelHeight="auto">
                         <option value="">Select All</option>
@@ -608,11 +616,12 @@
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
         url = "?filter_period_to=" + filter_period_to + "&filter_period_from=" + filter_period_from + "&filter_lot_no=" + filter_lot_no + "&filter_request_no=" + filter_request_no + 
          "&filter_supply_type=" + filter_supply_type + "&filter_status=" + filter_status + "&filter_wo_no=" + filter_wo_no + 
          "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
-         "&filter_item_fg_id=" + filter_item_fg_id; //"&filter_operation=" + filter_operation +
+         "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status_posting=" + filter_status_posting; //"&filter_operation=" + filter_operation +
 
         // $('#dg').datagrid({
         //     url: '<?= base_url('planning/supply_sheets/datatables') ?>' + url,
@@ -890,11 +899,12 @@
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
         var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
+        var filter_status_posting = $("#filter_status_posting").combobox('getValue');
 
         url = "?filter_period_to=" + filter_period_to + "&filter_period_from=" + filter_period_from + "&filter_lot_no=" + filter_lot_no + "&filter_request_no=" + filter_request_no + 
          "&filter_supply_type=" + filter_supply_type + "&filter_status=" + filter_status + "&filter_wo_no=" + filter_wo_no + 
          "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
-         "&filter_item_fg_id=" + filter_item_fg_id; //"&filter_operation=" + filter_operation +
+         "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status_posting=" + filter_status_posting; //"&filter_operation=" + filter_operation +
         window.location.assign('<?= base_url('planning/supply_sheets/print/excel') ?>' + url);
     }
 
@@ -1233,7 +1243,7 @@
                                         },
                                         success: function(result) {
                                             var result = eval('(' + result + ')');
-                                            toastr.success(result.message);
+                                            (result.success === false ? toastr.error : toastr.success)(result.message);
                                         },
                                         error: function(jqXHR, textStatus, errorThrown) {
                                             toastr.error(jqXHR.statusText);

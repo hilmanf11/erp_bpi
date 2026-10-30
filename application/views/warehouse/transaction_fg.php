@@ -420,6 +420,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                if (result && result.theme == "error") toastr.error(result.message, result.title);
                                 $('#dg').treegrid('reload');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
@@ -544,8 +545,13 @@
                         var totalrows = rows.length;
                         endEditing();
 
+                        var saveRequests = [];
+                        var blockedMessage = "";
                         for (let i = 0; i < totalrows; i++) {
                             if (rows[i].item_fg_id) {
+                                // Deferred sendiri: selesai (sukses/gagal) baru dihitung, supaya $.when tidak berhenti di request gagal pertama
+                                const saveDone = $.Deferred();
+                                saveRequests.push(saveDone.promise());
                                 $.ajax({
                                     type: "post",
                                     url: '<?= base_url('warehouse/transaction_fg/create') ?>',
@@ -569,24 +575,54 @@
                                     success: function(result) {
                                         if (result.theme == "error") {
                                             toastr.warning(result.message, "Error");
+                                            if (result.journaled) blockedMessage = result.message;
                                         }
-                                    }
+                                    },
+                                    complete: function() { saveDone.resolve(); }
                                 });
                             }
                         }
 
                         Swal.fire({
-                            title: "Data Saved Successfully",
-                            icon: "success",
-                            confirmButtonText: 'Ok',
+                            html: 'Saving data & Auto Posting Journal Inventory...',
                             allowOutsideClick: false,
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.reload();
-                            }
+                            didOpen: () => { Swal.showLoading(); }
                         });
-                        $('#dg').treegrid('reload');
-                        $('#dlg_insert').dialog('close');
+
+                        // Semua baris tersimpan -> Auto Posting Journal Inventory (gagal tercatat di Failed Posting)
+                        $.when.apply($, saveRequests).always(function() {
+                            // Ditolak server (sudah dijurnal) -> jangan posting & jangan tampilkan sukses
+                            if (blockedMessage) {
+                                Swal.fire({ title: "Failed", text: blockedMessage, icon: "error", confirmButtonText: 'Ok' });
+                                return;
+                            }
+                            $.ajax({
+                                type: "POST",
+                                url: '<?= base_url('warehouse/transaction_fg/autoPostJournal') ?>',
+                                data: { request_no: request_no },
+                                dataType: "json",
+                                complete: function(xhr) {
+                                    var res = xhr.responseJSON || {};
+                                    if (res.status === true) {
+                                        toastr.success(res.message, "Journal Inventory");
+                                    } else if (res.status === false) {
+                                        toastr.warning(res.message, "Journal Inventory (Failed Posting)");
+                                    }
+                                    Swal.fire({
+                                        title: "Data Saved Successfully",
+                                        icon: "success",
+                                        confirmButtonText: 'Ok',
+                                        allowOutsideClick: false,
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            window.location.reload();
+                                        }
+                                    });
+                                    $('#dg').treegrid('reload');
+                                    $('#dlg_insert').dialog('close');
+                                }
+                            });
+                        });
                     }
                 }
             }]

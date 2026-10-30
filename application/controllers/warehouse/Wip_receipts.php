@@ -432,11 +432,36 @@ class Wip_receipts extends CI_Controller
         }
     }
 
+    // Dokumen yang sudah dijurnal (Journal Inventory) tidak boleh diubah / dihapus
+    private function _journaled_block($document_no)
+    {
+        $this->load->model('autopostingjournal');
+        return $this->autopostingjournal->journaled_block(['WIP RECEIPT'], $document_no);
+    }
+
+    // Dipanggil view setelah semua baris Save All tersimpan.
+    // MTS: langsung closed saat save -> dijurnal. INJ: dijurnal saat semua label di-scan (Item_receipts_fg)
+    public function autoPostJournal()
+    {
+        $document_no = $this->input->post('document_no');
+        if (empty($document_no)) {
+            echo json_encode(['status' => false, 'message' => 'Document No is empty.']);
+            return;
+        }
+
+        $this->load->model('autopostingjournal');
+        $result = $this->autopostingjournal->auto_post_wip_receipt($document_no, 'SAVE');
+        echo json_encode($result ?? ['status' => null, 'message' => 'No journal posting for this document yet.']);
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
+                if ($blocked = $this->_journaled_block($post['document_no'] ?? '')) {
+                    die(json_encode($blocked + ['journaled' => true]));
+                }
                 $read = $this->crud->reads("wip_receipts", [], ["checksheet_number" => $post['checksheet_number']]);
 
                 if (count($read) > 0) {
@@ -462,6 +487,10 @@ class Wip_receipts extends CI_Controller
     {
         $data = $this->input->post();
         $document_no = $data['document_no'];
+        if ($blocked = $this->_journaled_block($document_no)) {
+            echo json_encode($blocked);
+            return;
+        }
 
         $wip_receipts = $this->crud->reads("wip_receipts", [], ["document_no" => $document_no]);
         foreach ($wip_receipts as $wip_receipt) {
@@ -476,6 +505,11 @@ class Wip_receipts extends CI_Controller
     public function deleteSingle()
     {
         $data = $this->input->post();
+        $row = !empty($data) ? $this->db->select('document_no')->where($data)->get('wip_receipts', 1)->row() : null;
+        if ($row && ($blocked = $this->_journaled_block($row->document_no))) {
+            echo json_encode($blocked);
+            return;
+        }
         $send = $this->crud->delete('wip_receipts', $data);
         echo $send;
     }

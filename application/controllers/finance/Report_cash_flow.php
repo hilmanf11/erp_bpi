@@ -44,6 +44,27 @@ class Report_cash_flow extends CI_Controller
     //     return @$data->total;
     // }
 
+    // Tambah mutasi Journal Inventory (periode = journal_date / tanggal dokumen, sejak JOURNAL_INVENTORY_START) ke hasil journal_postings
+    private function add_journal_inventory($journal, $account, $from, $to)
+    {
+        $this->db->select('COALESCE(SUM(local_debit), 0) as local_debit, COALESCE(SUM(local_credit), 0) as local_credit');
+        $this->db->from('journal_inventory');
+        $this->db->where('account_number', $account['account_number']);
+        $this->db->where("journal_date BETWEEN '$from' and '$to'");
+        $this->db->where('journal_date >=', JOURNAL_INVENTORY_START);
+        $inventory = $this->db->get()->row();
+
+        if ((float) $inventory->local_debit == 0 && (float) $inventory->local_credit == 0) {
+            return $journal;
+        }
+        if (!$journal) {
+            $journal = (object) ['account_number' => $account['account_number'], 'account_name' => $account['account_name'], 'local_debit' => 0, 'local_credit' => 0];
+        }
+        $journal->local_debit  = (float) $journal->local_debit + (float) $inventory->local_debit;
+        $journal->local_credit = (float) $journal->local_credit + (float) $inventory->local_credit;
+        return $journal;
+    }
+
     function getData($filter_from, $filter_to, $number){
         $filter_before = date("Y-01-01", strtotime((string) $filter_from));
         $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime((string) $filter_from)));
@@ -74,6 +95,10 @@ class Report_cash_flow extends CI_Controller
             $this->db->where("journal_date BETWEEN '$filter_before' and '$filter_before_to'");
             $this->db->group_by('account_number');
             $journal_bf = $this->db->get()->row();
+
+            // Journal Inventory (GLINV) ikut dijumlahkan
+            $journal    = $this->add_journal_inventory($journal, $account, $filter_from, $filter_to);
+            $journal_bf = $this->add_journal_inventory($journal_bf, $account, $filter_before, $filter_before_to);
 
             $journal_debit = @$journal_bf->local_debit;
             $journal_credit = @$journal_bf->local_credit;

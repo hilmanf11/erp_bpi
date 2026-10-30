@@ -2327,6 +2327,31 @@
                             var totalrows2 = rows2.length;
                             endEditing2();
 
+                            // POR baru wajib Status POR CLOSE (label ter-scan semua) dan Status Print GRN CLOSE
+                            var newPor = [];
+                            $.each(rows, function(i, r) {
+                                if (!r.id && r.por_no && r.por_no != "-" && newPor.indexOf(r.por_no) < 0) newPor.push(r.por_no);
+                            });
+                            var porNotReady = {};
+                            if (newPor.length > 0) {
+                                $.ajax({
+                                    type: "post",
+                                    url: "<?= base_url('finance/purchase_invoices/checkPorReady') ?>",
+                                    data: { por_no: newPor },
+                                    dataType: "json",
+                                    async: false,
+                                    success: function(res) { porNotReady = res.not_ready || {}; },
+                                    error: function() { porNotReady = { "-": "Gagal cek status POR" }; }
+                                });
+                            }
+                            if (Object.keys(porNotReady).length > 0) {
+                                var msg = $.map(porNotReady, function(reason, por) { return por + ": " + reason; }).join("<br>");
+                                Swal.fire({ title: "POR belum bisa dibuatkan PI", html: msg, icon: "error" });
+                                isSubmitting = false;
+                                btn.linkbutton('enable');
+                                return;
+                            }
+
                             $.ajax({
                                 type: "post",
                                 url: "<?= base_url('finance/purchase_invoices/deleteJournal') ?>",
