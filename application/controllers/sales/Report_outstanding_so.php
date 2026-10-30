@@ -70,6 +70,8 @@ class Report_outstanding_so extends CI_Controller
 
         $filter_so_date_from = base64_decode((string) $this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode((string) $this->input->get("filter_so_date_to"));
+        $filter_delivery_date_to = base64_decode((string) $this->input->get("filter_delivery_date_to"));
+        $filter_delivery_date_from = base64_decode((string) $this->input->get("filter_delivery_date_from"));
         $filter_customer_name = base64_decode((string) $this->input->get("filter_customer_name"));
         $filter_customer_order_no = base64_decode((string) $this->input->get("filter_customer_order_no"));
         $filter_sales_order_no = base64_decode((string) $this->input->get("filter_sales_order_no"));
@@ -142,36 +144,12 @@ class Report_outstanding_so extends CI_Controller
         if ($filter_display == "RECAP") {
 
             if ($filter_status == 'OPEN') {
-                $this->db->having("(a.status != 1 AND ((SUM(a.qty) - COALESCE(c.qty, 0)) > 0))");
+                $this->db->having("(a.status != 1 AND a.type != 'Closing SO' AND ((SUM(a.qty) - COALESCE(c.qty, 0)) > 0))");
             } elseif ($filter_status == 'CLOSE') {
-                $this->db->having("(a.status = 1 OR ((SUM(a.qty) - COALESCE(c.qty, 0)) = 0))");
+                $this->db->having("(a.status = 1 OR a.type = 'Closing SO' OR ((SUM(a.qty) - COALESCE(c.qty, 0)) = 0))");
             }
 
-            // $this->db->select('a.sales_order_no, 
-            // a.sales_order_date, 
-            // a.customer_order_no, 
-            // SUM(a.qty) as qty_order, 
-            // c.qty as qty_delivery, 
-            // SUM(a.qty) - COALESCE(c.qty,0) as qty_outstanding, 
-            // b.number as customer_number, 
-            // b.name as customer_name, 
-            // a.status');
-            // $this->db->from('sales_orders a');
-            // $this->db->join('customers b', 'a.customer_id = b.id');
-            // // $this->db->join('delivery_notes c', 'a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id', 'left');
-            // $this->db->join("(SELECT item_fg_id, sales_order_no, COALESCE(SUM(qty),0) as qty FROM delivery_notes GROUP BY sales_order_no ) c",'a.sales_order_no = c.sales_order_no','left');
-            // $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
-            // $this->db->like('a.customer_id', $filter_customer_name);
-            // $this->db->like('a.item_fg_id', $filter_item_fg);
-            // $this->db->like('a.customer_order_no', $filter_customer_order_no);
-            // $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            // $this->db->like('a.division', $filter_division);
-            // $this->db->order_by('b.name', 'ASC');
-            // $this->db->order_by('a.sales_order_no', 'ASC');
-            // $this->db->group_by('a.sales_order_no');
-            // $records = $this->db->get()->result_array();
-
-            $this->db->select('a.sales_order_no, 
+            $this->db->select('a.sales_order_no, a.delivery_date,
             a.sales_order_date, 
             a.customer_order_no, 
             SUM(a.qty) as qty_order, 
@@ -179,7 +157,9 @@ class Report_outstanding_so extends CI_Controller
             SUM(a.qty) - COALESCE(c.qty,0) as qty_outstanding, 
             b.number as customer_number, 
             b.name as customer_name, 
-            a.status');
+            MAX(a.type) as type,
+            MAX(a.status) as status');
+            
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
 
@@ -188,13 +168,20 @@ class Report_outstanding_so extends CI_Controller
             GROUP BY sales_order_no, item_fg_id)";
 
             if (!empty($filter_item_fg)) {
-            $this->db->join($subquery . " c", "a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id", "left");
+                $this->db->join($subquery . " c", "a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id", "left");
             } else {
-            $this->db->join("(SELECT sales_order_no, COALESCE(SUM(qty),0) as qty 
-                                FROM delivery_notes 
-                                GROUP BY sales_order_no) c", "a.sales_order_no = c.sales_order_no", "left");
+                $this->db->join("(SELECT sales_order_no, COALESCE(SUM(qty),0) as qty 
+                                    FROM delivery_notes 
+                                    GROUP BY sales_order_no) c", "a.sales_order_no = c.sales_order_no", "left");
             }
-            $this->db->where("a.delivery_date between '$filter_so_date_from' and '$filter_so_date_to'");
+
+            if (!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                $this->db->where("a.sales_order_date BETWEEN '$filter_so_date_from' AND '$filter_so_date_to'");
+            }
+            
+            if (!empty($filter_delivery_date_from) && !empty($filter_delivery_date_to)) {
+                $this->db->where("a.delivery_date BETWEEN '$filter_delivery_date_from' AND '$filter_delivery_date_to'");
+            }
 
             if (!empty($filter_customer_name)) {
                 $this->db->like('a.customer_id', $filter_customer_name);
@@ -217,38 +204,13 @@ class Report_outstanding_so extends CI_Controller
             $this->db->group_by('a.sales_order_no');
             $records = $this->db->get()->result_array();
 
-            // if (!$records) {
-            //     $this->db->select('a.sales_order_no, 
-            //     a.sales_order_date, 
-            //     a.customer_order_no, 
-            //     SUM(a.qty) as qty_order, 
-            //     c.qty as qty_delivery, 
-            //     SUM(a.qty) - COALESCE(c.qty,0) as qty_outstanding, 
-            //     b.number as customer_number, 
-            //     b.name as customer_name, 
-            //     a.status');
-            //     $this->db->from('sales_order_rm a');
-            //     $this->db->join('customers b', 'a.customer_id = b.id');
-            //     // $this->db->join('delivery_notes c', 'a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id', 'left');
-            //     $this->db->join("(SELECT item_fg_id, sales_order_no_rm, COALESCE(SUM(qty),0) as qty FROM delivery_notes GROUP BY sales_order_no_rm ) c",'a.sales_order_no = c.sales_order_no_rm','left');
-            //     $this->db->where("a.delivery_date between '$filter_so_date_from' and '$filter_so_date_to'");
-            //     $this->db->like('a.customer_id', $filter_customer_name);
-            //     $this->db->like('a.item_fg_id', $filter_item_fg);
-            //     $this->db->like('a.customer_order_no', $filter_customer_order_no);
-            //     $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            //     $this->db->like('a.division', $filter_division);
-            //     $this->db->order_by('b.name', 'ASC');
-            //     $this->db->order_by('a.sales_order_no', 'ASC');
-            //     $this->db->group_by('a.sales_order_no');
-            //     $records = $this->db->get()->result_array();
-            // }
-
             $html .= '<table id="customers" border="1">
                         <tr>
                             <th width="20">No</th>
                             <th>Sales Order No.</th>
                             <th>Customer Order No.</th>
                             <th>SO Date</th>
+                            <th>Delivery Date</th>
                             <th>Customer Name</th>
                             <th>Qty Order</th>
                             <th>Qty Delivery</th>
@@ -263,36 +225,74 @@ class Report_outstanding_so extends CI_Controller
             $qty_undelivery = 0;
             $qty_outstanding = 0;
             $status = "";
+            // foreach ($records as $data) {
+            //     $qty_order += $data['qty_order'];
+            //     $qty_delivery += $data['qty_delivery'];
+
+            //     if($data['type'] == "Closing SO") {
+            //         $status = "<b style='color:red;'>CLOSE</b>";
+            //     }else if(($data['qty_order'] - $data['qty_delivery']) > 0) {
+            //         $status = "<b style='color:green;'>OPEN</b>";
+            //     } else{
+            //         $status = "<b style='color:red;'>CLOSE</b>";
+            //     }
+
+                
+            //     if($data['type'] == "Closing SO") {
+            //         $undelivery = $data['qty_outstanding'];
+            //         $outstanding = 0;
+            //         $qty_undelivery += $undelivery;
+            //         $qty_outstanding += $outstanding;
+            //     } else{
+            //         $undelivery = 0;
+            //         $outstanding = $data['qty_outstanding'];
+            //         $qty_undelivery += $undelivery;
+            //         $qty_outstanding += $outstanding;
+            //     }
+
+            //     $html .= '<tr>
+            //                 <td>' . $no . '</td>
+            //                 <td>' . $data['sales_order_no'] . '</td>
+            //                 <td>' . $data['customer_order_no'] . '</td>
+            //                 <td>' . $data['sales_order_date'] . '</td>
+            //                 <td>' . $data['delivery_date'] . '</td>
+            //                 <td>' . $data['customer_name'] . '</td>
+            //                 <td style="mso-number-format:\@;">' . number_format((float) $data['qty_order']) . '</td>
+            //                 <td style="mso-number-format:\@;">' . number_format((float) $data['qty_delivery']) . '</td>
+            //                 <td style="mso-number-format:\@;">' . number_format((float) $undelivery) . '</td>
+            //                 <td style="mso-number-format:\@;">' . number_format((float) $outstanding) . '</td>
+            //                 <td>' . $status . '</td>
+            //             </tr>';
+            //     $no++;
+            // }
+
             foreach ($records as $data) {
                 $qty_order += $data['qty_order'];
                 $qty_delivery += $data['qty_delivery'];
 
-                if($data['status'] == 1) {
+                if ($data['type'] == "Closing SO" || $data['status'] == 1 || $data['qty_outstanding'] <= 0) {
                     $status = "<b style='color:red;'>CLOSE</b>";
-                }else if(($data['qty_order'] - $data['qty_delivery']) > 0) {
+                } else {
                     $status = "<b style='color:green;'>OPEN</b>";
-                } else{
-                    $status = "<b style='color:red;'>CLOSE</b>";
                 }
 
-                
-                if($data['status'] == 1 && $data['qty_outstanding'] > 0) {
-                    $undelivery = $data['qty_outstanding'];
+                if ($data['type'] == "Closing SO" || $data['status'] == 1) {
+                    $undelivery  = $data['qty_outstanding'];
                     $outstanding = 0;
-                    $qty_undelivery += $undelivery;
-                    $qty_outstanding += $outstanding;
-                } else{
-                    $undelivery = 0;
+                } else {
+                    $undelivery  = ($data['qty_outstanding'] < 0) ? 0 : 0; 
                     $outstanding = $data['qty_outstanding'];
-                    $qty_undelivery += $undelivery;
-                    $qty_outstanding += $outstanding;
                 }
+
+                $qty_undelivery  += $undelivery;
+                $qty_outstanding += $outstanding;
 
                 $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $data['sales_order_no'] . '</td>
                             <td>' . $data['customer_order_no'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
+                            <td>' . $data['delivery_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
                             <td style="mso-number-format:\@;">' . number_format((float) $data['qty_order']) . '</td>
                             <td style="mso-number-format:\@;">' . number_format((float) $data['qty_delivery']) . '</td>
@@ -304,7 +304,7 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="5" style="text-align:right;">TOTAL</th>
+                        <th colspan="6" style="text-align:right;">TOTAL</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_order) . '</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_delivery) . '</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_undelivery) . '</th>
@@ -320,7 +320,7 @@ class Report_outstanding_so extends CI_Controller
                 $this->db->where("(a.status = 1 OR (a.qty - COALESCE(d.qty, 0)) = 0)");
             }
 
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, 
+            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, a.delivery_date,
                 a.item_fg_id,
                 a.qty, 
                 d.qty as delivery, 
@@ -335,7 +335,15 @@ class Report_outstanding_so extends CI_Controller
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             // $this->db->join('delivery_notes d', 'a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id', 'left');
             $this->db->join("(SELECT item_fg_id, sales_order_no, COALESCE(SUM(qty),0) as qty FROM delivery_notes GROUP BY item_fg_id, sales_order_no ) d",'a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id','left');
-            $this->db->where("a.delivery_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            // $this->db->where("a.delivery_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            if (!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                $this->db->where("a.sales_order_date BETWEEN '$filter_so_date_from' AND '$filter_so_date_to'");
+            }
+            
+            if (!empty($filter_delivery_date_from) && !empty($filter_delivery_date_to)) {
+                $this->db->where("a.delivery_date BETWEEN '$filter_delivery_date_from' AND '$filter_delivery_date_to'");
+            }
+
             $this->db->like('a.customer_id', $filter_customer_name);
             $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('a.customer_order_no', $filter_customer_order_no);
@@ -381,6 +389,7 @@ class Report_outstanding_so extends CI_Controller
                             <th width="120">Product No</th>
                             <th>Product Name</th>
                             <th>SO Date</th>
+                            <th>Delivery Date</th>
                             <th>Qty Order</th>
                             <th>Qty Delivery</th>
                             <th>Undelivery Qty</th>
@@ -442,6 +451,7 @@ class Report_outstanding_so extends CI_Controller
                             <td>' . $data['item_fg_number'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
+                            <td>' . $data['delivery_date'] . '</td>
                             <td style="mso-number-format:\@;">' . number_format((float) $data['qty']) . '</td>
                             <td style="mso-number-format:\@;">' . number_format((float) $data['delivery']) . '</td>
                             <td style="mso-number-format:\@;">' . number_format((float) $undelivery) . '</td>
@@ -510,11 +520,12 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="4" style="text-align:right;">TOTAL</th>
+                        <th colspan="5" style="text-align:right;">TOTAL</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_order) . '</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_delivery) . '</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_undelivery) . '</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_outstanding) . '</th>
+                        <th style="mso-number-format:\@;">-</th>
                     </tr>';
         }else if($filter_display == "RECAP SO"){
 
@@ -525,8 +536,9 @@ class Report_outstanding_so extends CI_Controller
                 $this->db->where("(a.status = 1 OR (a.qty - COALESCE(d.qty, 0)) = 0)");
             }
 
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, 
+            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, a.delivery_date,
             a.qty as qty, 
+            a.type,
             d.qty as delivery,  
             a.qty - COALESCE(d.qty,0) as outstanding, 
             b.number as customer_number, 
@@ -539,7 +551,14 @@ class Report_outstanding_so extends CI_Controller
             $this->db->join('item_fg c', 'a.item_fg_id = c.id','left');
             // $this->db->join('delivery_notes d', 'a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id');
             $this->db->join("(SELECT item_fg_id, sales_order_no, COALESCE(SUM(qty),0) as qty FROM delivery_notes GROUP BY item_fg_id, sales_order_no ) d",'a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id','left');
-            $this->db->where("a.delivery_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            // $this->db->where("a.delivery_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            if (!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                $this->db->where("a.sales_order_date BETWEEN '$filter_so_date_from' AND '$filter_so_date_to'");
+            }
+            
+            if (!empty($filter_delivery_date_from) && !empty($filter_delivery_date_to)) {
+                $this->db->where("a.delivery_date BETWEEN '$filter_delivery_date_from' AND '$filter_delivery_date_to'");
+            }
             $this->db->like('a.customer_id', $filter_customer_name);
             $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('a.customer_order_no', $filter_customer_order_no);
@@ -559,6 +578,7 @@ class Report_outstanding_so extends CI_Controller
                             <th>Sales Order No.</th>
                             <th>Customer Order No.</th>
                             <th>SO Date</th>
+                            <th>Delivery Date</th>
                             <th>Product No</th>
                             <th>Product Name</th>
                             <th>Qty SO</th>
@@ -588,7 +608,7 @@ class Report_outstanding_so extends CI_Controller
                     $status = "<b style='color:red;'>CLOSE</b>";
                 }
 
-                if($data['status'] == 1 && $data['outstanding'] > 0) {
+                if($data['type'] == "Closing SO") {
                     $undelivery = $data['outstanding'];
                     $outstanding = 0;
                     $qty_undelivery += $undelivery;
@@ -606,6 +626,7 @@ class Report_outstanding_so extends CI_Controller
                             <td>' . $data['sales_order_no'] . '</td>
                             <td>' . $data['customer_order_no'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
+                            <td>' . $data['delivery_date'] . '</td>
                             <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
                             <td style="mso-number-format:\@;">' . number_format((float) $data['qty']) . '</td>
@@ -618,7 +639,7 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="7" style="text-align:right;">TOTAL</th>
+                        <th colspan="8" style="text-align:right;">TOTAL</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_order) . '</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_delivery) . '</th>
                         <th style="mso-number-format:\@;">' . number_format((float) $qty_undelivery) . '</th>
@@ -647,7 +668,14 @@ class Report_outstanding_so extends CI_Controller
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id','left');
             $this->db->join("(SELECT item_fg_id, customer_id, COALESCE(SUM(qty),0) as qty FROM delivery_notes GROUP BY item_fg_id, customer_id ) d",'a.customer_id = d.customer_id and a.item_fg_id = d.item_fg_id','left');
-            $this->db->where("a.delivery_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            // $this->db->where("a.delivery_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            if (!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                $this->db->where("a.sales_order_date BETWEEN '$filter_so_date_from' AND '$filter_so_date_to'");
+            }
+            
+            if (!empty($filter_delivery_date_from) && !empty($filter_delivery_date_to)) {
+                $this->db->where("a.delivery_date BETWEEN '$filter_delivery_date_from' AND '$filter_delivery_date_to'");
+            }
             $this->db->like('a.customer_id', $filter_customer_name);
             $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('a.customer_order_no', $filter_customer_order_no);

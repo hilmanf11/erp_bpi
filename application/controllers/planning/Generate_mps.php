@@ -1804,7 +1804,7 @@ class Generate_mps extends CI_Controller
         if ($p_month != '' && $p_year != '' && $revision != '' && $cutoff != '') {
             
             $this->db->select("a.*, b.number_customer as product_customer, (CASE WHEN a.so_qty > 0 OR a.forecast_qty > 0 THEN 'CHECK' ELSE '' END) as status");            $this->db->from('mps_failed_logs a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id AND a.item_fg_id != 0', 'left');
             $this->db->where('a.p_month', $p_month);
             $this->db->where('a.p_year', $p_year);
             $this->db->where('a.revision', $revision);
@@ -1842,7 +1842,7 @@ class Generate_mps extends CI_Controller
 
         $this->db->select('a.*, b.number_customer as product_customer');
         $this->db->from('mps_failed_logs a');
-        $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id AND a.item_fg_id != 0', 'left');
         $this->db->where('a.p_month', $p_month);
         $this->db->where('a.p_year', $p_year);
         $this->db->where('a.revision', $revision);
