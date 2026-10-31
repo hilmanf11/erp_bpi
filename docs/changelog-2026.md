@@ -1031,3 +1031,10 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com> ([b067305f](https://gith
 
 ### [2026-10-30]
 - **Yudhazaldi**: feat: implement journal inventory auto-posting and reporting integration ([223f3b9a](https://github.com/hilmanf11/erp_bpi/commit/223f3b9a3996fe1b58579e004c35a5c943591026))
+
+### [2026-10-31]
+- **kurniawan**: update script
+
+supply_sheets
+purchase_order_receipts
+penambahan height pada form ([28666bc6](https://github.com/hilmanf11/erp_bpi/commit/28666bc6faab0697350629e1b6dada8fbf5e7970))
